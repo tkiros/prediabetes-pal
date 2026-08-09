@@ -3,7 +3,7 @@
  *
  * A naive denylist (strip request/user/breadcrumbs only) PASSES a test that
  * checks request.data alone while still leaking the two vectors that actually
- * carry Revora's forbidden data: stacktrace frame `vars` (the prompt = food+a1c)
+ * carry Prediabetes Pal's forbidden data: stacktrace frame `vars` (the prompt = food+a1c)
  * and the exception `value` (a ZodError can echo model output_text). This test
  * feeds ALL THREE vectors with sentinel strings and proves the deep-serialized
  * event carries none of them.

@@ -49,7 +49,7 @@ export default function TrialStartedPage() {
           <p className="page-copy">
             Two days before your trial ends, we&apos;ll email you a reminder
             with the exact date and amount — and a one-tap cancel link. Cancel
-            any time from your account page, too. On your phone, Revora installs
+            any time from your account page, too. On your phone, Prediabetes Pal installs
             straight to your home screen —{" "}
             <Link className="inline-link" href="/get-the-app">
               see how

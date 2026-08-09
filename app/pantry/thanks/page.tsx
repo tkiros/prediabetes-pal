@@ -1,7 +1,7 @@
 import { SUPPORT_EMAIL } from "../../../lib/revora/contact";
 
 export const metadata = {
-  title: "Pantry Review — Revora",
+  title: "Pantry Review — Prediabetes Pal",
   robots: { index: false, follow: false }
 };
 

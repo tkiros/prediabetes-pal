@@ -146,7 +146,7 @@ describe("POST /api/pantry/submit", () => {
     expect(response.status).toBe(400);
   });
 
-  it("rejects photo URLs outside the Revora blob store (no arbitrary-fetch relay)", async () => {
+  it("rejects photo URLs outside the Prediabetes Pal blob store (no arbitrary-fetch relay)", async () => {
     const order = await makeClaimedOrder();
     const POST = createPantrySubmitHandler(makeDeps());
     for (const hostile of [

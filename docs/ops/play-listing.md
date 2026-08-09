@@ -1,4 +1,4 @@
-# Revora — Google Play Store Listing Draft
+# Prediabetes Pal — Google Play Store Listing Draft
 
 > **Active claims-controlled draft — 2026-07-12.** Paste only after replacing
 > placeholders and confirming the advertised production feature flags. This
@@ -7,9 +7,9 @@
 
 ## 1. App title
 
-> **AMENDED 2026-08-08.** Was `Revora — Prediabetes Coach`. "Coach" was the
+> **AMENDED 2026-08-08.** Was `Prediabetes Pal — Prediabetes Coach`. "Coach" was the
 > pre-pivot noun and this was the last surface still carrying it: `app/layout.tsx`
-> has said `Revora — Prediabetes Meal Checker` since the pivot, and the landing
+> has said `Prediabetes Pal — Prediabetes Meal Checker` since the pivot, and the landing
 > H1 reads "A meal checker built only for prediabetes." A store title that names
 > a different product than the page it links to is the one drift a reviewer sees
 > first. "Coach" also over-promises a relationship the product does not have —
@@ -17,12 +17,12 @@
 >
 > ⛔ **29 CHARACTERS, AND THAT IS THE BINDING CONSTRAINT. Play Console caps the
 > app title at 30.** The obvious fix — matching `app/layout.tsx`'s
-> `Revora — Prediabetes Meal Checker` exactly — is **33** and would be rejected
+> `Prediabetes Pal — Prediabetes Meal Checker` exactly — is **33** and would be rejected
 > at submission. Nothing in `npm run contract` measures length: the validator
 > reads the Copy for claims, so this fails at the Play Console paste box, not in
 > CI. **Count before you edit this line.**
 >
-> ⛔ **`Revora: Prediabetes Checker` (27) was REJECTED and must not be
+> ⛔ **`Prediabetes Pal: Prediabetes Checker` (27) was REJECTED and must not be
 > reintroduced as "the shorter one".** It fits, and it reads as *a checker for
 > prediabetes* — a screening claim, which is the first banned family in
 > `claims-boundary.md`. The word **meal** is what keeps the object of the verb
@@ -30,12 +30,12 @@
 >
 > The em dash went, not a word: ` — ` costs three characters and a space costs
 > one, and Play titles are conventionally unpunctuated. "Check" over "Checker"
-> is the last character. If the owner prefers the em dash, `Revora — Meal Check`
+> is the last character. If the owner prefers the em dash, `Prediabetes Pal — Meal Check`
 > (19) fits and drops the condition instead — worse for store search, which is
 > why this version keeps it.
 
 <!-- claims-audit:start -->
-**Revora Prediabetes Meal Check**
+**Prediabetes Pal Prediabetes Meal Check**
 <!-- claims-audit:end -->
 
 ## 2. Short description
@@ -54,28 +54,28 @@
 > **Check a meal. Understand its balance in seconds.**
 >
 > Type a meal or say it before submitting it.
-> Revora returns one cautious educational label—**Clear**, **Be careful**, or
+> Prediabetes Pal returns one cautious educational label—**Clear**, **Be careful**, or
 > **Hold off**—with a plain-language reason and, when appropriate, a practical
 > adjustment or alternative.
 >
 > **Built for adults using a prediabetes-range A1C**
 >
-> Revora accepts an A1C from `5.7%–6.4%`. The range only makes the educational
+> Prediabetes Pal accepts an A1C from `5.7%–6.4%`. The range only makes the educational
 > presentation more cautious; it is not used to predict your individual
-> response. Outside that range, Revora stops and points you to a doctor or
+> response. Outside that range, Prediabetes Pal stops and points you to a doctor or
 > registered dietitian instead of returning a meal label.
 >
 > **What a check includes**
 >
 > - A general meal-pattern label: Clear, Be careful, or Hold off
-> - A short explanation of the composition Revora noticed
+> - A short explanation of the composition Prediabetes Pal noticed
 > - A practical adjustment or alternative when appropriate
 > - A clarification question when the meal description is incomplete
 > - No calorie target, glucose forecast, or future laboratory prediction
 >
 > **Guest and Premium use**
 >
-> Try Revora as a guest without an account. You get 10 free checks on your first day, stored on that device. Premium adds unlimited checks,
+> Try Prediabetes Pal as a guest without an account. You get 10 free checks on your first day, stored on that device. Premium adds unlimited checks,
 > encrypted cross-device history, a behavior-only progress view, and an
 > optional daily reminder. The purchase
 > screen shows the price, billing interval, trial and first-charge terms,
@@ -83,9 +83,9 @@
 >
 > **Honest limits**
 >
-> Revora provides general educational information about meal composition. Its
+> Prediabetes Pal provides general educational information about meal composition. Its
 > labels do not establish that a meal is medically appropriate for you and do
-> not forecast your individual glucose response. Revora is informational only
+> not forecast your individual glucose response. Prediabetes Pal is informational only
 > and is not medical advice. Talk with a doctor or registered dietitian for
 > guidance specific to you.
 >
@@ -93,7 +93,7 @@
 >
 > With explicit consent, saved A1C and meal text are encrypted at rest. You can
 > withdraw saved-health-data consent and erase that data while keeping your
-> login, or delete your whole account in the app. Revora does not sell personal
+> login, or delete your whole account in the app. Prediabetes Pal does not sell personal
 > information or show ads.
 <!-- claims-audit:end -->
 
@@ -110,7 +110,7 @@ or regulatory-status keywords.
 ## Health-app declaration
 
 <!-- claims-audit:start -->
-> Revora is an informational wellness product for adults who provide an A1C in
+> Prediabetes Pal is an informational wellness product for adults who provide an A1C in
 > the `5.7%–6.4%` range. It describes general meal-composition patterns and uses
 > the A1C range only to apply a more cautious educational presentation. It does
 > not make medical determinations, provide clinical care, forecast an

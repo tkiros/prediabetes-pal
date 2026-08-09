@@ -22,7 +22,7 @@ import { getDb, schema } from "../../../lib/server/db";
 import { getPlanBox } from "../../../lib/server/plan-box";
 import { getSessionInfo } from "../../../lib/server/session";
 
-export const metadata = { title: "Home — Revora" };
+export const metadata = { title: "Home — Prediabetes Pal" };
 
 /**
  * Home — "help me decide now" (C7 four-jobs restructure 2026-07-21). Hybrid

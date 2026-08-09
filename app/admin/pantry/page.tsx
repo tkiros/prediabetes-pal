@@ -7,7 +7,7 @@ import { getDb, schema } from "../../../lib/server/db";
 import { getSessionInfo } from "../../../lib/server/session";
 
 export const metadata = {
-  title: "Pantry ops — Revora",
+  title: "Pantry ops — Prediabetes Pal",
   robots: { index: false, follow: false }
 };
 

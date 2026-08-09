@@ -449,12 +449,22 @@ describe("claims-boundary copy audit", () => {
     // making. So: hold the framing, not just the citation.
     //
     // JSX escapes apostrophes as &apos;, so the framing has to be matched
-    // through the entity — a naive /Revora's/ matches nothing and this guard
-    // would pass vacuously.
+    // through the entity — a naive /Prediabetes Pal's/ matches nothing and this
+    // guard would pass vacuously.
+    //
+    // ⚠️ The brand name is spelled out here on purpose, and it is why the
+    // 2026-08-09 rename turned this red instead of letting it drift. Keep it in
+    // step with the copy in app/(app)/how-it-works/page.tsx. Do NOT "fix" a
+    // failure here by loosening the brand to `.*` — the whole point is that this
+    // sentence is present and about US, and a wildcard would pass on a page that
+    // had quietly dropped the subject.
     const apos = "(?:'|&apos;|’)";
     const hiw = read("app/(app)/how-it-works/page.tsx");
     expect(hiw).toMatch(
-      new RegExp(`none of the following describes Revora${apos}s own users`, "i")
+      new RegExp(
+        `none of the following describes Prediabetes Pal${apos}s own users`,
+        "i"
+      )
     );
     expect(hiw).toMatch(/individual results vary/i);
   });

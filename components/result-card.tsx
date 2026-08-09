@@ -40,17 +40,17 @@ export function showPantryEntry(
 
 // Clinical-route eyebrows (W-01). The message body itself is approved ledger
 // copy; these are the short framing lines above it. Kept neutral and
-// non-diagnostic — Revora names what it CANNOT do, never what the user has.
+// non-diagnostic — Prediabetes Pal names what it CANNOT do, never what the user has.
 const CLINICAL_EYEBROWS: Record<ClinicalRoute, string> = {
   urgent_symptoms: "Please get help now",
   possible_hypoglycemia: "Follow your plan",
   medication_dosing: "Ask your prescriber",
   eating_disorder: "Support, not a verdict",
-  pregnancy: "Outside Revora's scope",
-  organ_disease: "Outside Revora's scope",
-  allergy: "Revora cannot confirm this",
-  diagnosed_diabetes: "Outside Revora's scope",
-  pediatric: "Outside Revora's scope"
+  pregnancy: "Outside Prediabetes Pal's scope",
+  organ_disease: "Outside Prediabetes Pal's scope",
+  allergy: "Prediabetes Pal cannot confirm this",
+  diagnosed_diabetes: "Outside Prediabetes Pal's scope",
+  pediatric: "Outside Prediabetes Pal's scope"
 };
 
 // §4D upsell variants. The branch renders the server `message` verbatim in
@@ -141,7 +141,7 @@ export function ResultCard({
       >
         <header className="result-permission">
           <p className="result-eyebrow">
-            {lead ? "A practical next step" : "Revora result"}
+            {lead ? "A practical next step" : "Prediabetes Pal result"}
           </p>
           <p className="result-lead">{lead ?? RISK_LABELS[response.risk]}</p>
           {/* Orientation line only — the load-bearing boundary copy stays in
@@ -199,7 +199,7 @@ export function ResultCard({
                 </p>
               ) : null}
               {/* W-17 honest framing. These two rows used to read "Eat it in
-                  this order:" and "After this meal:", which implied Revora had
+                  this order:" and "After this meal:", which implied Prediabetes Pal had
                   picked them FOR this meal. It had not — they were the same two
                   sentences on every flagged result. The labels now say what is
                   true: these are general strategies, not a reading of your
@@ -248,7 +248,7 @@ export function ResultCard({
           </div>
         ) : null}
         <Link className="result-how" href="/how-it-works">
-          How Revora chooses a signal
+          How Prediabetes Pal chooses a signal
           <IconArrowRight size={15} />
         </Link>
         <div className="result-fineprint">
@@ -257,7 +257,7 @@ export function ResultCard({
               this user's own response. */}
           <p className="result-disclaimer" data-testid="general-guidance">
             These labels describe general meal patterns. Your A1C range only
-            makes the presentation more cautious; Revora does not predict your
+            makes the presentation more cautious; Prediabetes Pal does not predict your
             individual response or decide whether a meal is medically
             appropriate for you.
           </p>
@@ -272,7 +272,7 @@ export function ResultCard({
           </p>
         ) : null}
         {/* W-30. Sits below the disclaimer, outside the guidance itself — the
-            question is about Revora, not about the meal. */}
+            question is about Prediabetes Pal, not about the meal. */}
         <ResultFeedback risk={response.risk} checkId={response.checkId} />
         {/* §P3.2 save-to-memory. Self-gates: renders nothing without the build
             flag, a persisted checkId, and server entitlement — so landing/demo
@@ -333,19 +333,19 @@ export function ResultCard({
     response.kind === "clarify"
       ? {
           eyebrow: "Need one more detail",
-          title: "Revora needs one more detail",
+          title: "Prediabetes Pal needs one more detail",
           body: response.question
         }
       : response.kind === "not_food"
         ? {
             eyebrow: "Food description needed",
             title: "Enter a food or meal",
-            body: `Revora can help once you enter a food or meal, such as ${response.examples.join(", ")}.`
+            body: `Prediabetes Pal can help once you enter a food or meal, such as ${response.examples.join(", ")}.`
           }
         : response.kind === "out_of_scope"
           ? {
               eyebrow: "Current scope",
-              title: "Outside Revora's current A1C range",
+              title: "Outside Prediabetes Pal's current A1C range",
               body: response.reason
             }
           : {

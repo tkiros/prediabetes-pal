@@ -40,7 +40,7 @@ describe("get-the-app page store waitlists", () => {
     vi.stubEnv("NEXT_PUBLIC_WAITLIST_IOS_URL", "");
     const text = await renderText();
     // Install guidance always renders.
-    expect(text).toContain("Revora already works on your phone");
+    expect(text).toContain("Prediabetes Pal already works on your phone");
     // The store section always renders (coming-soon messaging), links don't.
     expect(text).toContain("Prefer the store version?");
     expect(text).toContain("Google Play — coming soon.");

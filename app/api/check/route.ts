@@ -107,7 +107,7 @@ const FREE_LIMIT_MESSAGE = `You've used today's ${FREE_LIMIT_WORD} free checks. 
 // checks. The client renders this as the wall CTA; the copy stays calm and
 // names the exact next step.
 export const TRIAL_WALL_MESSAGE =
-  "Your free taste of Revora was yesterday's checks. Start your free week — card required, unlimited everything, and we email you before any charge — to keep going.";
+  "Your free taste of Prediabetes Pal was yesterday's checks. Start your free week — card required, unlimited everything, and we email you before any charge — to keep going.";
 
 // Model selection (W-02, reversing the 2026-07-11 tiering decision).
 //
@@ -219,7 +219,7 @@ export function createCheckRouteHandler(deps: CheckRouteDeps = {}) {
             {
               kind: "retry",
               message:
-                "Revora had a hiccup checking your plan. Please try again in a moment.",
+                "Prediabetes Pal had a hiccup checking your plan. Please try again in a moment.",
               disclaimer: loadSafetyContract().copy.disclaimer
             },
             { status: 503 }

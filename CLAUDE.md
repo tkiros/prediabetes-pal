@@ -18,3 +18,14 @@ Key routing rules:
 - Architecture review → invoke plan-eng-review
 - Save progress, checkpoint, resume → invoke checkpoint
 - Code quality, health check → invoke health
+
+## Legacy internal name
+
+The product was renamed Revora → **Prediabetes Pal** (2026-08-09,
+`docs/naming-decision-shortlist.md`). The `revora` prefix in internal
+identifiers is the legacy name and is **deliberately retained**: `lib/revora/`,
+`tests/unit/revora/`, the 13 `REVORA_*` env vars, `test:revora`/`eval:revora*`
+npm scripts, `x-revora-*` headers, `revora.*` storage keys, and the TWA
+`packageId` `app.revora.twa`. Renaming them risks env/code lockstep outages for
+zero user benefit — do not "clean this up". `docs/handoff/**` and
+`docs/archive/**` keep the old name too; they are historical records.

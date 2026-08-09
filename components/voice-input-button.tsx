@@ -32,7 +32,7 @@ type VoiceInputButtonProps = {
  *
  * The fallback button focuses the food field so the OS keyboard (and its mic
  * key, when the user has one) comes up. Same text path, audio still never
- * reaches Revora servers.
+ * reaches Prediabetes Pal servers.
  */
 export function VoiceInputButton({
   onTranscript,

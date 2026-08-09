@@ -25,7 +25,7 @@ const LANDING_DESCRIPTION =
   "A meal checker built only for prediabetes. Describe a meal and get cautious labels, reasons, and practical alternatives for the 5.7% to 6.4% A1C range.";
 
 export const metadata: Metadata = {
-  title: "Prediabetes Meal Checker — What You Can Eat | Revora",
+  title: "Prediabetes Meal Checker — What You Can Eat | Prediabetes Pal",
   description: LANDING_DESCRIPTION,
   // Resolved against metadataBase (app/layout.tsx) to the production origin.
   // Every launch channel is a tagged link (components/attribution-capture.tsx),
@@ -151,12 +151,12 @@ export default function LandingPage() {
       // safe direction is to never print the token. "Identify any condition"
       // carries the same meaning at the same length and keeps the design's
       // three-clause rhythm.
-      q: "Is Revora medical advice?",
-      a: "No. Revora is informational only and gives general educational information about meal composition. It does not identify any condition, does not predict your individual response, and does not replace a doctor or registered dietitian. Talk with a clinician for guidance that is specific to you."
+      q: "Is Prediabetes Pal medical advice?",
+      a: "No. Prediabetes Pal is informational only and gives general educational information about meal composition. It does not identify any condition, does not predict your individual response, and does not replace a doctor or registered dietitian. Talk with a clinician for guidance that is specific to you."
     },
     {
-      q: "Who is Revora for?",
-      a: "People in the prediabetes A1C range of 5.7% to 6.4%. If your number falls outside that range, Revora says so plainly and points you to a clinician instead of pretending."
+      q: "Who is Prediabetes Pal for?",
+      a: "People in the prediabetes A1C range of 5.7% to 6.4%. If your number falls outside that range, Prediabetes Pal says so plainly and points you to a clinician instead of pretending."
     },
     {
       // ⛔ THE DESIGN FILE DRAWS THIS ROW EXPANDED. It ships collapsed, and
@@ -188,7 +188,7 @@ export default function LandingPage() {
       // handler. Do not let it drift into naming photo input, which is
       // gated above and off.
       q: "What do I actually have to do?",
-      a: "Describe the meal in your own words — type it or say it. No weighing, no barcode, no portion sizes, no food database to search. If the description is ambiguous, Revora asks one question."
+      a: "Describe the meal in your own words — type it or say it. No weighing, no barcode, no portion sizes, no food database to search. If the description is ambiguous, Prediabetes Pal asks one question."
     },
     {
       q: "How do I cancel?",
@@ -208,17 +208,17 @@ export default function LandingPage() {
       {
         "@type": "SoftwareApplication",
         "@id": `${APP_URL}/#app`,
-        name: "Revora",
+        name: "Prediabetes Pal",
         url: APP_URL,
         description: LANDING_DESCRIPTION,
         applicationCategory: "HealthApplication",
         operatingSystem: "Web",
         publisher: {
           "@type": "Organization",
-          name: "Revora",
+          name: "Prediabetes Pal",
           url: APP_URL,
           // The brand descriptor, machine-readable. app/layout.tsx's openGraph
-          // siteName says "Revora — Prediabetes Meal Checker" and the Play
+          // siteName says "Prediabetes Pal — Prediabetes Meal Checker" and the Play
           // listing now says the same; this node carried no descriptor at all,
           // which is the one place the category was missing for answer engines.
           // It costs zero visible pixels — the H1 already states the category
@@ -270,7 +270,7 @@ export default function LandingPage() {
             this nav and the viewport — see `.landing` in globals.css. */}
         <nav className="landing-nav" aria-label="Main">
           <Link className="landing-wordmark" href="/">
-            Revora
+            Prediabetes Pal
           </Link>
           {/* ponytail: below 640px the link row collapses to the wordmark +
               the one CTA. It used to wrap to a 136px two-row block with the
@@ -360,7 +360,7 @@ export default function LandingPage() {
               <div className="landing-showpiece-art">
                 <img
                   src="/landing/app-check.png"
-                  alt="The Revora check screen on a phone: one box to describe the meal, one field for your latest A1C, and a button to check it."
+                  alt="The Prediabetes Pal check screen on a phone: one box to describe the meal, one field for your latest A1C, and a button to check it."
                   width={390}
                   height={700}
                   loading="lazy"
@@ -561,7 +561,7 @@ export default function LandingPage() {
           <div className="landing-scope-panel">
             <div className="landing-scope-grid">
               <p className="landing-scope-display">
-                Revora exists for that gap and nothing else.
+                Prediabetes Pal exists for that gap and nothing else.
               </p>
               <div className="landing-scope-copy">
                 <p className="landing-section-lede">
@@ -581,7 +581,7 @@ export default function LandingPage() {
             Ledger `landing-what-changes`. The page's one `--accent-strong`
             full-bleed band.
 
-            ⚖️ TWO COLUMNS NOW — "Today" beside "With Revora", the v4 design
+            ⚖️ TWO COLUMNS NOW — "Today" beside "With Prediabetes Pal", the v4 design
             file's, in place of the interleaved now/after pairs. The pairing
             survives: row N of the left column is row N of the right, and the
             two columns stack in that order on a phone, so the reading order is
@@ -619,7 +619,7 @@ export default function LandingPage() {
             </div>
             <div className="landing-changes-col">
               <p className="landing-changes-heading landing-changes-heading--after">
-                With Revora
+                With Prediabetes Pal
               </p>
               <ul className="landing-changes-list" role="list">
                 <li className="landing-changes-after">
@@ -677,7 +677,7 @@ export default function LandingPage() {
           <div className="landing-section-head">
             <h2 className="landing-h2">It asks before it guesses</h2>
             <p className="landing-section-lede">
-              Type “oatmeal” and Revora asks whether it is plain or sweetened,
+              Type “oatmeal” and Prediabetes Pal asks whether it is plain or sweetened,
               because the honest answer depends on it. Three steps, and
               nothing to weigh, log or look up in any of them.
             </p>
@@ -716,11 +716,11 @@ export default function LandingPage() {
                 <span className="landing-step-pill">Step two</span>
                 <h3>One question, when it needs one</h3>
                 <p>
-                  If a food is ambiguous, Revora asks one clarifying question
+                  If a food is ambiguous, Prediabetes Pal asks one clarifying question
                   instead of guessing — and errs on the careful side.
                 </p>
                 <p className="landing-step-punch">
-                  Without that one question, Revora would have been guessing.
+                  Without that one question, Prediabetes Pal would have been guessing.
                 </p>
                 {/* ⛔ A text link, not a pill, and no filled CTA inside the
                     steps — the absence is the argument. It is also the page's
@@ -796,7 +796,7 @@ export default function LandingPage() {
               One layout, whatever the answer is. The first card is the one
               from the top of this page, next to the two you have not seen.
               The {RISK_LABELS.SAFE} card carries no change to make, because
-              when a meal already looks balanced Revora says so and stops. It
+              when a meal already looks balanced Prediabetes Pal says so and stops. It
               does not invent a correction to look useful.
             </p>
           </div>
@@ -818,7 +818,7 @@ export default function LandingPage() {
               line at desk width and stacked once they no longer fit. */}
           <div className="landing-verdict-close">
             <p className="landing-verdict-note">
-              Illustrated examples. Every card ends with the same line: Revora
+              Illustrated examples. Every card ends with the same line: Prediabetes Pal
               is informational only and is not medical advice.
             </p>
             <LandingPrimaryCta />
@@ -833,7 +833,7 @@ export default function LandingPage() {
           <div className="landing-section-head">
             <h2 className="landing-h2">Calm, and honest about its limits</h2>
             <p className="landing-section-lede">
-              No miracle promises. Revora earns trust the slow way — by
+              No miracle promises. Prediabetes Pal earns trust the slow way — by
               telling you exactly what it measures and where it stops.
             </p>
           </div>
@@ -858,7 +858,7 @@ export default function LandingPage() {
           <div className="landing-sources">
             <h3>Sources</h3>
             <p>
-              Revora&apos;s general meal-planning principles map to
+              Prediabetes Pal&apos;s general meal-planning principles map to
               public-health guidance and cited nutrition research — that carbs
               raise blood sugar, that pairing them with protein, fibre or
               nonstarchy vegetables can slow the rise, and that less-refined
@@ -866,7 +866,7 @@ export default function LandingPage() {
             </p>
             <p>
               Those sources support narrow educational statements about food.
-              They are not evidence that Revora produces a particular health
+              They are not evidence that Prediabetes Pal produces a particular health
               result, and nothing on this page claims otherwise.
             </p>
             <p>
@@ -883,11 +883,11 @@ export default function LandingPage() {
                 renders from the promise registry two blocks up; the consent
                 clause was checked against schema.ts (`consentedAt`, notNull)
                 and /privacy, which lists storing health data without explicit
-                consent among the things Revora does not do. */}
+                consent among the things Prediabetes Pal does not do. */}
             <div className="landing-limits-card">
               <h3>When we&apos;re unsure, we say so</h3>
               <p>
-                If a food is ambiguous, Revora asks one clarifying question
+                If a food is ambiguous, Prediabetes Pal asks one clarifying question
                 instead of guessing — and errs on the careful side.
               </p>
             </div>
@@ -1041,7 +1041,7 @@ export default function LandingPage() {
             </div>
             <div className="landing-footer-col">
               <h3>Learn</h3>
-              <Link href="/about">About Revora</Link>
+              <Link href="/about">About Prediabetes Pal</Link>
               <a href="#how-it-works">How it works</a>
               {/* Renamed 2026-08-08. The route is a methodology disclosure —
                   "What's measured", "The research this is grounded in", "An

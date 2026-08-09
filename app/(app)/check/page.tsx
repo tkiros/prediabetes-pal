@@ -14,7 +14,7 @@ import { NudgeOpenTracker } from "../../../components/nudge-open-tracker";
 import { photoInputEnabled } from "../../../lib/photo-input-flag";
 
 export const metadata = {
-  title: "Check a Meal for Prediabetes — Revora",
+  title: "Check a Meal for Prediabetes — Prediabetes Pal",
   description:
     "Describe a meal and get a cautious educational read for the prediabetes range: the pattern, the reason, and a practical alternative when there is one.",
   alternates: { canonical: "/check" }
@@ -36,7 +36,7 @@ export default function CheckPage() {
         </Link>
       </div>
         <section className="surface-card hero-card check-hero">
-          <p className="hero-eyebrow">Revora</p>
+          <p className="hero-eyebrow">Prediabetes Pal</p>
           <h1 className="page-title">Check this meal</h1>
           <p className="page-copy">
             Get a cautious educational read on the meal&apos;s balance, the reason

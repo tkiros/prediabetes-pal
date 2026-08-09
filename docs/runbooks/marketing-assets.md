@@ -1,6 +1,6 @@
 # Runbook: Marketing assets
 
-How Revora's screenshots, captions, and store imagery get made — and the claims
+How Prediabetes Pal's screenshots, captions, and store imagery get made — and the claims
 discipline every one of them inherits. This is the asset side of the launch;
 the price-test procedure lives in `docs/runbooks/price-test.md`.
 
@@ -21,12 +21,12 @@ fakes certainty to a scam-wary 40–60 audience.
 
 Every caption is:
 
-    [the user's moment] → [Revora's answer]
+    [the user's moment] → [Prediabetes Pal's answer]
 
-- "Thought oatmeal was the safe breakfast → here's what Revora actually said."
+- "Thought oatmeal was the safe breakfast → here's what Prediabetes Pal actually said."
 - "Stared at the fridge wondering what to make → one description, one calm educational read."
 
-The left side is a human moment in plain words. The right side is what Revora
+The left side is a human moment in plain words. The right side is what Prediabetes Pal
 does, in capability language — never an outcome promise.
 
 ## Per-surface guidance
@@ -50,7 +50,7 @@ input) plus the resulting sample rows tells the whole story honestly.
 meal description → cautious educational label → the calm daily loop → the
 one-time pantry option. The listing must use the intended-use statement and
 verdict semantics from `docs/safety/claims-boundary.md`. No asset may connect
-Revora use to a disease outcome, even when the user is the grammatical agent.
+Prediabetes Pal use to a disease outcome, even when the user is the grammatical agent.
 
 ## Hard bans
 

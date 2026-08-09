@@ -17,7 +17,7 @@ export function paymentFailedEmailText(
   accessEndsText: string
 ): { subject: string; text: string } {
   return {
-    subject: "Your Revora payment didn't go through",
+    subject: "Your Prediabetes Pal payment didn't go through",
     text: [
       "Your card was declined, so this month's payment didn't go through.",
       "",
@@ -27,7 +27,7 @@ export function paymentFailedEmailText(
       "",
       "If you'd rather stop, you don't need to do anything at all.",
       "",
-      "— Revora"
+      "— Prediabetes Pal"
     ].join("\n")
   };
 }
@@ -40,7 +40,7 @@ export function prechargeEmailText(
 ): { subject: string; text: string } {
   const cancelUrl = `${appUrl}/api/billing/cancel?token=${cancelToken}`;
   return {
-    subject: "Your Revora trial ends in about 2 days",
+    subject: "Your Prediabetes Pal trial ends in about 2 days",
     text: [
       "A heads-up, as promised:",
       "",
@@ -53,7 +53,7 @@ export function prechargeEmailText(
       "You can also cancel any time from your account page:",
       `${appUrl}/account`,
       "",
-      "— Revora"
+      "— Prediabetes Pal"
     ].join("\n")
   };
 }

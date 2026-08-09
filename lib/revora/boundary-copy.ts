@@ -24,16 +24,21 @@
  * can attribute a rendered boundary message to the exact copy that produced it.
  * Aligned to the last boundary-copy revision (high-range-route, 2026-07-16).
  */
-export const BOUNDARY_COPY_VERSION = "2026-07-16.1";
+// 2026-08-09.1: Revora → Prediabetes Pal rename. high-range-route also
+// shortened (name swap pushed it past the 280-char out-of-scope cap): second
+// name mention → "It", dropped the redundant "prediabetes" before "bands"
+// (the product name now carries it). Meaning unchanged; owner re-approval of
+// the renamed rows is counsel item N6.
+export const BOUNDARY_COPY_VERSION = "2026-08-09.1";
 
 /** Ledger row `below-range-route` — A1C below the prediabetes floor (5.7%). */
 export const BELOW_RANGE_MESSAGE =
-  "Revora is designed for the prediabetes A1C range of 5.7% to 6.4%. This value sits below that range, so use a doctor or registered dietitian for guidance that is specific to you.";
+  "Prediabetes Pal is designed for the prediabetes A1C range of 5.7% to 6.4%. This value sits below that range, so use a doctor or registered dietitian for guidance that is specific to you.";
 
 /** Ledger row `high-range-route` — A1C at or above the prediabetes ceiling (6.5%). */
 export const HIGH_RANGE_MESSAGE =
-  "This A1C value falls in the range clinicians use when evaluating Type 2 diabetes, and Revora's prediabetes bands do not apply there. Revora does not know your medicine or glucose readings — please talk with a doctor or registered dietitian for next steps made for you.";
+  "This A1C value falls in the range clinicians use when evaluating Type 2 diabetes, and Prediabetes Pal's bands do not apply there. It does not know your medicine or glucose readings — please talk with a doctor or registered dietitian for next steps made for you.";
 
 /** Ledger row `result-footer` — the stable informational-only disclaimer. */
 export const BOUNDARY_DISCLAIMER =
-  "Revora is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you.";
+  "Prediabetes Pal is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you.";

@@ -5,7 +5,7 @@ import { TrialWall } from "../../../components/trial-wall";
 import { paywallMode } from "../../../lib/server/pricing";
 
 export const metadata = {
-  title: "Premium — Revora",
+  title: "Premium — Prediabetes Pal",
   alternates: { canonical: "/subscribe" }
 };
 
@@ -22,7 +22,7 @@ export default async function SubscribePage({
           <TrialWall declined={declined} />
         ) : (
           <section className="surface-card hero-card">
-            <p className="hero-eyebrow">Revora Premium</p>
+            <p className="hero-eyebrow">Prediabetes Pal Premium</p>
             <h1 className="page-title">
               Keep your history and your daily coach
             </h1>

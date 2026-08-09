@@ -1,30 +1,30 @@
-# Revora
+# Prediabetes Pal
 
-> Revora is a meal checker built only for prediabetes — for adults with an A1C between 5.7% and 6.4%. Describe a meal and get general meal-composition information, a cautious label, the reason behind it, and a practical alternative when there is one. Informational only; not medical advice.
+> Prediabetes Pal is a meal checker built only for prediabetes — for adults with an A1C between 5.7% and 6.4%. Describe a meal and get general meal-composition information, a cautious label, the reason behind it, and a practical alternative when there is one. Informational only; not medical advice.
 
-Revora is not a calorie counter or a tracker. It answers one everyday question — what can I eat with prediabetes, at this meal, right now — with one calm read per meal. The first checks on day one are free, with no login and no card.
+Prediabetes Pal is not a calorie counter or a tracker. It answers one everyday question — what can I eat with prediabetes, at this meal, right now — with one calm read per meal. The first checks on day one are free, with no login and no card.
 
 ## Guides
 
-- [Prediabetes guides index](https://revora.plus/guides): plain-language guides for eating with prediabetes
-- [A simple 7-day prediabetes meal plan](https://revora.plus/guides/prediabetes-meal-plan): a week of ordinary meals built on the balanced-plate pattern
-- [Healthy snacks for prediabetes](https://revora.plus/guides/prediabetes-snacks): easy snack ideas and the pattern behind them
-- [What to eat with prediabetes](https://revora.plus/guides/what-to-eat-with-prediabetes): what you can eat freely, what is worth limiting, and breakfast
-- [Prediabetes: now what?](https://revora.plus/guides/prediabetes-now-what): calm first steps after an A1C of 5.7% to 6.4%
-- [What an A1C of 5.7% to 6.4% means](https://revora.plus/guides/a1c-5-7-to-6-4): how to read the number
+- [Prediabetes guides index](https://prediabetespal.com/guides): plain-language guides for eating with prediabetes
+- [A simple 7-day prediabetes meal plan](https://prediabetespal.com/guides/prediabetes-meal-plan): a week of ordinary meals built on the balanced-plate pattern
+- [Healthy snacks for prediabetes](https://prediabetespal.com/guides/prediabetes-snacks): easy snack ideas and the pattern behind them
+- [What to eat with prediabetes](https://prediabetespal.com/guides/what-to-eat-with-prediabetes): what you can eat freely, what is worth limiting, and breakfast
+- [Prediabetes: now what?](https://prediabetespal.com/guides/prediabetes-now-what): calm first steps after an A1C of 5.7% to 6.4%
+- [What an A1C of 5.7% to 6.4% means](https://prediabetespal.com/guides/a1c-5-7-to-6-4): how to read the number
 
 ## Pages
 
-- [Check a meal](https://revora.plus/check): describe a meal and get a cautious educational read on its balance
-- [How it works](https://revora.plus/how-it-works): what the weekly recap measures, the evidence behind it, and its honest limits
-- [Pantry Review](https://revora.plus/pantry): a calm read on the foods you keep at home
-- [Pricing](https://revora.plus/subscribe): what Premium includes and costs
-- [Get the app](https://revora.plus/get-the-app): install Revora on your phone
-- [Privacy](https://revora.plus/privacy)
-- [Terms](https://revora.plus/terms)
+- [Check a meal](https://prediabetespal.com/check): describe a meal and get a cautious educational read on its balance
+- [How it works](https://prediabetespal.com/how-it-works): what the weekly recap measures, the evidence behind it, and its honest limits
+- [Pantry Review](https://prediabetespal.com/pantry): a calm read on the foods you keep at home
+- [Pricing](https://prediabetespal.com/subscribe): what Premium includes and costs
+- [Get the app](https://prediabetespal.com/get-the-app): install Prediabetes Pal on your phone
+- [Privacy](https://prediabetespal.com/privacy)
+- [Terms](https://prediabetespal.com/terms)
 
 ## Boundaries
 
 - Informational only — not medical advice, and never a substitute for a clinician.
-- Revora describes general meal patterns; it does not predict any individual response.
-- For A1C values outside the 5.7% to 6.4% range, Revora says so plainly and points to a clinician.
+- Prediabetes Pal describes general meal patterns; it does not predict any individual response.
+- For A1C values outside the 5.7% to 6.4% range, Prediabetes Pal says so plainly and points to a clinician.

@@ -126,7 +126,7 @@ export type BaiBandCopy = { label: string; message: string };
  * progression to type 2 diabetes. Naming it here, in the one place the user
  * reads about their OWN behavior and with none of the framing that surrounds
  * it on /how-it-works, built exactly the implied-efficacy bridge the landing
- * page explicitly refuses to build ("not a result from Revora's users, and not
+ * page explicitly refuses to build ("not a result from Prediabetes Pal's users, and not
  * a promise about your numbers"). The trial citation now lives ONLY on
  * /how-it-works and the landing proof band, where it is fully hedged and
  * attributed; this copy is now about the user's behavior and nothing else.

@@ -42,8 +42,8 @@ export function PhotoDraftReview({
       <p className="result-eyebrow">Check the draft</p>
       <p className="field-hint">
         {isEmpty
-          ? "Revora couldn't make out the food in this photo. Add the items below, or discard and type the meal instead."
-          : "This is Revora's best guess from your photo. Fix anything that's off — tap the highlighted items to confirm them."}
+          ? "Prediabetes Pal couldn't make out the food in this photo. Add the items below, or discard and type the meal instead."
+          : "This is Prediabetes Pal's best guess from your photo. Fix anything that's off — tap the highlighted items to confirm them."}
       </p>
       {initialCollapsed > 0 ? (
         <p className="field-hint" data-testid="draft-dedupe-notice">

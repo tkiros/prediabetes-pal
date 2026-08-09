@@ -235,14 +235,14 @@ export function PantryIntakeFlow({
                   checked={consented}
                   onChange={(event) => setConsented(event.target.checked)}
                 />{" "}
-                I explicitly consent to Revora collecting and using my A1C
+                I explicitly consent to Prediabetes Pal collecting and using my A1C
                 range, food details, notes, and pantry photos to prepare my
                 Pantry Review. OpenAI, via the OpenRouter gateway, processes
-                the photos and confirmed item text; Revora encrypts the saved
+                the photos and confirmed item text; Prediabetes Pal encrypts the saved
                 health details. Photos are
                 deleted after use. I can withdraw consent and erase claimed
                 report data from Account.{" "}
-                <a href="/privacy">How Revora handles health data</a>.
+                <a href="/privacy">How Prediabetes Pal handles health data</a>.
               </label>
             </div>
             {formError ? <p className="field-error">{formError}</p> : null}

@@ -50,7 +50,7 @@ describe("mapCheckFailure", () => {
   it("maps timeout, 429, network failure, and fallback errors to friendly retry copy", () => {
     expect(mapCheckFailure({ code: "timeout" })).toContain("longer than expected");
     expect(mapCheckFailure({ code: "rate_limited" })).toContain("a lot of people");
-    expect(mapCheckFailure({ code: "network" })).toContain("reach Revora");
+    expect(mapCheckFailure({ code: "network" })).toContain("reach Prediabetes Pal");
     expect(mapCheckFailure({ code: "retry" })).toContain("try again");
     expect(mapCheckFailure(new Error("server exploded"))).toContain("try again");
   });

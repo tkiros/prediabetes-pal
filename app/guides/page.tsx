@@ -4,7 +4,7 @@ import Link from "next/link";
 import { GuideCta } from "./cta";
 
 export const metadata: Metadata = {
-  title: "Prediabetes Guides — Meal Plans & What to Eat | Revora",
+  title: "Prediabetes Guides — Meal Plans & What to Eat | Prediabetes Pal",
   description:
     "Plain-language guides for eating with prediabetes: a 7-day meal plan example, snack ideas, what to eat and what to limit, and what an A1C of 5.7% to 6.4% means.",
   alternates: { canonical: "/guides" }

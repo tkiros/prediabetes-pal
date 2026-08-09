@@ -30,7 +30,7 @@ afterEach(() => {
 describe("submitCheck", () => {
   it("returns the server retry payload on 503 instead of throwing", async () => {
     const message =
-      "Revora is helping a lot of people right now. Please try again in a moment.";
+      "Prediabetes Pal is helping a lot of people right now. Please try again in a moment.";
     mockFetch(503, { kind: "retry", message, disclaimer: DISCLAIMER });
 
     await expect(submitCheck(input)).resolves.toEqual({

@@ -13,15 +13,15 @@ import { describe, expect, it } from "vitest";
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 const DISCLAIMER =
-  "Revora is informational only and is not medical advice. Talk with a doctor or " +
+  "Prediabetes Pal is informational only and is not medical advice. Talk with a doctor or " +
   "registered dietitian for guidance that is specific to you.";
 
 describe("Phase 7 — web manifest", () => {
   const manifest = JSON.parse(readFileSync("public/manifest.webmanifest", "utf8"));
 
   it("declares the installability fields", () => {
-    expect(manifest.name).toBe("Revora");
-    expect(manifest.short_name).toBe("Revora");
+    expect(manifest.name).toBe("Prediabetes Pal");
+    expect(manifest.short_name).toBe("Prediabetes Pal");
     // M1 dashboard: start URL flipped to /home; id pins install identity to
     // the original /check start_url so existing installs aren't orphaned.
     expect(manifest.start_url).toBe("/home");

@@ -6,7 +6,7 @@ import { resolvePantryPrice } from "../../lib/server/pantry-price";
 // Pantry Review, so no `robots: { index: false }` here (unlike the in-app
 // /report and /pantry/thanks surfaces).
 export const metadata = {
-  title: "Pantry Review — Revora",
+  title: "Pantry Review — Prediabetes Pal",
   alternates: { canonical: "/pantry" }
 };
 
@@ -59,7 +59,7 @@ export default async function PantryLandingPage() {
           <p className="page-copy">
             One evening of photos, one calm report. Send us pictures of your
             pantry and fridge, confirm the item list, and the same careful
-            engine behind Revora&apos;s meal check sorts everything you own
+            engine behind Prediabetes Pal&apos;s meal check sorts everything you own
             into enjoy freely, worth a tweak, and handle with care —
             printable, and yours to keep.
           </p>

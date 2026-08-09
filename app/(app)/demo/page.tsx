@@ -18,7 +18,7 @@ import { deriveCoachOutputs } from "../../../lib/revora/coach-outputs";
  */
 
 export const metadata = {
-  title: "Demo fixtures — Revora",
+  title: "Demo fixtures — Prediabetes Pal",
   robots: { index: false, follow: false }
 };
 
@@ -64,7 +64,7 @@ const HIGH_FIXTURE = resultFixture(
 const CLARIFY_FIXTURE: RevoraUserResponse = {
   kind: "clarify",
   question:
-    "Is this plain or sweetened? That one detail changes whether Revora should read it as lower impact or more concentrated.",
+    "Is this plain or sweetened? That one detail changes whether Prediabetes Pal should read it as lower impact or more concentrated.",
   disclaimer: BOUNDARY_DISCLAIMER
 };
 
@@ -73,9 +73,9 @@ export default function DemoPage() {
     <div className="app-content--narrow">
         <header className="surface-card hero-card">
           <p className="hero-eyebrow">Live examples</p>
-          <h1 className="page-title">See a Revora check in action</h1>
+          <h1 className="page-title">See a Prediabetes Pal check in action</h1>
           <p className="page-copy">
-            A few real examples of the answer Revora gives you — one for each
+            A few real examples of the answer Prediabetes Pal gives you — one for each
             kind of result you might see.
           </p>
           <Link className="inline-link" href="/check">
@@ -101,7 +101,7 @@ export default function DemoPage() {
           <ResultCard response={HIGH_FIXTURE} />
         </section>
 
-        <h2>When Revora needs one more detail</h2>
+        <h2>When Prediabetes Pal needs one more detail</h2>
         <section data-shot="clarify">
           <ResultCard response={CLARIFY_FIXTURE} />
         </section>

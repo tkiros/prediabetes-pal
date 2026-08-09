@@ -12,7 +12,7 @@ import type { RevoraUserResponse } from "./schemas";
 import type { SafetyContract } from "./safety-contract";
 
 const INVALID_REQUEST_MESSAGE =
-  "Enter a food or meal description and a numeric A1C value to get a Revora check.";
+  "Enter a food or meal description and a numeric A1C value to get a Prediabetes Pal check.";
 const RETRY_MESSAGE =
   "I couldn't produce a safe answer this time. Please try again with a simpler food description.";
 const CARBS_ONLY_MODERATE_REASON =

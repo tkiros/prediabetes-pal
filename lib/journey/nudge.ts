@@ -59,7 +59,7 @@ export const INACTIVITY_STOP_DAYS = 14;
 export const GENERIC_NUDGE_COPY = [
   "Ready for today? Check your first meal.",
   "One calm check before you eat — that's the whole habit.",
-  "What's on your plate today? Revora is ready when you are.",
+  "What's on your plate today? Prediabetes Pal is ready when you are.",
   "A quick check before your next meal keeps the day easy."
 ] as const;
 

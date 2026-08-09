@@ -13,7 +13,7 @@ Recently-diagnosed "trying hard but flying blind" prediabetics — US adults, sw
 <!-- claims-audit:start -->
 A prediabetes-exclusive daily decision coach — not a tracker, not a calorie counter. The wedge is the meal-moment check: Clear / Be careful / Hold off, plus why, plus — when there is one — something to adjust and a safer swap. (A Clear verdict carries no adjustment and no swap. That is enforced in code, not left to the copywriter, so no surface may promise either one unconditionally. See F-04.) The moat is the daily relationship: memory, patterns, gentle nudges, visible evidence of okay-ness over time.
 
-The user is always the agent; Revora never is. Revora's whole job is to give you the clarity to make your own choices — it does not claim credit for what follows from them, and no Revora surface may name an outcome it brings about.
+The user is always the agent; Prediabetes Pal never is. Prediabetes Pal's whole job is to give you the clarity to make your own choices — it does not claim credit for what follows from them, and no Prediabetes Pal surface may name an outcome it brings about.
 <!-- claims-audit:end -->
 
 ## Rejected claims — do not reintroduce
@@ -24,7 +24,7 @@ This file used to enshrine, under "Product Purpose", a sentence labelled **"Lega
 
 It was left standing here, framed as a verbatim North Star, for five weeks after counsel pulled it. That is the actual finding (F-25): PRODUCT.md is the brief — it is the first thing a new contractor, agent, or copywriter reads and the last place anyone thinks to check for stale claims. A rejected claim sitting in the brief under the words "Legal North Star, verbatim" is the single most likely way it gets typed back into shipping copy. The claim itself never rendered to a user; the *document* was the vector.
 
-The rule, stated positively so it needs no forbidden words to express: **Revora is never the agent of a health outcome — only the user is.** Any sentence that makes Revora, or the app's use, the thing that achieves an outcome is out of bounds, whatever verb it uses. See `docs/safety/claims-boundary.md` §Banned Claim Families for the enumerated vocabulary; `tests/unit/revora/claims-boundary-copy.test.ts` enforces it across `app/**`, `components/**`, and the fenced regions of this file and the Play listing.
+The rule, stated positively so it needs no forbidden words to express: **Prediabetes Pal is never the agent of a health outcome — only the user is.** Any sentence that makes Prediabetes Pal, or the app's use, the thing that achieves an outcome is out of bounds, whatever verb it uses. See `docs/safety/claims-boundary.md` §Banned Claim Families for the enumerated vocabulary; `tests/unit/revora/claims-boundary-copy.test.ts` enforces it across `app/**`, `components/**`, and the fenced regions of this file and the Play listing.
 
 If counsel Q8 ever comes back approving that line, the ledger row moves to Approved **first**, with sign-off recorded — and only then may any surface use it.
 
@@ -34,7 +34,7 @@ Calm, honest, permission-first. Grants calm permission or gives one clear next a
 
 ## Anti-references
 
-- Calorie counters and macro trackers (MyFitnessPal energy) — Revora is a decision coach, not a ledger.
+- Calorie counters and macro trackers (MyFitnessPal energy) — Prediabetes Pal is a decision coach, not a ledger.
 - Gamified streak apps (Duolingo-style loss-aversion mechanics) — users are anxious by definition; broken-chain pressure is the enemy.
 - Generic SaaS dashboard aesthetics: card mosaics, icon-in-circle decoration, centered-everything, decorative gradients (DESIGN.md §App-UI guardrails is binding).
 - Medical-portal coldness — clinical-grade honesty without clinical-grade sterility.

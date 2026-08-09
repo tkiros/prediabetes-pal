@@ -82,8 +82,8 @@ test("premium user with a computed week sees the non-scored recap and week facts
 
   await page.goto("/journey");
 
-  // Design-review pin: real tab title (was bare "Revora").
-  await expect(page).toHaveTitle("My journey — Revora");
+  // Design-review pin: real tab title (was bare "Prediabetes Pal").
+  await expect(page).toHaveTitle("My journey — Prediabetes Pal");
 
   const recap = page.getByTestId("journey-recap");
   await expect(recap).toBeVisible();

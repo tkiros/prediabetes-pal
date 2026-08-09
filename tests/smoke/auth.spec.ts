@@ -79,7 +79,7 @@ test("magic-link round trip: email → link → session → consent → profile"
 
   await page.getByLabel("Latest A1C").fill("6.1");
   await page
-    .getByLabel(/I explicitly consent to Revora collecting and using my A1C/)
+    .getByLabel(/I explicitly consent to Prediabetes Pal collecting and using my A1C/)
     .check();
   await page.getByTestId("welcome-save").click();
 

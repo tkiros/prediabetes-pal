@@ -147,7 +147,7 @@ describe("browser events are scrubbed of every PII vector", () => {
       type: undefined,
       message: `client boundary caught: ${FOOD}`,
       request: {
-        url: `https://revora.plus/check?food=${encodeURIComponent(FOOD)}`,
+        url: `https://prediabetespal.com/check?food=${encodeURIComponent(FOOD)}`,
         headers: { cookie: "session=abc" }
       },
       user: { ip_address: "203.0.113.9", id: "user_123" },

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "How Revora Works — the Weekly Prediabetes Recap",
+  title: "How Prediabetes Pal Works — the Weekly Prediabetes Recap",
   description:
-    "What Revora's weekly recap measures for people in the prediabetes A1C range, the evidence behind the approach, and its honest limits.",
+    "What Prediabetes Pal's weekly recap measures for people in the prediabetes A1C range, the evidence behind the approach, and its honest limits.",
   alternates: { canonical: "/how-it-works" }
 };
 
@@ -47,10 +47,10 @@ export default function HowItWorksPage() {
           <p>
             These appear in your weekly recap as plain sentences — no
             composite score, no bands, no percentages. Checking less as you
-            get more confident is how Revora is meant to work, so the recap
+            get more confident is how Prediabetes Pal is meant to work, so the recap
             states facts that cannot &quot;decline.&quot; The recap is
             refreshed once a week, early Monday, from the seven days before.
-            (Revora also computes an internal behavioral index to measure the
+            (Prediabetes Pal also computes an internal behavioral index to measure the
             product itself; it is never shown to you and never predicts
             anything about your health.)
           </p>
@@ -59,9 +59,9 @@ export default function HowItWorksPage() {
         <section className="surface-card legal-card">
           <h2>The research this is grounded in</h2>
           <p>
-            Revora doesn&apos;t invent behavior science — it points at
+            Prediabetes Pal doesn&apos;t invent behavior science — it points at
             published research and asks you to build the habit yourself.
-            None of the following describes Revora&apos;s own users or
+            None of the following describes Prediabetes Pal&apos;s own users or
             promises what will happen to your own numbers; each is a
             citation for why checking in and following through are the
             behaviors worth building.
@@ -83,7 +83,7 @@ export default function HowItWorksPage() {
               <strong>Imai et al., 2023</strong> (Nutrients) — vegetable- or
               protein-first meal sequencing was associated with a 29%
               reduction in post-meal glucose spikes among study
-              participants, the basis for Revora&apos;s sequencing tip.
+              participants, the basis for Prediabetes Pal&apos;s sequencing tip.
             </li>
           </ul>
         </section>
@@ -91,7 +91,7 @@ export default function HowItWorksPage() {
         <section className="surface-card legal-card">
           <h2>An honest limit</h2>
           <p>
-            Individual results vary, and Revora has no way to know yours.
+            Individual results vary, and Prediabetes Pal has no way to know yours.
             The weekly recap tracks behavior you can see and control —
             checking in, and following through. Only a blood test ordered
             by a clinician measures your actual A1C. Please talk with your

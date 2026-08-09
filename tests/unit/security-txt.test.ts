@@ -18,10 +18,10 @@ describe("GET /.well-known/security.txt", () => {
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
     expect(body.endsWith("\n")).toBe(true);
     expect(lines).toContain(
-      "Contact: mailto:support@revora.plus?subject=Security%20report",
+      "Contact: mailto:support@prediabetespal.com?subject=Security%20report",
     );
     expect(lines).toContain(
-      "Canonical: https://revora.plus/.well-known/security.txt",
+      "Canonical: https://prediabetespal.com/.well-known/security.txt",
     );
     expect(lines).toContain("Preferred-Languages: en");
     expect(expiresLines).toHaveLength(1);

@@ -112,7 +112,7 @@ export function createPhotoDraftHandler(deps: PhotoDraftDeps = {}) {
           {
             kind: "retry",
             message:
-              "Revora had a hiccup checking your plan. Please try again in a moment.",
+              "Prediabetes Pal had a hiccup checking your plan. Please try again in a moment.",
             disclaimer: loadSafetyContract().copy.disclaimer
           },
           { status: 503 }

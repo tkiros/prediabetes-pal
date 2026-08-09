@@ -14,15 +14,15 @@ import type { RevoraModelOutput } from "../../../lib/revora/schemas";
  */
 
 const DISCLAIMER =
-  "Revora is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you.";
+  "Prediabetes Pal is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you.";
 
 const BELOW_RANGE_MESSAGE =
-  "Revora is designed for the prediabetes A1C range of 5.7% to 6.4%. This value sits below that range, so use a doctor or registered dietitian for guidance that is specific to you.";
+  "Prediabetes Pal is designed for the prediabetes A1C range of 5.7% to 6.4%. This value sits below that range, so use a doctor or registered dietitian for guidance that is specific to you.";
 
 // Revised 2026-07-16 (doc 18, e-adv-a1c-high unanimous): the high side now
 // routes with diagnosed-diabetes tone instead of a generic scope refusal.
 const HIGH_RANGE_MESSAGE =
-  "This A1C value falls in the range clinicians use when evaluating Type 2 diabetes, and Revora's prediabetes bands do not apply there. Revora does not know your medicine or glucose readings — please talk with a doctor or registered dietitian for next steps made for you.";
+  "This A1C value falls in the range clinicians use when evaluating Type 2 diabetes, and Prediabetes Pal's bands do not apply there. It does not know your medicine or glucose readings — please talk with a doctor or registered dietitian for next steps made for you.";
 
 const NON_FOOD_MESSAGE =
   "I can only classify foods or meals. Try entering something like oatmeal with nuts or grilled chicken with rice and vegetables.";
@@ -356,7 +356,7 @@ describe("engine regression: golden floor scenarios", () => {
     expect(response).toEqual({
       kind: "retry",
       message:
-        "Enter a food or meal description and a numeric A1C value to get a Revora check.",
+        "Enter a food or meal description and a numeric A1C value to get a Prediabetes Pal check.",
       disclaimer: DISCLAIMER
     });
   });

@@ -21,7 +21,7 @@ export default function GuidesLayout({
         <div className="page-frame" id="guide-content" tabIndex={-1}>
           <nav className="backbar" aria-label="Guides">
           <Link className="backlink" href="/">
-            Revora home
+            Prediabetes Pal home
           </Link>
           <Link className="backlink" href="/guides">
             All guides

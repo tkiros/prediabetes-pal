@@ -200,7 +200,7 @@ export function PaywallCard() {
         <li>One gentle daily reminder (optional)</li>
       </ul>
       {/* F-24: this card used to carry a popularity flag claiming it was the
-          most-chosen plan. Revora has not launched and has zero subscribers, so
+          most-chosen plan. Prediabetes Pal has not launched and has zero subscribers, so
           that was fabricated social proof — a claim about other users we cannot
           make (PRODUCT.md §Design Principles 4, "No fabricated data").
           `data-recommended` still drives the visual emphasis; it just no longer

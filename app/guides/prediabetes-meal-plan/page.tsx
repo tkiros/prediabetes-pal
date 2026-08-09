@@ -4,7 +4,7 @@ import Link from "next/link";
 import { GuideCta } from "../cta";
 
 export const metadata: Metadata = {
-  title: "Prediabetes Meal Plan — a Simple 7-Day Example | Revora",
+  title: "Prediabetes Meal Plan — a Simple 7-Day Example | Prediabetes Pal",
   description:
     "A simple 7-day prediabetes meal plan example built on the balanced-plate pattern: protein, vegetables, fiber-rich carbs in modest portions, fewer refined carbs.",
   alternates: { canonical: "/guides/prediabetes-meal-plan" }
@@ -100,7 +100,7 @@ export default function MealPlanGuide() {
             healthy snacks for prediabetes
           </Link>
           . And when a specific plate has you unsure at the moment of eating,
-          that is the exact question Revora answers.
+          that is the exact question Prediabetes Pal answers.
         </p>
       </section>
 

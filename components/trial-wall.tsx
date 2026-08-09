@@ -126,7 +126,7 @@ export function TrialWall({ declined = false }: { declined?: boolean }) {
   if (!config) {
     return (
       <div className="surface-card hero-card" data-testid="trial-wall">
-        <p className="hero-eyebrow">Your free week with Revora</p>
+        <p className="hero-eyebrow">Your free week with Prediabetes Pal</p>
         <div
           className="paywall-config-pending"
           data-testid="paywall-config-pending"
@@ -182,7 +182,7 @@ export function TrialWall({ declined = false }: { declined?: boolean }) {
     <div className="surface-card hero-card" data-testid="trial-wall">
       {step === "value" ? (
         <>
-          <p className="hero-eyebrow">Your free week with Revora</p>
+          <p className="hero-eyebrow">Your free week with Prediabetes Pal</p>
           <h1 className="page-title">Keep your calm answers — 7 days free</h1>
           <p className="page-copy">
             Yesterday you checked a meal and got a cautious educational read
@@ -295,7 +295,7 @@ export function TrialWall({ declined = false }: { declined?: boolean }) {
           <p className="field-hint">
             Grounded in published research —{" "}
             <Link className="inline-link" href="/how-it-works">
-              see how Revora works
+              see how Prediabetes Pal works
             </Link>
             .
           </p>

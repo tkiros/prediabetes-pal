@@ -1,4 +1,4 @@
-export const metadata = { title: "My meals — Revora" };
+export const metadata = { title: "My meals — Prediabetes Pal" };
 
 export default function MealsLayout({
   children

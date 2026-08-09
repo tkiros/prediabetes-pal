@@ -1,6 +1,6 @@
 {
-  "name": "Revora",
-  "short_name": "Revora",
+  "name": "Prediabetes Pal",
+  "short_name": "Prediabetes Pal",
   "description": "Informational-only food checks for prediabetes-range A1C inputs.",
   "id": "/check",
   "start_url": "/home",

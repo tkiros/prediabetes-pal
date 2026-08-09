@@ -16,7 +16,7 @@ export default defineRailway(() => {
   const postgresVolumeYrjb = volume("postgres-volume-yrjb", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "sfo", sizeMB: 500 });
   const postgresVolumeUDrg = volume("postgres-volume-uDrg", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "sfo", sizeMB: 500 });
   const hourlyCrons = service("hourly-crons", {
-    source: github("tkiros/Revora", { branch: "main" }),
+    source: github("tkiros/Prediabetes Pal", { branch: "main" }),
     build: {
       builder: "DOCKERFILE",
       dockerfilePath: "Dockerfile.cron"
@@ -25,7 +25,7 @@ export default defineRailway(() => {
     replicas: 1,
     deploy: { cronSchedule: "0 * * * *", restartPolicyType: "NEVER" },
     env: {
-      APP_URL: "https://revora.plus",
+      APP_URL: "https://prediabetespal.com",
       CRON_ENDPOINTS: preserve(),
       CRON_SECRET: preserve(),
     },

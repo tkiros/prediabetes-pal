@@ -2,7 +2,7 @@ import { SUPPORT_EMAIL } from "../../../lib/revora/contact";
 
 export const dynamic = "force-dynamic";
 
-const CANONICAL_URL = "https://revora.plus/.well-known/security.txt";
+const CANONICAL_URL = "https://prediabetespal.com/.well-known/security.txt";
 const EXPIRY_WINDOW_MS = 180 * 24 * 60 * 60 * 1000;
 
 type SecurityTxtDeps = {

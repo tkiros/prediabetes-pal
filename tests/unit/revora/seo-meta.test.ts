@@ -99,7 +99,7 @@ describe("link-preview metadata", () => {
     const src = read("app/layout.tsx");
     expect(src).toContain("metadataBase: new URL(APP_URL)");
     expect(src).toContain("openGraph:");
-    expect(src).toContain('siteName: "Revora"');
+    expect(src).toContain('siteName: "Prediabetes Pal"');
     expect(src).toContain('card: "summary_large_image"');
   });
 
