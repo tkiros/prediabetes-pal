@@ -79,7 +79,7 @@ Both are region-derived (`us-east-1`) and identical in shape to the verified
 records on `contact.revora.plus`, so publishing them ahead of the cutover
 leaves **only the DKIM TXT** for the outage window. But:
 
-#### Why the MX record is suspect — the likely `revora.plus` root cause
+#### Why the MX record is suspect — the leading hypothesis
 
 Namecheap's Advanced DNS gates MX behind a **Mail Settings mode selector**
 (*No Email Service* / *Email Forwarding* / *Custom MX*). Adding a custom MX
@@ -94,16 +94,22 @@ The observed data fits this exactly (2026-08-10):
 | `prediabetespal.com` | none yet | ✅ all five `eforward` |
 
 The domain that received a custom MX is exactly the domain that lost its
-forwarding. An earlier draft of this runbook blamed a Vercel nameserver
-takeover — **that was wrong**: `revora.plus` is still on
-`dns1/dns2.registrar-servers.com`, so no takeover ever happened.
+forwarding. An earlier draft blamed a Vercel nameserver takeover — **that was
+wrong**: `revora.plus` is still on `dns1/dns2.registrar-servers.com`.
+
+⚠️ **This is n=1 with a confound, not a proven cause.** `revora.plus` also had
+its apex A pointed at Vercel; nothing here separates "the custom MX flipped the
+mode selector" from "something during the Vercel wiring wiped the record set".
+The test below settles it in minutes — and the operational advice is identical
+either way, so run it regardless.
 
 #### The test — do this now, while nothing depends on it
 
 1. Publish **only** the `send.contact` MX record above.
 2. Immediately: `dig MX prediabetespal.com`
 3. Did all five `eforward` records survive?
-   - **Yes** → the hypothesis is wrong, §2.3 is safe, publish the TXT and continue.
+   - **Yes** → hypothesis disproved, §2.3 is safe; publish the TXT and continue.
+     (`revora.plus`'s MX loss then traces to the Vercel wiring instead.)
    - **No** → you have just reproduced the `revora.plus` failure, before it
      could cost you anything. Restore forwarding via §2.3.1, and know that
      `support@` and Resend sending cannot trivially coexist on one Namecheap
@@ -124,7 +130,7 @@ never just the presence of records:
   Resend's `send.contact` MX.
 
 Whatever you choose, apply it to `revora.plus` too — its `support@` is dead
-right now for what is almost certainly this reason.
+right now, whichever of the two causes turns out to be responsible.
 
 ### 2.4 ⛔ Do NOT touch
 - **The apex TXT** `v=spf1 include:spf.efwd.registrar-servers.com ~all`.
