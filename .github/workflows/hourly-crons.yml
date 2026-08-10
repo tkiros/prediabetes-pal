@@ -15,8 +15,8 @@
 #
 # ⛔ APP_URL must equal `CANONICAL_APP_URL` in scripts/run-hourly-crons.mjs
 # BYTE-FOR-BYTE — `validateCronConfig()` throws `invalid_app_url` and every job
-# fails otherwise. It is `https://revora.plus` today and becomes
-# `https://prediabetespal.com` when the rename merges. Change both together.
+# fails otherwise. Both are `https://prediabetespal.com` as of the rename.
+# Change both together.
 #
 # Setup: add `CRON_SECRET` as a repository secret with the same value as the
 # `CRON_SECRET` env var in Vercel production. Scheduled workflows only run from
@@ -50,7 +50,7 @@ jobs:
       - name: Run hourly crons
         run: node scripts/run-hourly-crons.mjs
         env:
-          APP_URL: https://revora.plus
+          APP_URL: https://prediabetespal.com
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
 
       # bai-weekly is a Vercel cron (vercel.json, Mondays 04:30 UTC), NOT part
@@ -68,5 +68,5 @@ jobs:
             -H "accept: application/json" \
             "$APP_URL/api/cron/bai-weekly"
         env:
-          APP_URL: https://revora.plus
+          APP_URL: https://prediabetespal.com
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
