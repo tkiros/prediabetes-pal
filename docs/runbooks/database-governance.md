@@ -4,14 +4,14 @@ The application and migration credentials have different jobs:
 
 - `DATABASE_URL` is the Vercel runtime credential. It can read/write app rows
   but cannot create schemas or objects.
-- `DATABASE_MIGRATION_URL` is the Railway owner credential. It is available
+- `DATABASE_MIGRATION_URL` is the Neon owner credential (`neondb_owner`). It is available
   only to the operator running migrations; never bind it to Vercel.
 
 ## One-time role split
 
-Use the existing Railway owner as the migration role. Create a separate login
+Use the existing Neon owner as the migration role. Create a separate login
 named `revora_app` with a generated password, then run the following as the
-owner. Replace `railway_owner` with the actual owner role before executing the
+owner. Replace `neondb_owner` with the actual owner role before executing the
 `ALTER DEFAULT PRIVILEGES` statements; do not paste credentials into this file.
 
 Run this block with `psql` (it uses `\gexec` to quote the provider-generated
@@ -42,10 +42,15 @@ object ownership during this change.
 
 ## Migration sequence
 
-The current source journal ends at `0017_nudge-delivery-retries.sql`.
-Migrations `0014` through `0017` are additive. Migration `0017` adds only
-bounded operational attempt/lease metadata to `push_subscriptions`; existing
-rows receive `nudge_attempt_count = 0` and require no data backfill.
+The current source journal ends at `0018_accounts-expires-at-integer.sql`
+(19 journal entries). Migrations `0014` through `0018` are additive.
+Migration `0017` adds only bounded operational attempt/lease metadata to
+`push_subscriptions`; existing rows receive `nudge_attempt_count = 0` and
+require no data backfill.
+
+⚠️ When this head advances, update this line. It read `0017` for the whole of
+the 2026-08-10 outage and rebuild, which is exactly when an operator would
+have trusted it.
 
 1. Take/verify a provider backup and record its timestamp.
 2. Export both URLs only in the operator shell. Confirm they target the same
@@ -65,7 +70,7 @@ Each Vercel instance defaults to at most three connections, with a five-second
 connect timeout and ten-second idle timeout. `DATABASE_POOL_MAX` accepts only
 `1..10`. Keep it at three until provider metrics show a reason to change it.
 
-Record peak active connections, Railway's connection limit, and the maximum
+Record peak active connections, Neon's connection limit, and the maximum
 simultaneous Vercel instances. If `instances × pool max` can approach 70% of the
 provider limit, introduce a transaction pooler and repeat the full billing,
 auth, and `FOR UPDATE` inbox tests against it; do not simply raise the pool cap.
@@ -79,7 +84,7 @@ role names, query output containing user rows, or passwords in a handoff.
 
 ## Store inventory (NEW-002 / OA-4)
 
-Production runs against exactly ONE Postgres store — the Railway database the
+Production runs against exactly ONE Postgres store — the Neon database the
 deployed `DATABASE_URL` binds. A second provisioned store, `Postgres-FOMu`,
 was found during the 2026-07 service-integrations audit holding **7 billing
 inbox rows and nothing else** (V013): an artifact of an earlier binding, not a
@@ -91,5 +96,5 @@ contents were exported to the owner's local backup
 `billing_event_inbox` rows plus 1 `email_suppressions` row were migrated into
 the live store with conflict-safe inserts (0 duplicates; 2 email-delivery log
 rows and 1 cron heartbeat were export-only), and the `Postgres-FOMu` service
-was deleted from the Railway project. Production now runs against exactly one
+was deleted from the Neon project. Production now runs against exactly one
 store, verified healthy post-deletion.
