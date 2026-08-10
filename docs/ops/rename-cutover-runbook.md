@@ -4,7 +4,9 @@
 
 Execution runbook for the rename decided in `docs/naming-decision-shortlist.md`.
 The code is committed and green; what remains is DNS, the Resend cutover, and
-merge ordering. Read §2 before touching DNS — two records must **not** be edited.
+merge ordering. **Read §2.3 and §2.4 before touching DNS** — one record you'd
+naturally add can silently destroy `support@`, and it appears to have already
+done so on `revora.plus`.
 
 ---
 
@@ -17,7 +19,7 @@ here; prefer this file where the two disagree.
 |---|---|---|
 | "The old domain keeps working while the new one verifies — these overlap safely" | **Resend Free allows exactly 1 sending domain.** `contact.revora.plus` occupies it. Verified 2026-08-10: `POST /domains` → `403 Your plan includes 1 domain.` | Overlap is impossible without upgrading to Pro ($20/mo, 10 domains). Owner chose the **hard cutover** instead — see §3. |
 | "wait for green" on the Resend domain | The aggregate `status` field is **not** a usable gate. `contact.revora.plus` has been production's sender since 2026-07-21 while reading `partially_failed` — the only failed record is the *optional inbound* MX. | Gate on the **three sending records**, never on `status`. See §3.3. |
-| `revora.plus`'s MX is Namecheap forwarding | **`revora.plus` has no MX records at all** (confirmed via 1.1.1.1, 8.8.8.8, 9.9.9.9 on 2026-08-10). | `support@revora.plus` — printed in Terms, Privacy, reports and `security.txt` — is **bouncing today**. Pre-existing defect, not caused by the rename. Do not repeat it on the new domain: §2.4. |
+| `revora.plus`'s MX is Namecheap forwarding | **`revora.plus` has no MX records at all** (confirmed via 1.1.1.1, 8.8.8.8, 9.9.9.9 on 2026-08-10). | `support@revora.plus` — printed in Terms, Privacy, reports and `security.txt` — is **bouncing today**. Pre-existing defect, not caused by the rename. Likely root cause identified in §2.3 — and it is a live hazard the new domain is about to walk into. |
 
 ---
 
@@ -32,15 +34,21 @@ here; prefer this file where the two disagree.
   Awaiting the apex A record. Nameservers deliberately left at Namecheap.
 - Resend — only `contact.revora.plus` exists. The new domain **cannot** be
   created until the old one is deleted.
-- Code — `rename/prediabetes-pal` @ `7840b20`. All gates green.
+- Code — `rename/prediabetes-pal` @ `1b81f11`. Gates green: typecheck, lint
+  (0 errors), contract, and vitest (2215 passed at `1831ad0`; the three suites
+  covering files changed since re-run green).
 
 ---
 
-## 2. DNS at Namecheap — publish these now
+## 2. DNS at Namecheap
 
-Advanced DNS on `prediabetespal.com`. Steps 2.1–2.3 are safe to publish
-**before** the Resend cutover and shorten the §3 outage window, because two of
-the three sending records are predictable and only DKIM has to wait.
+Advanced DNS on `prediabetespal.com`. These land **before** the Resend cutover
+and shorten the §3 outage window, because two of the three sending records are
+predictable and only DKIM has to wait for it.
+
+Order matters: **2.1 → 2.2 → the 2.3 MX test → the rest of 2.3.** Do not batch
+them. The MX test in §2.3 can destroy `support@` forwarding, and you want that
+to happen (if it happens at all) while nothing depends on it.
 
 ### 2.1 Point the apex at Vercel
 | Type | Host | Value | TTL |
@@ -57,26 +65,77 @@ whatever the Vercel dashboard shows for this project.
 |---|---|---|---|
 | CNAME | `www` | `cname.vercel-dns.com` | Automatic |
 
-### 2.3 Resend SPF — publish now, ahead of the cutover
+### 2.3 ⛔ Resend SPF — run the MX test FIRST
+
+The TXT half is safe. **The MX half is not, and must be tested before you rely
+on it.**
+
 | Type | Host | Value | Priority | TTL |
 |---|---|---|---|---|
-| MX Record | `send.contact` | `feedback-smtp.us-east-1.amazonses.com` | 10 | Automatic |
 | TXT Record | `send.contact` | `v=spf1 include:amazonses.com ~all` | — | Automatic |
+| MX Record | `send.contact` | `feedback-smtp.us-east-1.amazonses.com` | 10 | ⚠️ see below |
 
-These are region-derived (`us-east-1`), identical in shape to the verified
-records on `contact.revora.plus`, so they can be published before the Resend
-domain exists. Doing so leaves **only the DKIM TXT** to add during the outage
-window.
+Both are region-derived (`us-east-1`) and identical in shape to the verified
+records on `contact.revora.plus`, so publishing them ahead of the cutover
+leaves **only the DKIM TXT** for the outage window. But:
+
+#### Why the MX record is suspect — the likely `revora.plus` root cause
+
+Namecheap's Advanced DNS gates MX behind a **Mail Settings mode selector**
+(*No Email Service* / *Email Forwarding* / *Custom MX*). Adding a custom MX
+record can flip the zone out of Email Forwarding mode and drop the
+`eforward1-5` records **wholesale** — taking `support@` with them.
+
+The observed data fits this exactly (2026-08-10):
+
+| Domain | `send.contact` MX | Apex MX |
+|---|---|---|
+| `revora.plus` | ✅ `feedback-smtp.us-east-1.amazonses.com` | ❌ **none** |
+| `prediabetespal.com` | none yet | ✅ all five `eforward` |
+
+The domain that received a custom MX is exactly the domain that lost its
+forwarding. An earlier draft of this runbook blamed a Vercel nameserver
+takeover — **that was wrong**: `revora.plus` is still on
+`dns1/dns2.registrar-servers.com`, so no takeover ever happened.
+
+#### The test — do this now, while nothing depends on it
+
+1. Publish **only** the `send.contact` MX record above.
+2. Immediately: `dig MX prediabetespal.com`
+3. Did all five `eforward` records survive?
+   - **Yes** → the hypothesis is wrong, §2.3 is safe, publish the TXT and continue.
+   - **No** → you have just reproduced the `revora.plus` failure, before it
+     could cost you anything. Restore forwarding via §2.3.1, and know that
+     `support@` and Resend sending cannot trivially coexist on one Namecheap
+     zone.
+
+#### 2.3.1 If the eforward records vanish
+
+In rough order of preference — each needs a delivered test message to confirm,
+never just the presence of records:
+
+- **Re-add `eforward1-5` manually** as custom MX (priorities 10/10/10/15/20).
+  Cheapest if it works, but Namecheap may disable the forwarding *rules* UI in
+  Custom MX mode, in which case the MX records resolve to nothing useful.
+- **Move DNS to Cloudflare** (free; registrar stays Namecheap). Handles
+  arbitrary custom MX *and* Cloudflare Email Routing for `support@`. This is
+  the durable fix and it also repairs `support@revora.plus`.
+- **A dedicated forwarding service** whose apex MX you add manually alongside
+  Resend's `send.contact` MX.
+
+Whatever you choose, apply it to `revora.plus` too — its `support@` is dead
+right now for what is almost certainly this reason.
 
 ### 2.4 ⛔ Do NOT touch
 - **The apex TXT** `v=spf1 include:spf.efwd.registrar-servers.com ~all`.
   Resend's SPF lands on `send.contact`, a different name. A second SPF record
   at the apex is a **permerror** that breaks SPF evaluation entirely.
 - **The `eforward1-5` MX records on `@`.** They carry `support@`.
-- **The nameservers.** Keep `dns1/dns2.registrar-servers.com`. Vercel will
-  offer to take over DNS (option (b) in `vercel domains inspect`) — accepting
-  it **deletes the eforward MX** and kills `support@` before it ever works.
-  That is the most plausible explanation for how `revora.plus` lost its MX.
+- **The nameservers.** Keep `dns1/dns2.registrar-servers.com` — unless you
+  deliberately move the whole zone to Cloudflare per §2.3.1. Vercel will offer
+  to take over DNS (option (b) in `vercel domains inspect`); accepting it
+  migrates only the records Vercel knows about and would **drop the eforward
+  MX**, killing `support@`. Use option (a), the A record, instead.
 - **`contact.revora.plus`'s existing records**, until after §3 succeeds.
 
 ### 2.5 Prove `support@` actually receives
@@ -97,7 +156,9 @@ This knowingly accepts what handoff §3.1 was written to prevent.
 up.** Existing sessions are unaffected.
 
 ### 3.1 Before starting
-- §2.1–2.3 published and resolving.
+- §2.1–2.3 published and resolving, **including the §2.3 MX test resolved
+  one way or the other** — with `support@` confirmed by a delivered test
+  message, not by the presence of records.
 - You are **at the Namecheap console**, able to paste a record immediately.
   The window starts at deletion and ends when DKIM verifies — being away from
   the console turns ~15 minutes into hours.
@@ -106,14 +167,20 @@ up.** Existing sessions are unaffected.
 ### 3.2 Sequence
 1. Delete `contact.revora.plus` from Resend. **Outage starts.**
 2. Create `contact.prediabetespal.com`, region `us-east-1`. Returns the DKIM key.
-3. Publish immediately at Namecheap:
+3. **Diff the returned `records[]` against what is already live.** Do not
+   assume the §2.3 pre-published pair matches — region routing and record
+   shapes have changed before. Skip only the records that are byte-for-byte
+   identical; republish any that differ. A stale "pre-published" record is a
+   *wrong* record, and during the window it will look exactly like a
+   propagation delay while you debug the wrong thing.
+4. Publish immediately at Namecheap:
    | Type | Host | Value |
    |---|---|---|
    | TXT | `resend._domainkey.contact` | *(the `p=MIGf…` key from step 2)* |
-4. Trigger verification. The subdomain has never been queried, so there is no
+5. Trigger verification. The subdomain has never been queried, so there is no
    negative cache to expire — fresh Namecheap records typically resolve in
    minutes, not the 24–48h worst case for *changing* existing records.
-5. Confirm §3.3, then send a real magic link to yourself. **Outage ends.**
+6. Confirm §3.3, then send a real magic link to yourself. **Outage ends.**
 
 ### 3.3 The actual gate — three records, not `status`
 Verified when **all three** report `verified`:
