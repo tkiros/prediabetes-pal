@@ -52,3 +52,21 @@ jobs:
         env:
           APP_URL: https://revora.plus
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+      # bai-weekly is a Vercel cron (vercel.json, Mondays 04:30 UTC), NOT part
+      # of the hourly runner — so a missed weekly run leaves /api/health
+      # degraded for up to its 8-day staleness window with no way to recover.
+      # That happened 2026-08-10: it fired at 04:30 while DATABASE_URL still
+      # pointed at the dead Railway database. runBaiWeeklyCron upserts keyed by
+      # the prior-week range, so an off-schedule run recomputes the same week
+      # and is idempotent. Manual runs only — the schedule must not touch it.
+      - name: Recover bai-weekly (manual runs only)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          curl -fsS --max-time 90 \
+            -H "authorization: Bearer $CRON_SECRET" \
+            -H "accept: application/json" \
+            "$APP_URL/api/cron/bai-weekly"
+        env:
+          APP_URL: https://revora.plus
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
