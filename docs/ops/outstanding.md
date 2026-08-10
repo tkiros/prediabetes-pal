@@ -1,6 +1,27 @@
 # Outstanding — ordered checklist (2026-08-10)
 
-## 🚨 0. LOGIN IS DOWN — production cannot send magic links
+## ✅ RESOLVED 2026-08-10 — production is healthy
+
+```
+/api/health → {"ok":true,"status":"healthy","issues":[],"db":"ok",
+  "crons":{"nudge":"ok","baiWeekly":"ok","trialPrecharge":"ok",
+           "pantrySweep":"ok","stripeReconcile":"ok"}}
+```
+
+| Was broken | Fix | Verified by |
+|---|---|---|
+| Database gone (Railway expiry) | Neon Free, 19 migrations, `revora_app` role | `db:"ok"`, 22 tables, governance green |
+| **Login — magic links 403'd** | `AUTH_EMAIL_FROM` → `signin@contact.prediabetespal.com` + redeploy | real signin POST → 302 `verify-request`, **verification token written to DB** |
+| `support@` bounced | Cloudflare Email Routing | live Resend send → `last_event: delivered` |
+| Crons never ran | GitHub Actions (#72) + bai-weekly recovery (#77) | all 5 heartbeats `ok` |
+| `prediabetespal.com` not serving | grey-cloud the apex; add `www` to the Vercel project | both return **200** over TLS |
+| `CRON_SECRET` unreadable | rotated in Vercel + GitHub together | workflow runs succeed |
+
+Everything below §0 is either done or deliberately deferred.
+
+---
+
+## ~~0. LOGIN IS DOWN~~ — FIXED (record retained)
 
 **Verified 2026-08-10.** `contact.revora.plus` was deleted from Resend during
 the hard cutover, but production still sends from it:
@@ -59,7 +80,17 @@ State of the world after the Railway outage and the rename work. Detail lives in
 
 ---
 
-## 1. 🟡 Get `/api/health` green — crons
+## ~~1. Get `/api/health` green — crons~~ ✅ DONE
+
+Merged as **#72** (hourly runner) and **#77** (manual-only bai-weekly
+recovery). `bai-weekly` is a Vercel cron with an 8-day staleness window; it
+fired at 04:30 on 2026-08-10 against the dead Railway database and would not
+have retried until 2026-08-17, so #77 added the lever to recover it by hand.
+Original plan retained below.
+
+<details><summary>original steps</summary>
+
+### (superseded)
 
 Production reports degraded until something writes cron heartbeats; the
 staleness window is 2h so it will not self-heal.
@@ -72,7 +103,18 @@ staleness window is 2h so it will not self-heal.
 4. 🟢 Actions → **hourly-crons** → *Run workflow* (don't wait an hour).
 5. 🟢 `curl -s https://revora.plus/api/health` → expect `"ok":true`.
 
-## 2. 🔴 Fix `support@` — both domains bounce
+</details>
+
+## 2. 🔴 `support@` — done on the new domain, still dead on `revora.plus`
+
+`support@prediabetespal.com` **works** (Cloudflare Email Routing; verified by a
+real Resend send reaching it). `support@revora.plus` still has no MX — that
+domain is still on Namecheap nameservers. It matters only until the rename
+merges, since production currently renders the `revora.plus` address in Terms,
+Privacy and `security.txt`. Moving it to Cloudflare too is the fix; do not
+re-enable Namecheap Email Forwarding, which is what wiped the records twice.
+
+<details><summary>original instructions</summary>
 
 Adding Resend's `send.contact` MX flipped Namecheap out of Email Forwarding
 mode and dropped `eforward1-5` on both apexes (confirmed n=2,
@@ -86,7 +128,15 @@ which supports arbitrary custom MX *and* Email Routing. Re-add:
 
 Confirm with a **delivered test message**, not by inspecting records.
 
-## 3. 🔴 Point `prediabetespal.com` at Vercel
+</details>
+
+## ~~3. Point `prediabetespal.com` at Vercel~~ ✅ DONE
+
+Apex `A → 216.198.79.1` (grey cloud), `www → cname.vercel-dns.com`. Both serve
+**200** over TLS. `www` needed adding to the Vercel project before a
+certificate would issue — DNS alone was not enough.
+
+<details><summary>original instructions</summary>
 
 At Namecheap, replace the parking A record:
 
@@ -98,7 +148,12 @@ At Namecheap, replace the parking A record:
 ⛔ Do **not** accept Vercel's offer to take over nameservers. Vercel then issues
 TLS automatically. Required before step 4 — the crons must reach this host.
 
-## 4. Rename cutover
+</details>
+
+## 4. Rename cutover — the only substantial work left
+
+Every technical blocker is cleared. What remains is a deliberate product
+decision (shipping a public rebrand), not a defect.
 
 Order is load-bearing.
 
