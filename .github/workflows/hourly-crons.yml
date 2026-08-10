@@ -1,0 +1,72 @@
+# Hourly crons — the replacement for Railway's `hourly-crons` service.
+#
+# The Railway account expired on 2026-08-09, taking both the Postgres database
+# and this cron runner with it (docs/runbooks/incident-2026-08-10-database-outage.md).
+# The database moved to Neon; this file is the other half.
+#
+# It runs `scripts/run-hourly-crons.mjs` UNCHANGED — the same script Railway
+# invoked, which GETs the four cron endpoints with a bearer token. The script
+# imports only `node:process` and `node:url`, so there is no install step and
+# nothing to keep in sync with package.json.
+#
+# ⚠️ These are not optional decoration. `/api/health` marks each cron `stale`
+# after 2 hours and returns 503 for the whole app, so without this workflow
+# production reports degraded even when it is otherwise healthy.
+#
+# ⛔ APP_URL must equal `CANONICAL_APP_URL` in scripts/run-hourly-crons.mjs
+# BYTE-FOR-BYTE — `validateCronConfig()` throws `invalid_app_url` and every job
+# fails otherwise. It is `https://revora.plus` today and becomes
+# `https://prediabetespal.com` when the rename merges. Change both together.
+#
+# Setup: add `CRON_SECRET` as a repository secret with the same value as the
+# `CRON_SECRET` env var in Vercel production. Scheduled workflows only run from
+# the default branch, so this does nothing until it is merged to `main`.
+
+name: hourly-crons
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    # Hourly. GitHub may delay scheduled runs under load; the 2h staleness
+    # window in /api/health absorbs that.
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: hourly-crons
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Run hourly crons
+        run: node scripts/run-hourly-crons.mjs
+        env:
+          APP_URL: https://revora.plus
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+      # bai-weekly is a Vercel cron (vercel.json, Mondays 04:30 UTC), NOT part
+      # of the hourly runner — so a missed weekly run leaves /api/health
+      # degraded for up to its 8-day staleness window with no way to recover.
+      # That happened 2026-08-10: it fired at 04:30 while DATABASE_URL still
+      # pointed at the dead Railway database. runBaiWeeklyCron upserts keyed by
+      # the prior-week range, so an off-schedule run recomputes the same week
+      # and is idempotent. Manual runs only — the schedule must not touch it.
+      - name: Recover bai-weekly (manual runs only)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          curl -fsS --max-time 90 \
+            -H "authorization: Bearer $CRON_SECRET" \
+            -H "accept: application/json" \
+            "$APP_URL/api/cron/bai-weekly"
+        env:
+          APP_URL: https://revora.plus
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
