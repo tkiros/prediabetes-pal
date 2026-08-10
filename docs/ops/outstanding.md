@@ -1,5 +1,43 @@
 # Outstanding — ordered checklist (2026-08-10)
 
+## 🚨 0. LOGIN IS DOWN — production cannot send magic links
+
+**Verified 2026-08-10.** `contact.revora.plus` was deleted from Resend during
+the hard cutover, but production still sends from it:
+
+```
+POST /emails  from: Revora <signin@contact.revora.plus>
+→ 403 "The contact.revora.plus domain is not verified."
+```
+
+`AUTH_EMAIL_FROM` was last modified **20 days ago** — before
+`prediabetespal.com` was registered (2026-08-09) — so it cannot reference the
+new domain. Every magic link fails. On a passwordless product that is a total
+login and signup outage. Existing sessions are unaffected.
+
+This is exactly what the 2026-08-09 handoff §3.1 warned about; the domains
+could not overlap because Resend Free allows only one.
+
+**Fix — one variable, then redeploy** (blocked for the agent by the
+production-env classifier, so the owner must run it):
+
+```bash
+printf 'Prediabetes Pal <signin@contact.prediabetespal.com>' > /tmp/from
+vercel env rm AUTH_EMAIL_FROM production --yes
+vercel env add AUTH_EMAIL_FROM production < /tmp/from
+rm /tmp/from
+vercel redeploy https://revora.plus     # required — env vars bind at deploy
+```
+
+Sending from the new domain is already proven working: a live Resend send from
+`signin@contact.prediabetespal.com` reached `support@prediabetespal.com` with
+`last_event: delivered`.
+
+The brand mismatch (site says Revora, email says Prediabetes Pal) is temporary
+and strictly better than no login. **Alternatively, merge the rename** — every
+blocker on it is now cleared, and it fixes the sender as a side effect.
+
+
 State of the world after the Railway outage and the rename work. Detail lives in
 `docs/runbooks/incident-2026-08-10-database-outage.md` and
 `docs/ops/rename-cutover-runbook.md`; this is the ordered index.
