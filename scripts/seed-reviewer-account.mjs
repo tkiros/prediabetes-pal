@@ -13,7 +13,7 @@
  * Run against the PREVIEW database only (human runs this manually, per
  * docs/handoff/human-actions-required.md):
  *
- *   DATABASE_URL=<preview-railway-url> HEALTH_DATA_KEY=<preview-key> \
+ *   DATABASE_URL=<preview-neon-url> HEALTH_DATA_KEY=<preview-key> \
  *     node scripts/seed-reviewer-account.mjs
  *
  * Plain node + `pg` (already a dependency) — no drizzle-kit runtime needed.
