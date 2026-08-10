@@ -1,4 +1,21 @@
-# Outstanding — ordered checklist (2026-08-10)
+# Outstanding — ordered checklist (2026-08-10, second revision)
+
+> **Current session handoff:**
+> `docs/handoff/2026-08-10-revora-name-removal-session-handoff.md` — read it
+> first. It has the two blockers, the safety regression, and the traps.
+
+## 🔴 Blocked on the owner — nothing else is
+
+1. **Vercel env** (values are encrypted → dashboard, not CLI):
+   add `PAL_MODEL` and `PAL_VISION_MODEL` copied from the `REVORA_*` pair;
+   set `NEXT_PUBLIC_APP_URL=https://prediabetespal.com`; **delete**
+   `LEGAL_ENTITY_NAME`. Then merge **#79** and redeploy.
+   ⛔ #79 must not merge first — both vars have code defaults, so it would
+   **silently downgrade the model** rather than fail loudly.
+2. **Database role** (Stage D) — the agent cannot read `DATABASE_URL`, so it
+   cannot reach Neon. Steps in the handoff §5.
+
+---
 
 ## ✅ RESOLVED 2026-08-10 — production is healthy
 
@@ -70,13 +87,14 @@ State of the world after the Railway outage and the rename work. Detail lives in
 | Thing | State |
 |---|---|
 | Database | ✅ Neon Free, `db:"ok"`, 22 tables, governance green |
-| `/api/health` | ❌ **503** — all 5 crons read `never` |
+| `/api/health` | ✅ `ok:true`, all 5 crons `ok` |
 | Site routes | ✅ `/`, `/check`, `/signin` all 200 |
-| `revora.plus` | ✅ serving (A `216.198.79.1`) · ❌ no MX, `support@` bounces |
-| `prediabetespal.com` | ❌ still Namecheap parking (A `192.64.119.172`), no TLS · ❌ no MX |
+| Rename | ✅ **merged** — #71 `899ea38`, #73 `6d5ef95`; landing has zero `Revora` |
+| `revora.plus` | ✅ serving · no MX, but `support@` is no longer rendered from it |
+| `prediabetespal.com` | ✅ apex + `www` serve **200** over TLS |
 | Resend | ✅ `contact.prediabetespal.com` **verified** |
 | Railway | ⚠️ expired, now unused — safe to delete |
-| Branches | all **unpushed**: `rename/prediabetes-pal` (+16), `ops/hourly-crons-github-actions` (+1) |
+| Still `Revora` in prod | ⚠️ `NEXT_PUBLIC_APP_URL` (canonical tag), `LEGAL_ENTITY_NAME` (Terms/Privacy) — §4 |
 
 ---
 
@@ -150,25 +168,55 @@ TLS automatically. Required before step 4 — the crons must reach this host.
 
 </details>
 
-## 4. Rename cutover — the only substantial work left
+## 4. Rename cutover — ✅ MERGED 2026-08-10, two env items left
 
-Every technical blocker is cleared. What remains is a deliberate product
-decision (shipping a public rebrand), not a defect.
+**#71 merged (`899ea38`), #73 merged (`6d5ef95`).** Production serves
+Prediabetes Pal: zero `Revora` on the landing, privacy heading renamed,
+`support@prediabetespal.com` rendered, `/api/health` `ok:true` with all five
+crons green.
 
-Order is load-bearing.
+The `APP_URL` change landed with it and was **verified for real** — a manual
+`hourly-crons` dispatch on `6d5ef95` ran with `APP_URL: https://prediabetespal.com`
+and returned `result=ok http_status=200` on all four jobs plus
+`bai-weekly {"ok":true}`. `validateCronConfig()` did not throw.
 
-1. 🔴 Merge **PR #71** (`seo/about-page-and-canonicals`) first — the rename
-   branch is built on it and rewrites the same landing.
-2. 🟢 In the **same change** as the rename merge, update
-   `.github/workflows/hourly-crons.yml` → `APP_URL: https://prediabetespal.com`.
-   `validateCronConfig()` compares it byte-for-byte against `CANONICAL_APP_URL`
-   and throws `invalid_app_url` otherwise, killing all four jobs.
-3. 🟢 Push `rename/prediabetes-pal`, open PR, re-run gates.
-4. 🔴 Merge.
-5. 🔴 Vercel → set `NEXT_PUBLIC_APP_URL` = `https://prediabetespal.com`, redeploy.
-6. 🔴 301 `revora.plus` → `prediabetespal.com`. **Keep `revora.plus` registered** —
-   it carries every link already posted in FB groups and DMs.
-7. 🟢 Re-run the marketing capture (landing copy changed).
+One defect surfaced in CI and was fixed (`95f3d3a`): the privacy page heading
+had been renamed but `tests/smoke/a11y.spec.ts` still asserted the old copy,
+failing on all four browser projects. Everything else matching `revora` in
+`tests/smoke` is storage keys and stub dirs — deliberately retained.
+
+### 🔴 Remaining — owner only, the agent is blocked on production env writes
+
+Order matters. The 301 **must** come last.
+
+```bash
+# 1. Canonical URL — <link rel="canonical"> still emits https://revora.plus
+printf 'https://prediabetespal.com' > /tmp/u
+vercel env rm NEXT_PUBLIC_APP_URL production --yes
+vercel env add NEXT_PUBLIC_APP_URL production < /tmp/u
+rm /tmp/u
+
+# 2. Legal entity — Terms and Privacy still render "Revora"
+printf 'Prediabetes Pal' > /tmp/l     # or the registered entity, if different
+vercel env rm LEGAL_ENTITY_NAME production --yes
+vercel env add LEGAL_ENTITY_NAME production < /tmp/l
+rm /tmp/l
+
+# 3. Env vars bind at deploy time
+vercel redeploy https://prediabetespal.com
+
+# 4. Verify a REAL signin end-to-end before step 5
+```
+
+5. 🔴 **Only then** 301 `revora.plus` → `prediabetespal.com` (Vercel → Project →
+   Domains → `revora.plus` → Redirect). Redirecting the old host while URLs are
+   still built from it is the same shape of failure as the `AUTH_EMAIL_FROM`
+   outage. **Keep `revora.plus` registered** — it carries every link already
+   posted in FB groups and DMs.
+6. 🟢 Re-run the marketing capture (landing copy changed).
+
+`support@revora.plus`'s missing MX (§2) is now moot — production renders
+`support@prediabetespal.com`, already verified delivering.
 
 ## 5. 🔴 Backups
 
