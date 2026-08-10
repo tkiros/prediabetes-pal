@@ -1,7 +1,95 @@
 # Incident + recovery — Railway expiry took production's database offline
 
 **Opened:** 2026-08-10 · **Severity:** production degraded, auth broken
-**Status:** unresolved — awaiting owner action on step 1
+**Status:** unresolved — awaiting owner acceptance of Neon marketplace terms
+
+---
+
+## ⚠️ SUPERSEDED — owner decision, 2026-08-10
+
+**The owner states there are no customers and no customer records**, so data
+recovery is not required. Steps 1–2 below (reactivate Railway, dump) are
+**skipped**; the chosen path is a **fresh Neon database built from the 19
+migrations**. Follow §"Chosen path" immediately below. Everything from
+§"Symptom" down is retained as the record of what was found and why the
+original ordering was recommended.
+
+Two things to keep in mind:
+
+- Creating a new database **destroys nothing**. The Railway volume is
+  abandoned, not deleted, and stays recoverable for as long as Railway retains
+  it — so this decision is reversible on that clock, not permanently.
+- `STRIPE_SECRET_KEY` is production-only and a second env pull was blocked, so
+  **Stripe was never checked for live subscriptions.** If any exist, they will
+  reference user rows that no longer have a database. Worth one look in the
+  Stripe dashboard before cutting over.
+
+### Chosen path
+
+Verified 2026-08-10: the migration set is sound — 19 journal entries, 19 `.sql`
+files, indices sequential, no `DROP TABLE` or `TRUNCATE` anywhere, building 22
+tables. It will apply cleanly to an empty database.
+
+**Owner step (required, cannot be automated — it is a legal acceptance):**
+accept Neon's marketplace terms at
+`https://vercel.com/tkiros-projects/~/integrations/accept-terms/neon?source=cli`
+Policies: [marketplace addendum](https://vercel.com/legal/integration-marketplace-end-users-addendum)
+· [Neon privacy](https://neon.tech/privacy-policy) · [Neon EULA](https://neon.tech/terms-of-service).
+Choose the **Free** plan.
+
+Then, in this order — the order matters, because granting on `ALL TABLES`
+before the tables exist grants nothing:
+
+1. **Provision**
+   ```bash
+   npx vercel integration add neon --no-claim --environment production --format json
+   ```
+2. **Migrate as the owner role** (creates all 22 tables)
+   ```bash
+   export DATABASE_MIGRATION_URL='<neon DIRECT url, owner role>'
+   export DATABASE_URL="$DATABASE_MIGRATION_URL"   # temporary, migration only
+   npx drizzle-kit migrate
+   ```
+3. **Create the restricted runtime role.** Neon's web SQL editor cannot run
+   psql's `\gexec`, so the governance block is written out literally here.
+   Substitute the real database and owner role names:
+   ```sql
+   CREATE ROLE revora_app LOGIN PASSWORD '<generated>';
+   REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+   REVOKE CREATE ON SCHEMA public FROM revora_app;
+   REVOKE CREATE ON DATABASE neondb FROM revora_app;
+   GRANT CONNECT ON DATABASE neondb TO revora_app;
+   GRANT USAGE ON SCHEMA public TO revora_app;
+   GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO revora_app;
+   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO revora_app;
+   ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public
+     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO revora_app;
+   ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public
+     GRANT USAGE, SELECT ON SEQUENCES TO revora_app;
+   ```
+4. **Verify the split** — `resolveMigrationDatabaseUrl()` throws if both URLs
+   share a role, which is the check that proves this worked:
+   ```bash
+   export DATABASE_URL='<neon POOLED url, revora_app role>'
+   export DATABASE_MIGRATION_URL='<neon DIRECT url, owner role>'
+   npm run db:governance:check
+   ```
+   Every boolean true; head `0018_accounts-expires-at-integer`.
+5. **Fix what the integration injected.** The Neon integration writes
+   `DATABASE_URL` into Vercel using the **owner** role, which would hand the web
+   runtime DDL authority and violate the governance model. Replace it with the
+   pooled `revora_app` URL, and never add `DATABASE_MIGRATION_URL` to Vercel:
+   ```bash
+   npx vercel env rm DATABASE_URL production
+   npx vercel env add DATABASE_URL production   # pooled revora_app URL
+   npx vercel --prod
+   curl -s https://revora.plus/api/health       # expect "ok":true
+   ```
+6. **Set up backups now, while the database is empty and it is cheap to think
+   about.** The absence of any backup is what made this incident dangerous.
+
+Steps 3–4 in §"Step 4" (cron replacement) and §"Step 5" (`support@`) still
+apply unchanged.
 
 ---
 
