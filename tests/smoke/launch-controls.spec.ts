@@ -42,7 +42,7 @@ async function stubMaintenanceMode(route: Route) {
     contentType: "application/json",
     body: JSON.stringify({
       kind: "retry",
-      message: "Revora checks are paused right now. Please try again in a few minutes.",
+      message: "Prediabetes Pal checks are paused right now. Please try again in a few minutes.",
       disclaimer: "Not medical advice."
     })
   });
@@ -144,7 +144,7 @@ test("rate limit — friendly retry response (WAF 429 behavior)", async ({
   await page.getByRole("button", { name: "Check this meal" }).click();
 
   // A 429 is mapped to "rate_limited" → RequestStatus with "Try again on this page"
-  // and "Revora is helping a lot of people right now" copy
+  // and "Prediabetes Pal is helping a lot of people right now" copy
   await expect(page.getByText("Try again on this page")).toBeVisible({
     timeout: 10_000
   });

@@ -3,7 +3,7 @@
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
-export const CANONICAL_APP_URL = "https://revora.plus";
+export const CANONICAL_APP_URL = "https://prediabetespal.com";
 export const CRON_PATHS = Object.freeze([
   "/api/cron/nudge",
   "/api/cron/pantry-sweep",

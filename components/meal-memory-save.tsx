@@ -25,7 +25,7 @@ import {
  * affordance, and the API 403s them anyway.
  *
  * The explainer states the boundary plainly: memory is the user's, and it never
- * changes how Revora checks a meal (global constraint §1). No glucose prompt, no
+ * changes how Prediabetes Pal checks a meal (global constraint §1). No glucose prompt, no
  * "did it work" claim — this phase records a choice, not a health outcome.
  */
 export function MealMemorySave({ checkId }: { checkId?: string }) {
@@ -244,7 +244,7 @@ export function MealMemorySave({ checkId }: { checkId?: string }) {
       </div>
 
       <p className="result-disclaimer" data-testid="memory-explainer">
-        Your memory is yours. It never changes how Revora checks a meal.
+        Your memory is yours. It never changes how Prediabetes Pal checks a meal.
       </p>
 
       {error ? (

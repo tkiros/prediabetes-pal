@@ -11,7 +11,7 @@ let testDb: Awaited<ReturnType<typeof createTestDb>>;
 
 beforeAll(async () => {
   process.env.HEALTH_DATA_KEY = Buffer.alloc(32, 14).toString("base64");
-  process.env.ADMIN_EMAIL = "founder@revora.plus";
+  process.env.ADMIN_EMAIL = "founder@prediabetespal.com";
   process.env.NEXT_PUBLIC_APP_URL = "https://revora.test";
   testDb = await createTestDb();
 });
@@ -39,7 +39,7 @@ async function makeOrder(overrides: Partial<typeof schema.pantryOrders.$inferIns
   return order;
 }
 
-function makeDeps(sessionEmail = "founder@revora.plus") {
+function makeDeps(sessionEmail = "founder@prediabetespal.com") {
   return {
     db: () => testDb.db,
     getSession: async () =>
@@ -84,7 +84,7 @@ describe("POST /api/admin/pantry", () => {
       adminRequest({ orderId: order.id, action: "mark_manual" })
     );
     expect(response.status).toBe(404);
-    process.env.ADMIN_EMAIL = "founder@revora.plus";
+    process.env.ADMIN_EMAIL = "founder@prediabetespal.com";
   });
 
   it("resend_intake mints a fresh token and stamps intakeEmailSentAt", async () => {

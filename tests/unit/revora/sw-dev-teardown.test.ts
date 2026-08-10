@@ -127,9 +127,13 @@ describe("service worker: local-dev kill switch", () => {
 
   it("leaves real deployed origins controlled — the worker must still work in production", () => {
     // The inverse assertion matters as much as the one above: widening the kill
-    // switch must never reach revora.plus, or the offline fallback and push
-    // silently die for every real user.
+    // switch must never reach a production host, or the offline fallback and
+    // push silently die for every real user. Both apexes stay listed:
+    // prediabetespal.com is the live domain, revora.plus stays registered and
+    // 301s to it (old FB/DM links).
     for (const host of [
+      "prediabetespal.com",
+      "www.prediabetespal.com",
       "revora.plus",
       "www.revora.plus",
       "revora-git-main.vercel.app",

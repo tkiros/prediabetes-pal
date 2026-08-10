@@ -10,7 +10,7 @@ export function RequestStatus({
       ? {
           eyebrow: "Status",
           title: "Checking your food",
-          message: "Revora is weighing this food against your A1C range.",
+          message: "Prediabetes Pal is weighing this food against your A1C range.",
           note: "Your answer lands here in a few seconds."
         }
       : state.kind === "slow"

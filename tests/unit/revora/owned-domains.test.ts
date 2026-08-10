@@ -33,11 +33,12 @@ const UNOWNED = [
   "revora.com" // held by a domain investor
 ];
 
-const OWNED_SUFFIX = "@revora.plus";
-// Senders may live on a subdomain of the owned apex (contact.revora.plus is
-// the Resend-verified sending domain; the apex keeps registrar forwarding
-// for the support inbox).
-const OWNED_SENDER = /@(?:[a-z0-9-]+\.)?revora\.plus>?$/;
+const OWNED_SUFFIX = "@prediabetespal.com";
+// Senders may live on a subdomain of the owned apex (contact.prediabetespal.com
+// must be the Resend-verified sending domain; the apex keeps registrar
+// forwarding for the support inbox). revora.plus stays registered (301s +
+// old links) but no user-facing address may remain on it after the rename.
+const OWNED_SENDER = /@(?:[a-z0-9-]+\.)?prediabetespal\.com>?$/;
 
 function sourceFiles(rel: string): string[] {
   const abs = path.join(ROOT, rel);

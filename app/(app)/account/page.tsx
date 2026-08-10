@@ -399,7 +399,7 @@ export default function AccountPage() {
     <div className="app-content--narrow">
         <section className="surface-card hero-card">
           <p className="hero-eyebrow">Account</p>
-          <h1 className="page-title">Your Revora account</h1>
+          <h1 className="page-title">Your Prediabetes Pal account</h1>
 
           {state === "loading" ? (
             <p className="page-copy">Loading…</p>

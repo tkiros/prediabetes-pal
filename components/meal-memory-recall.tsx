@@ -167,7 +167,7 @@ export function MealMemoryRecall({ food }: { food?: string }) {
         Your meal memory
       </h2>
       <p className="result-disclaimer" data-testid="memory-recall-explainer">
-        Your memory is yours. It never changes how Revora checks a meal.
+        Your memory is yours. It never changes how Prediabetes Pal checks a meal.
       </p>
 
       <ul className="memory-recall-list">

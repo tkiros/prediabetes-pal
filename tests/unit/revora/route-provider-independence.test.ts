@@ -30,7 +30,7 @@ const IN_SCOPE_INPUT = { food: "oatmeal with nuts", a1c: 6 };
 
 function throwingFactory() {
   return vi.fn((): RevoraModelClient => {
-    throw new Error("OPENAI_API_KEY is required for live Revora model calls.");
+    throw new Error("OPENAI_API_KEY is required for live Prediabetes Pal model calls.");
   });
 }
 

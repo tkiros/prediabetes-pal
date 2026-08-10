@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 /**
  * F-26 / W-04 — draft Terms and an open till may not coexist.
  *
- * `/terms` renders literal counsel placeholders today ("[Revora's operating
+ * `/terms` renders literal counsel placeholders today ("[Prediabetes Pal's operating
  * entity — counsel to confirm]"), and that is fine while the checkout gate is
  * closed: the app cannot take money under a contract that names no entity and
  * no governing law. What is NOT fine is the two states drifting apart, in

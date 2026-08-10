@@ -115,7 +115,7 @@ export const getPlanBox = cache(async (): Promise<PlanBoxData> => {
             ? `Renews ${date}`
             : "Active";
       return {
-        planName: "Revora Premium",
+        planName: "Prediabetes Pal Premium",
         meta,
         isFree: false,
         signedIn: true,

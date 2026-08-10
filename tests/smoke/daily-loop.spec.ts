@@ -101,7 +101,7 @@ test("empty meals page is calm and passes axe", async ({ page }) => {
 
   // Design-review pins: real tab title, and the footer Home link stays in the
   // app shell (was "/" — the marketing landing).
-  await expect(page).toHaveTitle("My meals — Revora");
+  await expect(page).toHaveTitle("My meals — Prediabetes Pal");
   await expect(
     page.locator(".page-footer").getByRole("link", { name: "Home" })
   ).toHaveAttribute("href", "/home");

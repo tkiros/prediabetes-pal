@@ -28,7 +28,7 @@ function stripComments(text: string): string {
 /**
  * Promise registry — the deploy-blocking fixture test (Plan §P1.1).
  *
- * Every meal example Revora PROMOTES (landing demo, onboarding first-check
+ * Every meal example Prediabetes Pal PROMOTES (landing demo, onboarding first-check
  * chips) is registered here with the route KIND the deterministic precheck must
  * return. The precheck (`classifyClinicalRisk` → `classifyInputBeforeModel`) is
  * model-free, so the promise-to-proof link is testable WITHOUT a model call:

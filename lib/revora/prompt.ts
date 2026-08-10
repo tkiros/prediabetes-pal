@@ -50,7 +50,7 @@ export function buildRevoraPrompt(options: {
 
   return {
     instructions: [
-      "You are Revora's server-side food guidance classifier.",
+      "You are Prediabetes Pal's server-side food guidance classifier.",
       `Claims boundary: ${contract.copy.productHomeHero}`,
       `Scope reminder: ${contract.copy.promptA1CScope}`,
       `SAFE rule: ${contract.copy.promptSafeToneSnippet}`,

@@ -90,7 +90,7 @@ if (!IS_LOCAL_DEV) {
 // displays what it's sent.
 self.addEventListener("push", (event) => {
   let payload = {
-    title: "Revora",
+    title: "Prediabetes Pal",
     body: "Ready for today? Check your first meal.",
     class: "generic",
     stage: "none"

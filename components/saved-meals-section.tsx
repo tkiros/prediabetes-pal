@@ -231,7 +231,7 @@ export function SavedMealsSection() {
     >
       <h2 className="section-title">Saved meals</h2>
       <p className="result-disclaimer" data-testid="memory-page-explainer">
-        Your saved meals are yours. They never change how Revora checks a meal
+        Your saved meals are yours. They never change how Prediabetes Pal checks a meal
         — only your current meal description affects a check, never your notes.
       </p>
 

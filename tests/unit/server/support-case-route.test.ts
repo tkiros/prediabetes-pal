@@ -111,7 +111,7 @@ describe("POST /api/support/case (P0.4)", () => {
     expect(row.messageCiphertext).not.toContain("Charged twice");
     expect(decryptField(row.messageCiphertext)).toBe("Charged twice for July.");
 
-    expect(mail!.to).toBe("support@revora.plus");
+    expect(mail!.to).toBe("support@prediabetespal.com");
     expect(mail!.subject).toContain(body.caseId);
     expect(mail!.text).toContain("/api/admin/support");
     expect(mail!.text).not.toContain("Charged twice for July.");
@@ -204,7 +204,7 @@ describe("admin support queue", () => {
     });
 
     const response = await GET(
-      new Request("https://revora.plus/api/admin/support")
+      new Request("https://prediabetespal.com/api/admin/support")
     );
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-store");
@@ -220,7 +220,7 @@ describe("admin support queue", () => {
     });
 
     const resolved = await PATCH(
-      new Request("https://revora.plus/api/admin/support", {
+      new Request("https://prediabetespal.com/api/admin/support", {
         method: "PATCH",
         body: JSON.stringify({ caseId: caseRow.id, status: "resolved" })
       })
@@ -242,7 +242,7 @@ describe("admin support queue", () => {
       getSession: session
     });
     expect(
-      (await GET(new Request("https://revora.plus/api/admin/support"))).status
+      (await GET(new Request("https://prediabetespal.com/api/admin/support"))).status
     ).toBe(404);
   });
 });

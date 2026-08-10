@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Check your email — Revora" };
+export const metadata = { title: "Check your email — Prediabetes Pal" };
 
 export default function CheckEmailPage() {
   return (

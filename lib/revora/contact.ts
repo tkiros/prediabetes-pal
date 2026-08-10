@@ -15,7 +15,10 @@
  */
 
 /** Public support inbox. Rendered in Terms, Privacy, reports, and pantry mail. */
-export const SUPPORT_EMAIL = "support@revora.plus";
+// ⛔ prediabetespal.com must have inbound forwarding configured at the
+// registrar before this deploys, or support mail bounces (revora.plus kept
+// working via Namecheap forwarding; the new apex starts with nothing).
+export const SUPPORT_EMAIL = "support@prediabetespal.com";
 
 /**
  * Support-case message cap (P0.4). One constant for the form's counter AND
@@ -29,15 +32,22 @@ export const SUPPORT_MESSAGE_MAX = 2000;
  * Overridable so preview can send from its own subdomain with its own DKIM
  * key without touching production's reputation.
  *
- * The fallback lives on `contact.revora.plus` because THAT is the domain
- * verified in Resend (P0.2, 2026-07-21) — the apex `revora.plus` keeps its
- * MX/SPF on registrar forwarding for the support inbox, and Resend's
- * DKIM/SPF records are scoped to the subdomain. Sending from an address the
- * provider has not verified silently bounces every magic link.
+ * The fallback lives on `contact.prediabetespal.com` because the sending
+ * domain must be the one verified in Resend — the apex keeps its MX/SPF on
+ * registrar forwarding for the support inbox, and Resend's DKIM/SPF records
+ * are scoped to the subdomain. Sending from an address the provider has not
+ * verified silently bounces every magic link.
+ *
+ * ⛔ RENAME GATE (docs/ops/env-reference.md:64): production uses THIS
+ * fallback (AUTH_EMAIL_FROM is a preview-only override), so this line
+ * flipping IS the sender cutover. `contact.prediabetespal.com` must be
+ * Resend-verified with DKIM green BEFORE this commit deploys, or every
+ * magic link lands in spam — a login outage on a passwordless product.
+ * (`contact.revora.plus` was the previous verified domain, P0.2 2026-07-21.)
  */
 // `||` on the trimmed value, not `??`: a set-but-empty AUTH_EMAIL_FROM is not
 // nullish, so `??` would keep it and give every send a blank From. An empty
 // override can only ever be a mistake; fall through to the real sender.
 export const EMAIL_FROM =
   process.env.AUTH_EMAIL_FROM?.trim() ||
-  "Revora <signin@contact.revora.plus>";
+  "Prediabetes Pal <signin@contact.prediabetespal.com>";

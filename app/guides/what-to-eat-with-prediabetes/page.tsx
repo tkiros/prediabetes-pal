@@ -4,14 +4,14 @@ import Link from "next/link";
 import { GuideCta } from "../cta";
 
 export const metadata: Metadata = {
-  title: "What to Eat with Prediabetes — and What to Limit | Revora",
+  title: "What to Eat with Prediabetes — and What to Limit | Prediabetes Pal",
   description:
     "What you can eat with prediabetes: the foods you can enjoy freely, what is worth limiting, breakfast ideas, and how to handle eating out.",
   alternates: { canonical: "/guides/what-to-eat-with-prediabetes" }
 };
 
 // SEO target: "what to eat with prediabetes", "prediabetes what not to eat",
-// "best breakfast for prediabetes". Permission-first, like every Revora
+// "best breakfast for prediabetes". Permission-first, like every Prediabetes Pal
 // surface: lead with what the reader CAN eat.
 export default function WhatToEatGuide() {
   return (
@@ -72,7 +72,7 @@ export default function WhatToEatGuide() {
           bottomless. One restaurant meal never decides your week. When a
           specific menu item has you second-guessing, a{" "}
           <Link href="/check">quick check</Link> gives you a calm read in
-          about ten seconds — that moment is exactly what Revora is for.
+          about ten seconds — that moment is exactly what Prediabetes Pal is for.
         </p>
         <p>
           Planning whole days rather than single plates? Start with the{" "}

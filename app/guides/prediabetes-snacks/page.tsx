@@ -4,7 +4,7 @@ import Link from "next/link";
 import { GuideCta } from "../cta";
 
 export const metadata: Metadata = {
-  title: "Healthy Snacks for Prediabetes — Easy Options | Revora",
+  title: "Healthy Snacks for Prediabetes — Easy Options | Prediabetes Pal",
   description:
     "Healthy snack ideas for prediabetes: options that pair protein or fat with fiber, snacks worth limiting, and why portion matters more than perfection.",
   alternates: { canonical: "/guides/prediabetes-snacks" }

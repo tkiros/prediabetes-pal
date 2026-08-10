@@ -152,7 +152,7 @@ export default function WelcomePage() {
               <p className="hero-eyebrow">One-time setup</p>
               <h1 className="page-title">Save your profile</h1>
               <p className="page-copy">
-                Revora stores your A1C and your meal checks so your history
+                Prediabetes Pal stores your A1C and your meal checks so your history
                 and coach work across devices. Your A1C and meal text are
                 encrypted at rest.
               </p>
@@ -188,12 +188,12 @@ export default function WelcomePage() {
                     default, blocking for storage, and separately revocable
                     from Account without deleting login or subscription. */}
                 <label htmlFor="welcome-consent" className="consent-label">
-                  I explicitly consent to Revora collecting and using my A1C
+                  I explicitly consent to Prediabetes Pal collecting and using my A1C
                   and submitted meal information (health data) to provide meal
                   checks, saved history, and progress
                   {longitudinalInsightsEnabled() ? ", and personalized insights" : ""}.
                   Each submitted meal and A1C is sent to OpenAI, via the
-                  OpenRouter gateway, to generate a response; Revora stores my
+                  OpenRouter gateway, to generate a response; Prediabetes Pal stores my
                   A1C and saved meal text in
                   encrypted form. I can withdraw this consent and erase the
                   saved health data from Account without deleting my login or

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { storeWaitlistUrl } from "../../../lib/waitlist";
 
 export const metadata = {
-  title: "Get Revora on your phone — Revora",
+  title: "Get Prediabetes Pal on your phone — Prediabetes Pal",
   alternates: { canonical: "/get-the-app" }
 };
 
@@ -14,19 +14,19 @@ export default function GetTheAppPage() {
     <div className="app-content--narrow">
         <section className="surface-card hero-card">
           <p className="hero-eyebrow">On your phone</p>
-          <h1 className="page-title">Revora already works on your phone</h1>
+          <h1 className="page-title">Prediabetes Pal already works on your phone</h1>
           <p className="page-copy">
             The web app installs to your home screen and works like an app —
             no store, no download, same checks.
           </p>
           <h2 className="section-title">Android (Chrome)</h2>
           <p className="page-copy">
-            Open Revora in Chrome, tap the menu (⋮), then &quot;Add to Home
+            Open Prediabetes Pal in Chrome, tap the menu (⋮), then &quot;Add to Home
             screen&quot;, then Add.
           </p>
           <h2 className="section-title">iPhone (Safari)</h2>
           <p className="page-copy">
-            Open Revora in Safari, tap Share, then &quot;Add to Home
+            Open Prediabetes Pal in Safari, tap Share, then &quot;Add to Home
             Screen&quot;, then Add.
           </p>
           <h2 className="section-title">Prefer the store version?</h2>

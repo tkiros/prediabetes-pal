@@ -14,7 +14,7 @@ import { learningJourneyUiEnabled } from "../lib/learning-journey-flag";
  * Graduation and maintenance are Task 20 (with pause reasons), so this card
  * exposes start/pause/resume, and — at day 90 (`isComplete`) — the four honest
  * completion paths of plan §P4.4: graduate & take your playbook, pause (with a
- * bounded reason), continue in maintenance, and a calm "outside Revora's scope?"
+ * bounded reason), continue in maintenance, and a calm "outside Prediabetes Pal's scope?"
  * pointer to professional care. Graduation is framed as a SUCCESS, none of these
  * paths touches billing, and there is no retention dark pattern (global
  * constraint §9): the copy honestly says graduating does not change a
@@ -91,10 +91,10 @@ export const CANCEL_INDEPENDENCE_COPY =
   "You can cancel or keep your subscription — it's your choice, and graduating doesn't change your billing.";
 
 /** Calm pointer to professional care (reuses the boundary-copy tone). */
-export const OUTSIDE_SCOPE_HEADING = "Is your question outside Revora's scope?";
+export const OUTSIDE_SCOPE_HEADING = "Is your question outside Prediabetes Pal's scope?";
 
 export const OUTSIDE_SCOPE_COPY =
-  "Revora is informational only and is not medical advice. If something about your health has you worried, talk with a doctor or registered dietitian for guidance that's specific to you.";
+  "Prediabetes Pal is informational only and is not medical advice. If something about your health has you worried, talk with a doctor or registered dietitian for guidance that's specific to you.";
 
 /** Every user-facing completion string, for the copy test to iterate over. */
 export const JOURNEY_COMPLETION_COPY = {
@@ -479,7 +479,7 @@ export function JourneyCard() {
             </button>
           )}
 
-          {/* Path 4 — Outside Revora's scope? */}
+          {/* Path 4 — Outside Prediabetes Pal's scope? */}
           {outsideScope}
 
           {/* Cancellation independence — no dark pattern. */}

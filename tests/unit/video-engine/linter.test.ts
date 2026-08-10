@@ -14,7 +14,7 @@ const rules = (items: ReturnType<typeof runRegexChecks>) => items.map((i) => i.r
 
 describe("runRegexChecks", () => {
   it("hard-fails the reversal family", () => {
-    const items = runRegexChecks(spec({ caption_text: "Revora helps reverse prediabetes." }));
+    const items = runRegexChecks(spec({ caption_text: "Prediabetes Pal helps reverse prediabetes." }));
     expect(items.some((i) => i.rule === "claim:reversal" && i.severity === "hard_fail")).toBe(true);
   });
 

@@ -30,7 +30,7 @@ export default async function AppShellLayout({
           <span className="app-brand-mark">
             <IconCheck size={17} />
           </span>
-          <span>Revora</span>
+          <span>Prediabetes Pal</span>
         </div>
         <AppNav variant="sidebar" />
         <div className="app-sidebar-foot">
@@ -43,7 +43,7 @@ export default async function AppShellLayout({
           <span className="app-brand-mark">
             <IconCheck size={17} />
           </span>
-          <span>Revora</span>
+          <span>Prediabetes Pal</span>
         </div>
       </header>
 

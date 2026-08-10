@@ -24,7 +24,7 @@ const RESULT_CARD_SOURCE = fs.readFileSync(
 // The real server strings (app/api/check/route.ts): the trial hard-wall body
 // names "free week"; the legacy soft limit names "free checks".
 const TRIAL_WALL_MESSAGE =
-  "Your free taste of Revora was yesterday's checks. Start your free week — card required, unlimited everything, and we email you before any charge — to keep going.";
+  "Your free taste of Prediabetes Pal was yesterday's checks. Start your free week — card required, unlimited everything, and we email you before any charge — to keep going.";
 const FREE_LIMIT_MESSAGE =
   "You've used today's five free checks. Premium removes the daily limit and keeps your full history — or check back in with your first meal tomorrow.";
 

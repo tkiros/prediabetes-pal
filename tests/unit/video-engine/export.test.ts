@@ -9,7 +9,7 @@ const spec = (over: Partial<VideoSpec>): VideoSpec =>
     disclosure_block: "", claims_used: [], duration_s: 20, status: "DRAFT", ...over,
   }) as VideoSpec;
 
-const DISCLAIMER = "Revora is informational only and is not medical advice.";
+const DISCLAIMER = "Prediabetes Pal is informational only and is not medical advice.";
 
 describe("buildPostingPackage (v1 = master passthrough + compliant caption)", () => {
   it("no claims → caption is unchanged, master path passes through", () => {

@@ -4,7 +4,7 @@
  * claims-audited via the copy ledger. No live check runs here.
  *
  * It shows the HONEST oatmeal sequence (Plan §P1.1 / K1): the user types
- * "oatmeal", Revora asks one clarifying question instead of guessing, the user
+ * "oatmeal", Prediabetes Pal asks one clarifying question instead of guessing, the user
  * supplies the missing context, and only THEN does the card appear. The three
  * interaction strings (input, question, answer) come from the promise registry
  * — not retyped here — so `promise-registry.test.ts` pins the clarify question
@@ -47,7 +47,7 @@ const SWAP = "Steel-cut oats hold up steadier than instant packets.";
 
 /**
  * `layout="table"` is the LANDING's rendering: the design file's six-row
- * label-gutter table (You type / Revora / You answer / Signal / Why / Try).
+ * label-gutter table (You type / Prediabetes Pal / You answer / Signal / Why / Try).
  * The default is the app's, and it is the default deliberately — `/check` and
  * `/demo` render this component too, and the design file is a marketing
  * drawing with no authority over an in-app surface. Changing the default
@@ -82,7 +82,7 @@ export function DemoCheckCard({ layout }: { layout?: "table" } = {}) {
           className="landing-demo-row landing-demo-row--ask"
           data-testid="demo-clarify"
         >
-          <span className="landing-demo-label">Revora</span>
+          <span className="landing-demo-label">Prediabetes Pal</span>
           <span className="landing-demo-value">
             <strong className="landing-demo-lead">Need one more detail</strong>
             <br />
@@ -132,7 +132,7 @@ export function DemoCheckCard({ layout }: { layout?: "table" } = {}) {
         You type: <strong>{example.input}</strong>
       </p>
 
-      {/* Step 2 — Revora asks one clarifying question instead of guessing. */}
+      {/* Step 2 — Prediabetes Pal asks one clarifying question instead of guessing. */}
       <div
         className="result-card"
         data-kind="clarify"
@@ -149,7 +149,7 @@ export function DemoCheckCard({ layout }: { layout?: "table" } = {}) {
 
       {/* Step 4 — the resulting card. */}
       <div className="result-card" data-risk="MODERATE">
-        <p className="result-eyebrow">Revora result</p>
+        <p className="result-eyebrow">Prediabetes Pal result</p>
         <p className="result-title verdict-title" data-risk="MODERATE">
           <IconAlert size={26} />
           Be careful

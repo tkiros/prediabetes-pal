@@ -5,7 +5,7 @@ import { VideoEngineDashboard } from "./dashboard-client";
 
 export const runtime = "nodejs";
 export const metadata = {
-  title: "Video Engine — Revora",
+  title: "Video Engine — Prediabetes Pal",
   robots: { index: false, follow: false },
 };
 

@@ -3,12 +3,12 @@
     {
       "label": "diagnosis",
       "pattern": "\\bdiagnos(e|es|ing|is)\\b",
-      "example": "Revora diagnoses whether you have prediabetes."
+      "example": "Prediabetes Pal diagnoses whether you have prediabetes."
     },
     {
       "label": "treatment",
       "pattern": "\\btreat(s|ed|ing)?\\b",
-      "example": "Revora treats prediabetes through meal advice."
+      "example": "Prediabetes Pal treats prediabetes through meal advice."
     },
     {
       "label": "prevention",
@@ -18,12 +18,12 @@
     {
       "label": "cure",
       "pattern": "\\bcure(s|d|ing)?\\b",
-      "example": "Revora cures prediabetes."
+      "example": "Prediabetes Pal cures prediabetes."
     },
     {
       "label": "reversal",
       "pattern": "\\brevers(e|es|ing|al)\\b",
-      "example": "Revora helps reverse prediabetes."
+      "example": "Prediabetes Pal helps reverse prediabetes."
     },
     {
       "label": "fda approval",

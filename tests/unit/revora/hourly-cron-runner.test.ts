@@ -63,7 +63,7 @@ describe("hourly cron runner", () => {
 
     await expect(
       runHourlyCronCli(
-        { APP_URL: "https://www.revora.plus", CRON_SECRET: secret },
+        { APP_URL: "https://www.prediabetespal.com", CRON_SECRET: secret },
         { error }
       )
     ).resolves.toBe(1);

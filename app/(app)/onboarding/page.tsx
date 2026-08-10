@@ -245,12 +245,12 @@ export default function OnboardingPage() {
           ) : null}
           {step === "welcome" ? (
             <>
-              <p className="hero-eyebrow">Welcome to Revora</p>
+              <p className="hero-eyebrow">Welcome to Prediabetes Pal</p>
               <h1 className="page-title">
                 Check a meal. Get a cautious educational read.
               </h1>
               <p className="page-copy">
-                At the moment of a meal, Revora gives you one cautious
+                At the moment of a meal, Prediabetes Pal gives you one cautious
                 educational label — {" "}
                 {RISK_LABELS.SAFE}, {RISK_LABELS.MODERATE}, or{" "}
                 {RISK_LABELS.HIGH} — with one reason and, when appropriate, an
@@ -343,7 +343,7 @@ export default function OnboardingPage() {
               <p className="hero-eyebrow">Your A1C</p>
               <h1 className="page-title">Your latest A1C</h1>
               <p className="page-copy">
-                Revora is built only for the prediabetes range — an A1C of
+                Prediabetes Pal is built only for the prediabetes range — an A1C of
                 5.7% to 6.4%. Your number tunes how careful the answers are.
               </p>
               <div className="field-stack">
@@ -390,7 +390,7 @@ export default function OnboardingPage() {
           {step === "boundary" ? (
             <>
               <p className="hero-eyebrow">A quick heads-up</p>
-              <h1 className="page-title">Revora isn&apos;t built for this range</h1>
+              <h1 className="page-title">Prediabetes Pal isn&apos;t built for this range</h1>
               <p className="page-copy" data-testid="boundary-message">
                 {boundaryMessage}
               </p>
@@ -403,7 +403,7 @@ export default function OnboardingPage() {
 
           {step === "expectations" ? (
             <>
-              <p className="hero-eyebrow">How Revora works</p>
+              <p className="hero-eyebrow">How Prediabetes Pal works</p>
               <h1 className="page-title">What to expect</h1>
               <ul className="page-copy expectation-list">
                 <li>

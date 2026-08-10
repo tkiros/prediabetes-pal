@@ -565,7 +565,7 @@ export async function runNudgeCron(
     const dayNumber = Number(todayKey.replace(/-/g, ""));
     const body = nudgeBody(selection, dayNumber);
     const payload = JSON.stringify({
-      title: "Revora",
+      title: "Prediabetes Pal",
       body,
       // Bounded routing metadata only — no health text. The SW opens
       // /check?nudge=<class>&stage=<stage>; the client emits nudge_opened.

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { GuideCta } from "../cta";
 
 export const metadata: Metadata = {
-  title: "A1C 5.7% to 6.4% — What the Prediabetes Range Means | Revora",
+  title: "A1C 5.7% to 6.4% — What the Prediabetes Range Means | Prediabetes Pal",
   description:
     "What an A1C between 5.7% and 6.4% means: how the test works, how clinicians read the prediabetes range, and why one number is not the whole story.",
   alternates: { canonical: "/guides/a1c-5-7-to-6-4" }
@@ -84,7 +84,7 @@ export default function A1cRangeGuide() {
           <Link href="/guides/what-to-eat-with-prediabetes">
             what-to-eat guide
           </Link>
-          . And at the moment a specific meal has you unsure, Revora gives
+          . And at the moment a specific meal has you unsure, Prediabetes Pal gives
           you a cautious educational read in about ten seconds.
         </p>
       </section>

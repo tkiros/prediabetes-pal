@@ -50,7 +50,7 @@ export function ResultFeedback({
       <p className="feedback-thanks" data-testid="result-feedback-thanks">
         {helpful
           ? "Good — that's the point."
-          : "Noted. Revora will keep working on it."}
+          : "Noted. Prediabetes Pal will keep working on it."}
       </p>
     );
   }

@@ -58,6 +58,6 @@ describe("the landing's captured artwork cannot drift from the free tier", () =>
     // It sits opposite "The apps want you to become an accountant" and is the
     // evidence for that claim. Decorative alt would drop the argument for
     // anyone not seeing the image.
-    expect(src).toMatch(/alt="The Revora check screen on a phone:[^"]+"/);
+    expect(src).toMatch(/alt="The Prediabetes Pal check screen on a phone:[^"]+"/);
   });
 });

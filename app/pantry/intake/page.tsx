@@ -8,7 +8,7 @@ import { getSessionInfo } from "../../../lib/server/session";
 import { SUPPORT_EMAIL } from "../../../lib/revora/contact";
 
 export const metadata = {
-  title: "Your Pantry Review — Revora",
+  title: "Your Pantry Review — Prediabetes Pal",
   robots: { index: false, follow: false }
 };
 

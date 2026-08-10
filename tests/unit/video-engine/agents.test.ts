@@ -16,7 +16,7 @@ describe("lintSpec", () => {
   });
 
   it("hard-fails from the regex layer even if the LLM layer says clean", async () => {
-    const rep = await lintSpec(spec({ caption_text: "Revora reverses prediabetes." }), { runner: async () => '{"items":[]}' });
+    const rep = await lintSpec(spec({ caption_text: "Prediabetes Pal reverses prediabetes." }), { runner: async () => '{"items":[]}' });
     expect(rep.verdict).toBe("hard_fail");
     expect(rep.items.some((i) => i.rule === "claim:reversal")).toBe(true);
   });

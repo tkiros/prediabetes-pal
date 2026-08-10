@@ -6,7 +6,7 @@ import { magicLinkSendFailed } from "../../../lib/revora/magic-link-outcome";
 import { ReviewerSigninForm } from "../../../components/reviewer-signin-form";
 
 export const metadata = {
-  title: "Sign in — Revora",
+  title: "Sign in — Prediabetes Pal",
   alternates: { canonical: "/signin" }
 };
 
@@ -30,7 +30,7 @@ export default async function SignInPage({
   return (
     <div className="app-content--narrow">
         <section className="surface-card hero-card">
-          <p className="hero-eyebrow">Revora account</p>
+          <p className="hero-eyebrow">Prediabetes Pal account</p>
           <h1 className="page-title">Sign in with your email</h1>
           <p className="page-copy">
             No password. We send a one-time sign-in link to your inbox — tap

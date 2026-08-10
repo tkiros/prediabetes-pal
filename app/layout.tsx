@@ -28,17 +28,17 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
-  title: "Revora — Prediabetes Meal Checker",
+  title: "Prediabetes Pal — Prediabetes Meal Checker",
   description:
     "A meal checker for the prediabetes A1C range — general meal-composition education with cautious context.",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "Revora", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Prediabetes Pal", statusBarStyle: "default" },
   // Site-wide link-preview card; app/opengraph-image.tsx supplies the image.
   // Deliberately NO og title/description here: Next backfills them from each
   // page's own metadata, so every route previews with its own copy. Setting
   // them here would override every page's og card with the landing's.
   openGraph: {
-    siteName: "Revora",
+    siteName: "Prediabetes Pal",
     type: "website"
   },
   twitter: { card: "summary_large_image" }

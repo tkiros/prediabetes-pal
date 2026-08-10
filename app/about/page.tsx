@@ -5,9 +5,9 @@ import { SUPPORT_EMAIL } from "../../lib/revora/contact";
 import { loadSafetyContract } from "../../lib/revora/safety-contract";
 
 export const metadata: Metadata = {
-  title: "About Revora — Who Built It and What It's Built On",
+  title: "About Prediabetes Pal — Who Built It and What It's Built On",
   description:
-    "Who makes Revora, the public health sources its guidance is built on, how its copy is governed, and the clinical review that is commissioned but not yet complete.",
+    "Who makes Prediabetes Pal, the public health sources its guidance is built on, how its copy is governed, and the clinical review that is commissioned but not yet complete.",
   alternates: { canonical: "/about" }
 };
 
@@ -55,7 +55,7 @@ const SOURCE_BODIES = [
 
 export default function AboutPage() {
   const { copy } = loadSafetyContract();
-  const operatorName = process.env.LEGAL_ENTITY_NAME?.trim() || "Revora";
+  const operatorName = process.env.LEGAL_ENTITY_NAME?.trim() || "Prediabetes Pal";
 
   // Outside the (app) route group on purpose. In the group this page rendered
   // `ƒ` — the shell's async getPlanBox() forces dynamic, so the E-E-A-T anchor
@@ -74,7 +74,7 @@ export default function AboutPage() {
         <div className="page-frame" id="about-content" tabIndex={-1}>
           <nav className="backbar" aria-label="About">
             <Link className="backlink" href="/">
-              Revora home
+              Prediabetes Pal home
             </Link>
             <Link className="backlink" href="/how-it-works">
               How it works
@@ -82,9 +82,9 @@ export default function AboutPage() {
           </nav>
       <section className="surface-card hero-card">
         <p className="hero-eyebrow">About</p>
-        <h1 className="page-title">Who built Revora, and what it stands on</h1>
+        <h1 className="page-title">Who built Prediabetes Pal, and what it stands on</h1>
         <p className="page-copy">
-          Revora answers one question: is the plate in front of you a
+          Prediabetes Pal answers one question: is the plate in front of you a
           reasonable fit for an A1C between 5.7% and 6.4%? This page is the
           part most health sites leave out — who is behind it, what the
           guidance is built on, and what has not been checked yet.
@@ -94,7 +94,7 @@ export default function AboutPage() {
       <section className="surface-card legal-card">
         <h2>Who makes it</h2>
         <p>
-          {operatorName} operates Revora. It is a small independent product,
+          {operatorName} operates Prediabetes Pal. It is a small independent product,
           not a clinic, not a care provider, and not affiliated with any of the
           public health bodies whose published guidance it draws on.
         </p>
@@ -106,13 +106,13 @@ export default function AboutPage() {
           tends to come in two sizes: a general article about food groups, or
           an app that asks you to weigh, log, and search a database at every
           meal. Neither answers the question people actually have at dinner.
-          Revora does that one thing and tries not to do anything else.
+          Prediabetes Pal does that one thing and tries not to do anything else.
         </p>
 
         <h2>Who it is for</h2>
         <p>
           Adults using an A1C in the 5.7% to 6.4% range. If the number you
-          enter falls outside that range, Revora says so plainly and points you
+          enter falls outside that range, Prediabetes Pal says so plainly and points you
           to a clinician rather than guessing. That boundary is enforced in the
           product, not just described here.
         </p>
@@ -133,7 +133,7 @@ export default function AboutPage() {
 
         <h2>What the guidance is built on</h2>
         <p>
-          Every claim Revora is permitted to make is tied to a published
+          Every claim Prediabetes Pal is permitted to make is tied to a published
           source, recorded in an evidence pack that ships in the repository
           alongside the code. Thirteen sources are currently behind the
           product&apos;s copy, published by:
@@ -156,7 +156,7 @@ export default function AboutPage() {
           allowed to support — lives in the evidence pack that ships with the
           code. For the research behind the weekly recap specifically, see{" "}
           <Link href="/how-it-works">How it works</Link>. Where the evidence
-          supports only a general, qualitative statement, Revora is limited to
+          supports only a general, qualitative statement, Prediabetes Pal is limited to
           a general, qualitative statement.
         </p>
 
@@ -175,7 +175,7 @@ export default function AboutPage() {
         <h2>Clinical review: commissioned, not yet complete</h2>
         <p>
           <strong>
-            No external clinician has signed off on Revora&apos;s guidance
+            No external clinician has signed off on Prediabetes Pal&apos;s guidance
             copy.
           </strong>{" "}
           We would rather say that here than let the sources above imply
@@ -200,7 +200,7 @@ export default function AboutPage() {
 
         <h2>Your data</h2>
         <p>
-          You can use Revora as a guest with no account and no server-side
+          You can use Prediabetes Pal as a guest with no account and no server-side
           history. If you create an account, your history is encrypted and you
           can delete it, and deleting your account removes your data with it.
           The full detail is in the{" "}
@@ -209,7 +209,7 @@ export default function AboutPage() {
 
         <h2>Contact</h2>
         <p>
-          Corrections, questions, or a clinical concern about something Revora
+          Corrections, questions, or a clinical concern about something Prediabetes Pal
           said:{" "}
           <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>. If you are a
           credentialed RDN or CDCES interested in the review panel, that is the
@@ -220,7 +220,7 @@ export default function AboutPage() {
       </section>
 
           <footer className="page-footer">
-            <Link href="/">Back to Revora</Link>
+            <Link href="/">Back to Prediabetes Pal</Link>
             <Link href="/guides">Prediabetes guides</Link>
             <Link href="/privacy">Privacy</Link>
           </footer>

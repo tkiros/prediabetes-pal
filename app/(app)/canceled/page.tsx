@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Canceled — Revora" };
+export const metadata = { title: "Canceled — Prediabetes Pal" };
 
 export default async function CanceledPage({
   searchParams

@@ -45,7 +45,7 @@ function baseEnv(overrides: Record<string, string | undefined> = {}) {
 }
 
 function post(body: unknown) {
-  return new Request("https://preview.revora.plus/api/auth/reviewer-signin", {
+  return new Request("https://preview.prediabetespal.com/api/auth/reviewer-signin", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body)
@@ -123,7 +123,7 @@ describe("POST /api/auth/reviewer-signin — secret and identity checks", () => 
   it("404s on malformed JSON instead of throwing", async () => {
     const POST = handler(baseEnv());
     const response = await POST(
-      new Request("https://preview.revora.plus/api/auth/reviewer-signin", {
+      new Request("https://preview.prediabetespal.com/api/auth/reviewer-signin", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: "not json"

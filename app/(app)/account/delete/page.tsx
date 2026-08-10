@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Delete your account & data — Revora",
+  title: "Delete your account & data — Prediabetes Pal",
   description:
-    "How to permanently delete your Revora account and all stored data."
+    "How to permanently delete your Prediabetes Pal account and all stored data."
 };
 
 /**
@@ -17,7 +17,7 @@ export default function DeleteAccountPage() {
           <p className="hero-eyebrow">Your data, your call</p>
           <h1 className="page-title">Delete your account &amp; data</h1>
           <p className="page-copy">
-            Deleting your Revora account permanently removes everything we
+            Deleting your Prediabetes Pal account permanently removes everything we
             store about you:
           </p>
           <ul className="page-copy expectation-list">
@@ -48,7 +48,7 @@ export default function DeleteAccountPage() {
               an anonymous code and two timestamps — no name, email, or health
               data — and the payment provider&apos;s own billing records
               (Stripe or Google Play), which are retained by the provider
-              under their terms, outside Revora.
+              under their terms, outside Prediabetes Pal.
             </li>
           </ul>
           <h2 className="section-title">How to delete</h2>

@@ -28,6 +28,8 @@ import { emailStubDirectory, writeEmailStub } from "./email-stub";
  * Delivery Failure") while 4/4 Resend→Gmail sends delivered, and Gmail→support@
  * forwarded fine (real MTAs retry 4xx; Resend gives up). So internal mail goes
  * to a directly-deliverable inbox when SUPPORT_INBOX_EMAIL is set.
+ * (Observed on revora.plus pre-rename; the same failure mode applies to
+ * prediabetespal.com whenever its MX is registrar forwarding too.)
  */
 export function supportInbox(): string {
   return process.env.SUPPORT_INBOX_EMAIL || SUPPORT_EMAIL;

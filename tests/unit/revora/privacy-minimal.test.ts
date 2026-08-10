@@ -9,7 +9,7 @@ import { loadSafetyContract } from "../../../lib/revora/safety-contract";
 import { checkFood } from "../../../lib/revora/service";
 
 const DISCLAIMER =
-  "Revora is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you.";
+  "Prediabetes Pal is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you.";
 
 const PROJECT_ROOT = process.cwd();
 

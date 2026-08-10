@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { disclosureLayer, MIN_HOLD_S } from "../../../video-engine/disclosure";
 
 const DISCLAIMER =
-  "Revora is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you.";
+  "Prediabetes Pal is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you.";
 
 describe("disclosureLayer (compliance-critical, pure)", () => {
   it("no claims → no disclosure (myth/label-trap specs need none)", () => {

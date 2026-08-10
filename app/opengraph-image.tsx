@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 import { RISK_LABELS } from "../lib/revora/labels";
 
-// The branded link-preview card (strategy §0.2 #7): a Revora link pasted into
+// The branded link-preview card (strategy §0.2 #7): a Prediabetes Pal link pasted into
 // Reddit/FB/DMs renders this instead of a bare domain. Every string is an
 // existing approved surface string (landing hero + standard disclaimer);
 // verdict words interpolate from RISK_LABELS like every other render surface.
@@ -10,7 +10,7 @@ import { RISK_LABELS } from "../lib/revora/labels";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "Revora — check a meal, get one cautious educational label";
+export const alt = "Prediabetes Pal — check a meal, get one cautious educational label";
 
 const CHIPS = [
   { label: RISK_LABELS.SAFE, color: "#065f46" },
@@ -77,7 +77,7 @@ export default function OpengraphImage() {
           }}
         >
           <div style={{ display: "flex", fontSize: 40, fontWeight: 800 }}>
-            Revora
+            Prediabetes Pal
           </div>
           <div style={{ display: "flex", fontSize: 24, opacity: 0.8 }}>
             Informational only — not medical advice.

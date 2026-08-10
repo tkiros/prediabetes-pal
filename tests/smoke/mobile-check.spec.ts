@@ -71,7 +71,7 @@ async function fulfillCheckRoute(route: Route, scenario: StubScenario) {
     out_of_scope: {
       kind: "out_of_scope",
       route: "diabetes_range_out_of_scope",
-      message: "Revora only supports prediabetes-range A1C checks right now.",
+      message: "Prediabetes Pal only supports prediabetes-range A1C checks right now.",
       disclaimer: "Not medical advice."
     },
     slow: {

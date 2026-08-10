@@ -8,7 +8,7 @@ import {
 import type { RevoraUserResponse } from "../../../lib/revora/schemas";
 
 const DISCLAIMER =
-  "Revora is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you.";
+  "Prediabetes Pal is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you.";
 
 function resultResponse(risk: "SAFE" | "MODERATE" | "HIGH"): RevoraUserResponse {
   return {

@@ -213,7 +213,7 @@ export function createAccountExportHandler(deps: Deps = {}) {
         {
           dataset: "provider-side billing records (Stripe / Google Play)",
           reason:
-            "Retained by the payment provider under their own terms; the subscription summary above is what Revora holds."
+            "Retained by the payment provider under their own terms; the subscription summary above is what Prediabetes Pal holds."
         }
       ]
     };

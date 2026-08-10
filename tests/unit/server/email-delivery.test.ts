@@ -70,7 +70,7 @@ function event(
     data: {
       email_id: emailId,
       created_at: createdAt.toISOString(),
-      from: "Revora <signin@contact.revora.plus>",
+      from: "Prediabetes Pal <signin@contact.prediabetespal.com>",
       to: ["buyer@example.com"],
       subject: "private subject",
       ...extra
@@ -310,7 +310,7 @@ describe("Resend delivery state machine", () => {
 
 describe("POST /api/webhooks/resend", () => {
   function request(headers: Record<string, string> = {}) {
-    return new Request("https://revora.plus/api/webhooks/resend", {
+    return new Request("https://prediabetespal.com/api/webhooks/resend", {
       method: "POST",
       headers,
       body: JSON.stringify({ private: "raw body" })

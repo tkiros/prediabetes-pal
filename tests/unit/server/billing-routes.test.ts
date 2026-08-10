@@ -183,7 +183,7 @@ describe("POST /api/billing/stripe/checkout terms acceptance", () => {
     const previousPrice = process.env.STRIPE_PRICE_MONTHLY_1299;
     const previousUrl = process.env.NEXT_PUBLIC_APP_URL;
     process.env.STRIPE_PRICE_MONTHLY_1299 = "price_monthly";
-    process.env.NEXT_PUBLIC_APP_URL = "https://revora.plus";
+    process.env.NEXT_PUBLIC_APP_URL = "https://prediabetespal.com";
     const stripe = {
       checkout: {
         sessions: { create: vi.fn().mockResolvedValue({ url: "https://stripe/x" }) }

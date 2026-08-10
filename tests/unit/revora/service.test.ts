@@ -22,7 +22,7 @@ describe("safety contract loader", () => {
     );
     expect(contract.fixture.uncertaintyFloors.length).toBeGreaterThan(0);
     expect(contract.copy.disclaimer).toBe(
-      "Revora is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you."
+      "Prediabetes Pal is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you."
     );
     expect(contract.copy.promptA1CScope).toContain("5.7%");
   });
@@ -385,7 +385,7 @@ describe("checkFood", () => {
       adjustment: null,
       swap: null,
       disclaimer:
-        "Revora is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you."
+        "Prediabetes Pal is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you."
     });
   });
 
@@ -423,7 +423,7 @@ describe("checkFood", () => {
       adjustment: null,
       swap: "If you have the option, swap to a less sweet or less refined version.",
       disclaimer:
-        "Revora is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you."
+        "Prediabetes Pal is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you."
     });
   });
 });

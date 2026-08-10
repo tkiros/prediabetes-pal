@@ -4,7 +4,7 @@ import Link from "next/link";
 import { GuideCta } from "../cta";
 
 export const metadata: Metadata = {
-  title: "Prediabetes: Now What? Calm First Steps | Revora",
+  title: "Prediabetes: Now What? Calm First Steps | Prediabetes Pal",
   description:
     "Your A1C came back between 5.7% and 6.4%. What prediabetes means, why it is not an emergency, and the calm, concrete first steps worth taking.",
   alternates: { canonical: "/guides/prediabetes-now-what" }
@@ -80,15 +80,15 @@ export default function NowWhatGuide() {
       </section>
 
       <section className="surface-card legal-card">
-        <h2>Where does Revora fit?</h2>
+        <h2>Where does Prediabetes Pal fit?</h2>
         <p>
           The hard part of &ldquo;eat better&rdquo; is the moment of an
           actual meal —
-          the dinner table, the grocery aisle, the menu. Revora is a meal
+          the dinner table, the grocery aisle, the menu. Prediabetes Pal is a meal
           checker built only for prediabetes: describe the meal and get a
           cautious educational read on its balance, the reason behind it, and
           a practical alternative when there is one. You stay the one making
-          the call; Revora&apos;s job is to replace the guessing.
+          the call; Prediabetes Pal&apos;s job is to replace the guessing.
         </p>
       </section>
 

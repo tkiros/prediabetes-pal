@@ -7,14 +7,14 @@ import { loadSafetyContract } from "../../../lib/revora/safety-contract";
 import { SUPPORT_EMAIL } from "../../../lib/revora/contact";
 
 export const metadata: Metadata = {
-  title: "Privacy · Revora",
-  description: "What Revora collects, why it uses it, and how to control it.",
+  title: "Privacy · Prediabetes Pal",
+  description: "What Prediabetes Pal collects, why it uses it, and how to control it.",
   alternates: { canonical: "/privacy" }
 };
 
 export default function PrivacyPage() {
   const { copy } = loadSafetyContract();
-  const operatorName = process.env.LEGAL_ENTITY_NAME?.trim() || "Revora";
+  const operatorName = process.env.LEGAL_ENTITY_NAME?.trim() || "Prediabetes Pal";
   const photoEnabled = photoInputEnabled();
   const insightsEnabled = longitudinalInsightsEnabled();
 
@@ -22,10 +22,10 @@ export default function PrivacyPage() {
     <div className="app-content--narrow">
       <section className="surface-card hero-card">
         <p className="hero-eyebrow">Privacy</p>
-        <h1 className="page-title">How Revora handles your data</h1>
+        <h1 className="page-title">How Prediabetes Pal handles your data</h1>
         <p className="page-copy">
-          Effective 2026-07-12. {operatorName} operates Revora and is
-          responsible for the personal information described here. Use Revora
+          Effective 2026-07-12. {operatorName} operates Prediabetes Pal and is
+          responsible for the personal information described here. Use Prediabetes Pal
           as a guest with no server-side history, or explicitly consent to an
           account with encrypted, deletable history.
         </p>
@@ -44,10 +44,10 @@ export default function PrivacyPage() {
 
         <h2>How a meal check works</h2>
         <p>
-          Revora sends the submitted meal description and A1C to OpenAI&apos;s
+          Prediabetes Pal sends the submitted meal description and A1C to OpenAI&apos;s
           Responses API, routed through the OpenRouter gateway, to generate a
           response. Calls set <code>store: false</code>, which disables default
-          API response storage, and Revora does not enable prompt logging at
+          API response storage, and Prediabetes Pal does not enable prompt logging at
           OpenRouter. OpenAI and OpenRouter may still retain limited
           abuse-monitoring records under their service terms.
           {photoEnabled
@@ -57,29 +57,29 @@ export default function PrivacyPage() {
 
         <h2>Guest use</h2>
         <p>
-          Revora does not create server-side meal history for a guest. Recent
+          Prediabetes Pal does not create server-side meal history for a guest. Recent
           checks and onboarding settings may remain in that browser&apos;s local
           storage until you clear the site data. Request data still passes
-          through Revora&apos;s hosting provider, OpenRouter, and OpenAI to
+          through Prediabetes Pal&apos;s hosting provider, OpenRouter, and OpenAI to
           answer the check.
         </p>
 
         <h2>Account use and explicit consent</h2>
         <p>
-          With explicit health-data consent, Revora saves your email, encrypted
+          With explicit health-data consent, Prediabetes Pal saves your email, encrypted
           A1C, encrypted meal text, general result category, dates, history,
           progress, and optional reminder registration
           {insightsEnabled ? ", plus derived pattern summaries" : ""}. The purposes
           are to provide saved checks, cross-device history, progress,
           {insightsEnabled ? " personalized pattern summaries," : ""} reminders,
-          support, security, and subscription access. Revora does not use this
+          support, security, and subscription access. Prediabetes Pal does not use this
           information for ads or sell it.
         </p>
 
         <h2>Pantry Review</h2>
         <p>
           Pantry Review stores photos in private object storage while the report
-          is prepared. Revora reads each photo through an authenticated server
+          is prepared. Prediabetes Pal reads each photo through an authenticated server
           request and sends it to OpenAI to create an item list that you review
           and correct. Photos are deleted after extraction or delivery according
           to the report workflow. Item names, notes, A1C range, and the finished
@@ -89,7 +89,7 @@ export default function PrivacyPage() {
         <h2>Pantry Review photos</h2>
         <p>
           If you buy a Pantry Review, the photos you upload are held by
-          Revora&apos;s storage provider in a private store that requires an
+          Prediabetes Pal&apos;s storage provider in a private store that requires an
           authenticated server request to read. They are never made public,
           linked to, or indexed. The photo is deleted when the report is delivered;
           within the hour if the order is canceled, refunded, or sent for
@@ -109,7 +109,7 @@ export default function PrivacyPage() {
         </p>
 
         <h2>Service providers and recipients</h2>
-        <p>Revora uses these provider categories for the stated purposes:</p>
+        <p>Prediabetes Pal uses these provider categories for the stated purposes:</p>
         <ul>
           <li>
             OpenAI for meal-check responses and Pantry Review extraction
@@ -126,7 +126,7 @@ export default function PrivacyPage() {
         </ul>
         <p>
           These providers may process information in the United States or
-          other countries where they operate. Revora limits each provider to
+          other countries where they operate. Prediabetes Pal limits each provider to
           the information needed for its role and does not send raw meal text,
           exact A1C, or email to analytics or Sentry.
         </p>
@@ -140,7 +140,7 @@ export default function PrivacyPage() {
           eliminate every risk.
         </p>
 
-        <h2>What Revora never does</h2>
+        <h2>What Prediabetes Pal never does</h2>
         <ul>
           <li>sell or share your personal data,</li>
           <li>show ads,</li>
@@ -184,22 +184,22 @@ export default function PrivacyPage() {
         <p>
           You may ask to access, correct, export, or delete personal information
           and may appeal a denied request by replying with “Privacy appeal” to{" "}
-          <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>. Revora will
+          <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>. Prediabetes Pal will
           verify the request using the existing account or another reasonable
-          method. Rights vary by location; Revora will honor mandatory rights
+          method. Rights vary by location; Prediabetes Pal will honor mandatory rights
           that apply to you.
         </p>
 
         <h2>Health-data incidents</h2>
         <p>
-          Revora investigates unauthorized access or disclosure and will notify
+          Prediabetes Pal investigates unauthorized access or disclosure and will notify
           affected people and authorities when applicable law requires it. A
           notice may arrive by email together with an in-app or website notice.
         </p>
 
         <h2>Children</h2>
         <p>
-          Revora is for adults 18 and older and is not directed to children. If
+          Prediabetes Pal is for adults 18 and older and is not directed to children. If
           you believe a child submitted information, contact {SUPPORT_EMAIL}.
         </p>
 
@@ -214,7 +214,7 @@ export default function PrivacyPage() {
       </section>
 
       <footer className="page-footer">
-        <Link href="/">Back to Revora</Link>
+        <Link href="/">Back to Prediabetes Pal</Link>
         <Link href="/terms">Terms</Link>
       </footer>
     </div>

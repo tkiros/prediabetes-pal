@@ -1,5 +1,5 @@
 /**
- * Launch-control contracts and threshold helpers for Revora (Plan 04-02)
+ * Launch-control contracts and threshold helpers for Prediabetes Pal (Plan 04-02)
  *
  * Reads Edge Config keys `launch_mode`, `public_checks_enabled`, and
  * `incident_message` when EDGE_CONFIG is present. Falls back to safe defaults
@@ -29,10 +29,10 @@ export type LaunchControls = {
 // ---------------------------------------------------------------------------
 
 const DEFAULT_INCIDENT_MESSAGE =
-  "Revora checks are temporarily paused. Please try again later.";
+  "Prediabetes Pal checks are temporarily paused. Please try again later.";
 
 const PAUSE_COPY =
-  "Revora checks are paused right now. Please try again in a few minutes.";
+  "Prediabetes Pal checks are paused right now. Please try again in a few minutes.";
 
 // ---------------------------------------------------------------------------
 // Threshold helper
