@@ -1,4 +1,21 @@
-# Outstanding — ordered checklist (2026-08-10)
+# Outstanding — ordered checklist (2026-08-10, second revision)
+
+> **Current session handoff:**
+> `docs/handoff/2026-08-10-revora-name-removal-session-handoff.md` — read it
+> first. It has the two blockers, the safety regression, and the traps.
+
+## 🔴 Blocked on the owner — nothing else is
+
+1. **Vercel env** (values are encrypted → dashboard, not CLI):
+   add `PAL_MODEL` and `PAL_VISION_MODEL` copied from the `REVORA_*` pair;
+   set `NEXT_PUBLIC_APP_URL=https://prediabetespal.com`; **delete**
+   `LEGAL_ENTITY_NAME`. Then merge **#79** and redeploy.
+   ⛔ #79 must not merge first — both vars have code defaults, so it would
+   **silently downgrade the model** rather than fail loudly.
+2. **Database role** (Stage D) — the agent cannot read `DATABASE_URL`, so it
+   cannot reach Neon. Steps in the handoff §5.
+
+---
 
 ## ✅ RESOLVED 2026-08-10 — production is healthy
 
