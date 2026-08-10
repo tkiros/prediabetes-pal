@@ -8,6 +8,7 @@ import type { MetadataRoute } from "next";
 export const PUBLIC_MARKETING_PATHS = [
   "/",
   "/check",
+  "/about",
   "/how-it-works",
   "/subscribe",
   "/pantry",

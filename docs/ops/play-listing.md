@@ -7,8 +7,35 @@
 
 ## 1. App title
 
+> **AMENDED 2026-08-08.** Was `Revora — Prediabetes Coach`. "Coach" was the
+> pre-pivot noun and this was the last surface still carrying it: `app/layout.tsx`
+> has said `Revora — Prediabetes Meal Checker` since the pivot, and the landing
+> H1 reads "A meal checker built only for prediabetes." A store title that names
+> a different product than the page it links to is the one drift a reviewer sees
+> first. "Coach" also over-promises a relationship the product does not have —
+> it returns one card and stops.
+>
+> ⛔ **29 CHARACTERS, AND THAT IS THE BINDING CONSTRAINT. Play Console caps the
+> app title at 30.** The obvious fix — matching `app/layout.tsx`'s
+> `Revora — Prediabetes Meal Checker` exactly — is **33** and would be rejected
+> at submission. Nothing in `npm run contract` measures length: the validator
+> reads the Copy for claims, so this fails at the Play Console paste box, not in
+> CI. **Count before you edit this line.**
+>
+> ⛔ **`Revora: Prediabetes Checker` (27) was REJECTED and must not be
+> reintroduced as "the shorter one".** It fits, and it reads as *a checker for
+> prediabetes* — a screening claim, which is the first banned family in
+> `claims-boundary.md`. The word **meal** is what keeps the object of the verb
+> the food and not the reader. Any shortening keeps it.
+>
+> The em dash went, not a word: ` — ` costs three characters and a space costs
+> one, and Play titles are conventionally unpunctuated. "Check" over "Checker"
+> is the last character. If the owner prefers the em dash, `Revora — Meal Check`
+> (19) fits and drops the condition instead — worse for store search, which is
+> why this version keeps it.
+
 <!-- claims-audit:start -->
-**Revora — Prediabetes Coach**
+**Revora Prediabetes Meal Check**
 <!-- claims-audit:end -->
 
 ## 2. Short description

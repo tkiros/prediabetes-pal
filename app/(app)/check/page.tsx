@@ -16,7 +16,8 @@ import { photoInputEnabled } from "../../../lib/photo-input-flag";
 export const metadata = {
   title: "Check a Meal for Prediabetes — Revora",
   description:
-    "Describe a meal and get a cautious educational read for the prediabetes range: the pattern, the reason, and a practical alternative when there is one."
+    "Describe a meal and get a cautious educational read for the prediabetes range: the pattern, the reason, and a practical alternative when there is one.",
+  alternates: { canonical: "/check" }
 };
 
 // The app's daily surface (moved here from `/` when the marketing landing

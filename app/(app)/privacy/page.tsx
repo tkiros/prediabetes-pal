@@ -8,7 +8,8 @@ import { SUPPORT_EMAIL } from "../../../lib/revora/contact";
 
 export const metadata: Metadata = {
   title: "Privacy · Revora",
-  description: "What Revora collects, why it uses it, and how to control it."
+  description: "What Revora collects, why it uses it, and how to control it.",
+  alternates: { canonical: "/privacy" }
 };
 
 export default function PrivacyPage() {

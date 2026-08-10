@@ -134,6 +134,22 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"]
       }
+    },
+    // 2026-08-08: the owner reported the landing page flickering with parts
+    // missing, in Firefox. It was "fixed" three times and verified three times
+    // in headless Chromium, because every project here was Chromium or WebKit —
+    // the suite was structurally incapable of seeing a Gecko-specific defect and
+    // reported green anyway. The defect turned out not to be Gecko's, but that
+    // was luck: nothing here could have told us either way. This project is the
+    // standing answer to that. Run it with:
+    //   npm run e2e -- --project="Desktop Firefox"
+    // ⚠️ Needs the browser downloaded once per machine: `npx playwright install
+    // firefox`. It is NOT bundled with the chromium/webkit installs.
+    {
+      name: "Desktop Firefox",
+      use: {
+        ...devices["Desktop Firefox"]
+      }
     }
   ]
 });

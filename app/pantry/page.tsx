@@ -6,7 +6,8 @@ import { resolvePantryPrice } from "../../lib/server/pantry-price";
 // Pantry Review, so no `robots: { index: false }` here (unlike the in-app
 // /report and /pantry/thanks surfaces).
 export const metadata = {
-  title: "Pantry Review — Revora"
+  title: "Pantry Review — Revora",
+  alternates: { canonical: "/pantry" }
 };
 
 // AUD-010: the displayed price is resolved per-request from the same Stripe

@@ -4,7 +4,10 @@ import { PaywallCard } from "../../../components/paywall-card";
 import { TrialWall } from "../../../components/trial-wall";
 import { paywallMode } from "../../../lib/server/pricing";
 
-export const metadata = { title: "Premium — Revora" };
+export const metadata = {
+  title: "Premium — Revora",
+  alternates: { canonical: "/subscribe" }
+};
 
 export default async function SubscribePage({
   searchParams

@@ -6,7 +6,8 @@ import { GuideCta } from "../cta";
 export const metadata: Metadata = {
   title: "Healthy Snacks for Prediabetes — Easy Options | Revora",
   description:
-    "Healthy snack ideas for prediabetes: options that pair protein or fat with fiber, snacks worth limiting, and why portion matters more than perfection."
+    "Healthy snack ideas for prediabetes: options that pair protein or fat with fiber, snacks worth limiting, and why portion matters more than perfection.",
+  alternates: { canonical: "/guides/prediabetes-snacks" }
 };
 
 // SEO target: "healthy snacks for prediabetes", "best snacks for prediabetes".

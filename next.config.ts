@@ -147,7 +147,18 @@ const nextConfig: NextConfig = {
           key: "Content-Security-Policy",
           value: [
             "default-src 'self'",
-            `script-src 'self' 'unsafe-inline'${umami}`,
+            // ⚠️ `'unsafe-eval'` IN DEVELOPMENT ONLY, and it is not a relaxation
+            // of the shipped policy — `NODE_ENV` is "production" for `next
+            // build`/`next start` and every deployed request, so the header
+            // served to a real user is byte-identical to what it was before.
+            //
+            // Why it has to be here: React's development build and Turbopack's
+            // Fast Refresh runtime both call `eval()`. Without it every dev page
+            // load throws "eval() is not supported in this environment", the
+            // refresh runtime degrades, and the page reloads itself repeatedly
+            // and renders half-built — which reads as a broken layout rather
+            // than as a CSP problem. It cost a design review to diagnose.
+            `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}${umami}`,
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' blob: data: https://*.blob.vercel-storage.com https://*.public.blob.vercel-storage.com",
             "font-src 'self' data:",
@@ -169,10 +180,26 @@ const nextConfig: NextConfig = {
           key: "Permissions-Policy",
           value: "camera=(self), microphone=(self), geolocation=()"
         },
-        {
-          key: "Strict-Transport-Security",
-          value: "max-age=63072000; includeSubDomains"
-        }
+        // ⚠️ NOT the 2026-08-08 flicker fix — unrelated defect found while
+        // diagnosing it, fixed because it was there. `next dev` serves plain
+        // HTTP on localhost, and we were sending a 2-year HSTS pin with
+        // `includeSubDomains` over it. RFC 6797 §8.1 says a UA MUST ignore an
+        // STS header received over insecure transport, so in practice it was
+        // ignored — but `localhost` is a "potentially trustworthy" origin, and a
+        // browser that ever did honour it would refuse plain HTTP to localhost
+        // for two years, on every port, for every project on the machine. That
+        // is an unrecoverable-looking dev machine in exchange for a header that
+        // does nothing in dev. Production is unaffected: `NODE_ENV` is
+        // "production" for `next build`/`next start` and every deployed request,
+        // so the shipped header is byte-identical.
+        ...(process.env.NODE_ENV === "development"
+          ? []
+          : [
+              {
+                key: "Strict-Transport-Security",
+                value: "max-age=63072000; includeSubDomains"
+              }
+            ])
       ]
     }
   ];

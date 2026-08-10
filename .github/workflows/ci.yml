@@ -130,10 +130,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx drizzle-kit migrate
-      # playwright.config.ts runs two projects: Mobile Chrome (Pixel 5, chromium)
-      # and Mobile Safari (iPhone 12, webkit). Installing chromium alone failed
-      # all 110 Mobile Safari tests at browser launch.
-      - run: npx playwright install --with-deps chromium webkit
+      # playwright.config.ts runs FOUR projects: Mobile Chrome (Pixel 5) and
+      # Desktop Chrome on chromium, Mobile Safari (iPhone 12) on webkit, and
+      # Desktop Firefox on gecko. Every engine a project names must be installed
+      # here or that project fails at browser launch, taking the whole job with
+      # it — installing chromium alone once failed all 110 Mobile Safari tests,
+      # and omitting firefox failed this job the moment the Gecko project landed.
+      # ⚠️ Adding a project to playwright.config.ts means editing this line too.
+      - run: npx playwright install --with-deps chromium webkit firefox
       # The runner builds isolated legacy + trial optimized local outputs
       # before Playwright starts, including its syntactically valid smoke-only
       # VAPID key. It explicitly blanks every provider credential before Next

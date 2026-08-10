@@ -1534,16 +1534,35 @@ button.inline-link {
    Marketing landing (/) — DESIGN.md §Marketing landing.
    Tokens only; the wider frame is landing-exclusive.
 
-   Surface rhythm (2026-07-27): the page is LIGHT throughout. The former
-   deep-green `.landing-dark` bands were removed on owner instruction. Depth
-   now comes from three light planes over the page background:
+   ⚠️ THIS BANNER DESCRIBED A DELETED SYSTEM UNTIL 2026-08-08. It documented
+   `.landing-sheet` and `.landing-band`, neither of which has existed in this
+   file for two design eras, and a rule ("the page is LIGHT throughout") that
+   DESIGN.md §11 had already overturned. Rewritten to the page that ships.
 
-     .landing-sheet  white  (--surface)      hero, the three-answers row
-     .landing-band   tint   (--accent-tint)  who-it's-for, pantry, closing CTA
-     (default)       page   (--page-bg)      everything else
+   Surface rhythm (2026-08-08, `Revora Landing v4 Product.dc.html`): sections
+   ALTERNATE strictly between two planes, and nothing else is a plane.
 
-   Alternating those three is what carries the eye down the page now that
-   inverted colour is gone. Risk colours remain semantic-only.
+     .landing-section--sheet   white (--surface), full-bleed, square, no border
+     (default)                 page  (--page-bg)
+
+   The alternation is the mechanism: a sheet is full-bleed and square, a card
+   has a radius, so the two are never confusable. In order down the page —
+   hero(page) · showpiece(page) · marquee(SHEET) · glance(page) ·
+   problem(SHEET) · scope(page) · what-changes(BAND) · how-it-works(SHEET) ·
+   three answers(page) · limits(SHEET) · offer(page) · FAQ(SHEET) ·
+   final(page).
+
+   Two things sit INSIDE a section without changing its plane, which is what
+   lets them exist at all: `.landing-changes` is the one full-bleed
+   `--accent-strong` band, and `.landing-showpiece-panel`,
+   `.landing-final-panel` (--accent-strong) and `.landing-scope-panel`
+   (--accent-tint) are PANELS — rounded, inset, inside a page-plane section.
+
+   ⛔ A card is always one step off the plane it sits on, in whichever
+   direction that plane leaves room: `--page-bg` cards on sheets (the pains,
+   the steps, the sources note, the limits trio), `--surface` cards on the page
+   plane (the verdict cards, the offer stages, the result card). Risk colours
+   remain semantic-only.
    ============================================================ */
 
 /* One body size for the whole page. The old 16.5–17px range needed a reason
@@ -1586,7 +1605,7 @@ button.inline-link {
 .landing-footer-col h3,
 .landing-glance-fact,
 .landing-offer-what,
-.landing-limits-trio h3,
+.landing-limits-card h3,
 .landing-verdict-signal,
 .landing-demo-eyebrow,
 .landing-demo-label,
@@ -1606,12 +1625,46 @@ button.inline-link {
   padding: 0 clamp(20px, 4vw, 32px);
 }
 
+/* ⚖️ A STICKY TRANSLUCENT CAPSULE — the v4 design file's, adopted 2026-08-08.
+   It reverses DESIGN.md §13 #8's "decorative glassmorphism" and takes the
+   system's second box-shadow, and both are deliberate: a pill that floats over
+   scrolling copy has to stay legible without going opaque (that is what the
+   blur buys) and has to separate from whatever is under it (that is what the
+   shadow buys). Neither is doing decorative work.
+
+   ⚠️ `position: sticky` survives only because `overflow-x: clip` lives on
+   `html` rather than on `.landing` — an ancestor with a clip or scroll
+   container is not a valid containing block for a sticky child. Moving that
+   one declaration back up turns this into an ordinary nav with no error and no
+   failing test. Same dependency `.landing-problem-head` used to carry.
+
+   ⛔ `top` is 14px, not 0. Flush against the viewport the capsule reads as a
+   bar that failed to fill the width; the gap is what makes it read as floating. */
 .landing-nav {
+  position: sticky;
+  top: 14px;
+  z-index: 30;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 22px 0;
+  gap: 18px;
+  margin: 14px 0 0;
+  padding: 9px 10px 9px clamp(16px, 2vw, 26px);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 6px 22px rgba(15, 23, 42, 0.06);
+  /* ⛔ Do NOT add `will-change: transform` here. One was added on 2026-08-08 to
+     chase a reported flicker; the flicker turned out to be a `next dev` HMR
+     failure in the owner's browser profile, nothing to do with compositing (see
+     docs/handoff/2026-08-08-flicker-root-caused-dev-only-hmr-session-handoff.md).
+     `backdrop-filter` already promotes this element, so the hint bought nothing.
+     Separately — as a prior, NOT as something measured here — `will-change:
+     transform` on a `position: sticky` box makes it a containing block for
+     fixed/absolute descendants and is a known Gecko jitter pattern. Scroll
+     behaviour was never tested either way, so don't cite that as proven. */
 }
 
 .landing-wordmark {
@@ -1785,23 +1838,62 @@ button.inline-link {
   }
 }
 
+/* ⚖️ CENTRED, the v4 design file's, in place of the two-column copy/card
+   split. The card did not disappear — it moved down into `.landing-showpiece`,
+   where it gets a dark ground and the real /check capture beside it. What the
+   hero keeps is the four things a reader decides on: who it is for, what it
+   is, what it gives back, and the button. */
+/* ⛔ EVERY IN-PAGE ANCHOR TARGET MUST CLEAR THE STICKY CAPSULE. The nav is
+   `top: 14px` and ~62px tall, so ~76px of the viewport is occluded and a bare
+   `#hash` jump parks the heading UNDERNEATH it. Nothing catches this: axe does
+   not test occlusion, `measure-landing.mjs` reads document coordinates, and
+   `landing-a11y.spec.ts`'s `toBeFocused()` passes happily on a focused element
+   nobody can see. This page went from zero in-page anchors to four in the same
+   commit that made the nav sticky, so the two changes have to travel together.
+   ⚠️ Add an id to this list the moment you add an anchor to it. */
+#landing-hero,
+#how-it-works,
+#faq,
+#live-example {
+  scroll-margin-top: 96px;
+}
+
 .landing-hero {
   display: grid;
-  gap: clamp(32px, 5vw, 56px);
-  padding: clamp(36px, 5vw, 64px) 0 clamp(52px, 7vw, 88px);
+  justify-items: center;
+  gap: 20px;
+  padding: clamp(30px, 4.4vw, 56px) 0 clamp(20px, 3vw, 34px);
+  text-align: center;
+}
+
+/* ⚖️ NOT THE EYEBROW LEDGER `landing-hero-moment` DELETED. That one restated
+   the H1's category above the H1. This one states the RANGE — which the H1
+   does not, and which is the scope-first framing every other Approved row
+   uses. It answers "is this for me" before the headline answers "what is it".
+
+   Tracked uppercase under the 16px floor, the same carve-out `.landing-offer-when`
+   and `.anatomy-label` already take: the floor exists for PROSE read by
+   40-to-60-year-olds, and this is a five-word positional label. */
+.landing-hero-eyebrow {
+  margin: 0;
+  display: inline-flex;
   align-items: center;
+  border-radius: 999px;
+  padding: 8px 20px;
+  background: var(--accent-tint);
+  color: var(--accent-strong);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 
-@media (min-width: 880px) {
-  .landing-hero {
-    grid-template-columns: 1.05fr 0.95fr;
-  }
-}
-
-.landing-hero-copy {
-  display: grid;
-  gap: 18px;
-  justify-items: start;
+/* The stack is left-aligned everywhere else on the page; here it inherits the
+   hero's centre. No font-size — that stays in the base rule. */
+.landing-hero .landing-cta-stack {
+  justify-items: center;
 }
 
 /* ⚖️ THE DESIGN FILE'S SCALE, adopted verbatim 2026-08-06 on the owner's
@@ -1862,44 +1954,149 @@ button.inline-link {
   color: var(--text-muted);
 }
 
-/* `home-trust-strip` — the three de-risking facts, directly under the CTA. */
-.landing-trust-strip {
+/* ── The showpiece ───────────────────────────────────────────
+   The v4 design file's hero payoff: the real /check capture beside the card it
+   returns, on the page's first `--accent-strong` ground. It is a PANEL inside
+   the frame, not a full-bleed sheet, so the strict page/sheet alternation the
+   sections below run on is untouched by it.
+
+   ⛔ Do not give `.result-card` a border, radius or shadow from here.
+   `landing-design-guards` GUARD 1 scans every `.landing`-containing selector
+   for exactly that and the card's recipe is the page's central claim. */
+.landing-showpiece {
+  padding: 0 0 clamp(38px, 5vw, 64px);
+}
+
+.landing-showpiece-panel {
+  border-radius: clamp(24px, 3vw, 40px);
+  padding: clamp(24px, 3.4vw, 50px);
+  background: var(--accent-strong);
+}
+
+.landing-showpiece-grid {
   display: grid;
-  gap: 8px;
-  margin: 4px 0 0;
+  gap: clamp(24px, 3.2vw, 48px);
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  align-items: center;
+}
+
+.landing-showpiece-art {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* ⚠️ THE CAP IS A REACHABILITY DECISION, not a taste one. At 100% of a 375px
+   column this 390×700 capture renders ~600px tall, and it sits inside the
+   stretch between the hero's exit and the glance strip's — which is the
+   page's worst desert at every measurement this page has ever taken. 220px
+   narrow costs the image nothing legible and buys ~180px of that budget back.
+   Re-measure before raising it: node scripts/measure-landing.mjs */
+.landing-showpiece-art img {
+  display: block;
+  width: 100%;
+  max-width: clamp(220px, 26vw, 300px);
+  height: auto;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+}
+
+.landing-showpiece-card {
+  display: grid;
+  min-width: 0;
+}
+
+.landing-showpiece .landing-card-caption {
+  margin-inline: auto;
+  text-align: center;
+}
+
+/* ── The marquee ─────────────────────────────────────────────
+   ⚖️ THE SYSTEM'S THIRD KEYFRAME. DESIGN.md §6 read "two sanctioned keyframes
+   … no other looping animation anywhere"; amended 2026-08-08 on the owner's
+   ruling that the v4 design file governs. It is also a full-bleed white sheet,
+   so it does the plane change between the hero and the glance strip.
+
+   The track holds the list TWICE and translates -50%, which is exactly one
+   copy — so the second copy is under the cursor at the moment the first ends
+   and the loop has no seam. The second copy is `aria-hidden` in the markup;
+   only the first is `.landing-trust-strip role="list"`, which is what
+   `tests/smoke/landing-a11y.spec.ts` asserts on.
+
+   ⚠️ TWO STOP MECHANISMS, both required. Moving text that runs longer than
+   five seconds and cannot be paused is a WCAG 2.2.2 failure, and axe-core does
+   not detect a CSS marquee — the a11y spec would pass over it. The global
+   prefers-reduced-motion block zeroes the animation outright (the track lands
+   on the second copy, which is identical, so nothing is lost); hover and
+   keyboard focus pause it in place. */
+.landing-marquee {
+  margin-inline: calc(50% - 50vw);
+  padding: 15px 0;
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--surface);
+  overflow: hidden;
+  contain: paint;
+}
+
+/* Ordinary compositing hygiene for a transform that runs forever: promoting the
+   track keeps the 34s loop off the paint path, and `contain: paint` on the band
+   above keeps its work from escaping into the rest of the page.
+   ⚠️ An earlier comment here claimed these two were "THE FLICKER FIX" and must
+   never be removed. That was wrong. The flicker the owner reported was a `next
+   dev` HMR chunk failure in their browser profile — it reproduced with these
+   properties in place and vanished in a clean profile and in a production build,
+   which is exactly what a compositing bug would NOT do. Keep them because an
+   infinite transform animation wants them, not because anything depends on them. */
+.landing-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: landing-marquee 34s linear infinite;
+  will-change: transform;
+}
+
+.landing-marquee:hover .landing-marquee-track,
+.landing-marquee:focus-within .landing-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes landing-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.landing-marquee ul {
+  display: flex;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.landing-trust-strip li {
-  position: relative;
-  padding-left: 24px;
-  color: var(--text-body);
-  font-size: 17.5px;
-  line-height: 1.5;
+.landing-marquee li {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 20px;
+  color: var(--text-strong);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
-.landing-trust-strip li::before {
+/* The separator is a dot after every item, so the strip reads as one running
+   sentence rather than as a row of buttons. */
+.landing-marquee li::after {
   content: "";
-  position: absolute;
-  left: 2px;
-  top: 0.32em;
-  width: 11px;
+  width: 6px;
   height: 6px;
-  border-left: 2px solid var(--accent);
-  border-bottom: 2px solid var(--accent);
-  transform: rotate(-45deg);
-}
-
-/* Hero product visual. The card inside is already a card, so this is a
-   positioning wrapper only — the old phone bezel wrapped a card in a card.
-   Renamed from `.landing-phone` 2026-08-05: the bezel was removed 2026-07-27
-   and the name had been describing a thing that no longer existed. */
-.landing-hero-proof {
-  display: grid;
-  justify-self: center;
-  width: 100%;
-  max-width: 420px;
+  border-radius: 999px;
+  background: var(--accent);
 }
 
 /* Says what the card above it means, in the hero and again under block 3's
@@ -2028,12 +2225,8 @@ button.inline-link {
   font-size: clamp(2.2rem, 5vw, 3.4rem);
   line-height: 1.02;
   letter-spacing: -0.034em;
-}
-
-/* Not a size change — the shared step, held to the drawing's measure so the
-   sticky column's heading breaks where the drawing breaks it. */
-.landing-pause-head .landing-h2 {
-  max-width: 16ch;
+  /* The closing block is an --accent-strong panel now, not a white sheet. */
+  color: var(--accent-contrast);
 }
 
 .landing-section-lede {
@@ -2145,20 +2338,31 @@ button.inline-link {
    also a sheet (see `.landing-section--sheet`), which is why it carries no
    hairline of its own: the colour change is the boundary. */
 .landing-final {
+  /* padding-BLOCK, not the shorthand — the panel inside carries the inline
+     padding and the section must not fight it. */
+  padding-block: clamp(40px, 5vw, 72px) clamp(46px, 6vw, 84px);
+  border-top: 0;
+}
+
+/* ⚖️ A DARK PANEL INSIDE THE FRAME, the v4 design file's, in place of the
+   white sheet. It is the page's second and last `--accent-strong` ground; the
+   what-changes band is the first, two thirds of a page above it. Two dark
+   moments that far apart read as bookends. It is a PANEL, not a full-bleed
+   sheet, so the page/sheet alternation above it is untouched. */
+.landing-final-panel {
   display: grid;
-  gap: 22px;
+  gap: 20px;
   justify-items: center;
   text-align: center;
-  /* padding-BLOCK, not the shorthand: `.landing-section--sheet` sets
-     padding-inline to bring the full-bleed content back onto the frame's
-     gutter, and this rule is later in the file, so `padding: X 0` here would
-     silently zero it and jam the text against the viewport edge. */
-  padding-block: clamp(64px, 8vw, 110px);
-  border-top: 1px solid var(--border-soft);
+  border-radius: clamp(26px, 3.2vw, 44px);
+  padding: clamp(44px, 6.4vw, 96px) clamp(24px, 4vw, 54px);
+  background: var(--accent-strong);
 }
 
 .landing-final .landing-section-lede {
   max-width: 46ch;
+  /* 4.9:1 on --accent-strong, the same value the dark band's lede takes. */
+  color: #a9cfc9;
 }
 
 /* The page's LAST pill is bigger than its other eight — 60px against 56px,
@@ -2181,35 +2385,33 @@ button.inline-link {
    two-up when two 340px tracks plus the gap fit and stack otherwise, rather
    than switching at a hand-picked breakpoint. Kept as written: it is the same
    rule the dark band and the offer strip already use on this page. */
-.landing-problem-grid {
-  display: grid;
-  gap: clamp(36px, 5vw, 72px);
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  align-items: start;
-}
-
-/* ⚠️ STICKY, and it only works because `overflow-x: clip` lives on `html`
-   rather than on `.landing` (see both rules). An ancestor with a clip or
-   scroll container is not a valid containing block for a sticky child, so
-   moving that one declaration back up silently turns this into an ordinary
-   column — no error, no failing test, just a design that quietly stops
-   happening. `top: 32px` clears the sticky nav-free header area. */
-@media (min-width: 900px) {
-  .landing-problem-head {
-    position: sticky;
-    top: 32px;
-  }
-}
-
+/* ⚖️ CENTRED HEAD ABOVE A CARD GRID — the v4 design file's, in place of the
+   two-column sticky split. `.landing-problem-grid` and the sticky rule went
+   with it: the design puts the head over a 2x2, so there is no second column
+   to hold anything in view beside. */
 .landing-problem-head {
-  align-content: start;
-  margin-bottom: 0;
+  justify-items: center;
+  max-width: 62ch;
+  margin-inline: auto;
+  margin-bottom: clamp(30px, 4vw, 50px);
+  text-align: center;
+}
+
+/* ⚖️ A TINTED PANEL, the v4 design file's. `--accent-tint` is a FILL inside a
+   page-plane section, not a plane of its own, so the strict page/sheet
+   alternation §11 runs on is untouched. The phone capture that used to sit in
+   this block's right column moved up into the showpiece, where the design
+   draws it and where it is evidence rather than decoration. */
+.landing-scope-panel {
+  border-radius: clamp(22px, 2.8vw, 34px);
+  padding: clamp(26px, 3.6vw, 52px);
+  background: var(--accent-tint);
 }
 
 .landing-scope-grid {
   display: grid;
-  gap: clamp(36px, 5vw, 64px);
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: clamp(24px, 3.4vw, 52px);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   align-items: center;
 }
 
@@ -2234,171 +2436,226 @@ button.inline-link {
   text-wrap: balance;
 }
 
-/* Not a card: no shadow, no card radius beyond the screen's own corners. §11
-   allows this page ONE card family and the result card is it — a second boxed
-   thing beside it would read as a competing surface. */
-.landing-scope-art {
+/* ── How it works: the three steps ───────────────────────────
+   ⭐ NEW 2026-08-08 (v4 design file §6). Replaces `.landing-pause-*`, whose
+   grid put one heading beside one card; the same artifact is still here, on
+   step two, where the pause it demonstrates is the argument.
+
+   Each step is a `--page-bg` block on a white sheet. That is the inverse of
+   every other card on the page and it is the point: the result card is white
+   with a border, so a tinted borderless block cannot be read as one. */
+.landing-steps {
+  display: grid;
+  gap: clamp(16px, 2.2vw, 26px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.landing-step {
+  display: grid;
+  gap: clamp(22px, 3.2vw, 44px);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  border-radius: clamp(20px, 2.6vw, 30px);
+  padding: clamp(24px, 3.2vw, 42px);
+  background: var(--page-bg);
+}
+
+/* Only the step that carries an artifact splits. The other two run full width
+   and read as a single measure, which is what stops the block looking like a
+   three-up feature grid with one cell empty. */
+@media (min-width: 720px) {
+  .landing-step--art {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    /* ⚠️ `center`, not the design's `start`. The drawing pairs ~250px of copy
+       with a ~500px phone; the real artifacts run to ~700px, so top-aligning
+       left a third of a section empty under the copy. Centring costs nothing
+       and is invisible where the two columns are close in height. */
+    align-items: center;
+  }
+}
+
+.landing-step-copy {
+  display: grid;
+  gap: 13px;
+  justify-items: start;
+  min-width: 0;
+  align-content: start;
+}
+
+/* ⚖️ THE STEP PILL — the v4 design file's, and DESIGN.md §13 #8 lists "Step N
+   eyebrows" as a confirmed anti-pattern (7/7 collapse). Reversed on the
+   owner's 2026-08-08 ruling. Tracked uppercase under the 16px prose floor,
+   the same carve-out `.landing-offer-when` and `.anatomy-label` take. */
+.landing-step-pill {
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.landing-steps h3 {
+  margin: 0;
+  max-width: 18ch;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: clamp(1.4rem, 2.4vw, 1.85rem);
+  font-weight: 800;
+  line-height: 1.14;
+  letter-spacing: -0.028em;
+  text-wrap: balance;
+}
+
+.landing-step-copy p {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--text-body);
+  font-size: 17.5px;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+/* The line the block is built to earn, so it carries weight and full text
+   colour rather than sitting at body grey. (0,2,0) so it outranks the step
+   body rule above, which is (0,1,1) — specificity, not source order. */
+.landing-step-copy .landing-step-punch {
+  max-width: 44ch;
+  color: var(--text-strong);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.landing-step-art {
   display: flex;
   justify-content: center;
   min-width: 0;
 }
 
-.landing-scope-art img {
+/* ⚠️ Capped, the same reachability reason as the showpiece's copy of this
+   capture: at full column width a 390x700 shot is ~600px tall on a phone,
+   inside the page's longest section. Re-measure before raising it. */
+.landing-step-art--shot img {
   display: block;
   width: 100%;
-  max-width: 340px;
+  max-width: clamp(210px, 24vw, 272px);
   height: auto;
   border: 1px solid var(--border-soft);
-  border-radius: 20px;
+  border-radius: 22px;
 }
 
-/* §5's two columns — the design file's, sticky left. Same auto-fit rule as
-   §3 and §4 so the three blocks break to one column at the same place. */
-.landing-pause-grid {
-  display: grid;
-  gap: clamp(36px, 5vw, 64px);
-  align-items: start;
-}
-
-/* Explicit placement rather than auto-fit, because the DOM order is
-   head → card → link (a reachability requirement on phones, see page.tsx) but
-   the design's desktop layout is head-above-link in the left column with the
-   card spanning both rows on the right. Grid is what lets one DOM order serve
-   both without duplicating the link. */
-@media (min-width: 900px) {
-  .landing-pause-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    /* ⚠️ `auto 1fr`, NOT the implicit `auto auto`. The card spans both rows,
-       and against two auto rows the browser splits its ~740px evenly between
-       them — which pushed the link a third of the way down the section and
-       left a column of dead space under the heading. Pinning row 1 to its
-       content and letting row 2 absorb the card's overhang puts the link
-       directly under the punch line, where the design draws it. */
-    grid-template-rows: auto 1fr;
-    column-gap: clamp(36px, 5vw, 64px);
-    row-gap: 24px;
-  }
-
-  .landing-pause-head {
-    grid-column: 1;
-    grid-row: 1;
-    position: sticky;
-    top: 32px;
-  }
-
-  .landing-pause-art {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-  }
-
-  .landing-pause-dare {
-    grid-column: 1;
-    grid-row: 2;
-    align-self: start;
-  }
-}
-
-.landing-pause-head {
-  align-content: start;
-  margin-bottom: 0;
-  gap: 20px;
-  justify-items: start;
-}
-
-/* The line the block is built to earn, so it carries weight and full text
-   colour rather than sitting at lede grey. */
-.landing-pause-punch {
-  margin: 0;
-  max-width: 48ch;
-  font-size: 19px;
-  line-height: 1.55;
-  font-weight: 600;
-  color: var(--text-strong);
-  text-wrap: pretty;
-}
-
-.landing-pause-art {
-  min-width: 0;
+/* The one step with no artifact — its copy hands off to the three cards in the
+   next section. Centred, so the absent right column reads as a close rather
+   than as a two-column block that failed to fill. */
+.landing-step--close .landing-step-copy {
+  justify-items: center;
+  max-width: 54ch;
+  margin-inline: auto;
+  text-align: center;
 }
 
 /* ── The four pains ──────────────────────────────────────────
-   Typography, not cards. These are four sentences about the reader's last six
-   months; boxing them would make them look like features.
+   ⚖️ CARDS NOW, the v4 design file's, adopted 2026-08-08 on the owner's
+   ruling. This reverses this block's own long-standing rule ("typography, not
+   cards — boxing them would make them look like features") and two entries in
+   DESIGN.md §13 #8, "identical card grids" and "numbered section markers as
+   scaffolding".
 
-   Numbered by counter. The design draws "01".."04" as literal content; a real
-   <ol> with a counter gets identical pixels, keeps the sequence in the
-   accessibility tree, and renumbers itself if an item is inserted. */
+   What contains the risk the old rule named: these are `--page-bg` on a white
+   SHEET, so they are the one card family on the page that is not white and
+   cannot be confused with the result card. And the numeral is not a marker
+   beside the text — it is oversized `--accent-tint` behind it, so it reads as
+   texture, not as a step the reader is being asked to follow in order.
+
+   Still a real <ol> with a CSS counter, not typed "01" content: the sequence
+   stays in the accessibility tree and renumbers itself if a fifth is added. */
 .landing-pains {
   counter-reset: pain;
   display: grid;
+  gap: clamp(14px, 1.9vw, 24px);
+  /* ⚠️ 400px IS THE DESIGN FILE'S TRACK FLOOR AND IT IS LOAD-BEARING. At 310px
+     these went 3-up at desk width and left a lone fourth card under three —
+     and the ghost numeral crowded a heading that now had 18ch to break in. At
+     400px the block is the 2x2 the design draws. */
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
   min-width: 0;
 }
 
-/* ⚠️ The gutter is 52px in the design, which is a 1280px drawing. At 375px
-   that plus the gap takes 66px of a 335px content column — the copy then wraps
-   about a third more, and the block measured 3,319px tall, which is what blew
-   the §11.1 desert budget. 30px narrow / 52px wide keeps the numeral column
-   reading as a column at both ends. Re-measure if you touch it. */
 .landing-pains li {
   counter-increment: pain;
+  position: relative;
+  overflow: hidden;
   display: grid;
-  grid-template-columns: 30px 1fr;
   gap: 12px;
-  align-items: start;
-  padding: 26px 0;
-  border-top: 1px solid var(--border-strong);
+  align-content: start;
+  border-radius: clamp(20px, 2.4vw, 26px);
+  padding: clamp(26px, 3.2vw, 40px);
+  background: var(--page-bg);
 }
 
-/* The first rule would double the section's own hairline. */
-.landing-pains li:first-child {
-  padding-top: 0;
-  border-top: 0;
-}
-
-@media (min-width: 640px) {
-  .landing-pains li {
-    grid-template-columns: 52px 1fr;
-    gap: clamp(14px, 1.6vw, 24px);
-  }
-}
-
+/* Decorative only — the <ol> carries the sequence, and this never becomes the
+   sole channel for it. `--accent-tint` on `--page-bg` is deliberately barely
+   there: at any real contrast it competes with the heading it sits behind. */
 .landing-pains li::before {
   content: "0" counter(pain);
+  position: absolute;
+  top: clamp(8px, 1.2vw, 16px);
+  right: clamp(16px, 2.2vw, 28px);
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  line-height: 1.3;
-  color: var(--accent);
-  padding-top: 5px;
+  font-size: clamp(3.4rem, 5.6vw, 5.2rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  color: var(--accent-tint);
+  pointer-events: none;
 }
 
-/* ⛔ BOTH must stay in column 2. The `li` has three grid items, not two — the
-   counter's ::before is the first — so without this the heading takes column 2
-   and the paragraph wraps back into the 30px numeral column on the next row.
-   It still "works" visually enough to miss at a glance, and it measured the
-   block at 3,856px instead of ~1,700px. */
+/* ⛔ BOTH must stay positioned. The numeral is absolutely positioned, so
+   without a stacking context of their own the heading and the paragraph paint
+   UNDER it and the first word of each card sits behind a 5rem glyph. */
 .landing-pains h3,
 .landing-pains p {
-  grid-column: 2;
+  position: relative;
 }
 
 .landing-pains h3 {
-  margin: 0 0 9px;
+  margin: 0;
+  max-width: 18ch;
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: clamp(19px, 1.9vw, 21px);
-  font-weight: 700;
-  line-height: 1.3;
-  letter-spacing: -0.012em;
+  font-size: clamp(1.3rem, 2.1vw, 1.65rem);
+  font-weight: 800;
+  line-height: 1.16;
+  letter-spacing: -0.028em;
   color: var(--text-strong);
+  text-wrap: balance;
+}
+
+/* The design's 44x3 accent rule between the heading and the body. A pseudo
+   element rather than a <div>: it is punctuation, and punctuation does not
+   belong in the accessibility tree. */
+.landing-pains h3::after {
+  content: "";
+  display: block;
+  width: 44px;
+  height: 3px;
+  margin-top: 14px;
+  border-radius: 999px;
+  background: var(--accent);
 }
 
 .landing-pains p {
   margin: 0;
-  max-width: 54ch;
+  max-width: 46ch;
   color: var(--text-body);
   font-size: 17.5px;
   line-height: 1.6;
@@ -2416,18 +2673,19 @@ button.inline-link {
    the result card is it — this is the one addition, and it is deliberate: the
    sources paragraph is the page's evidence, and the design gives it a surface
    so it reads as a citation block rather than more prose. It sits in a
-   PAGE-PLANE section, not a white sheet, so white here is unambiguously card
-   material and the alternation rule still holds. ⛔ It does not touch the
-   result-card recipe — see `landing-design-guards` GUARD 1. */
+   WHITE SHEET now (the v4 order), so it takes `--page-bg` rather than
+   `--surface`: a white card on a white sheet is the card/section ambiguity the
+   strict alternation exists to prevent. On a sheet, a card goes DOWN a plane.
+   ⛔ It does not touch the result-card recipe — see `landing-design-guards`
+   GUARD 1. */
 .landing-sources {
   display: grid;
   gap: 14px;
   align-content: start;
   margin: 0;
-  padding: clamp(24px, 2.6vw, 32px);
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-radius: 18px;
+  padding: clamp(24px, 2.8vw, 34px);
+  background: var(--page-bg);
+  border-radius: clamp(18px, 2.2vw, 22px);
   color: var(--text-body);
   font-size: 17px;
   line-height: 1.6;
@@ -2668,10 +2926,16 @@ button.inline-link {
   align-items: start;
 }
 
+/* ⚠️ `--surface`, not `--surface-muted`. These sat on a white SHEET until the
+   v4 order moved the block to the page plane, and a muted card is a card that
+   has stepped back from the sheet behind it. On `--page-bg` that same step
+   lands within a hair of the ground and the three cards stop reading as
+   objects. White is card material on the page plane — that is the whole rule.
+   Same value the design file draws. */
 .landing-verdict-card {
   display: grid;
   align-content: start;
-  background: var(--surface-muted);
+  background: var(--surface);
   border: 1px solid var(--border-soft);
   /* The 4px rule is the card's whole verdict signal at a glance — it is what
      lets the reader see three different answers before reading a word. */
@@ -2857,20 +3121,20 @@ button.inline-link {
   border-radius: 6px;
 }
 
-/* ── The v2 sections (2026-08-06) ─────────────────────────────
-   Four blocks the design file adds. All four are RULE-TOPPED, never carded:
-   §11 keeps this page on one plane, so a run of facts gets a hairline and
-   air, not a box with a shadow. The `.landing-price-*` family that stood
-   where the offer block now stands was the page's second card family and
-   carried the system's one box-shadow — the note left behind when it was
-   deleted said a replacement should earn that shadow again rather than
-   inherit it. None of these four earn it, so none of them take it.
+/* ── The glance strip, the dark band, the limits and the offer ─
+   Added 2026-08-06 (v2 design file), re-planed and partly re-carded 2026-08-08
+   (v4). ⚠️ The note that stood here said all four were RULE-TOPPED and never
+   carded, on a one-plane rule that no longer exists. Two of them are cards
+   now — see `.landing-offer li` and `.landing-limits-card` — and each
+   carries its own reason. What DID survive the change: none of them takes the
+   system's one `box-shadow`. The `.landing-price-*` family that stood where
+   the offer block now stands carried it, and the note left when those tiles
+   were deleted said a replacement should EARN that shadow rather than inherit
+   it (DESIGN.md §5). Border and radius only.
 
-   Type here is DESIGN.md §11's scale, not the design file's: the owner ruled
-   §11 wins on type and the design wins on layout. That means 18px body
-   throughout, the 22px/700 card-title step for the one display line in each
-   block, and no eyebrows — the design's 12–13px uppercase micro-labels would
-   have broken both the zero-eyebrow rule and the 16px fineprint floor. */
+   Type is DESIGN.md §11's table, which now carries the design file's own
+   13px tracked-uppercase micro-labels: the 16px floor is a PROSE floor, and a
+   two-word positional label is not prose. See the eyebrow bullet in §11. */
 
 /* Roughly half the section rhythm. Four short facts do not need a full
    block's air on either side, and this sits between the hero and the first
@@ -2888,10 +3152,19 @@ button.inline-link {
 .landing-glance-section {
   /* padding-BLOCK — see the note on `.landing-final`. */
   padding-block: clamp(28px, 3.5vw, 44px);
+  /* ⚠️ The marquee's `border-bottom` is already this block's top boundary, and
+     `.landing-section:first-of-type` does NOT reset it — that rule matches the
+     first <section> sibling, which is `.landing-hero`, and the hero carries no
+     `.landing-section` class. Without this the two 1px `--border-soft` rules
+     stack into a 2px line. It was invisible while this block was a white sheet
+     (the plane change hid it) and is not invisible now. */
+  border-top: 0;
 }
 
-/* §2. Four facts under the hero. The strip does not render below 640px (see
-   above), so the track floor only ever has to serve 640px and up.
+/* §2. Four facts under the hero. ⚠️ The note here used to say the strip does
+   not render below 640px. It has rendered at every width since 2026-08-06 —
+   see the rule above, which says so and says what paid for it. There is no
+   media query hiding this list and there has not been one for two eras.
 
    230px is the design file's own figure and it lands 4-up at the frame's
    1040px of content (4×230 + 3×32 = 1016). It relaxes to 3-up around 900px
@@ -2906,12 +3179,14 @@ button.inline-link {
   list-style: none;
 }
 
+/* ⛔ NO BORDER. These were rule-topped when the strip sat on a white sheet and
+   needed an edge to read as a set. The v4 order puts it on the page plane
+   directly under the marquee's own hairline, where a second rule per item made
+   four facts look like a table. The design draws four bare stacks. */
 .landing-glance li {
   display: grid;
-  gap: 8px;
+  gap: 7px;
   align-content: start;
-  padding: 18px 0 20px;
-  border-top: 1px solid var(--border-strong);
 }
 
 .landing-glance-fact {
@@ -2944,8 +3219,7 @@ button.inline-link {
   border-top: 0;
 }
 
-.landing-changes .landing-h2,
-.landing-changes .landing-changes-after {
+.landing-changes .landing-h2 {
   color: var(--accent-contrast);
 }
 
@@ -2954,55 +3228,110 @@ button.inline-link {
   color: #a9cfc9;
 }
 
-/* ⚠️ DIMMER THAN THE LEDE, and they are not interchangeable even though they
-   look it. The design file gives the lede #a9cfc9 and the "now" column
-   #8ab8b1 — the "now" column is the state the reader is LEAVING, so it sits a
-   step back from both the lede above it and the "after" column beside it. Set
-   them to the same value and the before/after contrast, which is the entire
-   argument of this band, flattens into two columns of equal weight.
+/* ⚖️ TWO COLUMNS, the v4 design file's — "Today" beside "With Revora" — in
+   place of the interleaved now/after rows. The pairing survives the change:
+   row N of the left column is row N of the right, and below 610px the two
+   columns stack in DOM order, so a phone reader still gets all four "todays"
+   then all four "with Revora"s rather than a scrambled sequence.
 
-   4.6:1 on --accent-strong: above the 4.5:1 floor at this size, and the floor
-   is why it does not go dimmer still. */
-.landing-changes .landing-changes-now {
+   ⚠️ The dimming moved, it was not dropped. The old rule made the "now" TEXT
+   dimmer than the lede, because the state the reader is leaving has to sit a
+   step back or the before/after contrast — the entire argument of this band —
+   flattens. The design file does the same job with the column HEADING instead
+   (#8ab8b1, 4.61:1) and lets the chips run at #a9cfc9, which measures 5.08:1
+   over the 6%-white chip rather than 4.9:1 over the bare band. Both clear AA;
+   setting them to one value is what would break the block. */
+.landing-changes-cols {
+  display: grid;
+  gap: 13px clamp(14px, 2vw, 24px);
+  align-items: start;
+}
+
+.landing-changes-col {
+  display: grid;
+  gap: 13px;
+  align-content: start;
+  min-width: 0;
+}
+
+/* ⚠️ ROW SUBGRID, and it is doing real work rather than being clever. The two
+   columns are independent lists, so by default row 3 of "Today" (one line)
+   sits nowhere near row 3 of "With Revora" (two lines) — and the pairing IS
+   the argument of this band. Handing both lists the section's row track makes
+   pair N align at every width without merging them into one flat grid, which
+   is what it would take otherwise and would cost both <ul>s their list
+   semantics.
+
+   Below 640px the columns stack and there is nothing to align, so the subgrid
+   never applies there. A browser without subgrid falls back to exactly the
+   ragged-but-correct layout above — no reflow, no overlap. */
+@media (min-width: 640px) {
+  .landing-changes-cols {
+    grid-template-columns: 1fr 1fr;
+    /* ⚠️ COUPLED TO THE PAIR COUNT. One row for the column heading, then one
+       per pair. A fifth <li> in either list overflows into an implicit row the
+       other column does not have, and the alignment this whole block exists for
+       fails silently — no error, no failing test. Add a pair, add a row. */
+    grid-template-rows: auto repeat(4, auto);
+  }
+
+  .landing-changes-col {
+    grid-row: 1 / -1;
+    grid-template-rows: subgrid;
+    gap: 0;
+  }
+
+  .landing-changes-list {
+    grid-row: 2 / -1;
+    grid-template-rows: subgrid;
+    gap: 0;
+  }
+}
+
+.landing-changes-heading {
+  margin: 0;
+  padding-left: 4px;
   color: #8ab8b1;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.landing-changes-heading--after {
+  color: #7dd3c8;
 }
 
 .landing-changes-list {
   display: grid;
+  gap: 13px;
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .landing-changes-list li {
-  display: grid;
-  gap: 10px 48px;
-  align-items: baseline;
-  padding: 24px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
-}
-
-/* 300px is the design file's own track floor: the pair collapses to stacked
-   rows on a phone, where "now" above "after" still reads as a before/after. */
-@media (min-width: 720px) {
-  .landing-changes-list li {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  }
+  border-radius: 16px;
+  padding: 17px 21px;
+  font-size: 17.5px;
+  line-height: 1.5;
 }
 
 .landing-changes-now {
-  font-size: 18px;
-  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.06);
+  color: #a9cfc9;
 }
 
+/* The one white ground inside the band. It is a chip, not a card — no border,
+   no card radius — so it cannot be read as the result card wearing a tint. */
 .landing-changes-after {
-  font-size: 19px;
-  line-height: 1.5;
-}
-
-.landing-changes-after {
-  font-weight: 600;
+  background: var(--surface);
+  color: var(--text-strong);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.012em;
 }
 
 /* The pill inverts on the accent ground: --accent-contrast on --accent-strong
@@ -3025,35 +3354,66 @@ button.inline-link {
   outline-offset: 3px;
 }
 
+/* The hint runs at --text-muted (#475569) on the page plane, which is 1.4:1 on
+   --accent-strong — unreadable, and the closing panel is the first place a
+   hint and a dark ground have ever met. 4.9:1. */
+.landing-cta-stack--on-dark .landing-cta-hint {
+  color: #a9cfc9;
+}
+
+/* The closing panel centres its whole stack; every other instance is
+   left-aligned in a copy column. */
+.landing-final .landing-cta-stack {
+  justify-items: center;
+}
+
 /* §8. The sources prose, promoted out of the three-answers block, beside the
    two commitments it used to sit above. */
+/* ⚖️ THREE EQUAL CARDS, the v4 design file's. This was a two-column split — a
+   wide sources card beside a stacked trio — which left the sources column
+   ending half a section above the last card and read as two blocks that had
+   missed each other. One row, one track floor; the design merges the data
+   promise and the boundary line into card three so the count is three. */
 .landing-limits {
   display: grid;
-  gap: 40px;
+  gap: clamp(14px, 1.9vw, 24px);
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
   align-items: start;
 }
 
-@media (min-width: 900px) {
-  .landing-limits {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-}
-
-.landing-limits-trio {
+/* ⚠️ `--page-bg`, NOT `--surface`, and this is the alternation rule biting.
+   The sources card was white BECAUSE this block used to sit on the page
+   plane, where white is unambiguously card material. The v4 order makes this
+   section a white SHEET, and a white card on a white sheet is exactly the
+   card/section ambiguity DESIGN.md §11's strict alternation exists to
+   prevent — it renders as a section that failed to reach the gutter. Tinted
+   and borderless, it is the same family as the pain cards and the step
+   blocks: on a sheet, cards go DOWN a plane, never sideways. */
+.landing-limits-card {
   display: grid;
-  gap: 26px;
+  gap: 10px;
   align-content: start;
+  border-radius: clamp(18px, 2.2vw, 22px);
+  padding: clamp(24px, 2.8vw, 34px);
+  background: var(--page-bg);
 }
 
-.landing-limits-trio h3 {
-  margin: 0 0 8px;
+.landing-limits-card h3 {
+  margin: 0;
   font-size: 19.5px;
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: -0.015em;
 }
 
-.landing-limits-trio p {
+/* Card three carries two headings — the data promise and the boundary line,
+   merged by the design. The second needs a break from the paragraph above it
+   that the first, at the top of the card, does not. */
+.landing-limits-card h3 + p + h3 {
+  margin-top: 6px;
+}
+
+.landing-limits-card p {
   margin: 0;
   max-width: 52ch;
   font-size: 17px;
@@ -3067,19 +3427,34 @@ button.inline-link {
    hear that it is a sequence of three. */
 .landing-offer {
   display: grid;
-  gap: 8px clamp(22px, 3vw, 40px);
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: clamp(14px, 1.9vw, 24px);
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/* ⚖️ CARDED, the v4 design file's, in place of the rule-topped columns.
+   ⛔ Border and radius only — NO shadow. The note left behind when the
+   `.landing-price-*` tiles were deleted from this exact spot said a
+   replacement block should EARN the system's one box-shadow rather than
+   inherit it (DESIGN.md §5). These do not: three stages of an offer ladder do
+   not need to lift off the page, they need to be told apart from the page. */
 .landing-offer li {
   display: grid;
   gap: 8px;
   align-content: start;
-  padding: 22px 0 26px;
-  border-top: 1px solid var(--border-strong);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  padding: clamp(22px, 2.6vw, 30px);
+  background: var(--surface);
+}
+
+/* Stage three is the one the reader is deciding about, so it is the one that
+   is tinted. `--accent-tint` with a stronger border keeps it a card in the
+   same family rather than a second treatment. */
+.landing-offer-final {
+  background: var(--accent-tint);
 }
 
 /* ⚖️ The design file's 13px uppercase stage label, adopted 2026-08-06. It had

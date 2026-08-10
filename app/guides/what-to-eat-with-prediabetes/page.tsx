@@ -6,7 +6,8 @@ import { GuideCta } from "../cta";
 export const metadata: Metadata = {
   title: "What to Eat with Prediabetes — and What to Limit | Revora",
   description:
-    "What you can eat with prediabetes: the foods you can enjoy freely, what is worth limiting, breakfast ideas, and how to handle eating out."
+    "What you can eat with prediabetes: the foods you can enjoy freely, what is worth limiting, breakfast ideas, and how to handle eating out.",
+  alternates: { canonical: "/guides/what-to-eat-with-prediabetes" }
 };
 
 // SEO target: "what to eat with prediabetes", "prediabetes what not to eat",

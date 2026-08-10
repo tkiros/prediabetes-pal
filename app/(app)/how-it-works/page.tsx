@@ -4,7 +4,8 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "How Revora Works — the Weekly Prediabetes Recap",
   description:
-    "What Revora's weekly recap measures for people in the prediabetes A1C range, the evidence behind the approach, and its honest limits."
+    "What Revora's weekly recap measures for people in the prediabetes A1C range, the evidence behind the approach, and its honest limits.",
+  alternates: { canonical: "/how-it-works" }
 };
 
 /**

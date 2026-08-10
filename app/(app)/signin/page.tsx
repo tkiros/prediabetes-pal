@@ -5,7 +5,10 @@ import { AUTH_EMAIL_AVAILABLE, signIn } from "../../../auth";
 import { magicLinkSendFailed } from "../../../lib/revora/magic-link-outcome";
 import { ReviewerSigninForm } from "../../../components/reviewer-signin-form";
 
-export const metadata = { title: "Sign in — Revora" };
+export const metadata = {
+  title: "Sign in — Revora",
+  alternates: { canonical: "/signin" }
+};
 
 // Preview-only: unset in production (docs/ops/env-reference.md), so the
 // reviewer-access form never renders on prod. NEXT_PUBLIC_ vars are inlined

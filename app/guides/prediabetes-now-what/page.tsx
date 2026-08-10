@@ -6,7 +6,8 @@ import { GuideCta } from "../cta";
 export const metadata: Metadata = {
   title: "Prediabetes: Now What? Calm First Steps | Revora",
   description:
-    "Your A1C came back between 5.7% and 6.4%. What prediabetes means, why it is not an emergency, and the calm, concrete first steps worth taking."
+    "Your A1C came back between 5.7% and 6.4%. What prediabetes means, why it is not an emergency, and the calm, concrete first steps worth taking.",
+  alternates: { canonical: "/guides/prediabetes-now-what" }
 };
 
 // SEO target: "i am prediabetic now what", "i am prediabetic what can i do",

@@ -7,7 +7,8 @@ import { SUPPORT_EMAIL } from "../../../lib/revora/contact";
 
 export const metadata: Metadata = {
   title: "Terms · Revora",
-  description: "The agreement between you and Revora, in plain language."
+  description: "The agreement between you and Revora, in plain language.",
+  alternates: { canonical: "/terms" }
 };
 
 export default function TermsPage() {

@@ -173,8 +173,17 @@ and used it. `impeccable` bans them; this file does not. The rule above is about
 
 - **Press feedback is on pointer-down (`:active`), never release** — the press is the moment the user watches most
   closely. `translateY(1px) scale(0.98)` at `--dur-press`. **Name the properties; never `transition: all`.**
-- **Two sanctioned keyframes:** `revora-rise` (6px fade-up, once, result-card entrance) and `revora-skeleton` (shimmer,
-  loading placeholders only). No other looping animation anywhere.
+- **Three sanctioned keyframes:** `revora-rise` (6px fade-up, once, result-card entrance), `revora-skeleton` (shimmer,
+  loading placeholders only) and — ⚖️ **2026-08-08, v4 design file** — `landing-marquee` (the landing's trust band,
+  `transform` only, 34s linear, infinite). **No other looping animation anywhere**, and the third one carries conditions
+  the first two do not: it is `transform`-only, it **pauses on `:hover` and `:focus-within`**, and the global
+  reduced-motion block zeroes it. ⛔ **`prefers-reduced-motion` is the load-bearing one and it is the ONLY one on a
+  phone** — `:hover` never fires on touch and nothing inside the band is focusable, so pointer pause is a desktop
+  affordance, not the accommodation. Moving text that runs past five seconds with no way to stop it is a WCAG 2.2.2
+  concern, and **axe-core does not detect a CSS marquee** — `landing-a11y.spec.ts` will pass over a page that has one.
+  ⚠️ **If this band ever grows a control or a link, it needs a real pause button**, because at that point a touch user
+  has content they must interact with inside a moving target. The track renders its list twice and translates `-50%`, so
+  the reduced-motion jump-to-end lands on an identical copy and loses nothing.
 - **A reveal enhances an already-visible default.** Ship content at `opacity: 1` and let an `IntersectionObserver`
   *replay* it; transitions pause on hidden tabs and never fire headless, so a visibility-gated reveal ships the section
   blank, including to a crawler.
@@ -272,6 +281,27 @@ face.
 >
 > Everything below marked ⚖️ **2026-08-06 (design file)** is a rule this ruling changed. Measured after the whole
 > change: **12,771px · 11 exits · worst desert 1,960px · 0 over budget.**
+>
+> ### ⚖️ 2026-08-08 — `Revora Landing v4 Product.dc.html`, and it overturns four §13 entries
+>
+> The owner imported a fourth design file and ruled it governs, with the §13 conflicts named and taken deliberately
+> rather than discovered afterwards. **Four confirmed anti-patterns from the tournament are now shipped on purpose:**
+> a **looping marquee** (§6 said there were two sanctioned keyframes; there are three), **`Step N` eyebrows** (§13 #8,
+> 7/7 collapse), a **glassmorphic sticky nav** (§13 #8), and the four pains as an **identical card grid with numbered
+> markers** (§13 #8, twice). Each is annotated at its rule below and at its CSS rule with what contains it. **What the
+> ruling did NOT extend to:** the footer, which keeps all twelve routes against the design's six, because
+> `.landing-nav-links` is `display: none` below 640px and the footer is the phone's only labelled navigation.
+>
+> **The section order changed**, and the plane sequence with it — hero · showpiece · marquee · glance · problem · scope ·
+> what-changes · how-it-works · three answers · limits · offer · FAQ · final. Two blocks are new (the **showpiece**, a
+> dark panel holding the real `/check` capture beside the real `ExampleResultCard`; and **how it works**, `#how-it-works`,
+> three named steps — the block the page had been missing since the old one was deleted, while the nav link pointed at a
+> methodology page with no steps on it). Two dark grounds now, not one: the showpiece opens and `.landing-final`'s panel
+> closes, with `.landing-changes` between them.
+>
+> ⛔ **Exits are NOT the design file's.** v4 draws five; the page ships eleven, every one of them a measured position.
+> This is the third pass to learn it and it is now a rule: **the design file governs layout and copy, §11.1 governs
+> exits.** Measured after the whole change: **14,471px · 11 exits · worst desert 1,921px · 0 over budget** (the page is 1,700px longer than the 2026-08-06 measurement and its worst desert is 39px *shorter*, because the two new blocks arrived with two new exits).
 
 - ⚖️ **Alternating planes — 2026-08-06 (design file).** ⛔ **This reverses the previous rule, which was "white is card
   material, never a section background."** Sections now alternate strictly between `--page-bg` and a full-bleed white
@@ -282,6 +312,18 @@ face.
   as "next section" rather than as an enormous card. ⚠️ **Two adjacent sheets, or a sheet that breaks the alternation,
   brings the original bug straight back.** Sheets break out of the frame with `margin-inline: calc(50% - 50vw)` plus
   matching `padding-inline`, so their content column stays aligned with every other section's.
+  ⚖️ **The sequence was re-cut 2026-08-08 (v4 design file) and the mechanism is unchanged.** Sheets are now the
+  **marquee band, the problem block, how-it-works, the limits block and the FAQ**; the hero, showpiece, glance strip,
+  scope block, three answers, offer and final CTA are the page plane. `.landing-changes` is still the one full-bleed
+  `--accent-strong` band. Two blocks carry a dark or tinted **panel** inside a page-plane section rather than changing
+  the plane itself — `.landing-showpiece-panel` and `.landing-final-panel` (`--accent-strong`) and `.landing-scope-panel`
+  (`--accent-tint`) — which is what lets them exist without breaking the parity.
+  ⛔ **ON A SHEET, A CARD GOES DOWN A PLANE — `--page-bg`, never `--surface`.** The pain cards, the step blocks, the
+  sources card and the limits trio are all tinted for this reason, and the last two only became so on 2026-08-08 when the
+  v4 order moved their sections onto sheets. The inverse holds too: `.landing-verdict-card` went `--surface-muted` →
+  `--surface` in the same pass, because a *muted* card on `--page-bg` lands within a hair of the ground and stops reading
+  as an object. **A card is always one clear step away from the plane it sits on, in whichever direction that plane
+  leaves room.**
   ⛔ **A CARD MAY NOT SIT ON A SHEET WEARING THE SHEET'S OWN COLOUR.** The FAQ shipped for one day as bordered white
   `<details>` boxes on a white sheet, which is the exact card/section ambiguity the alternation exists to prevent —
   self-inflicted by making the FAQ a sheet without re-reading its rows. The design file's answer, now implemented: the
@@ -363,15 +405,20 @@ face.
   | H2 — **final CTA only** | `clamp(2.2rem, 5vw, 3.4rem)` / `1.02` / `-0.034em`, `max-width: 16ch` |
   | Scope display line | `clamp(1.55rem, 2.9vw, 2.05rem)` / `1.18` / `-0.028em` / 800 |
   | Lede, hero sub | `20px / 1.55` |
-  | Pause punch, offer note, dark-band "after" | `19px` |
+  | Step punch (`.landing-step-punch`), offer note | `19px / 600` |
   | FAQ summary, limits `h3`, sources `h3` | `19.5px / 700` |
   | Glance fact, offer "what" | `22–24px / 800` |
-  | Pain `h3` | `clamp(19px, 1.9vw, 21px) / 700` |
+  | Step `h3` | `clamp(1.4rem, 2.4vw, 1.85rem)` / `1.14` / `-0.028em` / **800** |
+  | Pain `h3` | `clamp(1.3rem, 2.1vw, 1.65rem)` / `1.16` / `-0.028em` / **800** |
+  | Marquee item | `17px / 700` |
+  | Body, dark-band chips (`now` and `after`) | `17.5px` |
   | Body, dark-band "now" | `18px` |
   | Trust strip, card caption, FAQ answer, pain body | `17.5px` |
   | Sources, limits body, offer body, demo row value/entry | `17px` |
   | Glance label, verdict-card why/try | `16.5px` |
-  | Stage label, demo eyebrow | `13px / 700 / .09em` uppercase — **under the floor**, see the eyebrow bullet |
+  | Hero eyebrow | `13.5px / 700 / .05em` uppercase — **under the floor**, see the eyebrow bullet |
+  | Stage label, demo eyebrow, step pill | `13px / 700 / .09em` (step pill `.06em`) uppercase — **under the floor**, same |
+  | Dark-band column heading | `12.5px / 700 / .12em` uppercase — same carve-out |
   | Demo row label | `12px / 700 / .09em` uppercase — same carve-out, matching `.anatomy-label` |
 
   ⛔ **H2 IS NOT ONE STEP, and flattening it back is a regression, not a tidy-up.** The two exceptions above are the
@@ -460,6 +507,20 @@ misses the budget, the measured arrangement is the fallback and the adjacency is
    mechanism (7/7) · a fixed conversion element held across a whole page · deleting the category answer to dodge a trope
    · replacing recognition with definitions · side-stripe borders · gradient text · decorative glassmorphism · the
    hero-metric template · identical card grids · numbered section markers as scaffolding.
+
+   ⚖️ **FOUR OF THESE WERE OVERTURNED ON 2026-08-08** (v4 design file, owner ruling, conflicts named before the code was
+   written). They are struck **on the landing only**, each with the condition that contains what the tournament was
+   actually scoring — a bare reinstatement elsewhere is still the anti-pattern:
+   - **`Step N` eyebrows** → `.landing-step-pill`. What collapsed 7/7 was a step eyebrow on *a how-it-works block selling
+     typing and talking as the mechanism* — the same row bans that separately, and these three steps name the product's
+     conduct instead, with step two ("it asks before it guesses") carrying the argument.
+   - **Decorative glassmorphism** → `.landing-nav`. Not decorative: a capsule that floats over scrolling copy needs the
+     blur to stay legible without going opaque. It also takes the system's second `box-shadow` (§5), for separation.
+   - **Identical card grids** + **numbered section markers as scaffolding** → `.landing-pains`. The cards are `--page-bg`
+     on a white sheet, so they are the page's one non-white card family and cannot be read as the result card; the
+     numeral is oversized `--accent-tint` **behind** the heading, texture rather than a marker beside it, and the
+     sequence still lives in a real `<ol>` counter rather than in typed content.
+   - **A looping animation** (§6, not §13) → `.landing-marquee`. See §6 for the two stop mechanisms it must keep.
 
 **NOT banned, and you will be tempted:** three price tiles (4/7 keep, surviving because the middle tile carries the least
 portable sentence on the page — **if that sentence ever leaves the tile, the tiles become the generic thing and should

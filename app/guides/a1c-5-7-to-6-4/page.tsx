@@ -6,7 +6,8 @@ import { GuideCta } from "../cta";
 export const metadata: Metadata = {
   title: "A1C 5.7% to 6.4% — What the Prediabetes Range Means | Revora",
   description:
-    "What an A1C between 5.7% and 6.4% means: how the test works, how clinicians read the prediabetes range, and why one number is not the whole story."
+    "What an A1C between 5.7% and 6.4% means: how the test works, how clinicians read the prediabetes range, and why one number is not the whole story.",
+  alternates: { canonical: "/guides/a1c-5-7-to-6-4" }
 };
 
 // SEO target: "a1c 5.7", "a1c 6.4", "prediabetic range", "5.7 blood sugar".

@@ -20,6 +20,25 @@ export function SwRegister() {
     // reads as the whole page flickering. The SW exists for the offline
     // fallback and push, neither of which dev needs.
     if (process.env.NODE_ENV !== "production") {
+      // 2026-08-08: declining to register was NOT enough, and the gap cost four
+      // sessions. A service worker registered by an earlier PRODUCTION build on
+      // this origin stays active forever — and `localhost:3000` serves dev and
+      // `next start` from the SAME origin, so one `npm run build && npm run
+      // start` permanently installs a controller over everybody's dev server.
+      // It survives `rm -rf .next`, hard reload, and clearing the HTTP cache,
+      // because it is client-side registration state, not cache. Symptoms: the
+      // document reports "service worker" as its transfer, dev chunk requests
+      // die with NS_BINDING_ABORTED, and the page reload-loops exactly as
+      // described above. It is invisible in a private window and in a fresh
+      // profile (no registration there), which is what made it look like a CSS
+      // bug for three sessions.
+      //
+      // So actively tear it down. Idempotent, and the only code path that can
+      // reach a machine already in this state.
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => Promise.all(regs.map((r) => r.unregister())))
+        .catch(() => {});
       return;
     }
 

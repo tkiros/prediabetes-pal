@@ -6,7 +6,8 @@ import { GuideCta } from "../cta";
 export const metadata: Metadata = {
   title: "Prediabetes Meal Plan — a Simple 7-Day Example | Revora",
   description:
-    "A simple 7-day prediabetes meal plan example built on the balanced-plate pattern: protein, vegetables, fiber-rich carbs in modest portions, fewer refined carbs."
+    "A simple 7-day prediabetes meal plan example built on the balanced-plate pattern: protein, vegetables, fiber-rich carbs in modest portions, fewer refined carbs.",
+  alternates: { canonical: "/guides/prediabetes-meal-plan" }
 };
 
 // SEO target: "prediabetic meal plan", "7 day meal plan for prediabetes".

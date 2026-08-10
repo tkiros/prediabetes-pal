@@ -2,7 +2,10 @@ import Link from "next/link";
 
 import { storeWaitlistUrl } from "../../../lib/waitlist";
 
-export const metadata = { title: "Get Revora on your phone — Revora" };
+export const metadata = {
+  title: "Get Revora on your phone — Revora",
+  alternates: { canonical: "/get-the-app" }
+};
 
 export default function GetTheAppPage() {
   const androidWaitlist = storeWaitlistUrl("android");
