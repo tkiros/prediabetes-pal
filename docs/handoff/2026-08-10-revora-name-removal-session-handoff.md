@@ -17,6 +17,27 @@
 (`gpt-5.4-mini`), so merging early does not crash — it **silently downgrades the
 model**, which is harder to notice than a crash.
 
+### ⚠️ Expect your production redeploy to fail once — just retry it
+
+Vercel's builder intermittently cannot reach Google Fonts, and the build dies:
+
+```
+Error while requesting resource
+Turbopack build failed with 20 errors:
+Module not found: Can't resolve '@vercel/turbopack-next/internal/font/google/font'
+```
+
+**Hit 3 times on 2026-08-10.** It is not a code fault — the GitHub Actions
+`build` job passes the same commit every time, and a plain
+`vercel redeploy <url>` goes green in ~2m. Do not debug it, and do not let it
+convince you the env change broke something.
+
+The durable fix, if it keeps happening, is to self-host the two fonts via
+`next/font/local` instead of `next/font/google`, removing the build-time network
+dependency. Not done here: it changes font loading on a landing page that went
+through a full design tournament, so it wants its own change and its own visual
+check — not a drive-by inside a rename.
+
 ---
 
 ## 1. What shipped today
