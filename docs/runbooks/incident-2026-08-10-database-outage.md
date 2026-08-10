@@ -1,7 +1,47 @@
 # Incident + recovery — Railway expiry took production's database offline
 
 **Opened:** 2026-08-10 · **Severity:** production degraded, auth broken
-**Status:** unresolved — awaiting owner acceptance of Neon marketplace terms
+**Status:** ✅ **database resolved** — `db: "ok"`. Residual: cron heartbeats.
+
+## Resolution (2026-08-10)
+
+`DATABASE_URL` now points at Neon. `/api/health` reports `"db":"ok"`; the
+`database_unavailable` issue is gone and sign-in works again.
+
+What was done:
+
+| | |
+|---|---|
+| Provisioned | Neon `revora-db`, plan **`free_v3`** (Free), project `dry-shadow-56131409`, region `us-east-1` |
+| Connected | with `--prefix NEON_`, so the integration's own vars never collided with `DATABASE_URL` |
+| Migrated | all 19 migrations applied via the **owner** role on the direct (unpooled) endpoint → **22 tables** |
+| Runtime role | `revora_app` created, 9 grant/revoke statements applied per `database-governance.md` |
+| Governance | `npm run db:governance:check` — every boolean true, 19/19 migrations recorded |
+| Production | `DATABASE_URL` replaced with the **pooled `revora_app`** URL; `DATABASE_MIGRATION_URL` deliberately NOT set in Vercel |
+| Deployed | via `vercel redeploy` of the existing production deployment — **not** `vercel --prod`, which would have shipped the unmerged rename branch |
+
+⚠️ **A `revora_app` password was printed to a session transcript** (an unquoted
+`&` in the connection string caused a shell to echo it). It was **rotated
+immediately** and the leaked value never reached Vercel or any deployment. The
+credential in production is the post-rotation one.
+
+### Residual — cron heartbeats
+
+`/api/health` still returns **503**, now for a different reason: every cron
+reads `never`, because `cron_heartbeat` is a fresh empty table and Railway's
+runner is gone. `NUDGE_STALE_MS` and friends are **2 hours**, so this does not
+self-heal.
+
+Fix is committed on branch **`ops/hourly-crons-github-actions`**
+(`.github/workflows/hourly-crons.yml`). To activate:
+
+1. Add `CRON_SECRET` as a **repository secret**, matching Vercel production.
+2. Merge that branch to `main` — scheduled workflows only run from the default
+   branch, so it is inert until then.
+3. Trigger it once via **workflow_dispatch** rather than waiting an hour, then
+   re-check `/api/health`.
+
+Everything below is the original record of the incident.
 
 ---
 
