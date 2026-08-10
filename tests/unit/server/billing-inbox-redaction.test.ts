@@ -87,7 +87,7 @@ describe("minimizeBillingPayload", () => {
     } as unknown as Stripe.Event);
 
     expect(minimized).toEqual({
-      _revora_minimized: 1,
+      _pal_minimized: 1,
       id: "evt_min_1",
       type: "invoice.paid",
       created: 1_721_562_000,
@@ -165,7 +165,7 @@ describe("ingestStripeEvent → processed rows hold a redacted payload", () => {
     expect(row.status).toBe("failed");
     expect(row.lastError).toBe("Error");
     const serialized = JSON.stringify(row.payload);
-    expect(serialized).toContain('"_revora_minimized":1');
+    expect(serialized).toContain('"_pal_minimized":1');
     expect(serialized).toContain("sub_failed");
     expect(serialized).not.toContain("failed-buyer@example.com");
     expect(serialized).not.toContain("private account note");

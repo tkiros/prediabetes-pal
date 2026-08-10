@@ -59,7 +59,7 @@ async function signInVia(
 test("claim → intake → edit drafts → confirm → processing (extraction stubbed)", async ({
   page
 }) => {
-  const email = `pantry-e2e-${Date.now()}@revora.test`;
+  const email = `pantry-e2e-${Date.now()}@pal.test`;
   const { claimUrl } = seedOrder(email);
 
   await signInVia(page, email, claimUrl);
@@ -98,7 +98,7 @@ test("report is generated and emailed (live judge)", async ({ page }) => {
     !process.env.OPENAI_API_KEY,
     "needs OPENAI_API_KEY — judges 2 items live"
   );
-  const email = `pantry-live-${Date.now()}@revora.test`;
+  const email = `pantry-live-${Date.now()}@pal.test`;
   const { claimUrl } = seedOrder(email);
 
   await signInVia(page, email, claimUrl);

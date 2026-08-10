@@ -14,7 +14,7 @@
  */
 import fs from "node:fs";
 
-import { classifyInputBeforeModel, isCarbForward } from "../../lib/revora/input-precheck";
+import { classifyInputBeforeModel, isCarbForward } from "../../lib/pal/input-precheck";
 
 const [corpusPath, capturePath, outPath, ...panelPaths] = process.argv.slice(2);
 if (!corpusPath || !capturePath || !outPath || panelPaths.length === 0) {

@@ -17,7 +17,7 @@ import {
   type WeeklyMemoryInput
 } from "../../../../lib/journey/weekly-learning";
 import { dayKeyInTimezone } from "../../../../lib/coach/days";
-import { captureServerError } from "../../../../lib/revora/sentry-capture";
+import { captureServerError } from "../../../../lib/pal/sentry-capture";
 import { capabilitiesFor } from "../../../../lib/server/capabilities";
 import { encryptField, safeDecrypt } from "../../../../lib/server/crypto";
 import { getDb, schema, type Db } from "../../../../lib/server/db";

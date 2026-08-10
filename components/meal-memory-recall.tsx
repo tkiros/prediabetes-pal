@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { track } from "../lib/client/analytics";
-import { RISK_LABELS } from "../lib/revora/labels";
+import { RISK_LABELS } from "../lib/pal/labels";
 import { mealMemoryUiEnabled } from "../lib/meal-memory-flag";
 import {
   MEMORY_EASE_OPTIONS,
@@ -22,7 +22,7 @@ import {
  * meal text in the body, never a URL). If ≥1 match comes back it shows them in a
  * visually separate panel with source + date labels, a per-match dismiss, and a
  * one-tap "Check again" that pre-fills the stored meal into the standard input
- * path (`revora.recheck`, the same handoff the history page uses).
+ * path (`pal.recheck`, the same handoff the history page uses).
  *
  * Boundaries (global constraints §1/§6/§7):
  *  - render-after-result ONLY: this component is mounted inside the result branch,
@@ -35,7 +35,7 @@ import {
  *    server write.
  */
 
-const DISMISSED_KEY = "revora.memory.dismissed";
+const DISMISSED_KEY = "pal.memory.dismissed";
 
 const EASE_LABEL = new Map(MEMORY_EASE_OPTIONS.map((o) => [o.value, o.label]));
 const LABEL_LABEL = new Map(MEMORY_LABEL_OPTIONS.map((o) => [o.value, o.label]));
@@ -147,7 +147,7 @@ export function MealMemoryRecall({ food }: { food?: string }) {
       return;
     }
     try {
-      window.sessionStorage.setItem("revora.recheck", mealText);
+      window.sessionStorage.setItem("pal.recheck", mealText);
     } catch {
       // best-effort prefill only — /check still works without it
     }

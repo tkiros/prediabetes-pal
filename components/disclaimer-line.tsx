@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { BOUNDARY_DISCLAIMER } from "../lib/revora/boundary-copy";
+import { BOUNDARY_DISCLAIMER } from "../lib/pal/boundary-copy";
 
 // The one stable disclaimer across active result surfaces (claims-boundary.md
 // §"one result-footer disclaimer"). Single-sourced from the SAFETY-OWNED

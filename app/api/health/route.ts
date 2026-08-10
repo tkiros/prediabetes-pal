@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { getLaunchControls } from "../../../lib/revora/launch-controls";
-import { getRevoraEnv } from "../../../lib/revora/env";
-import { rateLimitConfigState } from "../../../lib/revora/rate-limit";
-import { captureServerError } from "../../../lib/revora/sentry-capture";
+import { getLaunchControls } from "../../../lib/pal/launch-controls";
+import { getPalEnv } from "../../../lib/pal/env";
+import { rateLimitConfigState } from "../../../lib/pal/rate-limit";
+import { captureServerError } from "../../../lib/pal/sentry-capture";
 import { getDb, schema, type Db } from "../../../lib/server/db";
 
 export const runtime = "nodejs";
@@ -65,7 +65,7 @@ export function createHealthHandler(deps: HealthDeps = {}) {
     let environment: "preview" | "production" | "development" | "test";
 
     try {
-      const env = getRevoraEnv();
+      const env = getPalEnv();
       environment = env.environment;
     } catch {
       // OPENAI_API_KEY missing — still report env/launch state from what we know

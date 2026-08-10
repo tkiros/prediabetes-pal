@@ -16,7 +16,7 @@ unavailable.
 | Signal                      | Value                                                                               | Response                                                                                 |
 | --------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | WAF rate limit (Vercel WAF) | 10 requests / 10 minutes / IP on `/api/check`                                       | Vercel blocks the request; client sees friendly 429                                      |
-| App daily cap               | 2,000 checks / 24h (aggregate across IPs, configurable by `REVORA_DAILY_CHECK_CAP`) | Middleware returns friendly 429 before model spend and emits `reasonCode:"daily_cap"`    |
+| App daily cap               | 2,000 checks / 24h (aggregate across IPs, configurable by `PAL_DAILY_CHECK_CAP`) | Middleware returns friendly 429 before model spend and emits `reasonCode:"daily_cap"`    |
 | Operator pause gate         | Any manual cost, abuse, legal, or safety concern                                    | Operator sets `public_checks_enabled = false` or `launch_mode = "paused"` in Edge Config |
 | Harmful-guidance incident   | Any SAFE classification for a high-risk food                                        | Operator sets `launch_mode = paused` and reviews model outputs                           |
 | Provider-failure spike      | Repeated provider errors (`check_failed` events)                                    | Operator sets `launch_mode = paused` until provider recovers                             |
@@ -196,7 +196,7 @@ still be set to `false` — toggle it back to `true` and re-run the probe.
 For local development and CI smoke tests, set:
 
 ```bash
-REVORA_LAUNCH_MODE_OVERRIDE=paused
+PAL_LAUNCH_MODE_OVERRIDE=paused
 ```
 
 This overrides launch mode to `paused` without touching live Edge Config.
@@ -218,12 +218,12 @@ Settings → Environment Variables for **Production + Preview** scopes only.
 | `EDGE_CONFIG`                 | prod+preview  | Kill-switch / launch-mode reads                       | Yes (for pause control)            |
 | `UPSTASH_REDIS_REST_URL`      | prod+preview  | Per-IP rate limit + daily counter store               | Yes (prod fails closed without it) |
 | `UPSTASH_REDIS_REST_TOKEN`    | prod+preview  | Auth for the Upstash REST client                      | Yes (prod fails closed without it) |
-| `REVORA_DAILY_CHECK_CAP`      | prod+preview  | Global daily cap (default `2000`)                     | No (defaults)                      |
-| `REVORA_MODEL`                | prod+preview  | Model id override (default `gpt-5.4-mini`)            | No                                 |
-| `REVORA_REASONING_EFFORT`     | prod+preview  | Reasoning-effort lever (blank = neutral)              | No                                 |
+| `PAL_DAILY_CHECK_CAP`      | prod+preview  | Global daily cap (default `2000`)                     | No (defaults)                      |
+| `PAL_MODEL`                | prod+preview  | Model id override (default `gpt-5.4-mini`)            | No                                 |
+| `PAL_REASONING_EFFORT`     | prod+preview  | Reasoning-effort lever (blank = neutral)              | No                                 |
 | `SENTRY_DSN`                  | prod+preview  | Server-side error capture (Responses-path exceptions) | No (SDK inert without it)          |
-| `REVORA_LAUNCH_MODE_OVERRIDE` | non-prod only | Force pause in dev/CI (ignored in prod)               | No                                 |
-| `REVORA_LIVE_EVAL`            | non-prod only | Route eval suite at the live model                    | No                                 |
+| `PAL_LAUNCH_MODE_OVERRIDE` | non-prod only | Force pause in dev/CI (ignored in prod)               | No                                 |
+| `PAL_LIVE_EVAL`            | non-prod only | Route eval suite at the live model                    | No                                 |
 
 **Verification (run before each release):**
 
@@ -269,7 +269,7 @@ instrumented). Set `SENTRY_DSN` (server-only, never `NEXT_PUBLIC_`) to enable; t
 SDK is inert without it.
 
 > **Why Sentry, not logs, owns the provider signal:** a model/provider failure is
-> swallowed at `lib/revora/service.ts` and returned to the user as calm `retry`
+> swallowed at `lib/pal/service.ts` and returned to the user as calm `retry`
 > copy, so it emits `check_completed` + `responseKind:"retry"` — **not**
 > `check_failed`. The only place a provider outage is visible is the explicit
 > `Sentry.captureException` at that catch site. Do not try to alert on provider
@@ -361,7 +361,7 @@ fail soft around the stateless engine, not take it down with it.
 
 **DB down (Railway Postgres unreachable).** Guests are still answered — the
 check engine itself is stateless and never reads the database
-(`lib/revora/service.ts`). What breaks: history, coach insights, and
+(`lib/pal/service.ts`). What breaks: history, coach insights, and
 progress all fail soft with calm, on-brand copy rather than a raw error
 (they depend on `lib/server/db`). `/api/health` reflects this precisely with
 `503`, `ok:false`, `status:"degraded"`, and `db:"error"`; `/api/health/live`
@@ -418,15 +418,15 @@ Release gates on the release commit (attach output to the release PR):
 ```bash
 npm run typecheck         # clean
 npm test                  # all unit + integration green
-npm run eval:revora       # mock routing gate green
-npm run eval:revora:live  # graded quality gate — SETUP_BLOCKED until OPENAI_API_KEY
+npm run eval:pal       # mock routing gate green
+npm run eval:pal:live  # graded quality gate — SETUP_BLOCKED until OPENAI_API_KEY
                           # + domain gold labels (acceptableRisks/labelSource) are set
 npx playwright test       # smoke suite green (Mobile Chrome + Mobile Safari)
 ```
 
-`eval:revora:live` is **blocked** until (a) `OPENAI_API_KEY` is exported and
+`eval:pal:live` is **blocked** until (a) `OPENAI_API_KEY` is exported and
 (b) the domain reviewer authors per-case gold labels in
-`tests/fixtures/revora-eval-cases.json`. Record `SETUP_BLOCKED` here until both
+`tests/fixtures/pal-eval-cases.json`. Record `SETUP_BLOCKED` here until both
 land; do not publish the link on a faked pass.
 
 Manual QA matrix — run against the **Preview** URL (§4) on real devices before
@@ -465,7 +465,7 @@ Expected: `{"ok":true,"launch":"ready","launchMode":"normal","upstash":"configur
 
 **Merge/deploy gate:** `upstash:"unconfigured"` here means the rate-limit + cap
 store is unset, so the middleware is failing **closed (503)** on every
-`/api/check`. Set `UPSTASH_REDIS_REST_URL` / `_TOKEN` + `REVORA_DAILY_CHECK_CAP`
+`/api/check`. Set `UPSTASH_REDIS_REST_URL` / `_TOKEN` + `PAL_DAILY_CHECK_CAP`
 (§7) and re-probe before continuing — do not proceed past this step until it
 reports `configured`.
 

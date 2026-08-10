@@ -1,10 +1,10 @@
 // RE-07: the cache name is stamped from the registration URL's ?v= (the build
-// id, see components/sw-register.tsx). A hardcoded "revora-v1" meant a
+// id, see components/sw-register.tsx). A hardcoded "pal-v1" meant a
 // corrected offline.html could never propagate: the SW bytes never changed, so
 // no reinstall ever re-cached it. A new build id → new registration URL → new
 // SW install → fresh cache; `activate` below deletes the old ones.
 const VERSION = new URL(self.location.href).searchParams.get("v") || "v1";
-const CACHE = `revora-${VERSION}`;
+const CACHE = `pal-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -105,7 +105,7 @@ self.addEventListener("push", (event) => {
       body: payload.body,
       icon: "/icon-192.png",
       badge: "/icon-192.png",
-      tag: "revora-daily-nudge", // same tag: never stacks duplicates
+      tag: "pal-daily-nudge", // same tag: never stacks duplicates
       // Bounded routing metadata only (no health text) — read on click so the
       // app can emit nudge_opened {class, stage} (§10.1).
       data: { class: payload.class, stage: payload.stage }

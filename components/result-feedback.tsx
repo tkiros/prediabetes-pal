@@ -10,7 +10,7 @@ import {
   submitResultFeedback,
   type FeedbackReason
 } from "../lib/client/feedback";
-import type { RevoraRisk } from "../lib/client/ui-state";
+import type { PalRisk } from "../lib/client/ui-state";
 
 /**
  * "Was this practical?" (W-30 / §P1.6).
@@ -35,7 +35,7 @@ export function ResultFeedback({
   risk,
   checkId
 }: {
-  risk: RevoraRisk;
+  risk: PalRisk;
   checkId?: string;
 }) {
   const [step, setStep] = useState<"ask" | "reason" | "done">("ask");

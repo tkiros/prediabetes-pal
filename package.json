@@ -1,5 +1,5 @@
 {
-  "name": "revora",
+  "name": "prediabetes-pal",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,11 +12,11 @@
     "lint": "eslint .",
     "contract": "node scripts/validate-safety-contract.mjs",
     "config:production-check": "tsx scripts/check-production-config.ts",
-    "db:migrate:production": "REVORA_DB_ENV=production drizzle-kit migrate",
+    "db:migrate:production": "PAL_DB_ENV=production drizzle-kit migrate",
     "db:governance:check": "node scripts/check-db-governance.mjs",
-    "test:revora": "vitest run tests/unit/revora",
-    "eval:revora": "vitest run tests/evals/revora-safety-eval.test.ts",
-    "eval:revora:live": "node scripts/run-graded-evals.mjs",
+    "test:pal": "vitest run tests/unit/pal",
+    "eval:pal": "vitest run tests/evals/pal-safety-eval.test.ts",
+    "eval:pal:live": "node scripts/run-graded-evals.mjs",
     "eval:pantry-extract": "vitest run tests/evals/pantry-extract-eval.test.ts",
     "eval:meal-photo": "EVAL_MEAL_PHOTO_LIVE=1 vitest run tests/evals/meal-photo-eval.test.ts",
     "eval:model-bakeoff": "tsx scripts/model-bakeoff.ts --dry-run",

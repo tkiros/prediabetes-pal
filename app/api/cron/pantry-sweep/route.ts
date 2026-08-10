@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { captureServerError } from "../../../../lib/revora/sentry-capture";
+import { captureServerError } from "../../../../lib/pal/sentry-capture";
 import { getDb, type Db } from "../../../../lib/server/db";
 import { defaultProcessDeps } from "../../../../lib/server/pantry/process";
 import { runPantrySweep } from "../../../../lib/server/pantry/sweep";

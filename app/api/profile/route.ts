@@ -2,13 +2,13 @@ import { and, eq, isNull, lte, or } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { routeA1C } from "../../../lib/revora/a1c";
+import { routeA1C } from "../../../lib/pal/a1c";
 // Approved boundary copy — single-sourced (SAFETY-OWNED). Out-of-range A1C gets
 // guidance, never a verdict, at profile creation exactly as at check time.
 import {
   BELOW_RANGE_MESSAGE,
   HIGH_RANGE_MESSAGE
-} from "../../../lib/revora/boundary-copy";
+} from "../../../lib/pal/boundary-copy";
 import { encryptField } from "../../../lib/server/crypto";
 import { getDb, schema, type Db } from "../../../lib/server/db";
 import {

@@ -1,13 +1,13 @@
-import type { ClinicalRoute } from "../revora/clinical-risk";
+import type { ClinicalRoute } from "../pal/clinical-risk";
 
-export type RevoraRisk = "SAFE" | "MODERATE" | "HIGH";
+export type PalRisk = "SAFE" | "MODERATE" | "HIGH";
 
 export type { ClinicalRoute };
 
-export type RevoraUserResponse =
+export type PalUserResponse =
   | {
       kind: "result";
-      risk: RevoraRisk;
+      risk: PalRisk;
       reason: string;
       adjustment: string | null;
       swap: string | null;
@@ -69,7 +69,7 @@ export type CheckUiState =
   | { kind: "invalid"; message: string }
   | { kind: "submitting" }
   | { kind: "slow" }
-  | { kind: "done"; response: RevoraUserResponse }
+  | { kind: "done"; response: PalUserResponse }
   | { kind: "error"; message: string };
 
 export type CheckFailureCode =

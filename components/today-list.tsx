@@ -1,5 +1,5 @@
 import type { StoredCheck } from "../lib/client/history-store";
-import { RISK_LABELS } from "../lib/revora/labels";
+import { RISK_LABELS } from "../lib/pal/labels";
 
 export function TodayList({ checks }: { checks: StoredCheck[] }) {
   if (checks.length === 0) {

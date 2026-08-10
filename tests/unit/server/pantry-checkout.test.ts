@@ -32,7 +32,7 @@ beforeEach(() => {
   savedAppUrl = process.env.NEXT_PUBLIC_APP_URL;
   savedLegal = process.env.LEGAL_TERMS_FINAL;
   process.env.STRIPE_PRICE_PANTRY = PRICE;
-  process.env.NEXT_PUBLIC_APP_URL = "https://revora.test";
+  process.env.NEXT_PUBLIC_APP_URL = "https://pal.test";
   // W-04: this is a paid-checkout entry point, so it 503s unless the deploy
   // declares the terms final. Declared here so the suite exercises the real
   // path — and so the "no price configured" 503 below can't pass for the wrong
@@ -77,7 +77,7 @@ function stripeStub(
 }
 
 function acceptedRequest() {
-  return new Request("https://revora.test/api/billing/stripe/pantry-checkout", {
+  return new Request("https://pal.test/api/billing/stripe/pantry-checkout", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -103,8 +103,8 @@ describe("createPantryCheckoutSessionHandler", () => {
       mode: "payment",
       line_items: [{ price: PRICE, quantity: 1 }],
       metadata: { terms_version: TERMS_VERSION },
-      success_url: "https://revora.test/pantry/thanks",
-      cancel_url: "https://revora.test/pantry"
+      success_url: "https://pal.test/pantry/thanks",
+      cancel_url: "https://pal.test/pantry"
     });
     // No session gate: the handler never touches client_reference_id.
     expect(call.client_reference_id).toBeUndefined();
@@ -191,7 +191,7 @@ describe("createPantryCheckoutSessionHandler", () => {
       stripeClient: () => stripe as never
     });
     const res = await handler(
-      new Request("https://revora.test/api/billing/stripe/pantry-checkout", {
+      new Request("https://pal.test/api/billing/stripe/pantry-checkout", {
         method: "POST",
         body: "{}"
       })

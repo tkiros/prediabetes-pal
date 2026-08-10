@@ -3,9 +3,9 @@ import webpush from "web-push";
 
 import { runNudgeCron, type PushSendResult } from "../../../../lib/server/nudge";
 import { getDb, type Db } from "../../../../lib/server/db";
-import { captureServerError } from "../../../../lib/revora/sentry-capture";
+import { captureServerError } from "../../../../lib/pal/sentry-capture";
 import { isAuthorizedCron } from "../../../../lib/server/timing-safe";
-import { SUPPORT_EMAIL } from "../../../../lib/revora/contact";
+import { SUPPORT_EMAIL } from "../../../../lib/pal/contact";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;

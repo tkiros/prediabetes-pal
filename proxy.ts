@@ -1,9 +1,9 @@
 /**
- * Revora proxy (né middleware; Next 16 rename) — pre-model abuse + cost gate
+ * Prediabetes Pal proxy (né middleware; Next 16 rename) — pre-model abuse + cost gate
  * (Plans 04-02 + launch-hardening + W-11)
  *
  * Runs BEFORE any model spend, any email send, and any Stripe session, on every
- * POST the route table in lib/revora/rate-limit.ts claims:
+ * POST the route table in lib/pal/rate-limit.ts claims:
  *   1. /api/check* — launch-mode pause gate (Edge Config kill-switch), then
  *      per-IP limit + global daily cap.
  *   2. /api/trial/start and POST /api/auth/* — per-IP abuse limits. These were
@@ -19,12 +19,12 @@
  * errors fail OPEN for checks and fail CLOSED for the two email-sending doors
  * — see RouteLimit in rate-limit.ts for why the asymmetry is deliberate.
  *
- * Edge-runtime safe: does NOT call getRevoraEnv() (which requires
+ * Edge-runtime safe: does NOT call getPalEnv() (which requires
  * OPENAI_API_KEY and would throw when absent).
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { evaluateLaunchMode } from "./lib/revora/launch-controls";
+import { evaluateLaunchMode } from "./lib/pal/launch-controls";
 import {
   createRateLimitDeps,
   evaluateAbuseLimit,
@@ -32,12 +32,12 @@ import {
   getClientIp,
   matchRouteLimit,
   type RateLimitDeps
-} from "./lib/revora/rate-limit";
-import { emitSafeEvent } from "./lib/revora/telemetry";
+} from "./lib/pal/rate-limit";
+import { emitSafeEvent } from "./lib/pal/telemetry";
 
 const DEFAULT_PAUSE_DISCLAIMER = "Not medical advice.";
 const RATE_LIMIT_COPY =
-  "Revora is helping a lot of people right now. Please try again in a moment.";
+  "Prediabetes Pal is helping a lot of people right now. Please try again in a moment.";
 // NEW-003: the fail-closed check 503 fires BEFORE the deterministic clinical
 // router can run, so a user describing acute symptoms during a limiter outage
 // would otherwise see only "try again". The abuse gate is not weakened — the

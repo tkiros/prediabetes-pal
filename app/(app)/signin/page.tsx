@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AUTH_EMAIL_AVAILABLE, signIn } from "../../../auth";
-import { magicLinkSendFailed } from "../../../lib/revora/magic-link-outcome";
+import { magicLinkSendFailed } from "../../../lib/pal/magic-link-outcome";
 import { ReviewerSigninForm } from "../../../components/reviewer-signin-form";
 
 export const metadata = {

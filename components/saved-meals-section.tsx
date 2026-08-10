@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { RISK_LABELS } from "../lib/revora/labels";
+import { RISK_LABELS } from "../lib/pal/labels";
 import { mealMemoryUiEnabled } from "../lib/meal-memory-flag";
 import {
   deleteAllMealMemories,

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 // SEO target: "a1c 5.7", "a1c 6.4", "prediabetic range", "5.7 blood sugar".
 // Hard boundary notes for this page: A1C percentages only — no lab-unit
 // numbers, and range meanings phrased as what clinicians use, mirroring the
-// approved boundary copy in lib/revora/boundary-copy.ts.
+// approved boundary copy in lib/pal/boundary-copy.ts.
 export default function A1cRangeGuide() {
   return (
     <>

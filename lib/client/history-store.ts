@@ -1,5 +1,5 @@
 import { computeStreak, dayKeyLocal } from "../coach/days";
-import type { RevoraRisk } from "./ui-state";
+import type { PalRisk } from "./ui-state";
 
 /**
  * On-device meal memory (plan P3). localStorage now; after 4B the same
@@ -14,7 +14,7 @@ export type InputMethod = "text" | "voice" | "photo";
 export type StoredCheck = {
   clientId: string;
   food: string;
-  risk: RevoraRisk;
+  risk: PalRisk;
   a1cBand: string;
   inputMethod: InputMethod;
   createdAt: string; // ISO
@@ -40,7 +40,7 @@ type StorageLike = {
   removeItem(key: string): void;
 };
 
-const STORAGE_KEY = "revora.history.v1";
+const STORAGE_KEY = "pal.history.v1";
 // ponytail: hard cap keeps localStorage bounded; server history (4B) is the
 // long-term memory.
 const MAX_STORED_CHECKS = 500;

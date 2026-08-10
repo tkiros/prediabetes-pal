@@ -60,7 +60,7 @@ describe("GET /pantry/claim", () => {
   it("redirects an anonymous visitor to signin with a callback back to the claim", async () => {
     const GET = createPantryClaimHandler(deps(null));
     const response = await GET(
-      new Request("https://revora.test/pantry/claim?token=abc")
+      new Request("https://pal.test/pantry/claim?token=abc")
     );
     expect(response.status).toBeGreaterThanOrEqual(302);
     const location = response.headers.get("location") ?? "";
@@ -74,7 +74,7 @@ describe("GET /pantry/claim", () => {
     const GET = createPantryClaimHandler(deps(userId));
 
     const response = await GET(
-      new Request(`https://revora.test/pantry/claim?token=${token}`)
+      new Request(`https://pal.test/pantry/claim?token=${token}`)
     );
 
     expect(response.headers.get("location")).toContain("/pantry/intake");
@@ -96,7 +96,7 @@ describe("GET /pantry/claim", () => {
       .where(eq(schema.pantryOrders.id, order.id));
 
     const GET = createPantryClaimHandler(deps(userId));
-    await GET(new Request(`https://revora.test/pantry/claim?token=${token}`));
+    await GET(new Request(`https://pal.test/pantry/claim?token=${token}`));
 
     const [after] = await testDb.db
       .select()
@@ -108,7 +108,7 @@ describe("GET /pantry/claim", () => {
   it("a wrong token is a harmless redirect to intake (empty state handles it)", async () => {
     const GET = createPantryClaimHandler(deps(userId));
     const response = await GET(
-      new Request("https://revora.test/pantry/claim?token=wrong")
+      new Request("https://pal.test/pantry/claim?token=wrong")
     );
     expect(response.headers.get("location")).toContain("/pantry/intake");
   });

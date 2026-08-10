@@ -1,4 +1,4 @@
-import { SUPPORT_EMAIL } from "../../revora/contact";
+import { SUPPORT_EMAIL } from "../../pal/contact";
 /** Email copy in one place so webhook/sweep/admin never drift apart. */
 
 export function intakeEmailText(

@@ -168,7 +168,7 @@ describe("historyStore", () => {
 
   it("survives corrupted storage payloads", () => {
     const storage = fakeStorage();
-    storage.setItem("revora.history.v1", "{not json");
+    storage.setItem("pal.history.v1", "{not json");
     const corrupted = createHistoryStore(storage);
 
     expect(corrupted.all()).toEqual([]);

@@ -134,7 +134,7 @@ describe("submitCheck", () => {
     expect(response.postMealAction).toBeNull();
   });
 
-  it("sends the x-revora-clarified header only when answering a clarify (§8 cap)", async () => {
+  it("sends the x-pal-clarified header only when answering a clarify (§8 cap)", async () => {
     const okBody = {
       kind: "result",
       risk: "SAFE",
@@ -146,13 +146,13 @@ describe("submitCheck", () => {
 
     const withFlag = mockFetch(200, okBody);
     await submitCheck(input, { clarified: true });
-    expect(headerOf(withFlag, "x-revora-clarified")).toBe("1");
+    expect(headerOf(withFlag, "x-pal-clarified")).toBe("1");
 
     vi.unstubAllGlobals();
 
     const withoutFlag = mockFetch(200, okBody);
     await submitCheck(input);
-    expect(headerOf(withoutFlag, "x-revora-clarified")).toBeUndefined();
+    expect(headerOf(withoutFlag, "x-pal-clarified")).toBeUndefined();
   });
 });
 

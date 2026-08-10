@@ -26,9 +26,9 @@ import { createCipheriv, randomBytes } from "node:crypto";
 
 import pg from "pg";
 
-const REVIEWER_EMAIL = "reviewer@revora.test";
+const REVIEWER_EMAIL = "reviewer@pal.test";
 const REVIEWER_A1C = "6.1"; // mid prediabetes band (5.7%-6.4%), matches onboarding framing
-const REVIEWER_A1C_BAND = "prediabetes_60_62"; // lib/revora/a1c.ts routeA1C(6.1)
+const REVIEWER_A1C_BAND = "prediabetes_60_62"; // lib/pal/a1c.ts routeA1C(6.1)
 const REVIEWER_TIMEZONE = "UTC";
 const REVIEWER_SUBSCRIPTION_REF = "reviewer-seed-subscription";
 

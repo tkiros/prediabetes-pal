@@ -108,7 +108,7 @@ test("a returning guest with a saved A1C skips the A1C step", async ({
 }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem(
-      "revora.profile.v1",
+      "pal.profile.v1",
       JSON.stringify({ a1c: 6.1, onboardedAt: "2026-01-01T00:00:00.000Z" })
     );
   });

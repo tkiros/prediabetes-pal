@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { captureServerError } from "../../revora/sentry-capture";
+import { captureServerError } from "../../pal/sentry-capture";
 import { decryptField } from "../crypto";
 import { schema, type Db } from "../db";
 import type { PantryReport } from "./process";

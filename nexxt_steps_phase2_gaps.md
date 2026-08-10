@@ -3,7 +3,7 @@
 All three Phase 2 plans were executed and committed through 02-01, 02-02,
   and 02-03, including the local safety gate work. Fresh local verification
   passed for node scripts/validate-safety-contract.mjs, npx vitest run tests/
-  unit/revora tests/evals, npm run typecheck, and npm run eval:revora. The
+  unit/revora tests/evals, npm run typecheck, and npm run eval:pal. The
   launch-only live eval is still SETUP_BLOCKED because OPENAI_API_KEY is not
   set.
 

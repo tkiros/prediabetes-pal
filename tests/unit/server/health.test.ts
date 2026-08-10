@@ -39,7 +39,7 @@ beforeEach(async () => {
     UPSTASH_REDIS_REST_TOKEN: "upstash-test",
   };
   delete process.env.EDGE_CONFIG;
-  delete process.env.REVORA_LAUNCH_MODE_OVERRIDE;
+  delete process.env.PAL_LAUNCH_MODE_OVERRIDE;
 });
 
 afterEach(() => {

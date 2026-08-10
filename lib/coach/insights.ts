@@ -1,5 +1,5 @@
 import type { StoredCheck } from "../client/history-store";
-import { RISK_LABELS } from "../revora/labels";
+import { RISK_LABELS } from "../pal/labels";
 import { longitudinalInsightsEnabled } from "../longitudinal-insights-flag";
 
 /**

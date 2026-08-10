@@ -41,7 +41,7 @@ async function seedPriorDayHistory(page: Page) {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     window.localStorage.setItem(
-      "revora.history.v1",
+      "pal.history.v1",
       JSON.stringify([
         {
           clientId: "prior-1",

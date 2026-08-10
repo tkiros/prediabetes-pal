@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // Build-time check that the configured vision model accepts image input.
 // Usage: OPENAI_API_KEY=... node scripts/verify-vision-model.mjs
-// On failure: set REVORA_VISION_MODEL to a vision-capable sibling — it is
+// On failure: set PAL_VISION_MODEL to a vision-capable sibling — it is
 // used ONLY for extraction; the judge model is untouched (locked decision 1).
 import OpenAI from "openai";
 
-const model = process.env.REVORA_VISION_MODEL ?? "gpt-5.4-mini";
+const model = process.env.PAL_VISION_MODEL ?? "gpt-5.4-mini";
 if (!process.env.OPENAI_API_KEY) {
   console.log("SETUP_BLOCKED: export OPENAI_API_KEY and rerun.");
   process.exit(0);
@@ -34,7 +34,7 @@ try {
 } catch (error) {
   console.error(`FAIL: ${model} rejected image input: ${error.message}`);
   console.error(
-    "Set REVORA_VISION_MODEL to a vision-capable sibling (extraction only) and rerun."
+    "Set PAL_VISION_MODEL to a vision-capable sibling (extraction only) and rerun."
   );
   process.exit(1);
 }

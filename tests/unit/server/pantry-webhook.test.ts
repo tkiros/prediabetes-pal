@@ -13,7 +13,7 @@ let testDb: Awaited<ReturnType<typeof createTestDb>>;
 beforeAll(async () => {
   process.env.HEALTH_DATA_KEY = Buffer.alloc(32, 7).toString("base64");
   process.env.STRIPE_PRICE_PANTRY = "price_pantry_25";
-  process.env.NEXT_PUBLIC_APP_URL = "https://revora.test";
+  process.env.NEXT_PUBLIC_APP_URL = "https://pal.test";
   testDb = await createTestDb();
 });
 

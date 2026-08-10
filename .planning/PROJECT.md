@@ -1,14 +1,14 @@
-# Revora
+# Prediabetes Pal
 
 ## What This Is
 
-Revora is a permission-first food checker for people with prediabetes who are standing in front of a meal and asking, "Can I eat this?" The current MVP is a text-only web app: the user enters a food description and A1C level, then receives a SAFE / MODERATE / HIGH risk answer in plain English with one practical next action when needed.
+Prediabetes Pal is a permission-first food checker for people with prediabetes who are standing in front of a meal and asking, "Can I eat this?" The current MVP is a text-only web app: the user enters a food description and A1C level, then receives a SAFE / MODERATE / HIGH risk answer in plain English with one practical next action when needed.
 
 The MVP is intentionally not the full scanner product. Its job is to validate whether prediabetes-specific, A1C-calibrated food guidance creates enough trust, sharing, and willingness-to-pay signal before investing in photo scanning, accounts, payments, databases, or mobile apps.
 
 ## Core Value
 
-Revora must give a clear, evidence-grounded, permission-first answer to "Can I eat this?" in under 5 seconds without increasing food anxiety.
+Prediabetes Pal must give a clear, evidence-grounded, permission-first answer to "Can I eat this?" in under 5 seconds without increasing food anxiety.
 
 ## Requirements
 
@@ -37,7 +37,7 @@ Revora must give a clear, evidence-grounded, permission-first answer to "Can I e
 - Authentication — account creation adds friction and is unnecessary for a signal tool.
 - Database-backed user profiles — the MVP is stateless; personalization is limited to the submitted A1C.
 - Payment integration — the MVP measures interest before adding Stripe or subscriptions.
-- Type 2 diabetes support — Revora's wedge is newly diagnosed prediabetes, A1C 5.7-6.4.
+- Type 2 diabetes support — Prediabetes Pal's wedge is newly diagnosed prediabetes, A1C 5.7-6.4.
 - Clinical diagnosis or medical treatment advice — the product provides informational food guidance only.
 - Predicted future A1C values — replaced by the future Behavioral Adherence Index concept because A1C prediction from GL adherence was unsupported.
 - CGM integration — future full-product feature gated behind launch, revenue, and product-market fit.
@@ -49,7 +49,7 @@ Revora must give a clear, evidence-grounded, permission-first answer to "Can I e
 
 The initial lead users are real people: the founder and the founder's aunt, both with prediabetes and both currently using Google as the meal-decision workaround. The target archetype is a newly diagnosed prediabetic adult, roughly 30-60, with a recent scary A1C reading and fear of progression to Type 2 diabetes.
 
-Existing scanner apps such as Glycemic Snap, Logi, GluKee, and Index Scanner validate the photo + glycemic-load mechanic, but they are general food tools. Revora's bet is that the scanner is not the moat; prediabetes-specific permission, tone, and coaching are the reason users stay and pay.
+Existing scanner apps such as Glycemic Snap, Logi, GluKee, and Index Scanner validate the photo + glycemic-load mechanic, but they are general food tools. Prediabetes Pal's bet is that the scanner is not the moat; prediabetes-specific permission, tone, and coaching are the reason users stay and pay.
 
 The current recommended MVP is Approach A from the design doc: a one-page Next.js web app using the OpenAI API in text mode and Vercel deployment. The design review also suggested a lightweight telemetry variant, but any logging must avoid raw food text and raw A1C unless privacy posture is explicitly handled.
 
@@ -82,7 +82,7 @@ The success target for this MVP is not polished retention yet. It is WTP and use
 | Keep healthcare channel for later | CDCE/PCP distribution is a moat after PMF, not the fastest path to early learning. | — Pending |
 | Avoid predicted future A1C values | Prior formula was unsupported and would damage trust; use behavioral evidence instead. | — Pending |
 | Use permission-first result framing | The product job is to reduce anxiety and enable informed moderation, not create more restriction. | — Pending |
-| Resolve naming collision before full launch | "Glucosnap" was too close to Glycemic Snap; the current name is Revora. | — Pending |
+| Resolve naming collision before full launch | "Glucosnap" was too close to Glycemic Snap; the current name is Prediabetes Pal. | — Pending |
 
 ---
 *Last updated: 2026-05-04 after initialization*

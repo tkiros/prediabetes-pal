@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/node";
 
-import { scrubSentryEvent } from "./lib/revora/sentry-scrub";
-import { resolveSentryRelease } from "./lib/revora/sentry-release";
+import { scrubSentryEvent } from "./lib/pal/sentry-scrub";
+import { resolveSentryRelease } from "./lib/pal/sentry-release";
 
 /**
  * Server-only Sentry init. Loaded from instrumentation.ts on the Node runtime

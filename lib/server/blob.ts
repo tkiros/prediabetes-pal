@@ -2,13 +2,13 @@ import { eq, inArray, lt, ne, or, and, isNotNull } from "drizzle-orm";
 
 import type { Db } from "./db";
 import * as schema from "./db/schema";
-import { captureServerError } from "../revora/sentry-capture";
+import { captureServerError } from "../pal/sentry-capture";
 import { pantryBlobToken } from "./pantry/blob-access";
 
 /**
  * Blob lifecycle (N-23/N-24).
  *
- * Pantry photos are the only user content Revora persists to object storage.
+ * Pantry photos are the only user content Prediabetes Pal persists to object storage.
  * The privacy page makes two promises about them — "deleted when the report is
  * delivered" and "we keep nothing after you delete your account" — and before
  * this module both were false: deletion fired on exactly one happy path

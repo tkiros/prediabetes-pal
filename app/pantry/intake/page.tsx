@@ -5,7 +5,7 @@ import { PantryIntakeFlow } from "../../../components/pantry-intake-flow";
 import { decryptField } from "../../../lib/server/crypto";
 import { getDb, schema } from "../../../lib/server/db";
 import { getSessionInfo } from "../../../lib/server/session";
-import { SUPPORT_EMAIL } from "../../../lib/revora/contact";
+import { SUPPORT_EMAIL } from "../../../lib/pal/contact";
 
 export const metadata = {
   title: "Your Pantry Review — Prediabetes Pal",

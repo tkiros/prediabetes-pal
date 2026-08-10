@@ -60,7 +60,7 @@ export function hashEmailRecipient(email: string, secret = process.env.AUTH_SECR
 }
 
 function providerIdempotencyKey(seed: string): string {
-  return `revora/${createHash("sha256").update(seed, "utf8").digest("hex")}`;
+  return `pal/${createHash("sha256").update(seed, "utf8").digest("hex")}`;
 }
 
 export async function beginEmailAttempt(

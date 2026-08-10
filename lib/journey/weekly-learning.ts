@@ -1,6 +1,6 @@
-import { normalize as normalizeFood } from "../revora/input-precheck";
-import { assertNoForbiddenClaims } from "../revora/postprocess";
-import type { SafetyContract } from "../revora/safety-contract";
+import { normalize as normalizeFood } from "../pal/input-precheck";
+import { assertNoForbiddenClaims } from "../pal/postprocess";
+import type { SafetyContract } from "../pal/safety-contract";
 import type { Stage } from "./state";
 
 /**

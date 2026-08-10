@@ -13,12 +13,12 @@ import {
  * Fixtures are the FOUNDER'S OWN photos with exhaustive labels
  * (labels.json lists every clearly visible food item per photo — an
  * extracted item matching no label counts as a hallucination).
- * Mirrors eval:revora:live gating: runs only with REVORA_LIVE_EVAL=1.
+ * Mirrors eval:pal:live gating: runs only with PAL_LIVE_EVAL=1.
  */
 
 const FIXTURES = path.join(process.cwd(), "tests/fixtures/pantry-photos");
 const LABELS = path.join(FIXTURES, "labels.json");
-const LIVE = process.env.REVORA_LIVE_EVAL === "1" && !!process.env.OPENAI_API_KEY;
+const LIVE = process.env.PAL_LIVE_EVAL === "1" && !!process.env.OPENAI_API_KEY;
 const READY = LIVE && fs.existsSync(LABELS);
 
 const RECALL_FLOOR = 0.7;
@@ -76,7 +76,7 @@ describe.skipIf(!READY)("eval:pantry-extract (live)", () => {
 describe.skipIf(READY)("eval:pantry-extract (setup)", () => {
   it("explains what is missing", () => {
     console.log(
-      "SETUP_BLOCKED: eval:pantry-extract needs (1) REVORA_LIVE_EVAL=1, " +
+      "SETUP_BLOCKED: eval:pantry-extract needs (1) PAL_LIVE_EVAL=1, " +
         "(2) OPENAI_API_KEY, (3) 8-10 founder photos in tests/fixtures/pantry-photos/ " +
         "with an exhaustive labels.json (see labels.example.json). Skipping."
     );

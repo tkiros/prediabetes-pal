@@ -2,9 +2,9 @@
  * Shared model-transport policy (NEW-001 / WS-2).
  *
  * One place decides where model traffic may go. Three transports consume it:
- * the Revora text engine (lib/revora/openai-client.ts) and the two vision
+ * the Prediabetes Pal text engine (lib/pal/openai-client.ts) and the two vision
  * drafters (lib/meal/photo-extract.ts, lib/pantry/extract.ts) — the vision
- * modules deliberately import nothing from lib/revora/, which is why this
+ * modules deliberately import nothing from lib/pal/, which is why this
  * lives in a neutral module.
  *
  * Production policy: model traffic is direct OpenAI (no base URL) or the
@@ -16,12 +16,12 @@
  * the fleet without a redeploy.
  */
 
-export class RevoraModelConfigurationError extends Error {
+export class PalModelConfigurationError extends Error {
   readonly code = "MODEL_CONFIG";
 
   constructor(message: string) {
     super(message);
-    this.name = "RevoraModelConfigurationError";
+    this.name = "PalModelConfigurationError";
   }
 }
 
@@ -42,7 +42,7 @@ export function isProductionModelEnvironment(
 
 /**
  * Validate and return the configured OPENAI_BASE_URL, or undefined for direct
- * OpenAI. Throws RevoraModelConfigurationError on any policy violation.
+ * OpenAI. Throws PalModelConfigurationError on any policy violation.
  */
 export function resolveTransportBaseUrl(
   input: NodeJS.ProcessEnv = process.env
@@ -56,7 +56,7 @@ export function resolveTransportBaseUrl(
   try {
     parsed = new URL(baseURL);
   } catch {
-    throw new RevoraModelConfigurationError(
+    throw new PalModelConfigurationError(
       "OPENAI_BASE_URL must be an absolute URL."
     );
   }
@@ -65,12 +65,12 @@ export function resolveTransportBaseUrl(
     parsed.protocol === "http:" &&
     (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1");
   if (parsed.protocol !== "https:" && !localHttp) {
-    throw new RevoraModelConfigurationError(
+    throw new PalModelConfigurationError(
       "OPENAI_BASE_URL must use HTTPS unless it targets localhost."
     );
   }
   if (parsed.username || parsed.password) {
-    throw new RevoraModelConfigurationError(
+    throw new PalModelConfigurationError(
       "OPENAI_BASE_URL must not contain credentials."
     );
   }
@@ -79,7 +79,7 @@ export function resolveTransportBaseUrl(
     isProductionModelEnvironment(input) &&
     !PRODUCTION_BASE_URL_HOSTS.has(parsed.hostname.toLowerCase())
   ) {
-    throw new RevoraModelConfigurationError(
+    throw new PalModelConfigurationError(
       "OPENAI_BASE_URL in production must target OpenRouter (openrouter.ai); other compatible hosts are evaluation-only."
     );
   }
@@ -108,12 +108,12 @@ export function assertModelIdMatchesTransport(
   baseURL: string | undefined
 ): void {
   if (!baseURL && model.includes("/")) {
-    throw new RevoraModelConfigurationError(
+    throw new PalModelConfigurationError(
       "Direct OpenAI model ids must not include a provider prefix."
     );
   }
   if (isOpenRouterBaseUrl(baseURL) && !model.includes("/")) {
-    throw new RevoraModelConfigurationError(
+    throw new PalModelConfigurationError(
       "OpenRouter model ids must include their provider prefix."
     );
   }

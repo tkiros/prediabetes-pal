@@ -1,6 +1,6 @@
 {
   "_comment": "Bubblewrap config (P8 — docs/ops/play-twa-runbook.md §9.3 'Generate the .aab'). Generated fields mirror public/manifest.webmanifest (name/colors/icons) so the TWA shell matches the live PWA. Fields wrapped in <...> are human-fill placeholders — replace them, then `bubblewrap init --manifest https://prediabetespal.com/manifest.webmanifest` to regenerate/validate, or edit this file in place and run `bubblewrap build` directly. Do NOT commit real signing-key paths or passwords here — this file is source-controlled.",
-  "packageId": "app.revora.twa",
+  "packageId": "com.prediabetespal.twa",
   "host": "prediabetespal.com",
   "name": "Prediabetes Pal",
   "launcherName": "Prediabetes Pal",

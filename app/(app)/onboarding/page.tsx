@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { routeA1C } from "../../../lib/revora/a1c";
+import { routeA1C } from "../../../lib/pal/a1c";
 // Single source of A1C boundary + disclaimer copy (SAFETY-OWNED). Onboarding is
 // a client component and cannot read the ledger from disk, so it imports the
 // canonical literals instead of retyping them (which is how they once drifted).
@@ -12,9 +12,9 @@ import {
   BELOW_RANGE_MESSAGE,
   BOUNDARY_DISCLAIMER,
   HIGH_RANGE_MESSAGE
-} from "../../../lib/revora/boundary-copy";
-import { RISK_LABELS } from "../../../lib/revora/labels";
-import { promotedInputsFor } from "../../../lib/revora/promise-registry";
+} from "../../../lib/pal/boundary-copy";
+import { RISK_LABELS } from "../../../lib/pal/labels";
+import { promotedInputsFor } from "../../../lib/pal/promise-registry";
 import { track } from "../../../lib/client/analytics";
 import {
   storedUtmChannel,
@@ -136,7 +136,7 @@ export default function OnboardingPage() {
     if (choice) {
       setSegment(choice);
       try {
-        window.localStorage.setItem("revora.segment.v1", choice);
+        window.localStorage.setItem("pal.segment.v1", choice);
       } catch {
         // best-effort — the chip choice still steers this tour
       }
@@ -205,9 +205,9 @@ export default function OnboardingPage() {
 
   function startGuidedCheck(food: string) {
     // Hand the chosen food to the home form via the same prefill path a
-    // one-tap re-check uses (food-check-form.tsx reads + clears revora.recheck).
+    // one-tap re-check uses (food-check-form.tsx reads + clears pal.recheck).
     try {
-      window.sessionStorage.setItem("revora.recheck", food);
+      window.sessionStorage.setItem("pal.recheck", food);
     } catch {
       // storage unavailable — land on the form without a prefill
     }

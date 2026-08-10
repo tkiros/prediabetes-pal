@@ -2,7 +2,7 @@ import { and, desc, eq, gte, lt, or, type SQL } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import type { A1CBand } from "../../../lib/revora/a1c";
+import type { A1CBand } from "../../../lib/pal/a1c";
 import { FREE_HISTORY_DAYS } from "../../../lib/free-tier";
 import {
   decryptField,
@@ -76,7 +76,7 @@ export const HISTORY_RETENTION = {
 const MIGRATE_MAX_SKEW_MS = 5 * 60 * 1000;
 const MIGRATE_MAX_AGE_MS = 2 * 365 * 24 * 60 * 60 * 1000;
 
-// The bands the app itself writes (lib/revora/a1c.ts is the source of truth —
+// The bands the app itself writes (lib/pal/a1c.ts is the source of truth —
 // `checks.a1c_band` is untyped text, so this schema is the only thing standing
 // between a hand-edited localStorage entry and the DB). Both directions are
 // asserted at compile time: `satisfies` rejects a value that is not a band, and
@@ -619,7 +619,7 @@ export function createHistoryExportHandler(deps: RouteDeps = {}) {
         status: 200,
         headers: {
           "content-type": "application/json; charset=utf-8",
-          "content-disposition": `attachment; filename="revora-history-${today}.json"`
+          "content-disposition": `attachment; filename="prediabetes-pal-history-${today}.json"`
         }
       }
     );

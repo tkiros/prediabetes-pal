@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { captureServerError } from "../../../../lib/revora/sentry-capture";
+import { captureServerError } from "../../../../lib/pal/sentry-capture";
 import { runPrechargeSweep } from "../../../../lib/server/billing/precharge";
 import { getDb, type Db } from "../../../../lib/server/db";
 import { sendEmail } from "../../../../lib/server/email";

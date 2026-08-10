@@ -1,5 +1,5 @@
 import type { MealDraftItem } from "../meal/photo-extract";
-import { FOOD_MAX_LENGTH } from "../revora/schemas";
+import { FOOD_MAX_LENGTH } from "../pal/schemas";
 
 export type PhotoDraftResult =
   | { kind: "draft"; dish: string | null; items: MealDraftItem[] }

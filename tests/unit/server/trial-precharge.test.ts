@@ -12,7 +12,7 @@ let testDb: Awaited<ReturnType<typeof createTestDb>>;
 const db = () => testDb.db;
 
 beforeAll(async () => {
-  process.env.NEXT_PUBLIC_APP_URL = "https://revora.test";
+  process.env.NEXT_PUBLIC_APP_URL = "https://pal.test";
   process.env.AUTH_SECRET = "test-auth-secret";
   testDb = await createTestDb();
 });

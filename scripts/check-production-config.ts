@@ -5,7 +5,7 @@ import { spawnSync } from "node:child_process";
  * non-secret values. Loads the REAL next.config.ts in a child process per
  * case and asserts the twin guard fires for every client/server flag pair
  * (client baked on + runtime kill switch unset must FAIL the build) and stays
- * quiet when the pair agrees. REVORA_ALLOW_NO_MEASUREMENT=1 isolates the twin
+ * quiet when the pair agrees. PAL_ALLOW_NO_MEASUREMENT=1 isolates the twin
  * guard — flag safety is deliberately outside the analytics waiver.
  */
 
@@ -20,7 +20,7 @@ function loadConfig(extraEnv: Record<string, string>): number {
   const env = {
     ...process.env,
     VERCEL_ENV: "production",
-    REVORA_ALLOW_NO_MEASUREMENT: "1"
+    PAL_ALLOW_NO_MEASUREMENT: "1"
   } as NodeJS.ProcessEnv;
   // Start every pair from a clean slate so ambient dev env can't skew a case.
   for (const [client, server] of PAIRS) {

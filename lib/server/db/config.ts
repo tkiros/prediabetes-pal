@@ -2,7 +2,7 @@ import type { PoolConfig } from "pg";
 
 type DatabaseEnv = Record<string, string | undefined>;
 
-const DEFAULT_DATABASE_URL = "postgres://localhost:5432/revora";
+const DEFAULT_DATABASE_URL = "postgres://localhost:5432/pal";
 const DEFAULT_POOL_MAX = 3;
 const MAX_POOL_MAX = 10;
 
@@ -47,7 +47,7 @@ export function createDatabasePoolConfig(
     max: databasePoolMax(env),
     connectionTimeoutMillis: 5_000,
     idleTimeoutMillis: 10_000,
-    application_name: "revora-web",
+    application_name: "pal-web",
     ssl: isLocalhostDatabase(url)
       ? undefined
       : { rejectUnauthorized: !url.includes("sslmode=no-verify") },
@@ -63,7 +63,7 @@ export function resolveMigrationDatabaseUrl(
 ): string {
   const runtimeUrl = trimmed(env.DATABASE_URL);
   const migrationUrl = trimmed(env.DATABASE_MIGRATION_URL);
-  const protectedEnvironment = env.REVORA_DB_ENV === "production";
+  const protectedEnvironment = env.PAL_DB_ENV === "production";
 
   if (protectedEnvironment) {
     if (!runtimeUrl || !migrationUrl) {

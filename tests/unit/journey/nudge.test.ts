@@ -15,8 +15,8 @@ import {
   WEEKLY_LEARNING_READY_COPY,
   type JourneyNudgeSignals
 } from "../../../lib/journey/nudge";
-import { assertNoForbiddenClaims } from "../../../lib/revora/postprocess";
-import { loadSafetyContract } from "../../../lib/revora/safety-contract";
+import { assertNoForbiddenClaims } from "../../../lib/pal/postprocess";
+import { loadSafetyContract } from "../../../lib/pal/safety-contract";
 
 function signals(
   overrides: Partial<JourneyNudgeSignals> = {}

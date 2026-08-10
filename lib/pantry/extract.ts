@@ -11,9 +11,9 @@ import { readPrivatePantryPhotoDataUrl } from "../server/pantry/blob-access";
  * Vision EXTRACTOR for the Pantry Review pipeline. It transcribes food items
  * from a photo into text and does nothing else — it never judges, never
  * advises, never sees the buyer's A1C. All health judgments happen later in
- * the Revora engine's service checkFood() on the buyer-CONFIRMED list (design
+ * the Prediabetes Pal engine's service checkFood() on the buyer-CONFIRMED list (design
  * doc locked decision 1). This module deliberately imports nothing from the
- * Revora engine (the lib/ engine directory).
+ * Prediabetes Pal engine (the lib/ engine directory).
  */
 
 export const DEFAULT_VISION_MODEL = "gpt-5.4-mini";
@@ -102,7 +102,7 @@ export function createPantryVisionClient(options?: {
       }
 
       const model =
-        options?.model ?? process.env.REVORA_VISION_MODEL ?? DEFAULT_VISION_MODEL;
+        options?.model ?? process.env.PAL_VISION_MODEL ?? DEFAULT_VISION_MODEL;
       // Injected clients (tests) own their routing; real transports must pair
       // the model-id naming with the configured base URL before a paid call.
       if (!options?.client) {

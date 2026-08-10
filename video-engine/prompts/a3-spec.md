@@ -12,7 +12,7 @@ anything renders.
 
 - **`hook_id` MUST equal the input hook's `id`.** The spec belongs to exactly one hook.
 - **Screen recordings are always the real app — never mocked, never faked.** The card on
-  screen is always a real Revora check. AI-generated *food b-roll* is allowed; AI-generated
+  screen is always a real Prediabetes Pal check. AI-generated *food b-roll* is allowed; AI-generated
   *verdicts* are not.
 - **CTA-after-value:** place the call to action after you've delivered value — never in the
   first beats, never as the opener.
@@ -27,7 +27,7 @@ anything renders.
   the copy uses **any** performance claim, list it in `claims_used` **and** set
   `disclosure_block` to the approved disclaimer **verbatim**:
 
-  > Revora is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you.
+  > Prediabetes Pal is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you.
 
   If no performance claim is used, `claims_used` is `[]` and `disclosure_block` may be `""`.
 

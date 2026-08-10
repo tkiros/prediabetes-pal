@@ -2,7 +2,7 @@
  * Voice input (plan P2 / §6.2): a thin wrapper over the browser Web Speech
  * API. Speech becomes text in the same textarea; the user reviews, edits, and
  * submits their own words through the unchanged /api/check path. Audio is
- * processed by the browser/OS speech service — it never reaches Revora
+ * processed by the browser/OS speech service — it never reaches Prediabetes Pal
  * servers. Where the API is unavailable (iOS Safari) callers hide the mic and
  * point to keyboard dictation instead.
  */

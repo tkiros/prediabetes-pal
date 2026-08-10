@@ -8,8 +8,8 @@ import {
   photoInputEnabled,
   photoInputServerEnabled
 } from "../../../../lib/photo-input-flag";
-import { loadSafetyContract } from "../../../../lib/revora/safety-contract";
-import { captureServerError } from "../../../../lib/revora/sentry-capture";
+import { loadSafetyContract } from "../../../../lib/pal/safety-contract";
+import { captureServerError } from "../../../../lib/pal/sentry-capture";
 import { getDb, type Db } from "../../../../lib/server/db";
 import { getEntitlement } from "../../../../lib/server/entitlement";
 import { fetchPlaySubscription } from "../../../../lib/server/play-api";

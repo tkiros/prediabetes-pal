@@ -14,7 +14,7 @@ export const metadata: Metadata = {
  * Citations are evidence for the approach, never a promise of this user's
  * own outcome — Amendment 1's fabricated "on track to reach X by day Y"
  * formula stays removed. This page is scanned by the claims-boundary audit
- * (tests/unit/revora/claims-boundary-copy.test.ts), so its copy — including
+ * (tests/unit/pal/claims-boundary-copy.test.ts), so its copy — including
  * the citations below — must itself stay inside the boundary.
  */
 export default function HowItWorksPage() {

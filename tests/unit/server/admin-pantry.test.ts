@@ -12,7 +12,7 @@ let testDb: Awaited<ReturnType<typeof createTestDb>>;
 beforeAll(async () => {
   process.env.HEALTH_DATA_KEY = Buffer.alloc(32, 14).toString("base64");
   process.env.ADMIN_EMAIL = "founder@prediabetespal.com";
-  process.env.NEXT_PUBLIC_APP_URL = "https://revora.test";
+  process.env.NEXT_PUBLIC_APP_URL = "https://pal.test";
   testDb = await createTestDb();
 });
 

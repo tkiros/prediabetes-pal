@@ -3,37 +3,37 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 import type { Daypart } from "../../../lib/coach/insights";
-import { routeA1C } from "../../../lib/revora/a1c";
-import { CLARIFY_QUESTIONS, type ClarifyReason } from "../../../lib/revora/clarify";
-import { classifyClinicalRisk } from "../../../lib/revora/clinical-risk";
+import { routeA1C } from "../../../lib/pal/a1c";
+import { CLARIFY_QUESTIONS, type ClarifyReason } from "../../../lib/pal/clarify";
+import { classifyClinicalRisk } from "../../../lib/pal/clinical-risk";
 import {
   deriveCoachOutputs,
   type CoachOutputs
-} from "../../../lib/revora/coach-outputs";
-import { buildRetryResponse } from "../../../lib/revora/fallback";
-import type { SnapshotMetadata } from "../../../lib/revora/postprocess";
+} from "../../../lib/pal/coach-outputs";
+import { buildRetryResponse } from "../../../lib/pal/fallback";
+import type { SnapshotMetadata } from "../../../lib/pal/postprocess";
 import {
   activeModelId,
   activeModelProvider,
-  createOpenAIRevoraModelClient,
-  type RevoraModelClient
-} from "../../../lib/revora/openai-client";
-import { PROMPT_VERSION } from "../../../lib/revora/prompt";
+  createOpenAIPalModelClient,
+  type PalModelClient
+} from "../../../lib/pal/openai-client";
+import { PROMPT_VERSION } from "../../../lib/pal/prompt";
 import {
   CONTRACT_VERSION,
   loadSafetyContract
-} from "../../../lib/revora/safety-contract";
+} from "../../../lib/pal/safety-contract";
 import {
   CheckRequestSchema,
-  type RevoraUserResponse
-} from "../../../lib/revora/schemas";
-import { checkUserSpendLimit } from "../../../lib/revora/rate-limit";
-import { captureServerError } from "../../../lib/revora/sentry-capture";
-import { checkFood } from "../../../lib/revora/service";
+  type PalUserResponse
+} from "../../../lib/pal/schemas";
+import { checkUserSpendLimit } from "../../../lib/pal/rate-limit";
+import { captureServerError } from "../../../lib/pal/sentry-capture";
+import { checkFood } from "../../../lib/pal/service";
 import {
   emitSafeEvent,
   type SafeTelemetryEvent
-} from "../../../lib/revora/telemetry";
+} from "../../../lib/pal/telemetry";
 import { encryptField } from "../../../lib/server/crypto";
 import { getDb, schema, type Db } from "../../../lib/server/db";
 import {
@@ -62,7 +62,7 @@ export const maxDuration = 15;
 type CheckRouteDeps = {
   checkFoodImpl?: typeof checkFood;
   emitEvent?: typeof emitSafeEvent;
-  modelFactory?: (model?: string) => RevoraModelClient;
+  modelFactory?: (model?: string) => PalModelClient;
   now?: () => number;
   db?: () => Db;
   getSession?: () => Promise<SessionInfo>;
@@ -112,7 +112,7 @@ export const TRIAL_WALL_MESSAGE =
 // Model selection (W-02, reversing the 2026-07-11 tiering decision).
 //
 // Every check — guest, trialing, or paying — runs on the primary model
-// (REVORA_MODEL, default gpt-5.4-mini). There is deliberately NO per-user
+// (PAL_MODEL, default gpt-5.4-mini). There is deliberately NO per-user
 // routing here.
 //
 // The removed code downgraded a user to gpt-5.4-nano after 10 stored checks.
@@ -123,17 +123,17 @@ export const TRIAL_WALL_MESSAGE =
 // bakeoff, which failed nano on the ≥98% schema-validity threshold and scoped
 // it to provider-outage degradation only.
 //
-// Nano remains reachable as a manual outage fallback by setting REVORA_MODEL
+// Nano remains reachable as a manual outage fallback by setting PAL_MODEL
 // (openai-client.ts) — a deliberate, disclosed, whole-fleet decision rather
 // than an invisible per-user one. Any future routing must first pass the full
 // ratified gate on the production provider path, and must be disclosed.
-const modelClients = new Map<string, RevoraModelClient>();
+const modelClients = new Map<string, PalModelClient>();
 
 function getModelClient(model?: string) {
   const key = model ?? "default";
   let client = modelClients.get(key);
   if (!client) {
-    client = createOpenAIRevoraModelClient(model ? { model } : {});
+    client = createOpenAIPalModelClient(model ? { model } : {});
     modelClients.set(key, client);
   }
   return client;
@@ -333,7 +333,7 @@ export function createCheckRouteHandler(deps: CheckRouteDeps = {}) {
         // does not chain into a second ambiguity question. Forgeable and
         // harmless if forged — it can only suppress a clarify, never a floor or
         // a clinical route.
-        clarified: request.headers.get("x-revora-clarified") === "1",
+        clarified: request.headers.get("x-pal-clarified") === "1",
         snapshot,
         onModelError(error) {
           modelFailure = error;
@@ -392,7 +392,7 @@ export function createCheckRouteHandler(deps: CheckRouteDeps = {}) {
       const coach = deriveCoachOutputs(response, {
         food: readFood(body),
         rotation: readRotation(request.headers),
-        seed: request.headers.get("x-revora-client-id") ?? undefined,
+        seed: request.headers.get("x-pal-client-id") ?? undefined,
         daypart: readDaypart(request.headers)
       });
 
@@ -465,7 +465,7 @@ async function persistCheck(input: {
   db: () => Db;
   getSession: () => Promise<SessionInfo>;
   body: unknown;
-  result: Extract<RevoraUserResponse, { kind: "result" }>;
+  result: Extract<PalUserResponse, { kind: "result" }>;
   coach: CoachOutputs;
   snapshot: SnapshotMetadata;
   headers: Headers;
@@ -496,8 +496,8 @@ async function persistCheck(input: {
     return undefined;
   }
 
-  const methodHeader = input.headers.get("x-revora-input-method");
-  const rawClientId = input.headers.get("x-revora-client-id");
+  const methodHeader = input.headers.get("x-pal-input-method");
+  const rawClientId = input.headers.get("x-pal-client-id");
   const clientId = rawClientId && rawClientId.length <= 64 ? rawClientId : null;
 
   // §P3.1 immutable snapshot: encrypt the exact card the user saw (verdict +
@@ -522,7 +522,7 @@ async function persistCheck(input: {
   // raw question or meal text over the wire. Stored only when this check truly
   // resolved a clarification. The ANSWER is this check's own normalized input
   // (foodCiphertext), so clarifyAnswerCiphertext stays null by construction.
-  const wasClarified = input.headers.get("x-revora-clarified") === "1";
+  const wasClarified = input.headers.get("x-pal-clarified") === "1";
   const clarifyQuestion = wasClarified
     ? clarifyQuestionFromHeader(input.headers)
     : null;
@@ -624,7 +624,7 @@ function readFood(body: unknown): string | undefined {
  * curl) → the bank falls back to hashing the per-check id.
  */
 function readRotation(headers: Headers): number | undefined {
-  const raw = headers.get("x-revora-coach-rotation");
+  const raw = headers.get("x-pal-coach-rotation");
   if (!raw) {
     return undefined;
   }
@@ -635,7 +635,7 @@ function readRotation(headers: Headers): number | undefined {
 
 /**
  * The approved clarify question this check resolved (§P3.1), reconstructed from
- * the bounded category header (`x-revora-clarify-category`).
+ * the bounded category header (`x-pal-clarify-category`).
  *
  * The client sends the closed `ClarifyReason` enum — the SAME bounded value it
  * already puts on the `clarification_resolved` analytics event — never the raw
@@ -645,7 +645,7 @@ function readRotation(headers: Headers): number | undefined {
  * An absent/unknown category yields null (older clients, curl).
  */
 function clarifyQuestionFromHeader(headers: Headers): string | null {
-  const category = headers.get("x-revora-clarify-category");
+  const category = headers.get("x-pal-clarify-category");
   if (category && Object.prototype.hasOwnProperty.call(CLARIFY_QUESTIONS, category)) {
     return CLARIFY_QUESTIONS[category as ClarifyReason];
   }
@@ -662,7 +662,7 @@ const DAYPARTS: readonly Daypart[] = ["breakfast", "lunch", "dinner"];
  * nothing.
  */
 function readDaypart(headers: Headers): Daypart | undefined {
-  const raw = headers.get("x-revora-daypart");
+  const raw = headers.get("x-pal-daypart");
   return DAYPARTS.find((daypart) => daypart === raw);
 }
 
@@ -701,7 +701,7 @@ function classifyFailureReason(
   }
 
   // Network blip vs provider outage split (REL-01).
-  if (error instanceof Error && error.name === "RevoraConnectionError") {
+  if (error instanceof Error && error.name === "PalConnectionError") {
     return "connection_blip";
   }
 

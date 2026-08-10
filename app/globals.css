@@ -46,7 +46,7 @@
   }
 }
 
-@keyframes revora-rise {
+@keyframes pal-rise {
   from {
     opacity: 0;
     transform: translateY(6px);
@@ -459,7 +459,7 @@ textarea.text-input {
 }
 
 /* W-30 "Was this practical?" — quiet by design. It sits below the disclaimer,
-   asks about Revora rather than the meal, and must never compete with the
+   asks about Prediabetes Pal rather than the meal, and must never compete with the
    verdict for attention. */
 .result-feedback {
   display: flex;
@@ -675,7 +675,7 @@ button.inline-link {
 
 .result-card {
   background: var(--surface);
-  animation: revora-rise var(--dur) var(--ease);
+  animation: pal-rise var(--dur) var(--ease);
 }
 
 .result-card[data-risk="SAFE"] {
@@ -1539,7 +1539,7 @@ button.inline-link {
    file for two design eras, and a rule ("the page is LIGHT throughout") that
    DESIGN.md §11 had already overturned. Rewritten to the page that ships.
 
-   Surface rhythm (2026-08-08, `Revora Landing v4 Product.dc.html`): sections
+   Surface rhythm (2026-08-08, `Prediabetes Pal Landing v4 Product.dc.html`): sections
    ALTERNATE strictly between two planes, and nothing else is a plane.
 
      .landing-section--sheet   white (--surface), full-bleed, square, no border
@@ -1897,7 +1897,7 @@ button.inline-link {
 }
 
 /* ⚖️ THE DESIGN FILE'S SCALE, adopted verbatim 2026-08-06 on the owner's
-   ruling that `Revora Landing.dc.html` is the target and is "way better and
+   ruling that `Prediabetes Pal Landing.dc.html` is the target and is "way better and
    more readable" than the §11 scale that had been imposed over it.
 
    The floor is the change that matters: 2.4rem/38.4px, up from 1.9rem/30.4px.
@@ -2723,7 +2723,7 @@ button.inline-link {
 
 /* ── §5's demo, the design file's six-row table ───────────────
    `<DemoCheckCard layout="table" />`. One card, six labelled rows — You type /
-   Revora / You answer / Signal / Why / Try — instead of the app layout's two
+   Prediabetes Pal / You answer / Signal / Why / Try — instead of the app layout's two
    nested result cards. The nesting was the problem the drawing solves: a card
    inside a card inside a marketing section gave the reader three borders to
    parse before the first word, and the clarify beat was the inner one.
@@ -2733,7 +2733,7 @@ button.inline-link {
    `.surface-card`, untouched. Do not "unify" them — a marketing drawing has
    no authority over an in-app surface.
 
-   ⛔ Row order is load-bearing. The reveal below targets the Revora row and
+   ⛔ Row order is load-bearing. The reveal below targets the Prediabetes Pal row and
    every SIBLING AFTER IT, so reordering the rows silently changes which part
    of the flow the pause lands on. */
 .landing-demo {
@@ -2785,7 +2785,7 @@ button.inline-link {
   border-top: 0;
 }
 
-/* The two rows where Revora is the one speaking are tinted, which is what
+/* The two rows where Prediabetes Pal is the one speaking are tinted, which is what
    makes the exchange legible as an exchange rather than as six equal rows.
    Both carry the MODERATE tint because the answer this flow ends in is
    MODERATE — the tint is the verdict, not decoration. */
@@ -2803,7 +2803,7 @@ button.inline-link {
 }
 
 /* What the READER supplied, in both places they supply something. Weight, not
-   colour: it has to be distinguishable from Revora's own lines at a glance
+   colour: it has to be distinguishable from Prediabetes Pal's own lines at a glance
    while staying plain text.
 
    ⛔ It looks like a field and must never become one. No input, not
@@ -2829,7 +2829,7 @@ button.inline-link {
 /* ⚠️ (0,2,0), and it has to be: the lead IS a <strong> inside
    `.landing-demo-value`, so the rule above is (0,1,1) and beats a bare class.
    Written as a descendant pair rather than as `strong.landing-demo-lead` so
-   the reason is visible — this is the row where Revora asks rather than
+   the reason is visible — this is the row where Prediabetes Pal asks rather than
    answers, and it carries the verdict colour the answer will arrive in. */
 .landing-demo-value .landing-demo-lead {
   color: var(--moderate-text);
@@ -3228,11 +3228,11 @@ button.inline-link {
   color: #a9cfc9;
 }
 
-/* ⚖️ TWO COLUMNS, the v4 design file's — "Today" beside "With Revora" — in
+/* ⚖️ TWO COLUMNS, the v4 design file's — "Today" beside "With Prediabetes Pal" — in
    place of the interleaved now/after rows. The pairing survives the change:
    row N of the left column is row N of the right, and below 610px the two
    columns stack in DOM order, so a phone reader still gets all four "todays"
-   then all four "with Revora"s rather than a scrambled sequence.
+   then all four "with Prediabetes Pal"s rather than a scrambled sequence.
 
    ⚠️ The dimming moved, it was not dropped. The old rule made the "now" TEXT
    dimmer than the lede, because the state the reader is leaving has to sit a
@@ -3256,7 +3256,7 @@ button.inline-link {
 
 /* ⚠️ ROW SUBGRID, and it is doing real work rather than being clever. The two
    columns are independent lists, so by default row 3 of "Today" (one line)
-   sits nowhere near row 3 of "With Revora" (two lines) — and the pairing IS
+   sits nowhere near row 3 of "With Prediabetes Pal" (two lines) — and the pairing IS
    the argument of this band. Handing both lists the section's row track makes
    pair N align at every width without merging them into one flat grid, which
    is what it would take otherwise and would cost both <ul>s their list
@@ -3630,7 +3630,7 @@ button.inline-link {
   cursor: pointer;
 }
 
-/* ── App shell (M1 dashboard plan, design ref: Revora.dc.html) ─────────────
+/* ── App shell (M1 dashboard plan, design ref: Prediabetes Pal.dc.html) ─────────────
    The responsive frame for (app) routes. Below 1024px: top bar + single
    column. From 1024px: fixed sidebar (280px) + wide content. This replaces
    the 480px .page-frame for migrated pages only — unmigrated pages keep
@@ -3984,7 +3984,7 @@ button.inline-link {
   }
 }
 
-/* ── Dashboard (M1, design ref: Revora.dc.html §home) ──────────────────── */
+/* ── Dashboard (M1, design ref: Prediabetes Pal.dc.html §home) ──────────────────── */
 
 .dash-grid {
   display: grid;
@@ -4388,10 +4388,10 @@ button.inline-link {
     var(--surface-muted) 63%
   );
   background-size: 400% 100%;
-  animation: revora-skeleton 1.4s ease-in-out infinite;
+  animation: pal-skeleton 1.4s ease-in-out infinite;
 }
 
-@keyframes revora-skeleton {
+@keyframes pal-skeleton {
   0% {
     background-position: 100% 0;
   }

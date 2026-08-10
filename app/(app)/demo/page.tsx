@@ -2,9 +2,9 @@ import Link from "next/link";
 
 import { DemoCheckCard } from "../../../components/demo-check-card";
 import { ResultCard } from "../../../components/result-card";
-import type { RevoraRisk, RevoraUserResponse } from "../../../lib/client/ui-state";
-import { BOUNDARY_DISCLAIMER } from "../../../lib/revora/boundary-copy";
-import { deriveCoachOutputs } from "../../../lib/revora/coach-outputs";
+import type { PalRisk, PalUserResponse } from "../../../lib/client/ui-state";
+import { BOUNDARY_DISCLAIMER } from "../../../lib/pal/boundary-copy";
+import { deriveCoachOutputs } from "../../../lib/pal/coach-outputs";
 
 /**
  * `/demo` — the marketing-asset fixtures route (Task 8.4). A noindex, inert page
@@ -12,8 +12,8 @@ import { deriveCoachOutputs } from "../../../lib/revora/coach-outputs";
  * with fixture props so the capture script can screenshot each surface at both
  * viewports. Every string here is copied verbatim from an approved copy-ledger
  * row (`docs/safety/copy-ledger.md`) or produced by the real coach derivation
- * (`lib/revora/coach-outputs.ts`) — this page invents NO copy, and the claims
- * scan (`tests/unit/revora/claims-boundary-copy.test.ts`, `app/demo/page.tsx` in
+ * (`lib/pal/coach-outputs.ts`) — this page invents NO copy, and the claims
+ * scan (`tests/unit/pal/claims-boundary-copy.test.ts`, `app/demo/page.tsx` in
  * `COPY_FILES`) enforces it. No live check runs here.
  */
 
@@ -26,8 +26,8 @@ export const metadata = {
 // fields (keepMost / sequencingTip / postMealAction) via the real derivation so
 // their copy is sourced from `coach-outputs.ts`, never re-typed here. SAFE gets
 // no coach output (the derivation returns nulls), matching the shipped product.
-function resultFixture(risk: RevoraRisk, reason: string): RevoraUserResponse {
-  const base: RevoraUserResponse = {
+function resultFixture(risk: PalRisk, reason: string): PalUserResponse {
+  const base: PalUserResponse = {
     kind: "result",
     risk,
     reason,
@@ -61,7 +61,7 @@ const HIGH_FIXTURE = resultFixture(
 );
 
 // `result-clarification-example` ledger row — the honesty screenshot.
-const CLARIFY_FIXTURE: RevoraUserResponse = {
+const CLARIFY_FIXTURE: PalUserResponse = {
   kind: "clarify",
   question:
     "Is this plain or sweetened? That one detail changes whether Prediabetes Pal should read it as lower impact or more concentrated.",

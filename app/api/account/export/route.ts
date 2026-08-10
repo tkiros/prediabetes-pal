@@ -223,7 +223,7 @@ export function createAccountExportHandler(deps: Deps = {}) {
       status: 200,
       headers: {
         "content-type": "application/json; charset=utf-8",
-        "content-disposition": `attachment; filename="revora-account-${today}.json"`
+        "content-disposition": `attachment; filename="prediabetes-pal-account-${today}.json"`
       }
     });
   };

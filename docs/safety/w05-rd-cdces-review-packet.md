@@ -64,7 +64,7 @@ Before any AI call, Revora applies deterministic rules. Please confirm these cla
 1. **"leftover" / "leftovers" alone** → asks the user to clarify what the food is (under-described); "leftover fried rice" still gets a verdict.
 2. **"curry" alone** → asks for clarification (composition varies too widely); a described curry gets a verdict.
 3. **"bbq sauce" quantities** treated as a sugar-heavy condiment: contributes sugar evidence to a "mostly sugary" reasoning, without alone forcing a HIGH verdict; **"bbq ribs"** recognized as a protein dish with a sugar-glazed component.
-4. Sugar-heavy condiments in quantity contribute to a "mostly sugary" reason but do not alone force HIGH (see `lib/revora/input-precheck.ts` markers "PENDING RD/CDCES" for the full rule list — we can provide a live walkthrough).
+4. Sugar-heavy condiments in quantity contribute to a "mostly sugary" reason but do not alone force HIGH (see `lib/pal/input-precheck.ts` markers "PENDING RD/CDCES" for the full rule list — we can provide a live walkthrough).
 
 ---
 

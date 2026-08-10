@@ -1321,7 +1321,7 @@ describe("applyStripeEvent — refund ordering (W-12)", () => {
 });
 
 /**
- * W-10 — churn was uninstrumented. The two event names existed on the REVORA
+ * W-10 — churn was uninstrumented. The two event names existed on the Prediabetes Pal
  * telemetry enum, which the webhook does not import and whose .strict() schema
  * could never have accepted them: a signal that was documented but structurally
  * incapable of firing. These tests exist so it cannot go quiet again.

@@ -10,7 +10,7 @@ import { IconArrowRight } from "./icons";
  * composite): the meal check IS the dashboard's first task, not a link to it.
  *
  * Deliberately a hand-off, not a second check surface: the typed meal rides
- * the existing `revora.recheck` sessionStorage prefill that /check already
+ * the existing `pal.recheck` sessionStorage prefill that /check already
  * reads, so /check stays the ONE place a check runs (taster gate, A1C,
  * voice/photo, result rendering — none of it duplicated here). An empty
  * submit behaves exactly like the old CTA link.
@@ -24,7 +24,7 @@ export function HomeCheckHero() {
     const trimmed = meal.trim();
     if (trimmed) {
       try {
-        window.sessionStorage.setItem("revora.recheck", trimmed);
+        window.sessionStorage.setItem("pal.recheck", trimmed);
       } catch {
         // best-effort prefill only — /check works without it
       }

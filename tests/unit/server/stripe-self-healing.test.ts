@@ -1066,7 +1066,7 @@ describe("inbox email dispatch (B4) — post-commit, once, stable token", () => 
   beforeAll(() => {
     process.env.HEALTH_DATA_KEY = Buffer.alloc(32, 7).toString("base64");
     process.env.STRIPE_PRICE_PANTRY = "price_pantry_25";
-    process.env.NEXT_PUBLIC_APP_URL = "https://revora.test";
+    process.env.NEXT_PUBLIC_APP_URL = "https://pal.test";
   });
   afterAll(() => {
     delete process.env.STRIPE_PRICE_PANTRY;

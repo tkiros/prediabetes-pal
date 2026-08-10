@@ -10,7 +10,7 @@
  * — not retyped here — so `promise-registry.test.ts` pins the clarify question
  * to the precheck's real output and blocks the deploy if the flow ever changes.
  */
-import { OATMEAL_EXAMPLE } from "../lib/revora/promise-registry";
+import { OATMEAL_EXAMPLE } from "../lib/pal/promise-registry";
 import { DisclaimerLine } from "./disclaimer-line";
 import { IconAlert, IconArrowRight, IconLeaf } from "./icons";
 

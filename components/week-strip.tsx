@@ -1,5 +1,5 @@
 import type { VerdictWeekDay } from "../lib/coach/days";
-import { RISK_LABELS } from "../lib/revora/labels";
+import { RISK_LABELS } from "../lib/pal/labels";
 import { IconAlert, IconCheck, IconPause } from "./icons";
 
 /**

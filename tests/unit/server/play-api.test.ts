@@ -15,10 +15,10 @@ const { privateKey, publicKey } = generateKeyPairSync("rsa", {
 
 beforeEach(() => {
   process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON = JSON.stringify({
-    client_email: "svc@revora.iam.gserviceaccount.com",
+    client_email: "svc@pal.iam.gserviceaccount.com",
     private_key: privateKey
   });
-  process.env.PLAY_PACKAGE_NAME = "app.revora.twa";
+  process.env.PLAY_PACKAGE_NAME = "com.prediabetespal.twa";
 });
 
 afterEach(() => {
@@ -34,7 +34,7 @@ describe("buildServiceAccountJwt", () => {
   it("produces a valid RS256 JWT with the androidpublisher scope", () => {
     const jwt = buildServiceAccountJwt(
       {
-        client_email: "svc@revora.iam.gserviceaccount.com",
+        client_email: "svc@pal.iam.gserviceaccount.com",
         private_key: privateKey
       },
       1_750_000_000
@@ -47,7 +47,7 @@ describe("buildServiceAccountJwt", () => {
     });
 
     const parsedClaims = JSON.parse(b64urlDecode(claims).toString());
-    expect(parsedClaims.iss).toBe("svc@revora.iam.gserviceaccount.com");
+    expect(parsedClaims.iss).toBe("svc@pal.iam.gserviceaccount.com");
     expect(parsedClaims.scope).toContain("androidpublisher");
     expect(parsedClaims.exp - parsedClaims.iat).toBe(3600);
 
@@ -87,7 +87,7 @@ describe("fetchPlaySubscription", () => {
 
     // the API call carried the bearer token and the encoded package/token
     const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;
-    expect(String(calls[1][0])).toContain("app.revora.twa");
+    expect(String(calls[1][0])).toContain("com.prediabetespal.twa");
     expect(String(calls[1][0])).toContain("token-abc");
   });
 

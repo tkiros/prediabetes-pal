@@ -188,7 +188,7 @@ Nothing depends on it once step 1 lands. Delete the project, then delete
 
 - **3 uncommitted owner-gated files** — `docs/legal/counsel-brief.md`,
   `scripts/capture-marketing-shots.mjs`,
-  `tests/unit/revora/claims-boundary-copy.test.ts` (the `posts.json` scan hunk).
+  `tests/unit/pal/claims-boundary-copy.test.ts` (the `posts.json` scan hunk).
   Provenance was never confirmed; still uncommitted by design.
 - **`LEGAL_ENTITY_NAME`** in Vercel still reads `Revora` and renders in Terms
   and Privacy. Env change, arguably a legal decision.

@@ -13,7 +13,7 @@ import { expect, test, type Page } from "@playwright/test";
  * Env-gated like auth.spec.ts: needs a real database + the email stub.
  *
  *   DATABASE_URL=<disposable loopback database> \
- *     AUTH_EMAIL_STUB_DIR=/tmp/revora-mailbox \
+ *     AUTH_EMAIL_STUB_DIR=/tmp/pal-mailbox \
  *     npx playwright test tests/smoke/account-support.spec.ts
  */
 
@@ -26,7 +26,7 @@ test.skip(
 );
 
 async function signIn(page: Page): Promise<string> {
-  const email = `e2e-support-${Date.now()}@revora.test`;
+  const email = `e2e-support-${Date.now()}@pal.test`;
 
   await page.goto("/signin");
   await page.getByLabel("Email address").fill(email);

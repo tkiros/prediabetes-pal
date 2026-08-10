@@ -1,5 +1,5 @@
-import { assertNoForbiddenClaims } from "../revora/postprocess";
-import type { SafetyContract } from "../revora/safety-contract";
+import { assertNoForbiddenClaims } from "../pal/postprocess";
+import type { SafetyContract } from "../pal/safety-contract";
 import type { JourneyState, Stage } from "./state";
 
 /**

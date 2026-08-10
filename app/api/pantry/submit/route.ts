@@ -10,7 +10,7 @@ import {
   MAX_ITEMS_PER_ORDER,
   type PantryVisionClient
 } from "../../../../lib/pantry/extract";
-import { captureServerError } from "../../../../lib/revora/sentry-capture";
+import { captureServerError } from "../../../../lib/pal/sentry-capture";
 import { encryptField } from "../../../../lib/server/crypto";
 import { getDb, schema, type Db } from "../../../../lib/server/db";
 import {
@@ -63,9 +63,9 @@ type Deps = {
   now?: () => Date;
 };
 
-// Extraction endpoint limiter (locked decision 8): revora:pantry prefix,
+// Extraction endpoint limiter (locked decision 8): pal:pantry prefix,
 // keyed by user (buyers are always signed in here). Fail-open on store
-// errors, same posture as lib/revora/rate-limit.ts.
+// errors, same posture as lib/pal/rate-limit.ts.
 let limiter: Ratelimit | null | undefined;
 async function defaultRateLimit(userId: string) {
   if (limiter === undefined) {
@@ -76,7 +76,7 @@ async function defaultRateLimit(userId: string) {
         ? new Ratelimit({
             redis: new Redis({ url, token }),
             limiter: Ratelimit.slidingWindow(5, "1 h"),
-            prefix: "revora:pantry",
+            prefix: "pal:pantry",
             analytics: false
           })
         : null;

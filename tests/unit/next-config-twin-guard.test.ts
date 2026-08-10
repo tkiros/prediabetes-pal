@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * Memory/Journey imported cleanly; these tests import the real config under a
  * synthetic production env and demand the throw.
  *
- * REVORA_ALLOW_NO_MEASUREMENT=1 isolates the twin guard from the analytics
+ * PAL_ALLOW_NO_MEASUREMENT=1 isolates the twin guard from the analytics
  * gate — the guard is deliberately OUTSIDE that waiver.
  */
 
@@ -19,7 +19,7 @@ const PAIRS = [
 
 function stubBase() {
   vi.stubEnv("VERCEL_ENV", "production");
-  vi.stubEnv("REVORA_ALLOW_NO_MEASUREMENT", "1");
+  vi.stubEnv("PAL_ALLOW_NO_MEASUREMENT", "1");
   for (const [client, server] of PAIRS) {
     vi.stubEnv(client, "");
     vi.stubEnv(server, "");
@@ -62,7 +62,7 @@ describe("next.config production twin guard (AUD-002)", () => {
   });
 
   it("the analytics waiver never waives flag safety", async () => {
-    // REVORA_ALLOW_NO_MEASUREMENT=1 is already set by stubBase — the guard
+    // PAL_ALLOW_NO_MEASUREMENT=1 is already set by stubBase — the guard
     // must still throw.
     stubBase();
     vi.stubEnv("NEXT_PUBLIC_MEAL_MEMORY", "1");

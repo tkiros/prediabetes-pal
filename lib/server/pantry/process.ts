@@ -1,8 +1,8 @@
 import { and, asc, eq, isNull, lt, or } from "drizzle-orm";
 
-import { createOpenAIRevoraModelClient, type RevoraModelClient } from "../../revora/openai-client";
-import { checkFood } from "../../revora/service";
-import { captureServerError } from "../../revora/sentry-capture";
+import { createOpenAIPalModelClient, type PalModelClient } from "../../pal/openai-client";
+import { checkFood } from "../../pal/service";
+import { captureServerError } from "../../pal/sentry-capture";
 import { deleteBlobUrls, deleteOrderBlobs } from "../blob";
 import { decryptField, encryptField } from "../crypto";
 import { schema, type Db } from "../db";
@@ -51,7 +51,7 @@ export type PantryReport = {
 
 export type ProcessDeps = {
   db: Db;
-  model: RevoraModelClient;
+  model: PalModelClient;
   email: {
     send: (input: SendEmailInput) => Promise<SendEmailResult>;
   };
@@ -62,7 +62,7 @@ export type ProcessDeps = {
 export function defaultProcessDeps(db: Db): ProcessDeps {
   return {
     db,
-    model: createOpenAIRevoraModelClient(),
+    model: createOpenAIPalModelClient(),
     email: { send: sendEmail },
     deleteBlobs: deleteBlobUrls,
     now: () => new Date()

@@ -2,7 +2,7 @@
 
 ## Delete the zombie Vercel project `revora-irj3` (owner, 1 min)
 - **What:** a second Vercel project on the same repo, no custom domain (only `*.vercel.app` aliases; `revora.plus` lives on the `revora` project). Its production build has failed on EVERY merge to main since ~Jul 17 — it has no measurement env vars, so `next.config.ts`'s deliberate dark-launch gate kills the build in ~7s ("Production build without measurement…") and Vercel emails the owner an error each time. It also double-builds every PR preview.
-- **Fix:** `vercel project rm revora-irj3` (or dashboard → project → Settings → Delete). Destructive, so owner's call; the alternative (`REVORA_ALLOW_NO_MEASUREMENT=1` on irj3) silences the emails but keeps paying the double-build tax for a project nothing uses.
+- **Fix:** `vercel project rm revora-irj3` (or dashboard → project → Settings → Delete). Destructive, so owner's call; the alternative (`PAL_ALLOW_NO_MEASUREMENT=1` on irj3) silences the emails but keeps paying the double-build tax for a project nothing uses.
 - **Why it matters:** an error email on every merge trains the owner to ignore deploy failures — the day the REAL project fails, the notification looks like the usual noise.
 
 ## Umami: historical funnel data is missing, and the ADR describes the wrong install
@@ -66,22 +66,22 @@
 - **What:** the evidence page has no stable name, and the mismatch is worse than
   the 2026-07-28 audit recorded. Current inbound labels: "Read the evidence and
   limitations" (`app/page.tsx:607`), "Read exactly what it measures and its
-  honest limits" (`:630`), "How the weekly recap works" (`:867`), "How Revora
+  honest limits" (`:630`), "How the weekly recap works" (`:867`), "How Prediabetes Pal
   chooses a signal" (`components/result-card.tsx:250`, and DESIGN.md §Result
   card sanctions that wording), "How this works"
-  (`app/(app)/journey/page.tsx:284`), "see how Revora works"
+  (`app/(app)/journey/page.tsx:284`), "see how Prediabetes Pal works"
   (`components/trial-wall.tsx:297`). Separately the landing nav's "How it works"
   points at the on-page `#how-it-works` anchor, not this page at all.
 - **The real defect:** the page itself is scoped to the weekly progress view —
-  `metadata.title` "How Revora Works — the Weekly Prediabetes Recap" (retitled
+  `metadata.title` "How Prediabetes Pal Works — the Weekly Prediabetes Recap" (retitled
   in the 2026-08-01 SEO pass; same scope), `<h1>` "What the progress view
   measures", and its three sections cover what the recap measures, the research
-  behind it, and its limits. So the result card's "How Revora chooses a signal"
+  behind it, and its limits. So the result card's "How Prediabetes Pal chooses a signal"
   sends a user who just received a verdict to a page that never explains how the
   verdict was chosen. That is a promise the destination does not keep, on the
   surface where trust is most load-bearing.
 - **Why not fixed in the consolidation pass:** every one of these strings is
-  claims-audited copy (`tests/unit/revora/claims-boundary-copy.test.ts`), the
+  claims-audited copy (`tests/unit/pal/claims-boundary-copy.test.ts`), the
   result-card label is written into DESIGN.md, and the fix is a content/IA
   decision — either the page grows a signal-methodology section, or the result
   card's trust link points somewhere that answers its own promise. Renaming
@@ -153,7 +153,7 @@
 - **Why:** Turns the one-off report build into the app's flagship retention feature; the confirm-screen pattern is already buyer-tested by then.
 - **Pros:** Extraction module, eval fixtures, and confirm UI all exist after the pipeline ships; strongest possible reuse.
 - **Cons:** Touches the safety-evaluated daily flow; needs its own QA round and eval extension before subscribers see it.
-- **Context:** Decided during /iplan-eng-review 2026-07-04 (Pantry Review pipeline). Engine today is text+A1C only (`lib/revora/`); vision enters the codebase via the pipeline as an extractor that never judges. Start by lifting `lib/pantry/` extraction + `app/pantry/` confirm screen into the check flow behind a flag.
+- **Context:** Decided during /iplan-eng-review 2026-07-04 (Pantry Review pipeline). Engine today is text+A1C only (`lib/pal/`); vision enters the codebase via the pipeline as an extractor that never judges. Start by lifting `lib/pantry/` extraction + `app/pantry/` confirm screen into the check flow behind a flag.
 - **Depends on / blocked by:** Pipeline shipped; edit-rate data from first ~10 paid orders (the real extraction-quality metric).
 
 ## Billing module multi-product shape
@@ -177,5 +177,5 @@
 - **Why:** Deeply on-brand ("document-not-dashboard" per DESIGN.md); emotionally stronger for anxious users; differentiated screenshots for marketing.
 - **Pros:** Rides M1's data layer unchanged; pure presentation + copy-generation layer.
 - **Cons:** LLM-generated copy near health claims needs its own eval suite extension; engine is text+A1C only today.
-- **Context:** Explored as Approach C in the 2026-07-10 dashboard design doc (`~/.gstack/projects/Revora/tefera-feat-video-engine-renderer-design-20260710-020331.md`), deliberately deferred. Prerequisite signal: daypart/repeat_meal insights consistently landing well with real users (day-3 observation assignment).
+- **Context:** Explored as Approach C in the 2026-07-10 dashboard design doc (`~/.gstack/projects/Prediabetes Pal/tefera-feat-video-engine-renderer-design-20260710-020331.md`), deliberately deferred. Prerequisite signal: daypart/repeat_meal insights consistently landing well with real users (day-3 observation assignment).
 - **Depends on / blocked by:** M1 shipped; real-user insight feedback; eval coverage for generated reassurance copy.

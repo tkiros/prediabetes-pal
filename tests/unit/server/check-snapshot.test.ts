@@ -7,9 +7,9 @@ import {
   createHistoryExportHandler,
   createHistoryGetHandler
 } from "../../../app/api/history/handlers";
-import { activeModelId } from "../../../lib/revora/openai-client";
-import { PROMPT_VERSION } from "../../../lib/revora/prompt";
-import { CONTRACT_VERSION } from "../../../lib/revora/safety-contract";
+import { activeModelId } from "../../../lib/pal/openai-client";
+import { PROMPT_VERSION } from "../../../lib/pal/prompt";
+import { CONTRACT_VERSION } from "../../../lib/pal/safety-contract";
 import { decryptField, encryptField } from "../../../lib/server/crypto";
 import { schema } from "../../../lib/server/db";
 import { createTestDb } from "../../helpers/test-db";
@@ -114,8 +114,8 @@ describe("immutable check-result snapshot (§P3.1)", () => {
     const POST = createHandler();
     const response = await POST(
       checkRequest({
-        "x-revora-client-id": "snap-1",
-        "x-revora-coach-rotation": "0"
+        "x-pal-client-id": "snap-1",
+        "x-pal-coach-rotation": "0"
       })
     );
     expect(response.status).toBe(200);
@@ -167,8 +167,8 @@ describe("immutable check-result snapshot (§P3.1)", () => {
     const POST = createHandler();
     await POST(
       checkRequest({
-        "x-revora-clarified": "1",
-        "x-revora-clarify-category": "plain_or_sweetened"
+        "x-pal-clarified": "1",
+        "x-pal-clarify-category": "plain_or_sweetened"
       })
     );
 
@@ -185,7 +185,7 @@ describe("immutable check-result snapshot (§P3.1)", () => {
   it("does not store a clarify question when the check did not resolve a clarification", async () => {
     const POST = createHandler();
     // Category present but no clarified flag — nothing was actually answered.
-    await POST(checkRequest({ "x-revora-clarify-category": "plain_or_sweetened" }));
+    await POST(checkRequest({ "x-pal-clarify-category": "plain_or_sweetened" }));
 
     const [row] = await testDb.db.select().from(schema.checks);
     expect(row.wasClarified).toBe(false);
@@ -196,8 +196,8 @@ describe("immutable check-result snapshot (§P3.1)", () => {
     const POST = createHandler();
     await POST(
       checkRequest({
-        "x-revora-clarified": "1",
-        "x-revora-clarify-category": "not_a_real_reason"
+        "x-pal-clarified": "1",
+        "x-pal-clarify-category": "not_a_real_reason"
       })
     );
 
@@ -208,7 +208,7 @@ describe("immutable check-result snapshot (§P3.1)", () => {
 
   it("persists nothing for a clarify (non-result) response", async () => {
     const POST = createHandler({ responseKind: "clarify" });
-    await POST(checkRequest({ "x-revora-clarified": "1" }));
+    await POST(checkRequest({ "x-pal-clarified": "1" }));
 
     const rows = await testDb.db.select().from(schema.checks);
     expect(rows).toHaveLength(0);
@@ -297,9 +297,9 @@ describe("append-only boundary (§12)", () => {
     });
     await POST(
       checkRequest({
-        "x-revora-client-id": "append-1",
-        "x-revora-clarified": "1",
-        "x-revora-clarify-category": "plain_or_sweetened"
+        "x-pal-client-id": "append-1",
+        "x-pal-clarified": "1",
+        "x-pal-clarify-category": "plain_or_sweetened"
       })
     );
 
@@ -337,8 +337,8 @@ describe("append-only boundary (§12)", () => {
   it("a rerun creates a NEW row rather than overwriting the old card", async () => {
     const POST = createHandler();
     // Distinct client ids → two independent snapshots (no dedupe collapse).
-    await POST(checkRequest({ "x-revora-client-id": "run-a" }));
-    await POST(checkRequest({ "x-revora-client-id": "run-b" }));
+    await POST(checkRequest({ "x-pal-client-id": "run-a" }));
+    await POST(checkRequest({ "x-pal-client-id": "run-b" }));
 
     const rows = await testDb.db.select().from(schema.checks);
     expect(rows).toHaveLength(2);

@@ -99,7 +99,7 @@ async function invokeCron(path, config, deps) {
       headers: {
         accept: "application/json",
         authorization: `Bearer ${config.secret}`,
-        "user-agent": "revora-hourly-cron/1"
+        "user-agent": "pal-hourly-cron/1"
       },
       signal: AbortSignal.timeout(deps.timeoutMs)
     });

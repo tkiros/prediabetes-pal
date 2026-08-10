@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 // §0.2 #7 (link-sharing basics): the public marketing surface only. App and
 // account surfaces (/home, /history, /welcome, /onboarding, …) and the
 // noindex fixtures route (/demo) stay out on purpose —
-// tests/unit/revora/seo-meta.test.ts cross-checks this list against
+// tests/unit/pal/seo-meta.test.ts cross-checks this list against
 // app/robots.ts so a sitemap URL can never be robots-disallowed.
 export const PUBLIC_MARKETING_PATHS = [
   "/",

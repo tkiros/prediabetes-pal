@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { mealMemoryServerEnabled } from "../../../lib/meal-memory-flag";
-import { normalize as normalizeFood } from "../../../lib/revora/input-precheck";
-import { captureServerError } from "../../../lib/revora/sentry-capture";
+import { normalize as normalizeFood } from "../../../lib/pal/input-precheck";
+import { captureServerError } from "../../../lib/pal/sentry-capture";
 import { capabilitiesFor } from "../../../lib/server/capabilities";
 import {
   decryptField,
@@ -42,7 +42,7 @@ import {
  * at rest (AES-256-GCM, same standard as checks.food), decrypted only here for
  * the owner. The bounded reflections (ease, label, wouldRepeat, favorite) stay
  * plaintext so the list renders without a decrypt per field. NOTHING here feeds
- * the check engine — this module is never imported by lib/revora/* (global
+ * the check engine — this module is never imported by lib/pal/* (global
  * constraint §1, asserted by meal-memory-non-interference.test.ts).
  */
 
@@ -465,7 +465,7 @@ export function createMemoryListHandler(deps: MemoryRouteDeps = {}) {
  * re-check.
  *
  * Matching is EXACT normalized-string equality — the same normalizer the input
- * precheck uses (lib/revora/input-precheck.normalize), so "White Rice " recalls a
+ * precheck uses (lib/pal/input-precheck.normalize), so "White Rice " recalls a
  * saved "white rice". Deliberately NOT fuzzy or semantic at launch (§P3.3), and
  * NO search index: the newest RECALL_SCAN_LIMIT memories are decrypted and
  * compared in memory. There is no hash of meal text anywhere (global constraint
@@ -830,7 +830,7 @@ export function createMemoryExportHandler(deps: MemoryRouteDeps = {}) {
           status: 200,
           headers: {
             "content-type": "application/json; charset=utf-8",
-            "content-disposition": `attachment; filename="revora-meal-memory-${today}.json"`
+            "content-disposition": `attachment; filename="prediabetes-pal-meal-memory-${today}.json"`
           }
         }
       );

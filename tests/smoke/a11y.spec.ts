@@ -189,7 +189,7 @@ test.describe("signed-in pantry surfaces", () => {
   test("pantry intake page has no critical or serious a11y violations", async ({
     page
   }) => {
-    const email = `a11y-intake-${Date.now()}@revora.test`;
+    const email = `a11y-intake-${Date.now()}@pal.test`;
     const { claimUrl } = seedOrder(email);
 
     await signInVia(page, email, claimUrl);
@@ -208,7 +208,7 @@ test.describe("signed-in pantry surfaces", () => {
       !process.env.OPENAI_API_KEY,
       "needs OPENAI_API_KEY — the report requires a real judged report (no stub)"
     );
-    const email = `a11y-report-${Date.now()}@revora.test`;
+    const email = `a11y-report-${Date.now()}@pal.test`;
     const { claimUrl } = seedOrder(email);
 
     await signInVia(page, email, claimUrl);

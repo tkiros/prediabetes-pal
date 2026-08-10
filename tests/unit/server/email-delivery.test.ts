@@ -113,7 +113,7 @@ describe("tracked Resend send", () => {
 
     const request = fetchImpl.mock.calls[0][1] as RequestInit;
     expect((request.headers as Record<string, string>)["Idempotency-Key"]).toMatch(
-      /^revora\/[a-f0-9]{64}$/
+      /^pal\/[a-f0-9]{64}$/
     );
 
     const secondFetch = vi.fn();
@@ -283,7 +283,7 @@ describe("Resend delivery state machine", () => {
     const old = new Date(NOW.getTime() - EMAIL_DELIVERY_RETENTION_MS - 1);
     await testDb.db.insert(schema.emailDeliveryAttempts).values({
       providerMessageId: "email_old",
-      idempotencyKey: "revora/old",
+      idempotencyKey: "pal/old",
       recipientHash: "a".repeat(64),
       category: "unknown",
       status: "delivered",

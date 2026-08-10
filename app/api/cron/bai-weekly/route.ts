@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { runBaiWeeklyCron } from "../../../../lib/server/bai-cron";
 import { getDb, type Db } from "../../../../lib/server/db";
-import { captureServerError } from "../../../../lib/revora/sentry-capture";
+import { captureServerError } from "../../../../lib/pal/sentry-capture";
 import { isAuthorizedCron } from "../../../../lib/server/timing-safe";
 
 export const runtime = "nodejs";
