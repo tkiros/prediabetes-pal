@@ -1,0 +1,275 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Prediabetes Pal carousel template</title>
+<!-- Six-slide photo-carousel master. Layout lives here; copy lives in
+     posts.json; scripts/render-carousel.mjs joins them and screenshots each
+     .slide to PNG. See README.md in this folder.
+
+     Fonts load from Google when online and fall back to system faces offline —
+     the shipped pairing is Plus Jakarta Sans (display) + Source Sans 3 (text),
+     same as app/fonts.ts. Check a render before publishing if you were offline. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  /* Tokens lifted from app/globals.css. Keep in sync by hand — this file is
+     standalone on purpose so a designer can open it without running Next. */
+  :root {
+    --w: 1080px;
+    --h: 1350px;          /* 4:5 — the widest-compatible ratio across IG, FB,
+                             Pinterest and TikTok photo mode. For a 9:16
+                             TikTok-native set, change to 1920px. */
+    --page-bg: #f2f7f6;
+    --surface: #ffffff;
+    --border-soft: #e2e8f0;
+    --text-strong: #0f172a;
+    --text-body: #1e293b;
+    --text-muted: #475569;
+    --text-soft: #64748b;
+    --accent: #0d5f57;
+    --accent-strong: #0a4a44;
+    --accent-contrast: #f8fafc;
+    --accent-tint: #e6f2ef;
+    --safe-border: #0f766e;
+    --safe-bg: #ecfdf5;
+    --safe-text: #065f46;
+    --moderate-border: #b45309;
+    --moderate-bg: #fffbeb;
+    --moderate-text: #92400e;
+    --high-border: #b91c1c;
+    --high-bg: #fef2f2;
+    --high-text: #991b1b;
+    --display: "Plus Jakarta Sans", system-ui, sans-serif;
+    --text: "Source Sans 3", system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #333; display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 24px; }
+
+  .slide {
+    position: relative;
+    width: var(--w);
+    height: var(--h);
+    background: var(--page-bg);
+    font-family: var(--text);
+    color: var(--text-body);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Slide 1: cover ─────────────────────────────────────────────────────
+     A photograph with the reader's back to camera — no face to cast, no
+     creator identity to maintain across 30 posts, and the reader projects
+     herself into the frame. That anonymity is the device, not a shortcut. */
+  .cover { padding: 0; }
+  .cover-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .cover-photo-missing {
+    position: absolute; inset: 0;
+    background: linear-gradient(160deg, #cfe0da 0%, #eef4f2 100%);
+    display: grid; place-items: center;
+    font-family: var(--display); font-size: 22px; letter-spacing: .08em;
+    text-transform: uppercase; color: #7c9a92;
+  }
+  .cover-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(15,23,42,0) 38%, rgba(15,23,42,.72) 100%); }
+  .cover-stack { position: relative; margin-top: auto; padding: 0 72px 84px; display: grid; gap: 22px; justify-items: start; }
+  .cover-eyebrow {
+    display: inline-flex; align-items: center;
+    border-radius: 999px; padding: 14px 30px;
+    background: var(--surface); color: var(--accent-strong);
+    font-family: var(--display); font-size: 25px; font-weight: 700;
+    letter-spacing: .05em; text-transform: uppercase; line-height: 1.2;
+  }
+  .cover-title {
+    font-family: var(--display); font-size: 92px; font-weight: 800;
+    line-height: 1.02; letter-spacing: -.025em; color: #ffffff;
+    text-wrap: balance;
+  }
+  .cover-part { font-family: var(--display); font-size: 30px; font-weight: 600; color: rgba(255,255,255,.82); }
+
+  /* ── Slides 2–5: the pair ───────────────────────────────────────────────
+     Two descriptions of the same meal, each with the label the product
+     actually returns. The verdict words are lib/revora/labels.ts verbatim. */
+  /* Centred, with the bottom pad reserving the disclaimer's strip. Top-aligned
+     left a dead band above the footer that read as a cropped slide. */
+  .pair { padding: 72px 72px 130px; justify-content: center; }
+  .pair-kicker {
+    font-family: var(--display); font-size: 26px; font-weight: 700;
+    letter-spacing: .09em; text-transform: uppercase; color: var(--accent);
+  }
+  .pair-grid { margin-top: 64px; display: grid; grid-template-columns: 1fr 96px 1fr; align-items: start; }
+  .pair-col { display: grid; justify-items: center; gap: 26px; }
+  .pair-disc { width: 340px; height: 340px; border-radius: 50%; overflow: hidden; background: var(--surface); }
+  .pair-disc img { width: 100%; height: 100%; object-fit: cover; }
+  .pair-disc-missing {
+    width: 100%; height: 100%;
+    border: 3px dashed #bcd2cb; border-radius: 50%;
+    background: var(--accent-tint);
+    display: grid; place-items: center;
+    font-family: var(--display); font-size: 20px; letter-spacing: .1em;
+    text-transform: uppercase; color: #8aa9a1;
+  }
+  .pair-role {
+    font-family: var(--display); font-size: 24px; font-weight: 700;
+    letter-spacing: .09em; text-transform: uppercase; color: var(--text-soft);
+  }
+  .pair-name {
+    font-family: var(--text); font-size: 36px; font-weight: 600;
+    line-height: 1.25; text-align: center; color: var(--text-strong);
+    max-width: 380px; text-wrap: balance;
+  }
+  .pair-arrow { align-self: center; margin-top: 130px; display: grid; place-items: center; }
+  .pair-arrow svg { width: 68px; height: 40px; }
+
+  /* Verdict chip. A LABEL, not a screenshot — it uses the product's words and
+     the product's tokens but does not impersonate the result card. The card
+     itself appears once, on slide 6, as a real /demo capture. */
+  .chip {
+    display: inline-flex; align-items: center;
+    border: 3px solid; border-radius: 999px; padding: 14px 34px;
+    font-family: var(--display); font-size: 30px; font-weight: 800;
+    letter-spacing: .02em;
+  }
+  .chip--clear    { border-color: var(--safe-border);     background: var(--safe-bg);     color: var(--safe-text); }
+  .chip--careful  { border-color: var(--moderate-border); background: var(--moderate-bg); color: var(--moderate-text); }
+  .chip--hold     { border-color: var(--high-border);     background: var(--high-bg);     color: var(--high-text); }
+
+  .pair-note {
+    margin: 72px auto 0; max-width: 840px;
+    background: var(--surface); border: 1px solid var(--border-soft);
+    border-radius: 28px; padding: 40px 48px;
+    font-size: 38px; line-height: 1.38; text-align: center; color: var(--text-body);
+    text-wrap: balance;
+  }
+
+  /* ── Slide 6: CTA ───────────────────────────────────────────────────────
+     The one structural advantage over every app-store competitor in this
+     niche: nothing to install. Say it in words, then show the real capture. */
+  .cta { background: var(--accent); color: var(--accent-contrast); padding: 96px 72px 120px; align-items: center; text-align: center; }
+  .cta-title { font-family: var(--display); font-size: 84px; font-weight: 800; line-height: 1.05; letter-spacing: -.025em; }
+  .cta-url { margin-top: 30px; font-family: var(--display); font-size: 46px; font-weight: 700; color: #bfe3dc; }
+  .cta-lines { margin-top: 34px; display: grid; gap: 10px; font-size: 38px; line-height: 1.3; color: #dcefeb; }
+  /* The /demo capture is a full phone-height card — far taller than the slot.
+     Crop from the TOP (label + why is the part worth showing) and fade the cut
+     so it reads as a deliberate crop, not an overflow. Re-check this height if
+     the result card ever gains or loses a row. */
+  .cta-shot {
+    position: relative; margin-top: 48px;
+    width: 470px; height: 600px;
+    border-radius: 26px; overflow: hidden;
+    box-shadow: 0 30px 70px rgba(0,0,0,.34);
+  }
+  .cta-shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .cta-shot::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 130px;
+    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, #0d5f57 96%);
+  }
+  .cta-shot-missing {
+    width: 470px; height: 300px; margin-top: 56px; border-radius: 26px;
+    border: 3px dashed rgba(255,255,255,.4); display: grid; place-items: center;
+    font-family: var(--display); font-size: 20px; letter-spacing: .1em;
+    text-transform: uppercase; color: rgba(255,255,255,.62); text-align: center; padding: 0 24px;
+  }
+
+  /* ── The footer is FIXED, not data-driven ───────────────────────────────
+     docs/safety/claims-boundary.md §Reusable Disclaimer. It renders on every
+     slide that carries a verdict word or a product claim, and posts.json
+     cannot switch it off. If you are tempted to remove it to win layout
+     space, shorten the slide instead. */
+  .disclaimer {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 0 72px 40px;
+    font-size: 22px; line-height: 1.35; color: var(--text-soft); text-align: center;
+  }
+  .cta .disclaimer { color: rgba(255,255,255,.72); }
+</style>
+
+<div id="deck"></div>
+
+<script>
+  const DISCLAIMER =
+    "Prediabetes Pal is informational only and is not medical advice. Talk with a doctor or registered dietitian for guidance that is specific to you.";
+
+  // Verdict words come from lib/revora/labels.ts. Keep this map in step with it.
+  const CHIP = {
+    clear:   { cls: "chip--clear",   text: "Clear" },
+    careful: { cls: "chip--careful", text: "Be careful" },
+    hold:    { cls: "chip--hold",    text: "Hold off" }
+  };
+
+  const esc = (s) =>
+    String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  const disc = (img, alt) =>
+    img
+      ? `<div class="pair-disc"><img src="${esc(img)}" alt="${esc(alt)}"></div>`
+      : `<div class="pair-disc"><div class="pair-disc-missing">photo</div></div>`;
+
+  const side = (s) => `
+    <div class="pair-col">
+      ${disc(s.img, s.name)}
+      <div class="pair-role">${esc(s.role)}</div>
+      <div class="pair-name">${esc(s.name)}</div>
+      <div class="chip ${CHIP[s.verdict].cls}">${CHIP[s.verdict].text}</div>
+    </div>`;
+
+  const ARROW = `<svg viewBox="0 0 68 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M2 20h60M46 4l16 16-16 16" stroke="#0d5f57" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+
+  function coverSlide(p) {
+    const art = p.cover.photo
+      ? `<img class="cover-photo" src="${esc(p.cover.photo)}" alt="">`
+      : `<div class="cover-photo-missing">cover photo — back to camera, no face</div>`;
+    return `
+      <section class="slide cover">
+        ${art}
+        <div class="cover-scrim"></div>
+        <div class="cover-stack">
+          <div class="cover-eyebrow">${esc(p.cover.eyebrow)}</div>
+          <h1 class="cover-title">${esc(p.cover.title)}</h1>
+          <div class="cover-part">pt. ${esc(p.part)}</div>
+        </div>
+      </section>`;
+  }
+
+  function pairSlide(pair) {
+    return `
+      <section class="slide pair">
+        <div class="pair-kicker">${esc(pair.kicker)}</div>
+        <div class="pair-grid">
+          ${side(pair.before)}
+          <div class="pair-arrow">${ARROW}</div>
+          ${side(pair.after)}
+        </div>
+        <div class="pair-note">${esc(pair.note)}</div>
+        <div class="disclaimer">${DISCLAIMER}</div>
+      </section>`;
+  }
+
+  function ctaSlide(p) {
+    const shot = p.cta.shot
+      ? `<div class="cta-shot"><img src="${esc(p.cta.shot)}" alt=""></div>`
+      : `<div class="cta-shot-missing">real /demo capture — see docs/runbooks/marketing-assets.md</div>`;
+    return `
+      <section class="slide cta">
+        <h2 class="cta-title">${esc(p.cta.title)}</h2>
+        <div class="cta-url">${esc(p.cta.url)}</div>
+        <div class="cta-lines">${p.cta.lines.map((l) => `<div>${esc(l)}</div>`).join("")}</div>
+        ${shot}
+        <div class="disclaimer">${DISCLAIMER}</div>
+      </section>`;
+  }
+
+  // Called by scripts/render-carousel.mjs, and by hand from the console when
+  // you are eyeballing a layout change.
+  window.renderPost = function (post) {
+    if (post.pairs.length !== 4) {
+      throw new Error(`pt. ${post.part}: expected 4 pairs, got ${post.pairs.length} — the deck is fixed at 6 slides`);
+    }
+    document.getElementById("deck").innerHTML =
+      coverSlide(post) + post.pairs.map(pairSlide).join("") + ctaSlide(post);
+    return document.querySelectorAll(".slide").length;
+  };
+</script>
