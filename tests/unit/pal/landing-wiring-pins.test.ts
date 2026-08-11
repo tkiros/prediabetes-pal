@@ -42,8 +42,10 @@ const text = (html: string) => html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " "
  *  1. FONT WIRING (FINDING-030). reading.className on the landing root is the
  *     SOLE source of the landing body face — the var-based CSS fallback was
  *     deliberately removed (a failed var cascade must not be able to pick a
- *     font). The font-google stub renders distinguishable markers so a deleted
- *     className goes red here instead of only in a production browser.
+ *     font). tests/support/next-font-local-stub.ts renders distinguishable
+ *     markers so a deleted className goes red here instead of only in a
+ *     production browser. (It stubbed next/font/google until 2026-08-10, when
+ *     the fonts were self-hosted; the markers are unchanged.)
  *
  *  2. FOOTER PROMISES. The nav collapses below 640px and the footer is the
  *     fallback, so it must never carry an inert store line.
@@ -75,11 +77,27 @@ describe("landing font wiring (FINDING-030)", () => {
   });
 
   it("the reading face loads 700 — globals.css caps .landing .result-title at it", () => {
-    // .landing .result-title { font-weight: 700 } exists BECAUSE Source Sans 3
-    // ships 400/600/700 and nothing heavier. If either side moves, move both.
+    // .landing .result-title { font-weight: 700 } exists BECAUSE the reading
+    // face can render 700. If either side moves, move both.
+    //
+    // This used to assert the literal string "700" in a static weight array.
+    // The self-hosted variable file declares a RANGE instead ("200 900"), and a
+    // substring check against a range is worse than useless — it would pass on
+    // "1700" and fail on a perfectly valid "400 900". Parse the range and prove
+    // it covers 700, which is what the CSS rule below actually depends on.
     const fonts = read("app/fonts.ts");
-    const readingBlock = fonts.slice(fonts.indexOf("Source_Sans_3"));
-    expect(readingBlock).toContain('"700"');
+    const readingBlock = fonts.slice(fonts.indexOf('variable: "--font-body"'));
+    expect(readingBlock).not.toBe("");
+
+    const declared = readingBlock.match(/weight:\s*"(\d+)\s+(\d+)"/);
+    expect(
+      declared,
+      "reading face must declare a variable weight range in app/fonts.ts"
+    ).not.toBeNull();
+
+    const [min, max] = [Number(declared![1]), Number(declared![2])];
+    expect(min).toBeLessThanOrEqual(700);
+    expect(max).toBeGreaterThanOrEqual(700);
 
     // Match the rule's whole body rather than its first declaration: the
     // property order inside the block is not the contract, the weight is.
