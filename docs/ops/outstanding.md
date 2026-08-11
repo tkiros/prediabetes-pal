@@ -26,10 +26,23 @@ the owner" item 1 is **done**, via CLI, and deployed:
 - **Deleted** `LEGAL_ENTITY_NAME` (Production; it never existed in Preview).
 - `/api/health` → `issues:[]`, `db:"ok"`, all five crons `ok` on the new deploy.
 
-**Still open from §2's verify list:** a real signin (needs the owner's inbox)
-and one meal-photo upload (vision path). ⛔ `REVORA_MODEL` /
-`REVORA_VISION_MODEL` are **deliberately not deleted** and the code fallback
-stays — both gated on those two verifications *and* on the incident below.
+**Verifications closed later the same day:** the owner ran a real signin
+end-to-end (two emails, both worked), and the vision path was verified by
+running the actual `createMealVisionClient()` against OpenRouter with
+production's `PAL_VISION_MODEL` — transport assertion, paid call and strict
+schema all green. (A production in-app photo upload needs a premium session —
+the route 402s first — so the client-level run is the verification.)
+With both gates met and `/api/check` healthy again (see below), the four
+`REVORA_*` env vars were **deleted from Vercel production and preview** and
+the code fallback stripped — `lib/pal/openai-client.ts` (×2),
+`lib/pal/rate-limit.ts`, `lib/meal/photo-extract.ts`, `lib/pantry/extract.ts`,
+the two test cases, and the `REVORA_*` row in `docs/ops/env-reference.md`.
+The rename's env stage is fully closed.
+
+⚠️ Vision-path observation for a future eval: on a blank 1×1 test image the
+drafter returned an invented meal ("rice with vegetables and meat") instead of
+the prompt-mandated `dish: null` — harmless today because every draft goes
+through human review, but the null case fails silently.
 
 ## ✅ RESOLVED same day — root cause was a stale `OPENAI_API_KEY` in Vercel
 

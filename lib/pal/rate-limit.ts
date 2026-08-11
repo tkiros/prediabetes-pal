@@ -345,12 +345,7 @@ export function createRateLimitDeps(
       );
     }
 
-    // REVORA_* is the pre-rename fallback so this can ship before the Vercel
-    // env vars are renamed — see activeModelId() in lib/pal/openai-client.ts.
-    // Losing a tightened cap here silently restores the 2000 default.
-    const parsedCap = Number(
-      env.PAL_DAILY_CHECK_CAP ?? env.REVORA_DAILY_CHECK_CAP
-    );
+    const parsedCap = Number(env.PAL_DAILY_CHECK_CAP);
     const dailyCap =
       Number.isFinite(parsedCap) && parsedCap > 0
         ? parsedCap
