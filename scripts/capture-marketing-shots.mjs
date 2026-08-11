@@ -24,7 +24,12 @@ for (const vp of VIEWPORTS) {
     viewport: { width: vp.width, height: vp.height },
     deviceScaleFactor: vp.deviceScaleFactor
   });
-  await page.goto(BASE_URL, { waitUntil: "networkidle" });
+  // NOT networkidle: the runbook tells you to run this against `next dev`, and
+  // Turbopack's HMR websocket never lets the network go idle — the wait always
+  // timed out at 30s. `load` + fonts.ready is the condition that actually
+  // matters here, since every shot is type on a plain ground.
+  await page.goto(BASE_URL, { waitUntil: "load" });
+  await page.evaluate(() => document.fonts.ready);
 
   for (const section of await page.locator("[data-shot]").all()) {
     const name = await section.getAttribute("data-shot");

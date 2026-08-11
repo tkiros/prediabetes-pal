@@ -20,6 +20,11 @@ openr.md
 
 # generated marketing captures (Task 8.4 — regenerated on demand)
 marketing/screenshots/
+marketing/screencasts/
+# rendered carousel slides. The SOURCES next to them (posts.json, template.html,
+# README.md) are tracked on purpose — claims-boundary-copy.test.ts scans
+# posts.json, so it has to exist in a clean checkout or CI fails on a missing file.
+marketing/carousels/out/
 
 # env
 .env
