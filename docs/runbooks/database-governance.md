@@ -25,9 +25,23 @@ Neon project `dry-shadow-56131409`, database `neondb`, owner role
 `neondb_owner`. The console's SQL editor is **not** psql, so `\gexec` does not
 work there — these statements are already expanded.
 
-1. **Neon Console → Roles → Add role** → name `prediabetespal_app`. Let Neon
-   generate the password and **copy the pooled connection string it shows** —
-   it is displayed once. This step alone changes nothing about production.
+⛔ **Create the role with SQL, never with the Console's Roles tab.** Neon grants
+`neon_superuser` to every role created through the Console/CLI/API, which would
+let the "restricted" app role create schemas and databases — the exact thing
+this split exists to prevent. Verified 2026-08-11: `revora_app` holds no
+`neon_superuser` membership and has `rolsuper/rolcreatedb/rolcreaterole` all
+false; the new role must match. `npm run db:governance:check` catches the
+mistake (`runtimeCannotCreate` asserts `can_create_schema === false` and
+`can_create_database === false`), but catching it after repointing production
+is a bad way to find out.
+
+1. Generate a password in the operator shell (`openssl rand -hex 24`), then in
+   **Neon Console → SQL Editor** as `neondb_owner`:
+
+```sql
+CREATE ROLE prediabetespal_app LOGIN PASSWORD '<generated>';
+```
+
 2. **Neon Console → SQL Editor**, as `neondb_owner`, run:
 
 ```sql
@@ -46,12 +60,21 @@ ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public
 COMMIT;
 ```
 
-3. Confirm the grants landed (expect one row per table, 22 at the 2026-08-11
-   head):
+3. Confirm the grants landed **and that the role is genuinely restricted**
+   (expect `22`, then zero rows — 22 is the public-table count at the
+   2026-08-11 head, matching `revora_app`'s current grant count):
 
 ```sql
 SELECT count(*) FROM information_schema.table_privileges
 WHERE grantee = 'prediabetespal_app' AND privilege_type = 'SELECT';
+
+-- MUST return zero rows. Any row here means the role was created through the
+-- Console UI and inherited neon_superuser — drop it and redo step 1 in SQL.
+SELECT g.rolname AS granted_role
+FROM pg_auth_members am
+JOIN pg_roles r ON r.oid = am.member
+JOIN pg_roles g ON g.oid = am.roleid
+WHERE r.rolname = 'prediabetespal_app';
 ```
 
 4. Repoint `DATABASE_URL` in **Vercel** to the **pooled** `prediabetespal_app`
