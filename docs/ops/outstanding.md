@@ -484,12 +484,21 @@ RDAP record.
 `support@revora.plus`'s missing MX (§2) is now moot — production renders
 `support@prediabetespal.com`, already verified delivering.
 
-## 5. 🔴 Backups
+## 5. ✅ Backups — DONE 2026-08-11
 
-There was no backup, which is what made the outage dangerous. Neon Free
-includes point-in-time restore with a short retention window — check the
-retention and decide whether it is enough, or add a scheduled `pg_dump`.
-Do this while the database is empty and it is cheap to think about.
+Nightly encrypted `pg_dump` to Vercel Blob — `.github/workflows/db-backup.yml`,
+06:17 UTC, 7 daily + 12 monthly rotating slots (no prune job to rot).
+Proven end to end including the link that usually goes unproven: the owner
+decrypted a stored dump to its `PGDMP` header.
+
+Running it rather than reading it surfaced two real defects — a `pg_dump`
+16-vs-17 version mismatch on the runner, and a passphrase set into GitHub
+without being saved anywhere else (every dump unreadable until rotated).
+Both are written up in `docs/runbooks/db-backups.md`, and "prove you can
+decrypt" is now a blocking step there rather than a footnote.
+
+Still worth a look: Neon Free's own PITR retention window, which this
+supplements rather than replaces.
 
 ## 6. 🔴 Decommission Railway
 
