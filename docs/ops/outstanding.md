@@ -16,6 +16,37 @@ reports `issues:[]`, so the pair is coherent — the fallback is being read, or
 `PAL_MODEL` was already fine. Either way there is no outage and no silent
 downgrade.
 
+⚠️ **That proves the TEXT path only.** `getPalEnv()` never reaches
+`lib/meal/photo-extract.ts` or `lib/pantry/extract.ts`, which run their own
+`assertModelIdMatchesTransport()` against a model now sourced from
+`REVORA_VISION_MODEL`. If that variable's prefix state disagrees with
+`OPENAI_BASE_URL`, meal-photo and Pantry extraction throw while `/api/health`
+stays `issues:[]`. Almost certainly fine — the text path proved coherent and
+this repo's own rule keeps the two ids in lockstep — but **unverified**.
+Discriminate with one meal-photo upload, or grep Sentry for
+`PalModelConfigurationError` since `e62a651`. Not a regression introduced here:
+pre-merge the vision path used the unprefixed default and was exposed to the
+mirror-image failure.
+
+### ⚠️ Two traps armed in the working tree
+
+1. **`local/main-latest` is behind `origin/main`** and its working tree still
+   carries `tests/unit/revora/claims-boundary-copy.test.ts` — one of the four
+   uncommitted owner-gated files, at a path **#79 deleted**. Fast-forwarding
+   that branch hits a delete/modify conflict, and resolving it carelessly
+   resurrects a stale duplicate next to `tests/unit/pal/claims-boundary-copy.test.ts`.
+   Decide the file's fate (its provenance was never confirmed) before updating
+   the branch — do not resolve the conflict on autopilot.
+2. **The Google Fonts flake reaches GitHub Actions too.** The handoff says it is
+   Vercel-only and that "the Actions `build` job passes the same commit every
+   time." That is false: run `31448588601` failed
+   `typecheck · lint · contract · build` with 21 × `Can't resolve
+   '@vercel/turbopack-next/internal/font/google/font'` on **#83, a docs-only
+   PR**. A rerun went green with no code change. Rerun, do not debug — but stop
+   treating a green Actions build as evidence that a red Vercel build is a real
+   fault. This also upgrades the `next/font/local` self-hosting item from
+   nice-to-have to "every PR is a coin flip."
+
 **Corrected:** the previous revision listed the Vercel project rename as
 needing a same-PR code change because `revora-git-main.vercel.app` is asserted
 in `tests/unit/pal/sw-dev-teardown.test.ts` and named in `.gitleaks.toml:15`.
