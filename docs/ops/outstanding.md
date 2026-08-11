@@ -354,6 +354,25 @@ Sending from the new domain is already proven working: a live Resend send from
 `signin@contact.prediabetespal.com` reached `support@prediabetespal.com` with
 `last_event: delivered`.
 
+✅ **Confirmed still correct on 2026-08-11**, after the domain 301. Do not
+re-run the block above. `AUTH_EMAIL_FROM` is unreadable (Vercel sensitive), so
+the sender was verified from the **provider side** instead — `GET
+api.resend.com/emails` shows every send since 2026-08-10 14:13, most recently
+15:52 today, from `Prediabetes Pal <signin@contact.prediabetespal.com>`. The
+last `Revora <signin@contact.revora.plus>` send was 2026-07-23.
+
+⚠️ Two things this surfaced, neither breaking:
+
+- `lib/pal/contact.ts:41` says production uses the **code fallback** and calls
+  `AUTH_EMAIL_FROM` "a preview-only override" — but the var **is** set in
+  Production. Harmless while both spell the same address; it means the file's
+  RENAME GATE comment is not actually load-bearing, since the env var wins.
+  Reconcile before trusting that comment again.
+- The 301 does **not** endanger mail: redirects are HTTP-only, and Resend's
+  DKIM/SPF live on `contact.prediabetespal.com` while the apex MX stays on
+  registrar forwarding. `contact.revora.plus` is likewise unaffected by
+  `revora.plus` redirecting.
+
 The brand mismatch (site says Revora, email says Prediabetes Pal) is temporary
 and strictly better than no login. **Alternatively, merge the rename** — every
 blocker on it is now cleared, and it fixes the sender as a side effect.
