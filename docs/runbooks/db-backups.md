@@ -51,9 +51,14 @@ Half of it was validated by hand instead:
   the exact pathname, and a second upload to the same path **overwrites**
   rather than erroring — which is the entire basis of the rotation scheme.
   The test objects were deleted; `db-backups/` is empty.
-- ❌ **Dump half unproven.** No `pg_dump` on the dev machine, and the runner
-  installs `postgresql-client-17` fresh. The first real run is still the first
-  test of the dump + encrypt steps — read that run's log rather than assuming.
+- ⚠️ **Dump half failed on its first real run — and that is why this section
+  existed.** Installing `postgresql-client-17` was not enough: the runner image
+  ships client **16** earlier on `PATH`, and `pg_dump` refuses to dump a newer
+  server (`aborting because of server version mismatch`; server 17.10 vs
+  pg_dump 16.14). Fixed by invoking `/usr/lib/postgresql/17/bin/pg_dump`
+  explicitly, with a `--version` line in the log as evidence.
+  **Never call bare `pg_dump` in CI** — the version it resolves to is the
+  image's business, not yours.
 
 ## Verify it's alive
 

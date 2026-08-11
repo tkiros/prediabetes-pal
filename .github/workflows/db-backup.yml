@@ -47,7 +47,13 @@ jobs:
           BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
         run: |
           set -euo pipefail
-          pg_dump --format=custom --no-owner "$DB_BACKUP_URL" -f backup.dump
+          # Call the versioned binary, NOT bare `pg_dump`: the runner image
+          # ships client 16 earlier on PATH, and pg_dump refuses to dump a
+          # newer server ("aborting because of server version mismatch",
+          # first real run 2026-08-11). Neon is on 17.x.
+          PGDUMP=/usr/lib/postgresql/17/bin/pg_dump
+          "$PGDUMP" --version
+          "$PGDUMP" --format=custom --no-owner "$DB_BACKUP_URL" -f backup.dump
           test -s backup.dump
           openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:BACKUP_PASSPHRASE \
             -in backup.dump -out backup.dump.enc
