@@ -1,8 +1,55 @@
-# Outstanding — ordered checklist (2026-08-10, second revision)
+# Outstanding — ordered checklist (2026-08-11, third revision)
 
 > **Current session handoff:**
 > `docs/handoff/2026-08-10-revora-name-removal-session-handoff.md` — read it
 > first. It has the two blockers, the safety regression, and the traps.
+
+## ✅ 2026-08-11 — Stage A (Vercel env) executed by the agent, verified
+
+The permission block was lifted this session, so the env work in §"Blocked on
+the owner" item 1 is **done**, via CLI, and deployed:
+
+- **Added** `PAL_MODEL` and `PAL_VISION_MODEL` = `openai/gpt-5.4-mini` to
+  **Production and Preview**. The "copy from `REVORA_*` in the dashboard"
+  instruction was never executable — all four are Vercel **sensitive**
+  (write-only) variables; `vercel env pull` returns them empty and the
+  dashboard cannot reveal them either. The value was reconstructed from
+  `docs/qa/23-launch-live-smoke-2026-07-18.md:21` and then **proven identical
+  to the live `REVORA_MODEL`**: a temporary rollback deploy with `PAL_*`
+  removed logged `"model":"openai/gpt-5.4-mini","modelProvider":"openrouter"`
+  in `check_failed` telemetry — the fallback resolves to the same string.
+- **Overrode** `NEXT_PUBLIC_APP_URL` → `https://prediabetespal.com` with
+  `vercel env add --force --value …` (argv, so no trailing-newline risk; the
+  `printf`-not-`echo` trap is moot via this path). Canonical tag, `robots.txt`
+  and `sitemap.xml` all now emit `prediabetespal.com` — verified on the live
+  deploy, no `&#10;`.
+- **Deleted** `LEGAL_ENTITY_NAME` (Production; it never existed in Preview).
+- `/api/health` → `issues:[]`, `db:"ok"`, all five crons `ok` on the new deploy.
+
+**Still open from §2's verify list:** a real signin (needs the owner's inbox)
+and one meal-photo upload (vision path). ⛔ `REVORA_MODEL` /
+`REVORA_VISION_MODEL` are **deliberately not deleted** and the code fallback
+stays — both gated on those two verifications *and* on the incident below.
+
+## 🔴 NEW 2026-08-11 — `/api/check` returns the fail-safe on every request
+
+Every guest check returns `kind:"retry"` ("couldn't produce a safe answer").
+Telemetry: `reasonCode:"provider_error"`, 350–600 ms — OpenRouter **processed
+and rejected** the request (HTTP 4xx/5xx; REL-01 never retries those).
+
+**Not caused by the rename.** Proven by A/B: a deploy with `PAL_*` removed
+(pure `REVORA_*` fallback, the pre-rename configuration) fails identically,
+same model string, same reason code. Also not model retirement — OpenRouter's
+public model list still serves `openai/gpt-5.4-mini` — and not a platform
+outage (unauthenticated probe returns a clean 401, API is up). The remaining
+candidates are account-level: **OpenRouter key invalid/rotated, or credits
+exhausted**. The exact HTTP status is only in Sentry (`provider_error` has no
+finer split — `lib/pal/telemetry.ts`).
+
+**Owner:** check the OpenRouter account (key validity + credit balance) for
+the key in `OPENAI_API_KEY`, then re-run one guest check. Note last session
+verified the text path only via `getPalEnv()` coherence — no real paid call —
+so this may have been broken for days without touching `/api/health`.
 
 ## ✅ #79 is merged — `e62a651`, deployed, verified
 
@@ -112,6 +159,10 @@ the Vercel project breaks no code.**
 ---
 
 ## 🔴 Blocked on the owner — nothing else is
+
+> **2026-08-11:** item 1 below is ✅ **done** — see the section at the top.
+> Kept verbatim for the record; the fallback-deletion trigger inside it is
+> still live (now additionally gated on the `/api/check` provider incident).
 
 1. **Vercel env** (values are encrypted → dashboard, not CLI):
    add `PAL_MODEL` and `PAL_VISION_MODEL` copied from the `REVORA_*` pair;
