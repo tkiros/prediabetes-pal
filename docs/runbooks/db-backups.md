@@ -51,8 +51,13 @@ Half of it was validated by hand instead:
   the exact pathname, and a second upload to the same path **overwrites**
   rather than erroring — which is the entire basis of the rotation scheme.
   The test objects were deleted; `db-backups/` is empty.
-- ⚠️ **Dump half failed on its first real run — and that is why this section
-  existed.** Installing `postgresql-client-17` was not enough: the runner image
+- ✅ **Green end to end on 2026-08-11** after the fix below: run
+  `31512313522` wrote `db-backups/daily-tue.dump.enc`, 79,232 bytes, carrying
+  openssl's `Salted__` header. **Decryptability is still owner-verified only**
+  — the passphrase is deliberately not available to the agent, so "it restores"
+  is a claim only the owner can close (procedure under **Restore** below).
+- ⚠️ **The dump half failed on its first real run — and that is why this
+  section existed.** Installing `postgresql-client-17` was not enough: the runner image
   ships client **16** earlier on `PATH`, and `pg_dump` refuses to dump a newer
   server (`aborting because of server version mismatch`; server 17.10 vs
   pg_dump 16.14). Fixed by invoking `/usr/lib/postgresql/17/bin/pg_dump`
