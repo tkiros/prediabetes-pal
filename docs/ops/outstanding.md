@@ -2,9 +2,9 @@
 
 > **Current session handoff:**
 > `docs/handoff/2026-08-11-rename-env-closed-ux-shipped-stage-d-and-domain-remaining-session-handoff.md`
-> — read it first. Stage A and the `REVORA_*` fallback are **done**; what
-> remains is the DB role (Stage D), the backup secrets, the domain/301, and
-> the Tally slug.
+> — read it first. Stages A–D and backups are **done**; what remains is the
+> Vercel domain switch + `revora.plus` 301, the Tally slug, and a cosmetic
+> Neon project label. (The handoff's filename is stale — Stage D is done.)
 
 ## ✅ 2026-08-11 — Stage A (Vercel env) executed by the agent, verified
 
