@@ -21,9 +21,11 @@ Do not paste credentials into this file.
 
 ### Neon-console procedure (current — no local credentials needed)
 
-Neon project `dry-shadow-56131409`, database `neondb`, owner role
-`neondb_owner`. The console's SQL editor is **not** psql, so `\gexec` does not
-work there — these statements are already expanded.
+The Neon project is **displayed as `revora-db`** in the console;
+`dry-shadow-56131409` is its project *ID* (shown in Project Settings and the
+URL, and stored as `NEON_PROJECT_ID`) — not a name you can search for. Database
+`neondb`, owner role `neondb_owner`. The console's SQL editor is **not** psql,
+so `\gexec` does not work there — these statements are already expanded.
 
 ⛔ **Create the role with SQL, never with the Console's Roles tab.** Neon grants
 `neon_superuser` to every role created through the Console/CLI/API, which would
