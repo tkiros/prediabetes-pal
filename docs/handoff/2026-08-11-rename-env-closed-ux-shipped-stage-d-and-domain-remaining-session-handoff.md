@@ -65,8 +65,10 @@ Every earlier handoff said to copy `REVORA_MODEL` → `PAL_MODEL` **by hand in
 the dashboard because the values are encrypted**. That instruction could never
 have been followed: all four model vars are Vercel **sensitive** (write-only)
 variables. `vercel env pull` returns them as `""` and the dashboard cannot
-reveal them either. **61 of the 91 production variables are write-only** — plan
-accordingly for any future "copy this value" step.
+reveal them either. This is not a corner case — a production `env pull` this
+session came back with **61 of 91 values empty** (write-only vars plus Vercel's
+own build-time system vars). Assume any "copy the existing value" step is
+unexecutable until proven otherwise.
 
 What was actually done: the value was reconstructed from
 `docs/qa/23-launch-live-smoke-2026-07-18.md:21` (`openai/gpt-5.4-mini`) and
