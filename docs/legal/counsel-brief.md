@@ -173,6 +173,91 @@ and any jurisdiction-specific disclosures. Do not infer them from this brief.
 6. Explicit evidence, labeling, operational, and further-review conditions for
    ever setting either disabled feature flag to `1`.
 
+## Brand-name change — questions retained for any future professional review
+
+**Added:** 2026-08-09. **Status:** NO NAME COMMITTED; NO DISPOSITION OBTAINED.
+
+These are numbered `N1`–`N6` rather than continuing the list above, because
+`PRODUCT.md` and `docs/safety/copy-ledger.md` both cite a "counsel Q8" that has
+no corresponding item in this document. That dangling reference is unresolved
+and is not clarified here; continuing this list into the 7–12 range would create
+a second, conflicting `Q8`.
+
+**Context.** `Revora` is in active use at `revora.plus` and in `twa-manifest.json`
+(`packageId: app.revora.twa`, **not yet published to Play**). A rename is under
+consideration because the mark is in concurrent commercial use by at least four
+unrelated parties in software — including a seed-funded company at
+`userevora.com` — and because `Revola Pharma` operates one letter away in
+metabolic health. The candidate replacement is **`Prediabetes Pal`**, with
+**`Predia Pal`** as the fallback. Supporting research is in
+`docs/naming-decision-shortlist.md`.
+
+**Nothing in `docs/naming-decision-shortlist.md` is a clearance search.** No
+USPTO database search has been run; the public search API was not accessible to
+the author. Findings there are limited to domain-registration status, commercial
+web presence, and app-store listings.
+
+**Operational hold — split by reversibility.** Professional review is waived
+under the Gate record below, so an indefinite hold pending disposition would
+block the rename permanently. The two decisions are therefore separated:
+
+- **Reversible — may proceed on owner risk.** The domain and product-name switch
+  itself. A rename is undone by re-renaming; the cost is proportional to elapsed
+  brand exposure, which is currently near zero (Week 1–2 of
+  `docs/Revora_60-Day_Execution_Roadmap.md` is FB-group DMs with, per
+  `docs/growth/first-two-weeks-checklist.md`, "no logo, no branding" and no
+  links). Proceeding requires a dated owner-risk acceptance recorded alongside
+  `docs/legal/owner-risk-launch-decision-5f6abcb.md`, on the same pattern.
+- **Irreversible — hard gate.** Publishing the Play listing. `packageId` is
+  immutable once published; renaming afterwards forfeits the listing and its
+  install history. **Do not publish before a disposition on `N1` and `N2`, or a
+  separate dated owner-risk acceptance naming this specific risk.**
+
+Delay is not neutral in the reversible case: switching cost rises with every
+week of brand exposure, so "wait for counsel" is itself a decision with a price.
+
+**N1. [GATING] Concurrent use: `PREDIABETES PAL` against `DiabetesPal`.**
+`DiabetesPal` (App Store id `736631625`, developer Pascal Freiburghaus) is live
+and actively maintained — v10.4, updated July, iOS 17.6+, **Medical** category.
+The proposed mark wholly contains it. Same distribution surface, same store
+category, adjacent condition. Both marks appear descriptive and therefore weak.
+Advise whether `Prediabetes Pal` is shippable, and if not, whether `Predia Pal`
+— which does not contain their mark — cures the problem. **Nothing else in this
+section matters if this fails.**
+
+**N2. [GATING] Does the disease name in the app title alter our intended-use
+posture?** The product is already prediabetes-exclusive by design, so the FDA
+general-wellness enforcement-discretion policy is arguably already unavailable
+on intended use — see item 1 above, which this does not supersede. The question
+is narrow: does moving the condition name into the **title and store listing**,
+where it becomes labeling, change the analysis or the disclosure obligations?
+Comparable apps do this (`PCOS Pal`, `MySugr`). The author's non-legal
+assessment is that posture is unchanged; confirm rather than assume.
+
+**N3. Registrability.** `PREDIABETES PAL` and `PREDIA PAL` in Classes 9 and 44.
+A §2(e)(1) descriptiveness refusal on the word mark is expected. Advise whether
+a stylized or logo mark plus common-law use is an adequate position at
+pre-revenue stage, or whether registrability should drive the name choice at
+all.
+
+**N4. Does `Rev-ora` read as `reverse`?** If the current name is itself heard as
+the disease-reversal claim, that is an independent reason to move, resolvable on
+claims grounds without any trademark search. The reversal family is banned by
+`docs/safety/claims-boundary.md §Banned Claim Families`; the specific rejected
+line is `onboarding-reversal-line` in `docs/safety/copy-ledger.md`. This is the
+cheapest question in this section to answer.
+
+**N5. Knockout on the incumbent.** `REVORA`, plus `REVOLA` / `REVARA` /
+`REVIVA`, in Classes 9, 42, 44, and 5. Needed to determine whether the rename is
+merely advisable or compelled.
+
+**N6. Does a rename require re-approval of ledgered copy?**
+`docs/safety/copy-ledger.md` holds Approved rows whose text contains the product
+name, and `tests/unit/revora/claims-boundary-copy.test.ts` enforces the boundary
+across `app/**`, `components/**`, `PRODUCT.md`, and the Play listing. Advise
+whether substituting the name in Approved copy preserves approval or requires
+re-review row by row.
+
 ## Required attachments
 
 - `docs/safety/claims-boundary.md`, `docs/safety/copy-ledger.md`, and the
@@ -186,6 +271,17 @@ and any jurisdiction-specific disclosures. Do not infer them from this brief.
   list of items not tested against production.
 - `docs/legal/counsel-panel-review-2026-07-12.md`, clearly labeled as
   non-legal-advice background only.
+
+For the brand-name section (`N1`–`N6`) only:
+
+- `docs/naming-decision-shortlist.md`, clearly labeled as non-legal research
+  and **not** a clearance search.
+- Current-name evidence: `twa-manifest.json` (`packageId`, `host`), the
+  `revora.plus` production origin, and the concurrent-use list in the research
+  doc above.
+- The `DiabetesPal` App Store listing (id `736631625`) as captured, for `N1`.
+- `docs/safety/copy-ledger.md` rows whose Approved text contains the product
+  name, for `N6`.
 
 ## Gate record
 
