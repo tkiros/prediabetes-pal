@@ -1,0 +1,60 @@
+# Nightly logical backup of the production Neon database.
+#
+# Why this exists: Neon Free's PITR window is short (hours, not days) and was
+# the standing 🔴 in docs/ops/outstanding.md since the 2026-08-10 outage.
+#
+# Design (docs/runbooks/db-backups.md has the restore procedure):
+# - pg_dump custom format over the UNPOOLED owner URL (secret DB_BACKUP_URL).
+# - Encrypted with AES-256 (secret BACKUP_PASSPHRASE) BEFORE leaving the
+#   runner — this repo is public, so nothing readable may land anywhere.
+# - Stored in the project's Vercel Blob store under rotating names
+#   (7 daily slots + 12 monthly slots) — no prune job needed.
+name: db-backup
+
+on:
+  schedule:
+    - cron: "17 6 * * *" # daily, 06:17 UTC — off the hourly-cron minutes
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install postgresql-client-17
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+
+      - name: Install upload deps
+        run: npm install --no-save @vercel/blob@2
+
+      - name: Dump and encrypt
+        env:
+          DB_BACKUP_URL: ${{ secrets.DB_BACKUP_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          pg_dump --format=custom --no-owner "$DB_BACKUP_URL" -f backup.dump
+          test -s backup.dump
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:BACKUP_PASSPHRASE \
+            -in backup.dump -out backup.dump.enc
+          rm backup.dump
+          ls -l backup.dump.enc
+
+      - name: Upload to Blob (rotating slots)
+        env:
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        run: node scripts/upload-db-backup.mjs backup.dump.enc
