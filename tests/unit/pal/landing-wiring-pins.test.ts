@@ -42,8 +42,10 @@ const text = (html: string) => html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " "
  *  1. FONT WIRING (FINDING-030). reading.className on the landing root is the
  *     SOLE source of the landing body face — the var-based CSS fallback was
  *     deliberately removed (a failed var cascade must not be able to pick a
- *     font). The font-google stub renders distinguishable markers so a deleted
- *     className goes red here instead of only in a production browser.
+ *     font). tests/support/next-font-local-stub.ts renders distinguishable
+ *     markers so a deleted className goes red here instead of only in a
+ *     production browser. (It stubbed next/font/google until 2026-08-10, when
+ *     the fonts were self-hosted; the markers are unchanged.)
  *
  *  2. FOOTER PROMISES. The nav collapses below 640px and the footer is the
  *     fallback, so it must never carry an inert store line.
