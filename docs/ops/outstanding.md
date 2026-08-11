@@ -28,24 +28,54 @@ Discriminate with one meal-photo upload, or grep Sentry for
 pre-merge the vision path used the unprefixed default and was exposed to the
 mirror-image failure.
 
-### ⚠️ Two traps armed in the working tree
+### ✅ Both previously-armed traps are cleared
 
-1. **`local/main-latest` is behind `origin/main`** and its working tree still
-   carries `tests/unit/revora/claims-boundary-copy.test.ts` — one of the four
-   uncommitted owner-gated files, at a path **#79 deleted**. Fast-forwarding
-   that branch hits a delete/modify conflict, and resolving it carelessly
-   resurrects a stale duplicate next to `tests/unit/pal/claims-boundary-copy.test.ts`.
-   Decide the file's fate (its provenance was never confirmed) before updating
-   the branch — do not resolve the conflict on autopilot.
-2. **The Google Fonts flake reaches GitHub Actions too.** The handoff says it is
-   Vercel-only and that "the Actions `build` job passes the same commit every
-   time." That is false: run `31448588601` failed
-   `typecheck · lint · contract · build` with 21 × `Can't resolve
-   '@vercel/turbopack-next/internal/font/google/font'` on **#83, a docs-only
-   PR**. A rerun went green with no code change. Rerun, do not debug — but stop
-   treating a green Actions build as evidence that a red Vercel build is a real
-   fault. This also upgrades the `next/font/local` self-hosting item from
-   nice-to-have to "every PR is a coin flip."
+1. ~~`local/main-latest` conflict~~ — **done.** `main` is checked out in the
+   primary tree and fast-forwarded; three stale worktrees were removed after
+   confirming each had zero dirty files, zero untracked files and zero commits
+   outside `origin/main`. The stash is gone: the `.gitignore`, capture-script
+   and `posts.json`-scan hunks all landed in **#85** (verified hunk-by-hunk on
+   `origin/main`, not assumed), and `docs/legal/counsel-brief.md` is restored
+   to the working tree uncommitted, exactly as it was.
+   ⚠️ `.claude/worktrees/app-shell-dashboard` was **deliberately kept** —
+   `feat/app-shell-dashboard` has one commit not in `origin/main`
+   (`9bc5cf3 fix(legal): fail close unreviewed health features`) plus an
+   untracked `.scratch/`. Do not prune it without deciding that commit's fate.
+2. ~~Google Fonts flake~~ — **fixed at the root in #86**, not documented around.
+   The fonts are self-hosted (`next/font/local`), so there is no build-time
+   fetch left to fail. See "Fonts" below.
+
+### Fonts — the build-time Google fetch is gone (#86)
+
+`next/font/google` fetched woff2 from `fonts.gstatic.com` at build time and
+failed intermittently on **both** builders — three production redeploys, then
+CI on a docs-only PR. Self-hosted now, so the dependency is deleted rather than
+retried.
+
+⛔ The vendored files came from the **running production build**, not a fresh
+Google download. Google's current CDN build is a later revision with ~2-4%
+different advance widths; measured with those, `"For an A1C of 5.7-6.4%"` went
+232px → 223px and a mobile disclaimer lost a line. Using production's own bytes
+made the swap provably free — **0 pixels changed** on a 2x-DPR diff of live
+production before vs after the deploy, both viewports. Re-measure before ever
+refreshing them; a newer Google build is a typographic change, not a bump.
+
+### Dependency PRs — grouping fixed, two majors left open on purpose (#87)
+
+Grouped Dependabot PRs were all-or-nothing, so one breaking major poisoned
+every safe bump beside it. Both npm groups are now `minor`+`patch`; majors
+arrive individually.
+
+- **#81** (dev) carries `typescript` 6→7, `eslint` 9→10, `@types/node` 24→26.
+  `typescript-eslint` 8.x declares `typescript: ">=4.8.4 <6.1.0"`, so the build
+  fails on TS 7. Diagnosed on the PR, left open — that migration is a decision.
+- **#69** (prod) carries `openai` **6→7**, the SDK behind the safety
+  classifier. `docs/ops/openai-cost-model.md` says model/SDK choices are made
+  **on the eval**, so this needs `npm run eval:pal`, not a version check.
+
+The `docker` ecosystem was dropped (nothing left to scan since #80 deleted
+`Dockerfile.cron`), and `ci-security.test.ts` now asserts the biconditional —
+add a Dockerfile back without a Dependabot entry and it goes red.
 
 **Corrected:** the previous revision listed the Vercel project rename as
 needing a same-PR code change because `revora-git-main.vercel.app` is asserted
@@ -65,6 +95,17 @@ the Vercel project breaks no code.**
    add `PAL_MODEL` and `PAL_VISION_MODEL` copied from the `REVORA_*` pair;
    set `NEXT_PUBLIC_APP_URL=https://prediabetespal.com`; **delete**
    `LEGAL_ENTITY_NAME`.
+   Preview carries `REVORA_MODEL` + `REVORA_VISION_MODEL` too — do **both**
+   scopes, or preview silently keeps depending on the fallback.
+
+   **Exactly what the agent can and cannot do here** (probed 2026-08-10, not
+   inferred): `vercel env ls` is **allowed** — that is how the variable list
+   below was confirmed. `vercel env pull` (decrypt) and `vercel env add` are
+   both **blocked by the permission classifier**. The write probe used a
+   throwaway `ZZ_PERM_PROBE`, never a half-write of a real variable: a
+   successful `rm` followed by a blocked `add` leaves the variable **missing**,
+   which is worse than stale. There is no agent-side workaround; a Bash
+   permission rule in settings is the only thing that changes this.
    ✅ **Did not gate #79** — it merged without them. `activeModelId()` and both vision extractors now
    read `REVORA_MODEL` / `REVORA_VISION_MODEL` as a fallback, so the merge is
    safe with production env untouched. The earlier note said an early merge
@@ -265,23 +306,42 @@ failing on all four browser projects. Everything else matching `revora` in
 
 Order matters. The 301 **must** come last.
 
+⚠️ `printf`, never `echo` or a heredoc. `app/layout.tsx:27`, `app/page.tsx:19`,
+`app/robots.ts:29` and `app/sitemap.ts:27` read `NEXT_PUBLIC_APP_URL` with **no
+`.trim()`** (the billing path trims; these four do not). A trailing newline
+emits `<link rel="canonical" href="https://prediabetespal.com&#10;"/>` and puts
+the same thing in robots.txt and sitemap.xml.
+
 ```bash
+# 0. Additive first — nothing can be left missing if a later step is refused.
+#    Copy the values in the DASHBOARD; `vercel env pull` is blocked and the
+#    values are encrypted. Do Production AND Preview: both carry REVORA_*.
+#      PAL_MODEL         <- REVORA_MODEL
+#      PAL_VISION_MODEL  <- REVORA_VISION_MODEL
+
 # 1. Canonical URL — <link rel="canonical"> still emits https://revora.plus
 printf 'https://prediabetespal.com' > /tmp/u
 vercel env rm NEXT_PUBLIC_APP_URL production --yes
 vercel env add NEXT_PUBLIC_APP_URL production < /tmp/u
 rm /tmp/u
 
-# 2. Legal entity — Terms and Privacy still render "Revora"
-printf 'Prediabetes Pal' > /tmp/l     # or the registered entity, if different
+# 2. Legal entity — Terms and Privacy still render "Revora".
+#    DELETING is preferred over setting it: all three consumers already default
+#    to "Prediabetes Pal" (`process.env.LEGAL_ENTITY_NAME?.trim() || "..."` in
+#    app/(app)/privacy, app/(app)/terms, app/about), and the owner confirmed
+#    there is no registered entity to name.
 vercel env rm LEGAL_ENTITY_NAME production --yes
-vercel env add LEGAL_ENTITY_NAME production < /tmp/l
-rm /tmp/l
 
 # 3. Env vars bind at deploy time
 vercel redeploy https://prediabetespal.com
 
-# 4. Verify a REAL signin end-to-end before step 5
+# 4. Verify, in this order, before step 5:
+#      curl -s https://prediabetespal.com/api/health   -> issues:[]
+#      curl -s https://prediabetespal.com/ | grep canonical
+#         -> https://prediabetespal.com with NO &#10; on the end
+#      a REAL signin, end to end
+#    Then delete REVORA_MODEL / REVORA_VISION_MODEL and strip the fallback code.
+#    That order only: the code may outlive the vars, never the reverse.
 ```
 
 5. 🔴 **Only then** 301 `revora.plus` → `prediabetespal.com` (Vercel → Project →
@@ -289,7 +349,22 @@ vercel redeploy https://prediabetespal.com
    still built from it is the same shape of failure as the `AUTH_EMAIL_FROM`
    outage. **Keep `revora.plus` registered** — it carries every link already
    posted in FB groups and DMs.
-6. 🟢 Re-run the marketing capture (landing copy changed).
+6. 🟡 **Vercel project rename** `revora` → `prediabetespal`, and make
+   `prediabetespal.com` the production domain **first** (`vercel project ls`
+   still reports production as `https://revora.plus`, and
+   `vercel redeploy https://revora.plus` is the command in these runbooks).
+   Dashboard-only — the CLI has no `project rename` and no domain-redirect
+   command. ✅ Verified safe: nothing in code depends on the project name.
+7. 🟢 Re-run the marketing capture (landing copy changed).
+   `scripts/capture-marketing-shots.mjs` no longer hangs — #85 replaced
+   `waitUntil: "networkidle"`, which never settles against `next dev` because
+   Turbopack's HMR websocket keeps the connection open.
+
+**Done this session, no action needed:** GitHub repo renamed
+`tkiros/Revora` → `tkiros/prediabetes-pal` (old slug 301s; #69/#81 survived;
+Vercel's git link verified by two subsequent PR builds). Stale `revora.bio`
+removed from the Vercel team after confirming it had no DNS, no HTTP and no
+RDAP record.
 
 `support@revora.plus`'s missing MX (§2) is now moot — production renders
 `support@prediabetespal.com`, already verified delivering.
@@ -310,10 +385,17 @@ Nothing depends on it once step 1 lands. Delete the project, then delete
 
 ## Smaller / deferred
 
-- **3 uncommitted owner-gated files** — `docs/legal/counsel-brief.md`,
-  `scripts/capture-marketing-shots.mjs`,
-  `tests/unit/pal/claims-boundary-copy.test.ts` (the `posts.json` scan hunk).
-  Provenance was never confirmed; still uncommitted by design.
+- **1 uncommitted owner-gated file** — `docs/legal/counsel-brief.md` (+96
+  lines). Still uncommitted by design: it is a legal document, so it is the
+  owner's call, not a cleanup.
+  The other three shipped in **#85**. The `posts.json` scan hunk had never been
+  committable as written: `marketing/` was untracked in its entirety, so
+  pointing `EXTRA_SOURCES` at `marketing/carousels/posts.json` would fail CI on
+  a missing file. #85 tracks the three carousel *sources* and ignores the
+  rendered `out/` slides, which is what made the scan real — and it closes a
+  genuine gap, since the claims-boundary audit reached every on-site surface and
+  no off-site one. Mutation-checked: planting "reverse your prediabetes" in a
+  slide title fails that case and only that case.
 - **`LEGAL_ENTITY_NAME`** in Vercel still reads `Revora` and renders in Terms
   and Privacy. Env change, arguably a legal decision.
 - **Counsel item N6** — re-approval of renamed copy-ledger rows, including the
@@ -321,7 +403,9 @@ Nothing depends on it once step 1 lands. Delete the project, then delete
 - **Dangling "counsel Q8"** — `PRODUCT.md:23` and `copy-ledger.md:97` gate the
   reversal line on a Q8 that does not exist. Pre-existing; do not invent one.
 - **`prediapal.com`** unregistered by choice — fallback name unprotected.
-- **4 open Dependabot PRs** (#67, #68, #69, #38) — untouched.
-- **`revora.bio`** listed in Vercel but RDAP 404s — stale team entry.
+- **2 open Dependabot PRs** (#69, #81) — both diagnosed on the PR and left open
+  on purpose; each carries a major that deserves its own decision. See
+  "Dependency PRs" above. #67, #68 and #38 are closed.
+- ~~`revora.bio` stale in Vercel~~ — removed 2026-08-10.
 - **Manifest `short_name`** is now 15 chars and may truncate on some Android
   launchers.
