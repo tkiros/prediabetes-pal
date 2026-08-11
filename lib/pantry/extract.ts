@@ -102,12 +102,10 @@ export function createPantryVisionClient(options?: {
       }
 
       // `||`, not `??`: a declared-but-empty var is a string and would win the
-      // coalesce, asking the provider for model "". REVORA_VISION_MODEL is the
-      // pre-rename fallback — see activeModelId() in lib/pal/openai-client.ts.
+      // coalesce, asking the provider for model "".
       const model =
         options?.model ||
         process.env.PAL_VISION_MODEL?.trim() ||
-        process.env.REVORA_VISION_MODEL?.trim() ||
         DEFAULT_VISION_MODEL;
       // Injected clients (tests) own their routing; real transports must pair
       // the model-id naming with the configured base URL before a paid call.
