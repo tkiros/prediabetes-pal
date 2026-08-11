@@ -1,8 +1,10 @@
 # Outstanding — ordered checklist (2026-08-11, third revision)
 
 > **Current session handoff:**
-> `docs/handoff/2026-08-10-revora-name-removal-session-handoff.md` — read it
-> first. It has the two blockers, the safety regression, and the traps.
+> `docs/handoff/2026-08-11-rename-env-closed-ux-shipped-stage-d-and-domain-remaining-session-handoff.md`
+> — read it first. Stage A and the `REVORA_*` fallback are **done**; what
+> remains is the DB role (Stage D), the backup secrets, the domain/301, and
+> the Tally slug.
 
 ## ✅ 2026-08-11 — Stage A (Vercel env) executed by the agent, verified
 
