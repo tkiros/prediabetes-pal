@@ -9,9 +9,30 @@
 1. **Vercel env** (values are encrypted → dashboard, not CLI):
    add `PAL_MODEL` and `PAL_VISION_MODEL` copied from the `REVORA_*` pair;
    set `NEXT_PUBLIC_APP_URL=https://prediabetespal.com`; **delete**
-   `LEGAL_ENTITY_NAME`. Then merge **#79** and redeploy.
-   ⛔ #79 must not merge first — both vars have code defaults, so it would
-   **silently downgrade the model** rather than fail loudly.
+   `LEGAL_ENTITY_NAME`.
+   ✅ **No longer gates #79.** `activeModelId()` and both vision extractors now
+   read `REVORA_MODEL` / `REVORA_VISION_MODEL` as a fallback, so the merge is
+   safe with production env untouched. The earlier note said an early merge
+   would "silently downgrade the model" — that understated it: with
+   `OPENAI_BASE_URL` on OpenRouter, the unprefixed default fails
+   `assertModelIdMatchesTransport`, which is an outage on `/api/check`, not a
+   quiet swap.
+   The same fallback covers `REVORA_REASONING_EFFORT` and
+   `REVORA_DAILY_CHECK_CAP` — both are optional with code defaults, but losing
+   a tightened daily cap silently restores 2000 checks/24h, which is spend.
+   The other renamed `REVORA_*` vars are dev/test/CLI only
+   (`LAUNCH_MODE_OVERRIDE` is ignored in production by design,
+   `LIVE_EVAL`/`MODEL_MINI`/`MODEL_NANO`/`DB_ENV`/`ALLOW_NO_MEASUREMENT`/
+   `ENFORCE_COMPONENT_MENTION` are not production-set) — no fallback added.
+   ⛔ **Delete the fallback** (`lib/pal/openai-client.ts` ×2,
+   `lib/pal/rate-limit.ts`, `lib/meal/photo-extract.ts`,
+   `lib/pantry/extract.ts`, plus the two cases in
+   `tests/unit/pal/openai-client.test.ts`) once the `PAL_*` vars exist in
+   Vercel production — otherwise it is permanent and `REVORA_MODEL` never gets
+   removed.
+   `NEXT_PUBLIC_APP_URL` is still wrong and independent of #79: the landing's
+   `<link rel="canonical">` emits `revora.plus` while
+   `/.well-known/security.txt` already emits `prediabetespal.com`.
 2. **Database role** (Stage D) — the agent cannot read `DATABASE_URL`, so it
    cannot reach Neon. Steps in the handoff §5.
 

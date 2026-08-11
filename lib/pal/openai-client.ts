@@ -50,7 +50,16 @@ export function activeModelId(input: NodeJS.ProcessEnv = process.env): string {
   // and a real Vercel state) is a string, so it wins the coalesce and every
   // call asks the provider for model "" — a 400 on every request, product and
   // eval alike. Blank means unset.
-  return input.PAL_MODEL?.trim() || DEFAULT_PAL_MODEL;
+  //
+  // REVORA_MODEL is the pre-rename name, read only as a fallback so this
+  // branch can merge before the Vercel env vars are renamed. Without it,
+  // production resolves to the unprefixed default while OPENAI_BASE_URL still
+  // points at OpenRouter — assertModelIdMatchesTransport then throws on every
+  // call. REMOVE once PAL_MODEL exists in Vercel production (see
+  // docs/ops/outstanding.md).
+  return (
+    input.PAL_MODEL?.trim() || input.REVORA_MODEL?.trim() || DEFAULT_PAL_MODEL
+  );
 }
 
 function providerForBaseUrl(baseURL: string | undefined): PalModelProvider {
@@ -159,7 +168,10 @@ export function createOpenAIPalModelClient(options?: {
   const env = options?.env ?? process.env;
   const model = options?.model?.trim() || activeModelId(env);
   const reasoningEffort = resolveReasoningEffort(
-    options?.reasoningEffort ?? env.PAL_REASONING_EFFORT
+    options?.reasoningEffort ??
+      env.PAL_REASONING_EFFORT ??
+      // Pre-rename fallback — see activeModelId() above.
+      env.REVORA_REASONING_EFFORT
   );
   const client =
     options?.client ??

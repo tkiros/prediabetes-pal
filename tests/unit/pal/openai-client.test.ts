@@ -22,12 +22,31 @@ describe("activeModelId", () => {
     ["whitespace", "   "]
   ])("falls back to the default when PAL_MODEL is %s", (_label, value) => {
     vi.stubEnv("PAL_MODEL", value as string);
+    vi.stubEnv("REVORA_MODEL", "");
     expect(activeModelId()).toBe(DEFAULT_PAL_MODEL);
     vi.unstubAllEnvs();
   });
 
   it("uses an explicitly set PAL_MODEL", () => {
     vi.stubEnv("PAL_MODEL", "gpt-5.4");
+    expect(activeModelId()).toBe("gpt-5.4");
+    vi.unstubAllEnvs();
+  });
+
+  // Pre-rename fallback: production still carries REVORA_MODEL. Without this
+  // the unprefixed default resolves against an OpenRouter base URL and
+  // assertModelIdMatchesTransport throws on every call. Delete both the
+  // fallback and these two cases once PAL_MODEL exists in Vercel production.
+  it("falls back to REVORA_MODEL when PAL_MODEL is unset", () => {
+    vi.stubEnv("PAL_MODEL", "");
+    vi.stubEnv("REVORA_MODEL", "openai/gpt-5.4-mini");
+    expect(activeModelId()).toBe("openai/gpt-5.4-mini");
+    vi.unstubAllEnvs();
+  });
+
+  it("prefers PAL_MODEL over REVORA_MODEL", () => {
+    vi.stubEnv("PAL_MODEL", "gpt-5.4");
+    vi.stubEnv("REVORA_MODEL", "gpt-5.4-nano");
     expect(activeModelId()).toBe("gpt-5.4");
     vi.unstubAllEnvs();
   });
