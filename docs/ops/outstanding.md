@@ -71,18 +71,29 @@ only `app/page.tsx` imports. Note that `landing-wiring-pins.test.ts:74` cannot
 catch this — it asserts `app/layout.tsx` does not *reference* `reading`, which
 is a source-level check, not a bundle-level one.
 
-### Dependency PRs — grouping fixed, two majors left open on purpose (#87)
+### Dependency PRs — grouping fixed, safe bumps landed, majors held back (#87)
 
 Grouped Dependabot PRs were all-or-nothing, so one breaking major poisoned
 every safe bump beside it. Both npm groups are now `minor`+`patch`; majors
 arrive individually.
 
-- **#81** (dev) carries `typescript` 6→7, `eslint` 9→10, `@types/node` 24→26.
-  `typescript-eslint` 8.x declares `typescript: ">=4.8.4 <6.1.0"`, so the build
-  fails on TS 7. Diagnosed on the PR, left open — that migration is a decision.
-- **#69** (prod) carries `openai` **6→7**, the SDK behind the safety
-  classifier. `docs/ops/openai-cost-model.md` says model/SDK choices are made
-  **on the eval**, so this needs `npm run eval:pal`, not a version check.
+The fix demonstrably worked. Dependabot regenerated both groups under the new
+config and **#88** / **#89** merged green — 6 dev and 15 production bumps
+(`next` 16.2.11→16.3.0, `react` 19.2.5→19.2.8, `stripe` ^22.3→^22.4, `vitest`
+4.1.5→4.1.10, `playwright` 1.60→1.62). It then auto-closed #81 and #69 as
+superseded. The majors did **not** ride along — `package.json` still pins
+`openai` 6.36.0, `typescript` 6.0.3, `eslint` ^9.39.5.
+
+Those three are now the open decisions, and each will arrive as its own PR:
+
+- **`openai` 6→7** — the SDK behind the safety classifier.
+  `docs/ops/openai-cost-model.md` is explicit that model/SDK choices are made
+  **on the eval**, so this needs `npm run eval:pal` behind it, not a version
+  check.
+- **`typescript` 6→7 with `eslint` 9→10** — `typescript-eslint` 8.x declares
+  `typescript: ">=4.8.4 <6.1.0"`, so TS 7 fails the build outright
+  ("trying to use TypeScript but do not have the required package(s)
+  installed"). A toolchain migration, not a bump.
 
 The `docker` ecosystem was dropped (nothing left to scan since #80 deleted
 `Dockerfile.cron`), and `ci-security.test.ts` now asserts the biconditional —
@@ -414,9 +425,9 @@ Nothing depends on it once step 1 lands. Delete the project, then delete
 - **Dangling "counsel Q8"** — `PRODUCT.md:23` and `copy-ledger.md:97` gate the
   reversal line on a Q8 that does not exist. Pre-existing; do not invent one.
 - **`prediapal.com`** unregistered by choice — fallback name unprotected.
-- **2 open Dependabot PRs** (#69, #81) — both diagnosed on the PR and left open
-  on purpose; each carries a major that deserves its own decision. See
-  "Dependency PRs" above. #67, #68 and #38 are closed.
+- **0 open Dependabot PRs.** #88/#89 merged; #69/#81 auto-closed as superseded;
+  #67, #68 and #38 were already closed. Three majors are held back by the new
+  grouping and will return individually — see "Dependency PRs" above.
 - ~~`revora.bio` stale in Vercel~~ — removed 2026-08-10.
 - **Manifest `short_name`** is now 15 chars and may truncate on some Android
   launchers.
