@@ -109,6 +109,14 @@ export default function WelcomePage() {
       // Signed in: entitlement is server-truth, so drop the device taster.
       tasterStore.clear();
 
+      // Mirror the saved profile on-device BEFORE navigating: /check's
+      // FirstRunGate keys on a non-null device profile, and a user who signed
+      // in without ever touching the guest tour has none — without this they
+      // bounce from /check into /onboarding (caught by auth.spec on main,
+      // Mobile Safari, right after the /check landing change). Also what
+      // makes the saved-A1C row prefill instantly.
+      profileStore.set({ a1c, onboardedAt: new Date().toISOString() });
+
       setState("done");
       track({ name: "signin_completed" });
       // Land where the product is: the check page (type / say it / photo) —
@@ -145,7 +153,10 @@ export default function WelcomePage() {
               <p className="page-copy">
                 Your history and coach follow you across devices now.
               </p>
-              <Link className="primary-button link-button" href="/check">
+              {/* ?stay=1: this user has a SERVER profile but this device may
+                  be fresh (no local profile), and FirstRunGate would bounce
+                  an empty device into the guest tour. */}
+              <Link className="primary-button link-button" href="/check?stay=1">
                 Check a meal
               </Link>
             </>
