@@ -5,17 +5,35 @@ updates:
     schedule:
       interval: weekly
     groups:
+      # Groups are restricted to minor+patch ON PURPOSE. A grouped PR is
+      # all-or-nothing: one breaking major poisons every other bump in it, and
+      # the PR then sits red for weeks looking like a flake.
+      #
+      # That is exactly what happened to #81 — it carried TypeScript 6→7,
+      # ESLint 9→10 and @types/node 24→26 together, and typescript-eslint 8.x
+      # declares `typescript: ">=4.8.4 <6.1.0"`, so the build failed with
+      # "trying to use TypeScript but do not have the required package(s)
+      # installed". Nine safe bumps were unmergeable because of three majors.
+      #
+      # Majors now arrive as individual PRs. They are toolchain migrations and
+      # deserve to be triaged one at a time, not merged as housekeeping.
       production-dependencies:
         dependency-type: production
+        update-types:
+          - minor
+          - patch
       development-dependencies:
         dependency-type: development
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
 
-  - package-ecosystem: docker
-    directory: /
-    schedule:
-      interval: weekly
+# The docker ecosystem was removed on 2026-08-10. It watched Dockerfile.cron,
+# which PR #80 deleted along with the rest of the Railway decommission — the
+# repo now contains no Dockerfile, .dockerignore or compose file, so the entry
+# could only ever produce noise or nothing.
