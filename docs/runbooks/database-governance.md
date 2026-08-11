@@ -13,21 +13,39 @@ Use the existing Neon owner as the migration role. Create a separate login
 with a generated password, then run the grant/revoke block below as the owner.
 Do not paste credentials into this file.
 
-> **2026-08-11 — the app role is being renamed** `revora_app` →
-> `prediabetespal_app` as the last step of the product rename. Use the
-> **Neon-console procedure** immediately below; the historical `psql` block
-> after it is kept because it documents what the current `revora_app` grants
-> actually are.
+> **2026-08-11 — ✅ DONE.** The app role was renamed `revora_app` →
+> `prediabetespal_app` and `revora_app` was dropped. Production runs on the new
+> role: governance check all-true (19/19 migrations), `/api/health` `db:"ok"`,
+> a live `/api/check`, and a real signin whose verification-token row was
+> confirmed written. The procedure below is retained as the reference for the
+> next role rotation; the historical `psql` block after it documents the grant
+> set that was reproduced.
 
 ### Neon-console procedure (current — no local credentials needed)
 
-Neon project `dry-shadow-56131409`, database `neondb`, owner role
-`neondb_owner`. The console's SQL editor is **not** psql, so `\gexec` does not
-work there — these statements are already expanded.
+The Neon project is **displayed as `revora-db`** in the console;
+`dry-shadow-56131409` is its project *ID* (shown in Project Settings and the
+URL, and stored as `NEON_PROJECT_ID`) — not a name you can search for. Database
+`neondb`, owner role `neondb_owner`. The console's SQL editor is **not** psql,
+so `\gexec` does not work there — these statements are already expanded.
 
-1. **Neon Console → Roles → Add role** → name `prediabetespal_app`. Let Neon
-   generate the password and **copy the pooled connection string it shows** —
-   it is displayed once. This step alone changes nothing about production.
+⛔ **Create the role with SQL, never with the Console's Roles tab.** Neon grants
+`neon_superuser` to every role created through the Console/CLI/API, which would
+let the "restricted" app role create schemas and databases — the exact thing
+this split exists to prevent. Verified 2026-08-11: `revora_app` holds no
+`neon_superuser` membership and has `rolsuper/rolcreatedb/rolcreaterole` all
+false; the new role must match. `npm run db:governance:check` catches the
+mistake (`runtimeCannotCreate` asserts `can_create_schema === false` and
+`can_create_database === false`), but catching it after repointing production
+is a bad way to find out.
+
+1. Generate a password in the operator shell (`openssl rand -hex 24`), then in
+   **Neon Console → SQL Editor** as `neondb_owner`:
+
+```sql
+CREATE ROLE prediabetespal_app LOGIN PASSWORD '<generated>';
+```
+
 2. **Neon Console → SQL Editor**, as `neondb_owner`, run:
 
 ```sql
@@ -46,25 +64,40 @@ ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public
 COMMIT;
 ```
 
-3. Confirm the grants landed (expect one row per table, 22 at the 2026-08-11
-   head):
+3. Confirm the grants landed **and that the role is genuinely restricted**
+   (expect `22`, then zero rows — 22 is the public-table count at the
+   2026-08-11 head, matching `revora_app`'s current grant count):
 
 ```sql
 SELECT count(*) FROM information_schema.table_privileges
 WHERE grantee = 'prediabetespal_app' AND privilege_type = 'SELECT';
+
+-- MUST return zero rows. Any row here means the role was created through the
+-- Console UI and inherited neon_superuser — drop it and redo step 1 in SQL.
+SELECT g.rolname AS granted_role
+FROM pg_auth_members am
+JOIN pg_roles r ON r.oid = am.member
+JOIN pg_roles g ON g.oid = am.roleid
+WHERE r.rolname = 'prediabetespal_app';
 ```
 
 4. Repoint `DATABASE_URL` in **Vercel** to the **pooled** `prediabetespal_app`
    URL and redeploy. ⛔ `DATABASE_MIGRATION_URL` stays out of Vercel.
 5. Verify `/api/health` → `db:"ok"` **and** a real signin (sessions live in
    Postgres, so a broken app role is also a login outage).
-6. Only then retire the old role — it owns no objects (`neondb_owner` does),
-   so `DROP OWNED` only strips its grants:
+6. Only then retire the old role. ⚠️ **`DROP OWNED BY` fails on Neon** with
+   `permission denied to drop objects` — `neondb_owner` is not a true
+   superuser. Revoke explicitly instead; the role owns no objects
+   (`neondb_owner` does), so this is equivalent:
 
 ```sql
 ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public REVOKE ALL ON TABLES FROM revora_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public REVOKE ALL ON SEQUENCES FROM revora_app;
-DROP OWNED BY revora_app;
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM revora_app;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM revora_app;
+REVOKE ALL ON SCHEMA public FROM revora_app;
+REVOKE ALL ON DATABASE neondb FROM revora_app;
+REVOKE revora_app FROM neondb_owner;   -- the owner is a member of the app role
 DROP ROLE revora_app;
 ```
 

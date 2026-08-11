@@ -237,8 +237,15 @@ the Vercel project breaks no code.**
    `NEXT_PUBLIC_APP_URL` is still wrong and independent of #79: the landing's
    `<link rel="canonical">` emits `revora.plus` while
    `/.well-known/security.txt` already emits `prediabetespal.com`.
-2. **Database role** (Stage D) — the agent cannot read `DATABASE_URL`, so it
-   cannot reach Neon. Steps in the handoff §5.
+2. ~~**Database role** (Stage D)~~ — ✅ **DONE 2026-08-11.** The premise here
+   was wrong: the agent could always reach Neon via `NEON_DATABASE_URL_UNPOOLED`
+   in `.env.local` — only `DATABASE_URL` itself is unreadable, and it was never
+   needed. `prediabetespal_app` was created (in SQL, **not** the Console Roles
+   tab, which auto-grants `neon_superuser`), granted, verified byte-for-byte
+   against the old role's privileges, bound to Vercel production, deployed, and
+   verified by health + a live check + a real signin's token write.
+   `revora_app` is dropped. Remaining: the cosmetic Neon project label
+   `revora-db` → `prediabetespal-db`.
 
 ---
 

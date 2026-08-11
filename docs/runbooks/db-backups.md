@@ -40,6 +40,21 @@ pg_restore --no-owner --dbname "$TARGET_DATABASE_URL" backup.dump
    repoint `DATABASE_URL` — never `pg_restore --clean` straight over a live
    production database.
 
+## What has and hasn't been proven (2026-08-11)
+
+The workflow has **never run** — it cannot until the three secrets exist.
+Half of it was validated by hand instead:
+
+- ✅ **Upload half proven.** `scripts/upload-db-backup.mjs` was run against the
+  real Blob store with the production token, writing to a `_selftest-*` path
+  (never a real rotation slot): the token works, `addRandomSuffix:false` keeps
+  the exact pathname, and a second upload to the same path **overwrites**
+  rather than erroring — which is the entire basis of the rotation scheme.
+  The test objects were deleted; `db-backups/` is empty.
+- ❌ **Dump half unproven.** No `pg_dump` on the dev machine, and the runner
+  installs `postgresql-client-17` fresh. The first real run is still the first
+  test of the dump + encrypt steps — read that run's log rather than assuming.
+
 ## Verify it's alive
 
 The workflow fails loudly on an empty dump (both the `test -s` and the
