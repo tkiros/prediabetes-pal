@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Same transport as lib/revora/telemetry.ts: schema-validated console JSON,
+// Same transport as lib/pal/telemetry.ts: schema-validated console JSON,
 // queryable in Vercel logs. No PII by construction — names + bounded enums only.
 // ponytail: log-based metrics; upgrade to a real sink post-launch if log
 // querying becomes the bottleneck for the §3 price-test readouts.
@@ -12,10 +12,10 @@ const BillingTelemetryEventSchema = z
       "trial_canceled",
       "pantry_purchased",
       "precharge_email_sent",
-      // Churn, server-side (W-10). These live HERE, not in lib/revora/telemetry,
+      // Churn, server-side (W-10). These live HERE, not in lib/pal/telemetry,
       // because the webhook is the only thing that can see them: a canceled or
       // refunded user is precisely the user who is no longer running our
-      // client-side analytics. They were previously declared on the revora
+      // client-side analytics. They were previously declared on the pal
       // SafeTelemetryEvent enum, which the webhook does not import and whose
       // .strict() schema could never have accepted them — two dead enum
       // entries documenting a signal that did not exist.

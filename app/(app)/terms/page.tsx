@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { WEB_REFUND_WINDOW_DAYS } from "../../../lib/legal/terms";
-import { loadSafetyContract } from "../../../lib/revora/safety-contract";
-import { SUPPORT_EMAIL } from "../../../lib/revora/contact";
+import { loadSafetyContract } from "../../../lib/pal/safety-contract";
+import { SUPPORT_EMAIL } from "../../../lib/pal/contact";
 
 export const metadata: Metadata = {
   title: "Terms · Prediabetes Pal",

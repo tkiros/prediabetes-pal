@@ -76,7 +76,7 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:3100",
     // Block service workers in E2E: WebKit's automation driver hangs on SW-controlled
     // navigations (a Playwright-WebKit limitation), and tests should never run against a
-    // cached SW. The SW itself is covered by tests/unit/revora/pwa-assets.test.ts (file
+    // cached SW. The SW itself is covered by tests/unit/pal/pwa-assets.test.ts (file
     // contract) and the Phase 8.1 manual offline-launch matrix.
     serviceWorkers: "block",
     // The 2026-07-07 revamp added a small CSS motion layer (transitions +

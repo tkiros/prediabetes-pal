@@ -10,7 +10,7 @@ import {
   type BlobDeleter
 } from "../../../../lib/server/blob";
 import { getDb, schema, type Db } from "../../../../lib/server/db";
-import { captureServerError } from "../../../../lib/revora/sentry-capture";
+import { captureServerError } from "../../../../lib/pal/sentry-capture";
 import {
   getSessionInfo,
   type SessionInfo

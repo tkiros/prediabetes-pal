@@ -110,7 +110,7 @@ export const TextOnScreen: React.FC<TextOnScreenProps> = ({ hookText, beats, dis
 
       <Sequence from={endStart} durationInFrames={endFrames}>
         <Card>
-          <div style={{ color: COLORS.accent, fontWeight: 800, fontSize: 88, letterSpacing: 1 }}>Revora</div>
+          <div style={{ color: COLORS.accent, fontWeight: 800, fontSize: 88, letterSpacing: 1 }}>Prediabetes Pal</div>
         </Card>
       </Sequence>
     </AbsoluteFill>

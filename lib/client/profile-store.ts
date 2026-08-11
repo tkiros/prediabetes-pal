@@ -8,7 +8,7 @@ export type GuestProfile = {
   onboardedAt: string; // ISO
 };
 
-const STORAGE_KEY = "revora.profile.v1";
+const STORAGE_KEY = "pal.profile.v1";
 
 export const profileStore = {
   get(): GuestProfile | null {

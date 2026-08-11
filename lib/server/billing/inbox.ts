@@ -155,7 +155,7 @@ export async function processInboxRow(
   // This is intentionally outside the reducer transaction: even when apply
   // fails again, raw provider PII must not survive in a failed/dead-letter row.
   const storedPayload = row.payload as Record<string, unknown>;
-  if (storedPayload._revora_minimized !== 1) {
+  if (storedPayload._pal_minimized !== 1) {
     const minimized = minimizeBillingPayload(
       storedPayload as unknown as Stripe.Event
     ) as unknown as Record<string, unknown>;
@@ -452,7 +452,7 @@ export function minimizeBillingPayload(event: Stripe.Event): Stripe.Event {
   }
 
   return compact({
-    _revora_minimized: 1,
+    _pal_minimized: 1,
     id: typeof source.id === "string" ? source.id : undefined,
     type,
     created:

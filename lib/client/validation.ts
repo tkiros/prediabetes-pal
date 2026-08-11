@@ -1,4 +1,4 @@
-import type { CheckRequest } from "../revora/schemas";
+import type { CheckRequest } from "../pal/schemas";
 
 export type CheckFormInput = {
   food: string;

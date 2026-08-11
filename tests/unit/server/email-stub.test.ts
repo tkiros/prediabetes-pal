@@ -44,7 +44,7 @@ describe("email stub production boundary", () => {
   });
 
   it("writes mailbox material with owner-only permissions", async () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), "revora-stub-policy-"));
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "pal-stub-policy-"));
     const directory = path.join(root, "mailbox");
 
     await writeEmailStub(directory, "message.json", { url: "https://example.test" });
@@ -57,7 +57,7 @@ describe("email stub production boundary", () => {
 
   it("rejects a filename that could escape the mailbox", async () => {
     await expect(
-      writeEmailStub("/tmp/revora-unused-mailbox", "../escape.json", {})
+      writeEmailStub("/tmp/pal-unused-mailbox", "../escape.json", {})
     ).rejects.toThrow("must not contain a path");
   });
 });

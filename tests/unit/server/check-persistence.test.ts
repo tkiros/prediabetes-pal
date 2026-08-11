@@ -101,8 +101,8 @@ describe("check persistence (4B)", () => {
     const POST = createHandler({ sessionUserId: userId });
     const response = await POST(
       checkRequest({
-        "x-revora-client-id": "web-123",
-        "x-revora-input-method": "voice"
+        "x-pal-client-id": "web-123",
+        "x-pal-input-method": "voice"
       })
     );
 
@@ -128,8 +128,8 @@ describe("check persistence (4B)", () => {
 
   it("returns the same checkId on a client-id dedupe re-submit", async () => {
     const POST = createHandler({ sessionUserId: userId });
-    const first = await POST(checkRequest({ "x-revora-client-id": "web-dup" }));
-    const second = await POST(checkRequest({ "x-revora-client-id": "web-dup" }));
+    const first = await POST(checkRequest({ "x-pal-client-id": "web-dup" }));
+    const second = await POST(checkRequest({ "x-pal-client-id": "web-dup" }));
 
     const firstBody = await first.json();
     const secondBody = await second.json();
@@ -175,7 +175,7 @@ describe("check persistence (4B)", () => {
 
   it("persists the photo input method (D5)", async () => {
     const POST = createHandler({ sessionUserId: userId });
-    await POST(checkRequest({ "x-revora-input-method": "photo" }));
+    await POST(checkRequest({ "x-pal-input-method": "photo" }));
 
     const rows = await testDb.db.select().from(schema.checks);
     expect(rows[0].inputMethod).toBe("photo");
@@ -183,7 +183,7 @@ describe("check persistence (4B)", () => {
 
   it("defaults a bad input-method header to text", async () => {
     const POST = createHandler({ sessionUserId: userId });
-    await POST(checkRequest({ "x-revora-input-method": "gibberish" }));
+    await POST(checkRequest({ "x-pal-input-method": "gibberish" }));
 
     const rows = await testDb.db.select().from(schema.checks);
     expect(rows[0].inputMethod).toBe("text");

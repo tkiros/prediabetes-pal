@@ -1,12 +1,12 @@
 import type {
   ClarifyElapsedBucket,
   ClarifyReason
-} from "../revora/clarify";
+} from "../pal/clarify";
 import type { Channel } from "./attribution";
 import type {
   ClinicalRoute,
-  RevoraRisk,
-  RevoraUserResponse
+  PalRisk,
+  PalUserResponse
 } from "./ui-state";
 
 /**
@@ -23,7 +23,7 @@ import type {
 
 // Closed set of response kinds the check engine can return to the client
 // (lib/client/ui-state.ts — the same type check.ts normalizes onto).
-type CheckResponseKind = RevoraUserResponse["kind"];
+type CheckResponseKind = PalUserResponse["kind"];
 
 // Price points offered at the paywall/trial (cents-as-string, matching the
 // Stripe price-lookup keys). A closed enum so no arbitrary amount reaches
@@ -66,7 +66,7 @@ export type AnalyticsEvent =
   | {
       name: "check_completed";
       props: {
-        risk: RevoraRisk;
+        risk: PalRisk;
         kind: CheckResponseKind;
         input_method: "text" | "voice" | "photo";
         // W-10/N-12: without a first-check marker the activation funnel is not
@@ -84,7 +84,7 @@ export type AnalyticsEvent =
       // today because no feedback event exists — which is why W-17's variant
       // bank ships together with this, not before it.
       name: "result_helpful";
-      props: { helpful: boolean; risk: RevoraRisk };
+      props: { helpful: boolean; risk: PalRisk };
     }
   | {
       // W-01: which clinical class fired. The route id only — never the text
@@ -128,7 +128,7 @@ export type AnalyticsEvent =
     }
   // P1.3 §10.1: the bounded-ambiguity clarify funnel. Only the ambiguity
   // `category` (which of the three deterministic prompts fired, a closed enum
-  // from lib/revora/clarify.ts) and an elapsed-time bucket — never the meal
+  // from lib/pal/clarify.ts) and an elapsed-time bucket — never the meal
   // text or the prompt wording. Abandonment is derivable as a
   // `clarification_requested` with no matching `clarification_resolved`, so no
   // separate event is emitted. The prop is `category`, not the result's

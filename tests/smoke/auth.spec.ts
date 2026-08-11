@@ -9,7 +9,7 @@ import { expect, test } from "@playwright/test";
  *
  *   DATABASE_URL=<disposable loopback database> \
  *   AUTH_SECRET=<any> HEALTH_DATA_KEY=<32B base64> \
- *   AUTH_EMAIL_STUB_DIR=/tmp/revora-mailbox \
+ *   AUTH_EMAIL_STUB_DIR=/tmp/pal-mailbox \
  *   npx playwright test tests/smoke/auth.spec.ts
  *
  * Skipped automatically when the isolated database isn't provisioned.
@@ -38,7 +38,7 @@ test("reviewer-access form is absent when NEXT_PUBLIC_REVIEWER_MODE is unset", a
 test("magic-link round trip: email → link → session → consent → profile", async ({
   page
 }) => {
-  const email = `e2e-${Date.now()}@revora.test`;
+  const email = `e2e-${Date.now()}@pal.test`;
 
   await page.goto("/signin");
   await page.getByLabel("Email address").fill(email);

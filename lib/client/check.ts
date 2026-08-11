@@ -1,10 +1,10 @@
 import { daypartOfHour } from "../coach/insights";
-import type { CheckRequest } from "../revora/schemas";
+import type { CheckRequest } from "../pal/schemas";
 import { nextCoachRotation } from "./coach-rotation";
 import type {
   CheckFailureCode,
   ClinicalRoute,
-  RevoraUserResponse
+  PalUserResponse
 } from "./ui-state";
 
 // Everything the check endpoint itself can return: the UI union minus the
@@ -14,7 +14,7 @@ import type {
 // which is how a new response kind could be added to the engine and silently
 // fail to reach the card — the normalizer below throws on any kind this type
 // does not admit, and that throw surfaces as a retry card.
-type ServerResponse = Exclude<RevoraUserResponse, { kind: "upsell" }>;
+type ServerResponse = Exclude<PalUserResponse, { kind: "upsell" }>;
 
 class CheckRequestError extends Error {
   code: CheckFailureCode;
@@ -41,7 +41,7 @@ export async function submitCheck(
     // raw question). Lets the server persist WHICH approved question was asked.
     clarifyCategory?: string;
   }
-): Promise<RevoraUserResponse> {
+): Promise<PalUserResponse> {
   let response: Response;
   const rotation = nextCoachRotation();
 
@@ -50,25 +50,25 @@ export async function submitCheck(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(init?.clientId ? { "x-revora-client-id": init.clientId } : {}),
+        ...(init?.clientId ? { "x-pal-client-id": init.clientId } : {}),
         ...(init?.inputMethod
-          ? { "x-revora-input-method": init.inputMethod }
+          ? { "x-pal-input-method": init.inputMethod }
           : {}),
-        ...(init?.clarified ? { "x-revora-clarified": "1" } : {}),
+        ...(init?.clarified ? { "x-pal-clarified": "1" } : {}),
         ...(init?.clarified && init?.clarifyCategory
-          ? { "x-revora-clarify-category": init.clarifyCategory }
+          ? { "x-pal-clarify-category": init.clarifyCategory }
           : {}),
         // W-17: cycles the server's audited coach phrase bank so a daily user
         // is not shown the same three sentences every day.
         ...(rotation !== undefined
-          ? { "x-revora-coach-rotation": String(rotation) }
+          ? { "x-pal-coach-rotation": String(rotation) }
           : {}),
         // W-17: the device's own clock, bucketed to three values before it
         // leaves the browser. The server has no other way to know it is 8am
         // where the user is without a profile round-trip, and "walk it off
         // after dinner" at breakfast is the tell that the tip was never about
         // this meal. Bucketed, not the raw hour: nothing here identifies anyone.
-        "x-revora-daypart": daypartOfHour(new Date().getHours())
+        "x-pal-daypart": daypartOfHour(new Date().getHours())
       },
       body: JSON.stringify(input),
       signal: getRequestSignal(init?.signal)
@@ -145,7 +145,7 @@ export async function submitCheck(
  */
 function asRetryResponse(
   payload: unknown
-): Extract<RevoraUserResponse, { kind: "retry" }> | null {
+): Extract<PalUserResponse, { kind: "retry" }> | null {
   if (!payload || typeof payload !== "object") {
     return null;
   }
@@ -166,7 +166,7 @@ function asRetryResponse(
   return null;
 }
 
-function normalizeResponse(payload: unknown): RevoraUserResponse {
+function normalizeResponse(payload: unknown): PalUserResponse {
   if (!payload || typeof payload !== "object" || !("kind" in payload)) {
     throw new CheckRequestError("invalid_response");
   }

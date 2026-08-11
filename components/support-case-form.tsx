@@ -5,7 +5,7 @@ import { useState } from "react";
 import {
   SUPPORT_EMAIL,
   SUPPORT_MESSAGE_MAX as MESSAGE_MAX
-} from "../lib/revora/contact";
+} from "../lib/pal/contact";
 
 /**
  * P0.4: the in-account "Help & refunds" door (C7 plan §9 + design-review D3/#9).

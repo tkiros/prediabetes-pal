@@ -13,8 +13,8 @@ import {
   uncertaintyFromRepeat,
   type WeeklyLearningInputs
 } from "../../../lib/journey/weekly-learning";
-import { assertNoForbiddenClaims } from "../../../lib/revora/postprocess";
-import { loadSafetyContract } from "../../../lib/revora/safety-contract";
+import { assertNoForbiddenClaims } from "../../../lib/pal/postprocess";
+import { loadSafetyContract } from "../../../lib/pal/safety-contract";
 
 const WEEK_START = "2026-07-13";
 

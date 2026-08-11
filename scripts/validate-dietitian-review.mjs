@@ -9,7 +9,7 @@ const ROOT = process.cwd();
 const REVIEW_DIR = path.join(ROOT, "docs/qa/dietitian-review");
 const GOVERNANCE_PATH = path.join(REVIEW_DIR, "clinical-copy-governance.json");
 const PANEL_PATH = path.join(REVIEW_DIR, "panel-review.json");
-const EVAL_PATH = path.join(ROOT, "tests/fixtures/revora-eval-cases.json");
+const EVAL_PATH = path.join(ROOT, "tests/fixtures/pal-eval-cases.json");
 const LEDGER_PATH = path.join(ROOT, "docs/safety/copy-ledger.md");
 const EVIDENCE_PATH = path.join(ROOT, "docs/safety/evidence-pack.md");
 
@@ -47,7 +47,7 @@ export function validateEngineeringPacket(root = ROOT) {
     root,
     "docs/qa/dietitian-review/clinical-copy-governance.json"
   );
-  const evalPath = path.join(root, "tests/fixtures/revora-eval-cases.json");
+  const evalPath = path.join(root, "tests/fixtures/pal-eval-cases.json");
   const ledger = fs.readFileSync(
     path.join(root, "docs/safety/copy-ledger.md"),
     "utf8"

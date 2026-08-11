@@ -78,7 +78,7 @@ export const verificationTokens = pgTable(
   (table) => [primaryKey({ columns: [table.identifier, table.token] })]
 );
 
-// ── Revora stateful layer ───────────────────────────────────────────────────
+// ── Prediabetes Pal stateful layer ───────────────────────────────────────────────────
 
 export const profiles = pgTable("profiles", {
   userId: uuid("user_id")
@@ -160,7 +160,7 @@ export const checks = pgTable(
     // exists so the snapshot carries its own route class if that boundary widens.
     routeType: text("route_type"),
     // Clarification asked + answer supplied (§P3.1). The QUESTION is one of three
-    // approved deterministic strings (lib/revora/clarify.ts) reconstructed
+    // approved deterministic strings (lib/pal/clarify.ts) reconstructed
     // server-side from a bounded category — never health text, encrypted anyway.
     // The ANSWER is, by construction, this check's own normalized input
     // (foodCiphertext), so clarifyAnswerCiphertext is left null rather than
@@ -260,7 +260,7 @@ export const checkFeedback = pgTable(
 // The user attaches, to a check they already ran: what they chose, whether they
 // would choose it again, how easy it felt, a private note, a favorite flag, and
 // a self-chosen label. NEVER an input to card-band logic — nothing in
-// lib/revora/* imports this table, and meal-memory-non-interference.test.ts
+// lib/pal/* imports this table, and meal-memory-non-interference.test.ts
 // asserts that structurally (global constraint §1). Memory is anchored on a
 // check (`checkId`, cascade) and unique per (user, check) so a save upserts the
 // single row rather than piling duplicates.

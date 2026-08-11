@@ -4,7 +4,7 @@ import {
   randomBytes
 } from "node:crypto";
 
-import { captureServerError } from "../revora/sentry-capture";
+import { captureServerError } from "../pal/sentry-capture";
 
 /**
  * Column-level encryption for special-category fields (exact A1C, food text)

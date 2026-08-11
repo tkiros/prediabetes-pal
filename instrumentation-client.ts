@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/browser";
 
-import { resolveSentryRelease } from "./lib/revora/sentry-release";
-import { scrubSentryEvent } from "./lib/revora/sentry-scrub";
+import { resolveSentryRelease } from "./lib/pal/sentry-release";
+import { scrubSentryEvent } from "./lib/pal/sentry-scrub";
 
 /**
  * Browser Sentry (W-22).
@@ -64,7 +64,7 @@ export const CLIENT_SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
 /**
  * The init options, exported so the scrub/allowlist discipline is unit-testable
- * without booting the SDK (tests/unit/revora/sentry-client-scrub.test.ts).
+ * without booting the SDK (tests/unit/pal/sentry-client-scrub.test.ts).
  */
 export function clientSentryOptions(dsn: string | undefined) {
   return {

@@ -33,7 +33,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = 3100;
 const BASE = `http://localhost:${PORT}`;
 const PG_PORT = 55440;
-const PG_CONTAINER = "revora-e2e-pg";
+const PG_CONTAINER = "pal-e2e-pg";
 // 127.0.0.1 via --network host: docker bridge port-publishing proved unreliable
 // on this machine (DNAT blackhole), host networking bypasses it entirely.
 const DATABASE_URL = `postgres://postgres:e2e@127.0.0.1:${PG_PORT}/postgres`;
@@ -110,7 +110,7 @@ execSync(`npx drizzle-kit push --force`, {
 // else create a throwaway product + prices.
 async function ensurePrice(envId, args, label) {
   if (envId) { try { await stripe.prices.retrieve(envId); return envId; } catch { /* fall through */ } }
-  const product = await stripe.products.create({ name: `Revora E2E-06 ${label} (${RUN_ID})` });
+  const product = await stripe.products.create({ name: `Prediabetes Pal E2E-06 ${label} (${RUN_ID})` });
   const price = await stripe.prices.create({ product: product.id, currency: "usd", ...args });
   return price.id;
 }
@@ -199,7 +199,7 @@ try {
   await waitFor(`${BASE}/api/health/live`);
 
   // ── step 1: trial checkout ────────────────────────────────────────────────
-  const buyer = `e2e06-${Date.now()}@revora-e2e.test`;
+  const buyer = `e2e06-${Date.now()}@pal-e2e.test`;
   let startRes;
   let startBody = {};
   for (let attempt = 0; attempt < 6; attempt += 1) {
@@ -410,7 +410,7 @@ try {
   const portalConfigs = await stripe.billingPortal.configurations.list({ limit: 1 });
   if (portalConfigs.data.length === 0) {
     await stripe.billingPortal.configurations.create({
-      business_profile: { headline: "Revora test portal" },
+      business_profile: { headline: "Prediabetes Pal test portal" },
       features: { subscription_cancel: { enabled: true }, invoice_history: { enabled: true } },
       default_return_url: `${BASE}/account`
     });

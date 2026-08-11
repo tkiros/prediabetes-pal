@@ -43,7 +43,7 @@
   (`revora-sentry-verification-manual-1784733827563`) thrown on production `/home` produced a
   POST to `o4511672801820672.ingest.us.sentry.io/api/4511691306696704/envelope/` that returned
   **200** with zero CSP violations — ingest accepts the client's envelopes end to end.
-  Issue-stream visibility CONFIRMED (2026-07-22): issue `REVORA_1-3` (unhandled TypeError from
+  Issue-stream visibility CONFIRMED (2026-07-22): issue `PAL_1-3` (unhandled TypeError from
   `auto.browser.global_handlers.onerror` on `/signin`, collateral from the verification session's
   flaky network) appeared in the Sentry Issues feed and fired an email alert — capture → ingest →
   issue → alert all observed. NOTE for future verifiers: Sentry's data scrubbing redacts error

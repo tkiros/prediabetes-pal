@@ -16,7 +16,7 @@ import {
   type VerdictWeekDayWire
 } from "../../../lib/coach/progress-state";
 import { RECAP_POSTURE_LINE, recapSentences } from "../../../lib/coach/recap";
-import { SUPPORT_EMAIL } from "../../../lib/revora/contact";
+import { SUPPORT_EMAIL } from "../../../lib/pal/contact";
 
 /**
  * My Journey — "show me what I'm learning" (C7 four-jobs restructure,

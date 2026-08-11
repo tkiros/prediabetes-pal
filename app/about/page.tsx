@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { SUPPORT_EMAIL } from "../../lib/revora/contact";
-import { loadSafetyContract } from "../../lib/revora/safety-contract";
+import { SUPPORT_EMAIL } from "../../lib/pal/contact";
+import { loadSafetyContract } from "../../lib/pal/safety-contract";
 
 export const metadata: Metadata = {
   title: "About Prediabetes Pal — Who Built It and What It's Built On",

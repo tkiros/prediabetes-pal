@@ -7,7 +7,7 @@ import {
 } from "../../../../lib/server/billing/reconcile";
 import { getDb, type Db } from "../../../../lib/server/db";
 import { sendEmail } from "../../../../lib/server/email";
-import { captureServerError } from "../../../../lib/revora/sentry-capture";
+import { captureServerError } from "../../../../lib/pal/sentry-capture";
 import { isAuthorizedCron } from "../../../../lib/server/timing-safe";
 
 export const runtime = "nodejs";

@@ -1,15 +1,15 @@
 #!/usr/bin/env npx tsx
 /**
  * Model bake-off: compare two model IDs on the FROZEN eval corpus
- * (tests/fixtures/revora-eval-cases.json) through the IDENTICAL production
- * pipeline — buildRevoraPrompt → Responses API w/ strict json_schema →
- * RevoraModelOutputSchema → postprocess floors → fail-closed retry. Parity is
- * structural: both models go through createOpenAIRevoraModelClient with the
+ * (tests/fixtures/pal-eval-cases.json) through the IDENTICAL production
+ * pipeline — buildPalPrompt → Responses API w/ strict json_schema →
+ * PalModelOutputSchema → postprocess floors → fail-closed retry. Parity is
+ * structural: both models go through createOpenAIPalModelClient with the
  * same instructions, schema, and (absent) reasoning/temperature settings.
  *
  * Provider parity (N-19): live calls default to OpenAI-direct — production's
  * own path. Set OPENAI_BASE_URL (e.g. https://openrouter.ai/api/v1) plus
- * provider-prefixed model ids via REVORA_MODEL_NANO/MINI to test elsewhere;
+ * provider-prefixed model ids via PAL_MODEL_NANO/MINI to test elsewhere;
  * that is a deviation from production and the artifact records the base URL.
  *
  * Documented deviation from the production call (applied to BOTH models):
@@ -39,16 +39,16 @@ import fs from "node:fs";
 import path from "node:path";
 import OpenAI from "openai";
 
-import { checkFood } from "../lib/revora/service";
-import type { RevoraModelClient } from "../lib/revora/openai-client";
-import { REVORA_JSON_SCHEMA_NAME } from "../lib/revora/openai-client";
+import { checkFood } from "../lib/pal/service";
+import type { PalModelClient } from "../lib/pal/openai-client";
+import { PAL_JSON_SCHEMA_NAME } from "../lib/pal/openai-client";
 import {
-  RevoraModelOutputSchema,
-  revoraModelJsonSchema
-} from "../lib/revora/schemas";
-import type { RevoraUserResponse } from "../lib/revora/schemas";
-import { scoreRun, type GradedRun } from "../lib/revora/eval-rubric";
-import { loadEvalCases, type RevoraEvalCase } from "../tests/support/revora-test-model";
+  PalModelOutputSchema,
+  palModelJsonSchema
+} from "../lib/pal/schemas";
+import type { PalUserResponse } from "../lib/pal/schemas";
+import { scoreRun, type GradedRun } from "../lib/pal/eval-rubric";
+import { loadEvalCases, type PalEvalCase } from "../tests/support/pal-test-model";
 
 type Mode = "dry-run" | "mock" | "live";
 
@@ -73,7 +73,7 @@ type CaseResult = {
   blindModel: "A" | "B";
   modelCalled: boolean;
   call: CallRecord | null;
-  finalKind: RevoraUserResponse["kind"];
+  finalKind: PalUserResponse["kind"];
   finalRisk: string | null;
   pipelineOutcome:
     | "delivered"
@@ -86,7 +86,7 @@ type CaseResult = {
   acceptableRisks: string[] | null;
   knownGap: boolean;
   harmfulSafe: boolean;
-  response: RevoraUserResponse;
+  response: PalUserResponse;
 };
 
 const MAX_OUTPUT_TOKENS = 1024; // parity with production openai-client.ts cap
@@ -99,8 +99,8 @@ function envNum(name: string, fallback: number): number {
 // Prod-style ids for OpenAI-direct. OpenRouter needs the "openai/" prefix —
 // set these envs alongside OPENAI_BASE_URL when deliberately going off-path.
 const MODELS = {
-  nano: process.env.REVORA_MODEL_NANO?.trim() || "gpt-5.4-nano",
-  mini: process.env.REVORA_MODEL_MINI?.trim() || "gpt-5.4-mini"
+  nano: process.env.PAL_MODEL_NANO?.trim() || "gpt-5.4-nano",
+  mini: process.env.PAL_MODEL_MINI?.trim() || "gpt-5.4-mini"
 };
 
 const CAPS = {
@@ -125,18 +125,18 @@ function budgetExhausted(): boolean {
 }
 
 /** Wraps the raw SDK so we can measure each call while the production client
- * (createOpenAIRevoraModelClient) still owns request construction. We inject
+ * (createOpenAIPalModelClient) still owns request construction. We inject
  * at one level lower instead: this transport IS handed the exact params the
  * production client builds, adds only max_output_tokens, and records. */
 function createInstrumentedClient(
   model: string,
   apiKey: string,
   calls: CallRecord[]
-): RevoraModelClient {
+): PalModelClient {
   const sdk = new OpenAI({
     apiKey,
     // Default is OpenAI-direct — the exact provider path production uses
-    // (lib/revora/openai-client.ts). A different provider has different
+    // (lib/pal/openai-client.ts). A different provider has different
     // failure modes; only test one on purpose, via OPENAI_BASE_URL.
     baseURL: process.env.OPENAI_BASE_URL?.trim() || undefined,
     timeout: 30_000,
@@ -173,7 +173,7 @@ function createInstrumentedClient(
         };
       };
       try {
-        // Identical to lib/revora/openai-client.ts request shape, plus the
+        // Identical to lib/pal/openai-client.ts request shape, plus the
         // documented max_output_tokens deviation (same for both models).
         response = (await sdk.responses.create({
           model,
@@ -184,8 +184,8 @@ function createInstrumentedClient(
           text: {
             format: {
               type: "json_schema",
-              name: REVORA_JSON_SCHEMA_NAME,
-              schema: revoraModelJsonSchema,
+              name: PAL_JSON_SCHEMA_NAME,
+              schema: palModelJsonSchema,
               strict: true
             }
           }
@@ -217,11 +217,11 @@ function createInstrumentedClient(
         throw new Error("model output was not valid JSON", { cause: error });
       }
 
-      const validated = RevoraModelOutputSchema.safeParse(parsed);
+      const validated = PalModelOutputSchema.safeParse(parsed);
       if (!validated.success) {
         record.outcome = "schema_invalid";
         throw new Error(
-          `model output failed RevoraModelOutputSchema: ${validated.error.message}`
+          `model output failed PalModelOutputSchema: ${validated.error.message}`
         );
       }
 
@@ -231,7 +231,7 @@ function createInstrumentedClient(
   };
 }
 
-function createMockClient(cases: readonly RevoraEvalCase[]): RevoraModelClient {
+function createMockClient(cases: readonly PalEvalCase[]): PalModelClient {
   const byKey = new Map(
     cases.map((c) => [`${c.input.food.trim().toLowerCase()}::${c.input.a1c}`, c])
   );
@@ -251,8 +251,8 @@ function createMockClient(cases: readonly RevoraEvalCase[]): RevoraModelClient {
 async function runModelOverCorpus(
   label: "A" | "B",
   modelId: string,
-  cases: readonly RevoraEvalCase[],
-  client: RevoraModelClient,
+  cases: readonly PalEvalCase[],
+  client: PalModelClient,
   calls: CallRecord[]
 ): Promise<CaseResult[]> {
   const results: CaseResult[] = [];
@@ -463,7 +463,7 @@ async function main() {
     mode,
     timestamp: stamp,
     provider: process.env.OPENAI_BASE_URL?.trim() || "openai-direct",
-    corpus: { file: "tests/fixtures/revora-eval-cases.json", cases: cases.length },
+    corpus: { file: "tests/fixtures/pal-eval-cases.json", cases: cases.length },
     budget: { ...CAPS, spent: spend },
     gates,
     models: modelSummaries

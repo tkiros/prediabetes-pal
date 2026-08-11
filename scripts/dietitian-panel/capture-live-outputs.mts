@@ -2,19 +2,19 @@
  * Capture full live product outputs for the dietitian panel.
  * Runs the REAL product path (checkFood: clinical gate, precheck, prompt,
  * model, postprocess floors) for every labeled case + clinical_risk cases.
- * Usage: REVORA_LIVE_EVAL=1 OPENAI_BASE_URL=... OPENAI_API_KEY=... \
- *        REVORA_MODEL=openai/gpt-5.4-mini \
+ * Usage: PAL_LIVE_EVAL=1 OPENAI_BASE_URL=... OPENAI_API_KEY=... \
+ *        PAL_MODEL=openai/gpt-5.4-mini \
  *        npx tsx scripts/dietitian-panel/capture-live-outputs.mts <out.json> [cases.json]
  * Optional second arg: a review-corpus fixture (same case schema) to capture
- * instead of the default gate corpus in tests/fixtures/revora-eval-cases.json.
+ * instead of the default gate corpus in tests/fixtures/pal-eval-cases.json.
  */
 import fs from "node:fs";
 
-import { checkFood } from "../../lib/revora/service";
+import { checkFood } from "../../lib/pal/service";
 import {
   createEvalModelClient,
   loadEvalCases
-} from "../../tests/support/revora-test-model";
+} from "../../tests/support/pal-test-model";
 
 const out = process.argv[2];
 const corpusPath = process.argv[3];
@@ -63,5 +63,5 @@ for (const c of graded) {
   console.log(`${c.id}: ${(response as { kind?: string })?.kind ?? "ERROR"}`);
 }
 
-fs.writeFileSync(out, JSON.stringify({ model: process.env.REVORA_MODEL, capturedAt: new Date().toISOString(), rows }, null, 2));
+fs.writeFileSync(out, JSON.stringify({ model: process.env.PAL_MODEL, capturedAt: new Date().toISOString(), rows }, null, 2));
 console.log(`wrote ${out} (${rows.length} cases)`);

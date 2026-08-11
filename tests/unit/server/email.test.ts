@@ -57,7 +57,7 @@ describe("sendEmail", () => {
   });
 
   it("writes to the stub dir instead of fetching when AUTH_EMAIL_STUB_DIR is set", async () => {
-    const stubDir = fs.mkdtempSync(path.join(os.tmpdir(), "revora-mail-"));
+    const stubDir = fs.mkdtempSync(path.join(os.tmpdir(), "pal-mail-"));
     process.env.AUTH_EMAIL_STUB_DIR = stubDir;
     const fetchImpl = vi.fn();
 
@@ -75,7 +75,7 @@ describe("sendEmail", () => {
   });
 
   it("never writes to the stub in production", async () => {
-    const stubDir = fs.mkdtempSync(path.join(os.tmpdir(), "revora-mail-prod-"));
+    const stubDir = fs.mkdtempSync(path.join(os.tmpdir(), "pal-mail-prod-"));
     process.env.AUTH_EMAIL_STUB_DIR = stubDir;
     process.env.VERCEL_ENV = "production";
     process.env.RESEND_API_KEY = "re_production_key";

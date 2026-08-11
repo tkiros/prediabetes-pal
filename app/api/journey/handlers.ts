@@ -17,7 +17,7 @@ import {
   type JourneyAction
 } from "../../../lib/journey/state";
 import { STAGE_DESCRIPTORS, stageDescriptor } from "../../../lib/journey/stages";
-import { captureServerError } from "../../../lib/revora/sentry-capture";
+import { captureServerError } from "../../../lib/pal/sentry-capture";
 import { capabilitiesFor } from "../../../lib/server/capabilities";
 import { getDb, schema, type Db } from "../../../lib/server/db";
 import {

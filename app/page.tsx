@@ -10,8 +10,8 @@ import { LandingPause } from "../components/landing-pause";
 import { TASTER_LIMIT } from "../lib/client/taster-store";
 import { FREE_DAILY_CHECKS } from "../lib/free-tier";
 import { photoInputEnabled } from "../lib/photo-input-flag";
-import { BOUNDARY_DISCLAIMER } from "../lib/revora/boundary-copy";
-import { RISK_LABELS } from "../lib/revora/labels";
+import { BOUNDARY_DISCLAIMER } from "../lib/pal/boundary-copy";
+import { RISK_LABELS } from "../lib/pal/labels";
 import { paywallMode } from "../lib/server/pricing";
 import { storeWaitlistUrl } from "../lib/waitlist";
 import { reading } from "./fonts";
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * The marquee band's six lines (`Revora Landing v4 Product.dc.html`, §3).
+ * The marquee band's six lines (`Prediabetes Pal Landing v4 Product.dc.html`, §3).
  *
  * The first three are `home-trust-strip` VERBATIM — the ledger row that used to
  * render as the hero's bullet list. The design shortens the cancel line to
@@ -69,7 +69,7 @@ const MARQUEE_LINES = [
 // Two hard rules this file must keep (F-04 / F-07, 2026-07-11 claims
 // reconciliation):
 //  - The adjustment and the swap are CONDITIONAL. A SAFE ("Clear") result is
-//    structurally forbidden either one (lib/revora/postprocess.ts
+//    structurally forbidden either one (lib/pal/postprocess.ts
 //    assertNoUnsafeSafeFields throws), so no surface may promise them
 //    unconditionally. Always hedge: "when there's one". The Clear example
 //    card below demonstrates this rather than asserting it — it carries no
@@ -80,9 +80,9 @@ const MARQUEE_LINES = [
 //    (Importing the constant is safe from a server component: taster-store
 //    touches `window` only inside function bodies.)
 //
-// Verdict words come from lib/revora/labels.ts (RISK_LABELS) — never retyped.
+// Verdict words come from lib/pal/labels.ts (RISK_LABELS) — never retyped.
 //
-// Surface treatment: alternating planes (DESIGN.md §11). `Revora Landing v4
+// Surface treatment: alternating planes (DESIGN.md §11). `Prediabetes Pal Landing v4
 // Product.dc.html` keeps the alternation and re-sequences it — page · sheet ·
 // page · accent band · sheet · page · sheet · page · sheet · page — so the two
 // dark grounds (the hero showpiece and the what-changes band) are the only

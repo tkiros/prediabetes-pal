@@ -57,7 +57,7 @@ test("checks build the on-device day: today list, streak, action ack", async ({
   await expect(page.getByTestId("streak-chip")).toContainText("1 day this week");
 
   const stored = await page.evaluate(() =>
-    JSON.parse(window.localStorage.getItem("revora.history.v1") ?? "[]")
+    JSON.parse(window.localStorage.getItem("pal.history.v1") ?? "[]")
   );
   expect(stored).toHaveLength(1);
   expect(stored[0].actionDoneAt).toBeTruthy();
@@ -142,7 +142,7 @@ test("longitudinal insight stays absent after five checks when the gate is off",
       createdAt
     });
     window.localStorage.setItem(
-      "revora.history.v1",
+      "pal.history.v1",
       JSON.stringify([
         entry("1", "bagel", "MODERATE", day(1, 8)),
         entry("2", "sweet cereal", "HIGH", day(2, 8)),

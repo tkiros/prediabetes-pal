@@ -1,4 +1,4 @@
-import { EMAIL_FROM, SUPPORT_EMAIL } from "../revora/contact";
+import { EMAIL_FROM, SUPPORT_EMAIL } from "../pal/contact";
 import { getDb, type Db } from "./db";
 import {
   beginEmailAttempt,

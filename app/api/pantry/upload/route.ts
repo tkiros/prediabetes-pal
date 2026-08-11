@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { authorizePantryUpload } from "../../../../lib/server/pantry/upload-auth";
 import { pantryBlobToken } from "../../../../lib/server/pantry/blob-access";
-import { captureServerError } from "../../../../lib/revora/sentry-capture";
+import { captureServerError } from "../../../../lib/pal/sentry-capture";
 import { getDb, type Db } from "../../../../lib/server/db";
 import {
   getSessionInfo,

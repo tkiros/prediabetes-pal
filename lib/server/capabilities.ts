@@ -63,7 +63,7 @@ export type CapabilityFlagEnv = {
  * mealMemory and weeklyLearning joined 2026-07-27: both server flags are on in
  * production (401-vs-404 probe) and both NEXT_PUBLIC_* UI flags are set, so
  * premium genuinely receives them. The paywall bullet pin test
- * (tests/unit/revora/paywall-capability-truth.test.ts) keys off this list.
+ * (tests/unit/pal/paywall-capability-truth.test.ts) keys off this list.
  */
 export const PREMIUM_CAPABILITY_KEYS = [
   "dailyChecks",

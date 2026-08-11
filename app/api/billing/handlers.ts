@@ -38,7 +38,7 @@ import { verifyCancelToken } from "../../../lib/server/billing/cancel-token";
 import { paymentFailedEmailText } from "../../../lib/server/billing/emails";
 import { deleteOrderBlobs } from "../../../lib/server/blob";
 import { timingSafeEqualSecret } from "../../../lib/server/timing-safe";
-import { checkEmailCooldown } from "../../../lib/revora/rate-limit";
+import { checkEmailCooldown } from "../../../lib/pal/rate-limit";
 import { TERMS_VERSION } from "../../../lib/legal/terms";
 import { playBillingEnabled } from "../../../lib/play-billing-flag";
 

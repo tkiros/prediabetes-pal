@@ -88,7 +88,7 @@ export function main(args = process.argv.slice(2)): void {
 
   const automaticMailbox =
     process.env.DATABASE_URL && !process.env.AUTH_EMAIL_STUB_DIR
-      ? mkdtempSync(join(tmpdir(), "revora-e2e-mailbox-"))
+      ? mkdtempSync(join(tmpdir(), "pal-e2e-mailbox-"))
       : null;
   const playwrightEnv = isolatedE2ERuntimeEnv({
     ...process.env,

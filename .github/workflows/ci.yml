@@ -107,7 +107,7 @@ jobs:
         image: postgres:16@sha256:33f923b05f64ca54ac4401c01126a6b92afe839a0aa0a52bc5aeb5cc958e5f20
         env:
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: revora_e2e
+          POSTGRES_DB: pal_e2e
         ports:
           - 5432:5432
         options: >-
@@ -117,7 +117,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/revora_e2e
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/pal_e2e
       HEALTH_DATA_KEY: ${{ secrets.CI_HEALTH_DATA_KEY || 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=' }}
 
     steps:

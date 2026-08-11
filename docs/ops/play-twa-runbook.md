@@ -93,7 +93,7 @@ signing key). After upload, copy the **app signing key SHA-256** from
 **Play Console → Setup → App integrity → App signing key certificate**.
 
 > **`twa-manifest.json` (repo root, P8).** A checked-in Bubblewrap config
-> template — `packageId app.revora.twa`, colors/icons/start URL mirrored from
+> template — `packageId com.prediabetespal.twa`, colors/icons/start URL mirrored from
 > `public/manifest.webmanifest`, `webManifestUrl` pointed at the same
 > `<domain>` placeholder used throughout this runbook. Human fills before
 > `bubblewrap build`: the `host` field, `webManifestUrl`/`iconUrl`/
@@ -124,7 +124,7 @@ with the real values, then commit + deploy:**
 ]
 ```
 
-- `__PACKAGE_NAME__` — the Android application id chosen in `bubblewrap init` (e.g. `app.revora.twa`).
+- `__PACKAGE_NAME__` — the Android application id chosen in `bubblewrap init` (e.g. `com.prediabetespal.twa`).
 - `__PLAY_APP_SIGNING_SHA256__` — the colon-separated SHA-256 from Play App Signing (**not** the
   upload key, **not** the local Bubblewrap key).
 

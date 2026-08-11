@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { SUPPORT_MESSAGE_MAX } from "../../../lib/revora/contact";
-import { captureServerError } from "../../../lib/revora/sentry-capture";
+import { SUPPORT_MESSAGE_MAX } from "../../../lib/pal/contact";
+import { captureServerError } from "../../../lib/pal/sentry-capture";
 import { encryptField } from "../../../lib/server/crypto";
 import { getDb, schema, type Db } from "../../../lib/server/db";
 import { sendEmail, supportInbox } from "../../../lib/server/email";

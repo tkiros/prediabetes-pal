@@ -62,7 +62,7 @@ describe("first-touch capture", () => {
   });
 
   it("reads tampered storage as none, not as free text", () => {
-    const storage = fakeStorage({ "revora.utm.v1": "<script>alert(1)</script>" });
+    const storage = fakeStorage({ "pal.utm.v1": "<script>alert(1)</script>" });
     expect(storedUtmChannel(storage)).toBe("none");
   });
 

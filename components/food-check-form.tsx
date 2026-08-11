@@ -9,12 +9,12 @@ import {
   clarifyElapsedBucket,
   clarifyReasonForQuestion,
   type ClarifyReason
-} from "../lib/revora/clarify";
+} from "../lib/pal/clarify";
 import { historyStore } from "../lib/client/history-store";
 import { profileStore } from "../lib/client/profile-store";
 import { useHydrated } from "../lib/client/use-hydrated";
 import { tasterStore } from "../lib/client/taster-store";
-import { routeA1C } from "../lib/revora/a1c";
+import { routeA1C } from "../lib/pal/a1c";
 import {
   type CheckUiState,
   isSlowThresholdReached,
@@ -134,9 +134,9 @@ export function FoodCheckForm() {
       const profile = profileStore.get();
       let recheck: string | null = null;
       try {
-        recheck = window.sessionStorage.getItem("revora.recheck");
+        recheck = window.sessionStorage.getItem("pal.recheck");
         if (recheck) {
-          window.sessionStorage.removeItem("revora.recheck");
+          window.sessionStorage.removeItem("pal.recheck");
         }
       } catch {
         // best-effort prefill only

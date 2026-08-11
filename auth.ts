@@ -7,8 +7,8 @@ import {
   emailStubDirectory,
   writeEmailStub
 } from "./lib/server/email-stub";
-import { checkEmailCooldown } from "./lib/revora/rate-limit";
-import { EMAIL_FROM } from "./lib/revora/contact";
+import { checkEmailCooldown } from "./lib/pal/rate-limit";
+import { EMAIL_FROM } from "./lib/pal/contact";
 import { normalizeSigninIdentifier } from "./lib/server/auth-identifier";
 import { sendEmail } from "./lib/server/email";
 
@@ -76,8 +76,8 @@ const emailProvider = Resend({
 
     const result = await sendEmail({
       to: params.identifier,
-      subject: "Your Revora sign-in link",
-      text: `Sign in to Revora:\n\n${params.url}\n\nThis link expires in 24 hours. If you didn't request it, you can ignore this email.`,
+      subject: "Your Prediabetes Pal sign-in link",
+      text: `Sign in to Prediabetes Pal:\n\n${params.url}\n\nThis link expires in 24 hours. If you didn't request it, you can ignore this email.`,
       category: "auth_magic_link",
       idempotencyKey: `auth/${params.url}`
     });

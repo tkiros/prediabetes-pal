@@ -113,7 +113,7 @@ export async function runStripeReconcileCron(
     .select()
     .from(schema.billingEventInbox)
     .where(
-      sql`${schema.billingEventInbox.payload}->>'_revora_minimized' IS DISTINCT FROM '1'`
+      sql`${schema.billingEventInbox.payload}->>'_pal_minimized' IS DISTINCT FROM '1'`
     )
     .orderBy(asc(schema.billingEventInbox.receivedAt))
     .limit(RECONCILE_BATCH);

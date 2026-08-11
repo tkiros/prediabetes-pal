@@ -15,7 +15,7 @@ import {
   type ServerCheck
 } from "../../../lib/client/remote-history";
 import { dayKeyLocal as localDayKey, verdictWeekView } from "../../../lib/coach/days";
-import { RISK_LABELS } from "../../../lib/revora/labels";
+import { RISK_LABELS } from "../../../lib/pal/labels";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -175,7 +175,7 @@ export default function HistoryPage() {
 
   function recheck(food: string) {
     try {
-      window.sessionStorage.setItem("revora.recheck", food);
+      window.sessionStorage.setItem("pal.recheck", food);
     } catch {
       // best-effort prefill only
     }

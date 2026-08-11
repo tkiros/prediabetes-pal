@@ -1,4 +1,4 @@
-const STORAGE_KEY = "revora.taster.v1";
+const STORAGE_KEY = "pal.taster.v1";
 export const TASTER_LIMIT = 10;
 
 export type TasterState = { firstDay: string; used: number };

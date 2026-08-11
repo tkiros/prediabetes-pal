@@ -1,6 +1,6 @@
-# Revora Design System
+# Prediabetes Pal Design System
 
-Canonical for every Revora surface. From `app/globals.css`, `docs/product-marketing.md`, and the landing design & copy
+Canonical for every Prediabetes Pal surface. From `app/globals.css`, `docs/product-marketing.md`, and the landing design & copy
 tournament of 2026-08-04/05 (`docs/plans/landing-tournament-*.md`, which holds the evidence this file only cites).
 Rewritten 2026-08-05 (Phase 10B): every rule states its derivation in one clause or names its test. Rules that could do
 neither were accidents and were cut; §15 reports what went.
@@ -13,9 +13,9 @@ with the reason. §13 is the banned list; §14 is scar tissue, each row naming i
 
 | # | Rail | Held by | Real? |
 |---|---|---|---|
-| 1 | Revora is never the agent of a health outcome | `claims-boundary-copy.test.ts` | **TEST** |
+| 1 | Prediabetes Pal is never the agent of a health outcome | `claims-boundary-copy.test.ts` | **TEST** |
 | 2 | No fabricated ratings, user counts or testimonials | family `social-proof` | **TEST** |
-| 3 | `SAFE`/`MODERATE`/`HIGH` never render as copy; labels come from `lib/revora/labels.ts` | `copy-pins.test.ts` | **TEST** |
+| 3 | `SAFE`/`MODERATE`/`HIGH` never render as copy; labels come from `lib/pal/labels.ts` | `copy-pins.test.ts` | **TEST** |
 | 4 | A Clear verdict carries no adjustment and no swap | `assertNoUnsafeSafeFields` (throws) + family `unconditional-swap` | **TEST + RUNTIME** |
 | 5 | The disclaimer is visible with the result, never behind a disclosure | `disclaimer-presence.test.ts` (engine responses only) | **TEST in-app · PROSE on marketing** |
 | 6 | Statistics trace to the evidence pack; the trial citation lives only on `/how-it-works` | family `study-association` + exemption guard | **TEST** |
@@ -52,7 +52,7 @@ no big-number affordance exists and the rail is discharged structurally. If a st
 > **Every user-facing sentence must be fileable under a claim class in `docs/safety/claims-boundary.md`. A sentence that
 > is neither approved nor banned is not therefore permitted.**
 
-All nine classes are *about Revora*. **There is no class for a statement about another company's product**, so
+All nine classes are *about Prediabetes Pal*. **There is no class for a statement about another company's product**, so
 comparative copy is unavailable at any scale: outside the schema, not merely unapproved. Creating a class is a decision
 for counsel, not a copy decision.
 
@@ -173,7 +173,7 @@ and used it. `impeccable` bans them; this file does not. The rule above is about
 
 - **Press feedback is on pointer-down (`:active`), never release** — the press is the moment the user watches most
   closely. `translateY(1px) scale(0.98)` at `--dur-press`. **Name the properties; never `transition: all`.**
-- **Three sanctioned keyframes:** `revora-rise` (6px fade-up, once, result-card entrance), `revora-skeleton` (shimmer,
+- **Three sanctioned keyframes:** `pal-rise` (6px fade-up, once, result-card entrance), `pal-skeleton` (shimmer,
   loading placeholders only) and — ⚖️ **2026-08-08, v4 design file** — `landing-marquee` (the landing's trust band,
   `transform` only, 34s linear, infinite). **No other looping animation anywhere**, and the third one carries conditions
   the first two do not: it is `transform`-only, it **pauses on `:hover` and `:focus-within`**, and the global
@@ -251,7 +251,7 @@ Users are anxious by definition, so progress UI manufactures reassurance and nev
   `--surface-muted` inset at the 14px nested scale, inside the daily-loop card. No confetti, animation, emoji or
   exclamation marks; at most once a day, only when `streak === 1`.
 - **Home meal-check hero** (`.meal-hero`) is the dashboard's one accent-filled card and a **hand-off, not a second check
-  surface**: the typed meal rides the `revora.recheck` prefill into `/check`, the one place a check runs.
+  surface**: the typed meal rides the `pal.recheck` prefill into `/check`, the one place a check runs.
 
 ## 11. Marketing surfaces
 
@@ -262,7 +262,7 @@ face.
 > ### ⚖️ 2026-08-06 — the imported design file is the page, and it supersedes the tournament winner
 >
 > This section used to describe **`W — One Card Back`** (`docs/plans/landing-tournament-winner-spec.md`). The owner
-> reviewed the built page against `Revora Landing.dc.html` and ruled the design file **"way better and more readable"**,
+> reviewed the built page against `Prediabetes Pal Landing.dc.html` and ruled the design file **"way better and more readable"**,
 > and that it should be implemented as drawn. An earlier pass had implemented that file *filtered through* the rules
 > below — keeping §11's type scale, one plane and no-eyebrow rule over the design's — and the owner rejected the result.
 >
@@ -282,7 +282,7 @@ face.
 > Everything below marked ⚖️ **2026-08-06 (design file)** is a rule this ruling changed. Measured after the whole
 > change: **12,771px · 11 exits · worst desert 1,960px · 0 over budget.**
 >
-> ### ⚖️ 2026-08-08 — `Revora Landing v4 Product.dc.html`, and it overturns four §13 entries
+> ### ⚖️ 2026-08-08 — `Prediabetes Pal Landing v4 Product.dc.html`, and it overturns four §13 entries
 >
 > The owner imported a fourth design file and ruled it governs, with the §13 conflicts named and taken deliberately
 > rather than discovered afterwards. **Four confirmed anti-patterns from the tournament are now shipped on purpose:**

@@ -44,7 +44,7 @@ model's band, that is. Two hard limits:
   reassurance ("just tell me it's SAFE"), the conservative band stands. The
   frozen gate corpus pins this (adversarial-coax cases).
 - **The deterministic floors DO NOT move.** The named-sugar/dessert floors
-  (`CARBS_ONLY` / `HIGH_RISK` in `lib/revora/input-precheck.ts`) still fire on
+  (`CARBS_ONLY` / `HIGH_RISK` in `lib/pal/input-precheck.ts`) still fire on
   a "tiny bite of cheesecake" and still produce HIGH. This is a known,
   deliberate over-caution: the 2026-07-16 panel unanimously suggested
   MODERATE(+SAFE) for the tiny-bite case, and the decision to keep the floor
@@ -78,10 +78,10 @@ bands (39/39 verdicts).
 
 ## Where it is enforced
 
-- **Prompt:** `lib/revora/prompt.ts` (label-math, small-portion, unstated-
+- **Prompt:** `lib/pal/prompt.ts` (label-math, small-portion, unstated-
   portion, honesty, and restaurant-scale starch-count rules; version
   `2026-07-16.2`).
-- **Gate corpus:** `tests/fixtures/revora-eval-cases.json` — cases
+- **Gate corpus:** `tests/fixtures/pal-eval-cases.json` — cases
   `label-math-two-servings-granola`, `portion-one-serving-ice-cream`,
   `portion-half-box-penne`, `portion-tiny-bite-cheesecake` pin the four
   shapes above (both eval modes must be green per the frozen-corpus rule).

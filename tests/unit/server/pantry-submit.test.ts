@@ -74,8 +74,8 @@ function validBody(orderId: string, overrides: Record<string, unknown> = {}) {
   return {
     orderId,
     photoUrls: [
-      `https://revora.private.blob.vercel-storage.com/pantry/${orderId}/photo-AbCdEf123456.jpg`,
-      `https://revora.private.blob.vercel-storage.com/pantry/${orderId}/photo-ZyXwVu987654.jpg`
+      `https://pal.private.blob.vercel-storage.com/pantry/${orderId}/photo-AbCdEf123456.jpg`,
+      `https://pal.private.blob.vercel-storage.com/pantry/${orderId}/photo-ZyXwVu987654.jpg`
     ],
     a1cBand: "prediabetes_60_62",
     notes: "mostly breakfast stuff",
@@ -138,7 +138,7 @@ describe("POST /api/pantry/submit", () => {
           photoUrls: Array.from(
             { length: 11 },
             (_, i) =>
-              `https://revora.private.blob.vercel-storage.com/pantry/${order.id}/photo-AbCdEf12${String(i).padStart(2, "0")}.jpg`
+              `https://pal.private.blob.vercel-storage.com/pantry/${order.id}/photo-AbCdEf12${String(i).padStart(2, "0")}.jpg`
           )
         })
       )
@@ -152,9 +152,9 @@ describe("POST /api/pantry/submit", () => {
     for (const hostile of [
       "https://evil.example/a.jpg",
       "https://blob.vercel-storage.com.evil.example/a.jpg",
-      `https://revora.public.blob.vercel-storage.com/pantry/${order.id}/photo-AbCdEf123456.jpg`,
-      `https://revora.private.blob.vercel-storage.com/pantry/${crypto.randomUUID()}/photo-AbCdEf123456.jpg`,
-      `http://revora.private.blob.vercel-storage.com/pantry/${order.id}/photo-AbCdEf123456.jpg`
+      `https://pal.public.blob.vercel-storage.com/pantry/${order.id}/photo-AbCdEf123456.jpg`,
+      `https://pal.private.blob.vercel-storage.com/pantry/${crypto.randomUUID()}/photo-AbCdEf123456.jpg`,
+      `http://pal.private.blob.vercel-storage.com/pantry/${order.id}/photo-AbCdEf123456.jpg`
     ]) {
       const response = await POST(
         submitRequest(validBody(order.id, { photoUrls: [hostile] }))
@@ -165,7 +165,7 @@ describe("POST /api/pantry/submit", () => {
 
   it("rejects duplicate photo URLs", async () => {
     const order = await makeClaimedOrder();
-    const duplicate = `https://revora.private.blob.vercel-storage.com/pantry/${order.id}/photo-AbCdEf123456.jpg`;
+    const duplicate = `https://pal.private.blob.vercel-storage.com/pantry/${order.id}/photo-AbCdEf123456.jpg`;
     const POST = createPantrySubmitHandler(makeDeps());
 
     const response = await POST(
@@ -300,7 +300,7 @@ describe("POST /api/pantry/submit", () => {
       .where(eq(schema.pantryOrders.id, order.id));
     await testDb.db.insert(schema.pantryPhotos).values({
       orderId: order.id,
-      blobUrl: `https://revora.private.blob.vercel-storage.com/pantry/${order.id}/photo-OldCrash0001.jpg`
+      blobUrl: `https://pal.private.blob.vercel-storage.com/pantry/${order.id}/photo-OldCrash0001.jpg`
     });
     await testDb.db.insert(schema.pantryItems).values({
       orderId: order.id,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { routeA1C } from "../../../lib/revora/a1c";
+import { routeA1C } from "../../../lib/pal/a1c";
 import { bandRepresentativeA1c } from "../../../lib/server/pantry/band";
 
 describe("bandRepresentativeA1c", () => {

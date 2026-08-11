@@ -1,7 +1,7 @@
-# Requirements: Revora
+# Requirements: Prediabetes Pal
 
 **Defined:** 2026-05-04
-**Core Value:** Revora must give a clear, evidence-grounded, permission-first answer to "Can I eat this?" in under 5 seconds without increasing food anxiety.
+**Core Value:** Prediabetes Pal must give a clear, evidence-grounded, permission-first answer to "Can I eat this?" in under 5 seconds without increasing food anxiety.
 
 ## v1 Requirements
 
@@ -20,7 +20,7 @@ Requirements for the Permission MVP. Each maps to roadmap phases.
 - [x] **INPUT-01**: User can enter a food name or meal description without creating an account.
 - [x] **INPUT-02**: User can enter an A1C value as a numeric input that supports one decimal place.
 - [x] **INPUT-03**: The app validates required food and A1C inputs before calling the model.
-- [x] **INPUT-04**: The app handles A1C values below 5.7 by explaining that Revora is designed for the prediabetes range.
+- [x] **INPUT-04**: The app handles A1C values below 5.7 by explaining that Prediabetes Pal is designed for the prediabetes range.
 - [x] **INPUT-05**: The app handles A1C values of 6.5 or above by explaining that the value is in the Type 2 diabetes range and directing the user to clinician guidance.
 - [x] **INPUT-06**: The app handles non-food input by refusing to classify it and showing concrete food examples.
 - [x] **INPUT-07**: The app handles ambiguous food descriptions by asking at most one clarifying question instead of inventing meal details.
@@ -69,7 +69,7 @@ Requirements for the Permission MVP. Each maps to roadmap phases.
 
 ### Launch Validation
 
-- [ ] **VALID-01**: Founder can post a non-promotional, evidence-aware Revora link in r/prediabetes or an equivalent community channel.
+- [ ] **VALID-01**: Founder can post a non-promotional, evidence-aware Prediabetes Pal link in r/prediabetes or an equivalent community channel.
 - [ ] **VALID-02**: Founder can track whether the MVP receives at least 50 queries in the first week.
 - [ ] **VALID-03**: Founder can track whether at least 5 people share the MVP with another prediabetic.
 - [ ] **VALID-04**: Founder can track whether at least 3 people ask if there is a paid version.

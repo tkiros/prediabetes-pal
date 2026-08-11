@@ -27,7 +27,7 @@ const EXEMPT = new Set([
   "NEXT_RUNTIME",
   "NEXT_DIST_DIR",
   // Sentry release identity is derived from the git SHA at build time
-  // (lib/revora/sentry-release.ts), not operator-set.
+  // (lib/pal/sentry-release.ts), not operator-set.
   "SENTRY_RELEASE",
   "NEXT_PUBLIC_SENTRY_RELEASE",
   // Vitest/test-harness only.

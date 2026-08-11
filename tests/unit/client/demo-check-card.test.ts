@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { demoExampleEyebrow } from "../../../components/demo-check-card";
-import { OATMEAL_EXAMPLE } from "../../../lib/revora/promise-registry";
+import { OATMEAL_EXAMPLE } from "../../../lib/pal/promise-registry";
 
 // Vitest runs under the "node" environment (no jsdom), so a real render is not
 // possible here. Instead we pin the demo card's SOURCE against the copy ledger:

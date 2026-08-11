@@ -35,7 +35,7 @@ import { timingSafeEqualSecret } from "../../../../lib/server/timing-safe";
 // The only account this route will ever sign in — never taken from the
 // request body, so a leaked secret still can't be used to sign in as
 // anyone else.
-export const REVIEWER_EMAIL = "reviewer@revora.test";
+export const REVIEWER_EMAIL = "reviewer@pal.test";
 
 const TOKEN_TTL_MS = 10 * 60 * 1000; // single-use, short-lived
 const PROVIDER_ID = "resend"; // matches the Resend provider id in auth.ts

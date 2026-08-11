@@ -116,7 +116,7 @@ test("taster: first-run walk lands a guided oatmeal check and meters used===1", 
   await expect(card).toHaveAttribute("data-kind", "result");
 
   const used = await page.evaluate(() => {
-    const raw = window.localStorage.getItem("revora.taster.v1");
+    const raw = window.localStorage.getItem("pal.taster.v1");
     return raw ? (JSON.parse(raw) as { used: number }).used : null;
   });
   expect(used).toBe(1);
@@ -126,7 +126,7 @@ test("exhaustion: a spent taster is walled on the next submit", async ({ page })
   await page.addInitScript(
     (firstDay) => {
       window.localStorage.setItem(
-        "revora.taster.v1",
+        "pal.taster.v1",
         JSON.stringify({ firstDay, used: 10 })
       );
     },
@@ -152,7 +152,7 @@ test("entitled: a Premium session with a spent device store is never walled", as
   await page.addInitScript(
     (firstDay) => {
       window.localStorage.setItem(
-        "revora.taster.v1",
+        "pal.taster.v1",
         JSON.stringify({ firstDay, used: 10 })
       );
     },
@@ -207,7 +207,7 @@ test("entitled: a Premium session with a spent device store is never walled", as
   // And the entitled result was not metered against the device store.
   const used = await page.evaluate(
     () =>
-      JSON.parse(window.localStorage.getItem("revora.taster.v1") ?? "{}").used
+      JSON.parse(window.localStorage.getItem("pal.taster.v1") ?? "{}").used
   );
   expect(used).toBe(10);
 });
@@ -215,7 +215,7 @@ test("entitled: a Premium session with a spent device store is never walled", as
 test("day 2: an aged-out taster is walled on the next submit", async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem(
-      "revora.taster.v1",
+      "pal.taster.v1",
       JSON.stringify({ firstDay: "2020-01-01", used: 2 })
     );
   });
@@ -258,14 +258,14 @@ test("wall → checkout: value → start POSTs the trial and navigates", async (
   // Two-step wall: the first screen leads with "7 days free" + the price, so
   // one click reaches the email step.
   await page.getByRole("button", { name: "Start my free week" }).click();
-  await page.getByLabel("Your email").fill("wall@revora.test");
+  await page.getByLabel("Your email").fill("wall@pal.test");
   await page.getByTestId("trial-terms-consent").check();
   await page
     .getByRole("button", { name: "Continue to checkout — $0 due today" })
     .click();
 
   await expect(page).toHaveURL(/\/__checkout_stub$/);
-  expect(trialStartEmail).toBe("wall@revora.test");
+  expect(trialStartEmail).toBe("wall@pal.test");
 });
 
 test("decline catch: /subscribe?declined=1 offers the one-time Pantry Review", async ({
@@ -274,7 +274,7 @@ test("decline catch: /subscribe?declined=1 offers the one-time Pantry Review", a
   // Seed two local checks so the endowment note has something to name.
   await page.addInitScript(() => {
     window.localStorage.setItem(
-      "revora.history.v1",
+      "pal.history.v1",
       JSON.stringify([
         { clientId: "a", food: "oatmeal", createdAt: "2026-07-06T10:00:00.000Z" },
         { clientId: "b", food: "banana", createdAt: "2026-07-06T11:00:00.000Z" }
@@ -328,7 +328,7 @@ test("legacy guard: PAYWALL_MODE=legacy shows the paywall card, never the wall",
   await page.addInitScript(
     (firstDay) => {
       window.localStorage.setItem(
-        "revora.taster.v1",
+        "pal.taster.v1",
         JSON.stringify({ firstDay, used: 3 })
       );
     },

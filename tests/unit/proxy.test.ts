@@ -70,7 +70,7 @@ describe("middleware", () => {
   });
 
   it("returns a 503 pause response when launch mode is paused", async () => {
-    vi.stubEnv("REVORA_LAUNCH_MODE_OVERRIDE", "paused");
+    vi.stubEnv("PAL_LAUNCH_MODE_OVERRIDE", "paused");
     const response = await middleware(post("/api/check"));
     expect(response.status).toBe(503);
     const body = await response.json();

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-// Phase 8.1 integration bridge: the unit test (tests/unit/revora/pwa-assets.test.ts) only
+// Phase 8.1 integration bridge: the unit test (tests/unit/pal/pwa-assets.test.ts) only
 // checks the files on disk. These hit the running app to confirm the PWA assets are
 // actually *served* at their public paths with sane content. Raw HTTP via the `request`
 // fixture — not page navigation — so it's unaffected by serviceWorkers:"block".

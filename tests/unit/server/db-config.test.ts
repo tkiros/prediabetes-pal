@@ -18,7 +18,7 @@ describe("database runtime and migration boundaries", () => {
 
   it("bounds connection establishment and idle retention", () => {
     const config = createDatabasePoolConfig(
-      "postgres://app:secret@db.example/revora",
+      "postgres://app:secret@db.example/pal",
       {},
     );
 
@@ -26,32 +26,32 @@ describe("database runtime and migration boundaries", () => {
       max: 3,
       connectionTimeoutMillis: 5_000,
       idleTimeoutMillis: 10_000,
-      application_name: "revora-web",
+      application_name: "pal-web",
       ssl: { rejectUnauthorized: true },
     });
     expect(
-      createDatabasePoolConfig("postgres://app:secret@localhost/revora", {}).ssl,
+      createDatabasePoolConfig("postgres://app:secret@localhost/pal", {}).ssl,
     ).toBeUndefined();
   });
 
   it("requires distinct runtime and owner roles for production migrations", () => {
     expect(() =>
-      resolveMigrationDatabaseUrl({ REVORA_DB_ENV: "production" }),
+      resolveMigrationDatabaseUrl({ PAL_DB_ENV: "production" }),
     ).toThrow(/require DATABASE_URL and DATABASE_MIGRATION_URL/);
 
     expect(() =>
       resolveMigrationDatabaseUrl({
-        REVORA_DB_ENV: "production",
-        DATABASE_URL: "postgres://owner:runtime@db.example/revora",
-        DATABASE_MIGRATION_URL: "postgres://owner:migrate@db.example/revora",
+        PAL_DB_ENV: "production",
+        DATABASE_URL: "postgres://owner:runtime@db.example/pal",
+        DATABASE_MIGRATION_URL: "postgres://owner:migrate@db.example/pal",
       }),
     ).toThrow(/different database roles/);
 
-    const migrationUrl = "postgres://owner:migrate@db.example/revora";
+    const migrationUrl = "postgres://owner:migrate@db.example/pal";
     expect(
       resolveMigrationDatabaseUrl({
-        REVORA_DB_ENV: "production",
-        DATABASE_URL: "postgres://revora_app:runtime@db.example/revora",
+        PAL_DB_ENV: "production",
+        DATABASE_URL: "postgres://prediabetespal_app:runtime@db.example/pal",
         DATABASE_MIGRATION_URL: migrationUrl,
       }),
     ).toBe(migrationUrl);
@@ -59,12 +59,12 @@ describe("database runtime and migration boundaries", () => {
 
   it("keeps local development compatible with one credential", () => {
     expect(resolveMigrationDatabaseUrl({})).toBe(
-      "postgres://localhost:5432/revora",
+      "postgres://localhost:5432/pal",
     );
     expect(
       resolveMigrationDatabaseUrl({
-        DATABASE_URL: "postgres://local:local@localhost/revora",
+        DATABASE_URL: "postgres://local:local@localhost/pal",
       }),
-    ).toBe("postgres://local:local@localhost/revora");
+    ).toBe("postgres://local:local@localhost/pal");
   });
 });

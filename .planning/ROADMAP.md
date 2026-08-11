@@ -1,8 +1,8 @@
-# Roadmap: Revora
+# Roadmap: Prediabetes Pal
 
 ## Overview
 
-Revora's Permission MVP stays narrow on purpose: first lock the safety and claims contract, then build the guardrailed inference core, wrap it in a single public mobile flow, add privacy-minimal launch controls, and only then run the founder-led community launch and review loop. Scanner, native mobile apps, authentication, saved history, and payments remain deferred v2 scope unless this text-only wedge proves trust and willingness to pay.
+Prediabetes Pal's Permission MVP stays narrow on purpose: first lock the safety and claims contract, then build the guardrailed inference core, wrap it in a single public mobile flow, add privacy-minimal launch controls, and only then run the founder-led community launch and review loop. Scanner, native mobile apps, authentication, saved history, and payments remain deferred v2 scope unless this text-only wedge proves trust and willingness to pay.
 
 ## Phases
 
@@ -23,7 +23,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 ### Phase 1: Claims Boundary, Evidence Pack, and Safety Spec
 
-**Goal**: Revora has a locked safety contract for prediabetes-only guidance before model and UI behavior expand.
+**Goal**: Prediabetes Pal has a locked safety contract for prediabetes-only guidance before model and UI behavior expand.
 **Depends on**: Nothing (first phase)
 **Requirements**: CLAIM-01, CLAIM-02, CLAIM-03, CLAIM-04, INPUT-04, INPUT-05, GUIDE-02, GUIDE-07, GUARD-04
 **Success Criteria** (what must be TRUE):
@@ -42,7 +42,7 @@ Plans:
 
 ### Phase 2: Guardrailed Inference Core and Eval Harness
 
-**Goal**: Server-side inference returns schema-valid, conservative Revora answers for in-scope and edge-case checks before public launch.
+**Goal**: Server-side inference returns schema-valid, conservative Prediabetes Pal answers for in-scope and edge-case checks before public launch.
 **Depends on**: Phase 1
 **Requirements**: CLAIM-05, INPUT-06, INPUT-07, INPUT-08, GUIDE-01, GUIDE-03, GUIDE-04, GUIDE-05, GUIDE-06, GUARD-01, GUARD-02, GUARD-03, GUARD-05, GUARD-06
 **Success Criteria** (what must be TRUE):
@@ -67,7 +67,7 @@ Plans:
 
 ### Phase 3: Public Mobile Permission Check
 
-**Goal**: A user standing in front of food can complete the Revora check from one mobile-first page and get a useful answer quickly.
+**Goal**: A user standing in front of food can complete the Prediabetes Pal check from one mobile-first page and get a useful answer quickly.
 **Depends on**: Phase 2
 **Requirements**: INPUT-01, INPUT-02, INPUT-03, GUIDE-08, UX-01, UX-02, UX-03, UX-04, UX-05, UX-06, UX-07
 **Success Criteria** (what must be TRUE):
@@ -89,12 +89,12 @@ Plans:
 
 ### Phase 4: Privacy-Minimal Launch Controls
 
-**Goal**: Revora can be deployed publicly with explicit privacy, abuse, and rollback boundaries that protect user trust and operating cost.
+**Goal**: Prediabetes Pal can be deployed publicly with explicit privacy, abuse, and rollback boundaries that protect user trust and operating cost.
 **Depends on**: Phase 3
 **Requirements**: PRIV-01, PRIV-02, PRIV-03, PRIV-04, OPS-01, OPS-02, OPS-03
 **Success Criteria** (what must be TRUE):
 
-  1. Revora is deployable on Vercel as a public MVP without default storage of raw food descriptions, raw A1C values, or account-linked health data.
+  1. Prediabetes Pal is deployable on Vercel as a public MVP without default storage of raw food descriptions, raw A1C values, or account-linked health data.
   2. OpenAI and telemetry configuration avoid provider-side response storage where supported and exclude raw food text and raw A1C from analytics and operational events.
   3. The launch configuration defines when to rate-limit or temporarily shut down the app for abuse or cost spikes, and the rollback or kill-switch path is documented and executable.
 
@@ -107,7 +107,7 @@ Plans:
 
 ### Phase 5: Community Launch and Founder Review Loop
 
-**Goal**: Revora can launch into trust-sensitive communities, measure demand, and learn safely before any broader product expansion.
+**Goal**: Prediabetes Pal can launch into trust-sensitive communities, measure demand, and learn safely before any broader product expansion.
 **Depends on**: Phase 4
 **Requirements**: GUARD-07, VALID-01, VALID-02, VALID-03, VALID-04, VALID-05, VALID-06
 **Success Criteria** (what must be TRUE):

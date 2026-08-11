@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-import { RISK_LABELS } from "../lib/revora/labels";
+import { RISK_LABELS } from "../lib/pal/labels";
 
 // The branded link-preview card (strategy §0.2 #7): a Prediabetes Pal link pasted into
 // Reddit/FB/DMs renders this instead of a bare domain. Every string is an

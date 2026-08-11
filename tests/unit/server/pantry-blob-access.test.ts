@@ -9,7 +9,7 @@ import {
 } from "../../../lib/server/pantry/blob-access";
 
 const ORDER_ID = "11111111-1111-4111-8111-111111111111";
-const PHOTO_URL = `https://revora.private.blob.vercel-storage.com/pantry/${ORDER_ID}/photo-AbCdEf123456.jpg`;
+const PHOTO_URL = `https://pal.private.blob.vercel-storage.com/pantry/${ORDER_ID}/photo-AbCdEf123456.jpg`;
 
 function privateBlobResult(
   body: Uint8Array,

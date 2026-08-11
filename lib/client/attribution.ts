@@ -17,7 +17,7 @@ export const CHANNELS = [
 
 export type Channel = (typeof CHANNELS)[number];
 
-const STORAGE_KEY = "revora.utm.v1";
+const STORAGE_KEY = "pal.utm.v1";
 
 // Order matters: first match wins. Patterns cover the strategy's three
 // channels (Reddit, short-form video, Facebook groups) plus the organic pair.

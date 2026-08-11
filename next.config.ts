@@ -1,16 +1,16 @@
 import type { NextConfig } from "next";
 
-import { resolveSentryRelease } from "./lib/revora/sentry-release";
+import { resolveSentryRelease } from "./lib/pal/sentry-release";
 
 // P0.3: a production deploy without measurement is a silent analytics outage —
 // the funnel reads as zero and nobody notices. Fail the BUILD when production
 // is missing the analytics env, unless the owner explicitly waives it
-// (REVORA_ALLOW_NO_MEASUREMENT=1) for a deliberate dark launch. The Sentry
+// (PAL_ALLOW_NO_MEASUREMENT=1) for a deliberate dark launch. The Sentry
 // client DSN is warn-only until one is provisioned — client error reporting
 // missing is bad, but not worth blocking a deploy the analytics gate allows.
 if (
   process.env.VERCEL_ENV === "production" &&
-  process.env.REVORA_ALLOW_NO_MEASUREMENT !== "1"
+  process.env.PAL_ALLOW_NO_MEASUREMENT !== "1"
 ) {
   const missing = [
     !process.env.NEXT_PUBLIC_UMAMI_SRC && "NEXT_PUBLIC_UMAMI_SRC",
@@ -19,7 +19,7 @@ if (
   if (missing.length > 0) {
     throw new Error(
       `Production build without measurement: set ${missing.join(", ")} ` +
-        "(or REVORA_ALLOW_NO_MEASUREMENT=1 to deploy dark deliberately)."
+        "(or PAL_ALLOW_NO_MEASUREMENT=1 to deploy dark deliberately)."
     );
   }
   if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
@@ -33,7 +33,7 @@ if (
 // Flag server twins: a NEXT_PUBLIC flag baked ON with its runtime twin unset
 // means the feature ships with a kill switch that does nothing. Fail the
 // build so the mismatch can never ship silently. Deliberately OUTSIDE the
-// REVORA_ALLOW_NO_MEASUREMENT waiver above — waiving analytics must never
+// PAL_ALLOW_NO_MEASUREMENT waiver above — waiving analytics must never
 // also waive flag safety.
 if (process.env.VERCEL_ENV === "production") {
   const twinMismatch = [

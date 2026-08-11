@@ -30,8 +30,8 @@
  * engine cannot produce one — the layout has to survive the empty slot, and
  * that survival is the argument the block exists to make.
  */
-import type { RevoraRisk } from "../lib/client/ui-state";
-import { RISK_LABELS } from "../lib/revora/labels";
+import type { PalRisk } from "../lib/client/ui-state";
+import { RISK_LABELS } from "../lib/pal/labels";
 import { demoExampleEyebrow } from "./demo-check-card";
 import { DisclaimerLine } from "./disclaimer-line";
 import {
@@ -56,7 +56,7 @@ const RISK_ICONS = {
  * `result-high-example` rows. Nothing here is invented card copy.
  */
 export const EXAMPLE_RESULTS: Record<
-  RevoraRisk,
+  PalRisk,
   { meal: string; why: string; adjustment?: string; swap?: string }
 > = {
   SAFE: {
@@ -81,7 +81,7 @@ export function ExampleResultCard({
   labelled = false,
   withFineprint = false
 }: {
-  risk: RevoraRisk;
+  risk: PalRisk;
   /**
    * AUD-008. ⛔ The label is COMPUTED, never typed: the day an authorised live
    * capture lands, `demoExampleEyebrow` returns "A real check, captured
@@ -183,7 +183,7 @@ export function ExampleResultCard({
  * the fine-print pattern AUD-008 argues against. Do not add one here without
  * deleting the note, or the page states the same compliance line four times.
  */
-export function LandingVerdictCard({ risk }: { risk: RevoraRisk }) {
+export function LandingVerdictCard({ risk }: { risk: PalRisk }) {
   const example = EXAMPLE_RESULTS[risk];
   const VerdictIcon = RISK_ICONS[risk];
   return (

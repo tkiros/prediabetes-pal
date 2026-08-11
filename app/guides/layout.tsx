@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { BOUNDARY_DISCLAIMER } from "../../lib/revora/boundary-copy";
+import { BOUNDARY_DISCLAIMER } from "../../lib/pal/boundary-copy";
 
 // The guides are the SEO/content surface: standalone document-style pages in
 // the page-shell frame (same pattern as /pantry), indexable, no app shell.

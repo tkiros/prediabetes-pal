@@ -62,7 +62,7 @@ describe("E2E production-build selection", () => {
 
   it("replaces ambient provider credentials with isolated test values", () => {
     const env = isolatedE2ERuntimeEnv({
-      DATABASE_URL: "postgres://e2e@127.0.0.1:55432/revora",
+      DATABASE_URL: "postgres://e2e@127.0.0.1:55432/pal",
       OPENAI_API_KEY: "live-model-key",
       RESEND_API_KEY: "live-email-key",
       STRIPE_SECRET_KEY: "live-billing-key",
@@ -74,7 +74,7 @@ describe("E2E production-build selection", () => {
     });
 
     expect(env.DATABASE_URL).toBe(
-      "postgres://e2e@127.0.0.1:55432/revora"
+      "postgres://e2e@127.0.0.1:55432/pal"
     );
     expect(env.VERCEL_ENV).toBe("development");
     for (const name of [
@@ -94,7 +94,7 @@ describe("E2E production-build selection", () => {
   it("passes through only the Pantry-live credentials on explicit opt-in", () => {
     const env = isolatedE2ERuntimeEnv({
       E2E_PANTRY_LIVE: "1",
-      DATABASE_URL: "postgres://e2e@127.0.0.1:55432/revora",
+      DATABASE_URL: "postgres://e2e@127.0.0.1:55432/pal",
       OPENAI_API_KEY: "live-model-key",
       PANTRY_BLOB_READ_WRITE_TOKEN: "live-blob-token",
       RESEND_API_KEY: "live-email-key",
@@ -128,7 +128,7 @@ describe("E2E production-build selection", () => {
   it("refuses a remote database even when the caller provides it", () => {
     expect(() =>
       isolatedE2ERuntimeEnv({
-        DATABASE_URL: "postgres://runtime@production.example/revora"
+        DATABASE_URL: "postgres://runtime@production.example/pal"
       })
     ).toThrow("disposable loopback database");
   });

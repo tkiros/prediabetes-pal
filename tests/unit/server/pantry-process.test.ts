@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { RevoraModelClient } from "../../../lib/revora/openai-client";
+import type { PalModelClient } from "../../../lib/pal/openai-client";
 import { decryptField, encryptField } from "../../../lib/server/crypto";
 import { schema } from "../../../lib/server/db";
 import {
@@ -17,7 +17,7 @@ let userId: string;
 
 beforeAll(async () => {
   process.env.HEALTH_DATA_KEY = Buffer.alloc(32, 11).toString("base64");
-  process.env.NEXT_PUBLIC_APP_URL = "https://revora.test";
+  process.env.NEXT_PUBLIC_APP_URL = "https://pal.test";
   testDb = await createTestDb();
   const [user] = await testDb.db
     .insert(schema.users)
@@ -38,7 +38,7 @@ beforeEach(async () => {
 /** Model stub speaking the engine's own output contract — the processor only
  *  ever sees checkFood()'s response, so this exercises the REAL postprocess
  *  floors on the way through. */
-function modelReturning(risk: "SAFE" | "MODERATE" | "HIGH"): RevoraModelClient {
+function modelReturning(risk: "SAFE" | "MODERATE" | "HIGH"): PalModelClient {
   return {
     generate: vi.fn().mockResolvedValue({
       kind: "result",
@@ -53,7 +53,7 @@ function modelReturning(risk: "SAFE" | "MODERATE" | "HIGH"): RevoraModelClient {
   };
 }
 
-const failingModel: RevoraModelClient = {
+const failingModel: PalModelClient = {
   generate: vi.fn().mockRejectedValue(new Error("model down"))
 };
 
@@ -87,7 +87,7 @@ async function makeProcessingOrder(itemNames: string[]) {
   return order;
 }
 
-function makeDeps(model: RevoraModelClient) {
+function makeDeps(model: PalModelClient) {
   return {
     db: testDb.db,
     model,
@@ -146,7 +146,7 @@ describe("processPantryOrder", () => {
 
   it("continue-on-failure: a twice-failing item is marked failed, the report still ships", async () => {
     const order = await makeProcessingOrder(["good item", "bad item"]);
-    const model: RevoraModelClient = {
+    const model: PalModelClient = {
       generate: vi.fn().mockImplementation(async (prompt: { input: string }) => {
         if (JSON.stringify(prompt).includes("bad item")) {
           throw new Error("model down");

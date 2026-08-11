@@ -10,9 +10,9 @@ import {
  * Vision DRAFTER for the D5 photo-assist check input. It transcribes a meal
  * photo into an editable text draft and does nothing else — it never judges,
  * never advises, never sees the user's A1C. The health verdict happens later
- * in the Revora engine via /api/check on the user-CONFIRMED text (same locked
+ * in the Prediabetes Pal engine via /api/check on the user-CONFIRMED text (same locked
  * decision as the Pantry extractor, lib/pantry/extract.ts). This module
- * deliberately imports nothing from lib/revora/ or lib/pantry/.
+ * deliberately imports nothing from lib/pal/ or lib/pantry/.
  */
 
 export const DEFAULT_VISION_MODEL = "gpt-5.4-mini";
@@ -108,8 +108,14 @@ export function createMealVisionClient(options?: {
         return STUB_DRAFT;
       }
 
+      // `||`, not `??`: a declared-but-empty var is a string and would win the
+      // coalesce, asking the provider for model "". REVORA_VISION_MODEL is the
+      // pre-rename fallback — see activeModelId() in lib/pal/openai-client.ts.
       const model =
-        options?.model ?? process.env.REVORA_VISION_MODEL ?? DEFAULT_VISION_MODEL;
+        options?.model ||
+        process.env.PAL_VISION_MODEL?.trim() ||
+        process.env.REVORA_VISION_MODEL?.trim() ||
+        DEFAULT_VISION_MODEL;
       // Injected clients (tests) own their routing; real transports must pair
       // the model-id naming with the configured base URL before a paid call.
       if (!options?.client) {

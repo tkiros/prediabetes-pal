@@ -1,4 +1,4 @@
-import { loadSafetyContract } from "../lib/revora/safety-contract";
+import { loadSafetyContract } from "../lib/pal/safety-contract";
 import type { VideoSpec, ComplianceItem } from "./schema";
 
 // Mirror scripts/validate-safety-contract.mjs:446 exactly.

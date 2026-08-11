@@ -1,18 +1,18 @@
 import { dayKeyInTimezone } from "./days";
 
 /**
- * Behavioral Adherence Index (plan P6). Adapted from Revora_PRD_Amendments.md
+ * Behavioral Adherence Index (plan P6). Adapted from Prediabetes Pal_PRD_Amendments.md
  * Amendment 1 — but that amendment's GL-budget/scan/A1C-prediction version is
  * SUPERSEDED and its literal band copy fails the claims-boundary audit
  * (it names a future A1C outcome and a banned verb — see
- * tests/unit/revora/claims-boundary-copy.test.ts). This is a from-scratch,
+ * tests/unit/pal/claims-boundary-copy.test.ts). This is a from-scratch,
  * behavior-only composite: what someone DID this week, never what their next
  * lab result will be. No GI/GL/carb/glucose numbers anywhere in this module.
  * This file is itself scanned by the claims-boundary audit (see COPY_FILES),
  * so even code comments here must stay inside the boundary.
  *
  * Reuses lib/coach/days.ts (dayKeyInTimezone) for all day bucketing — never
- * re-derives day math. lib/revora/ stays untouched; this module only reads
+ * re-derives day math. lib/pal/ stays untouched; this module only reads
  * the plaintext `risk` field the engine already returns.
  */
 
@@ -44,7 +44,7 @@ const CONSISTENCY_WEIGHT = 0.3;
 const ACTION_WEIGHT = 0.2;
 
 // "Prompted" = a check whose engine response carried a post-meal action.
-// lib/revora/coach-outputs.ts derives postMealAction for every non-SAFE
+// lib/pal/coach-outputs.ts derives postMealAction for every non-SAFE
 // result, and only result-kind checks are persisted to `checks` — so risk
 // !== SAFE is exactly the prompted set, without a separate stored flag.
 function wasPrompted(row: BaiCheckRow): boolean {
@@ -113,7 +113,7 @@ export type BaiBandCopy = { label: string; message: string };
 
 /**
  * Single source of truth for band copy — audited verbatim by
- * tests/unit/coach/bai.test.ts and tests/unit/revora/claims-boundary-copy.test.ts.
+ * tests/unit/coach/bai.test.ts and tests/unit/pal/claims-boundary-copy.test.ts.
  *
  * Adapted from Amendment 1's bands, but rewritten to stay inside the locked
  * claims boundary: no predicted/future A1C, no banned-verb claim, no "on

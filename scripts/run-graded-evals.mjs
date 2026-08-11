@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 export const GRADED_EVAL_ARGS = [
   "vitest",
   "run",
-  "tests/evals/revora-graded-eval.test.ts"
+  "tests/evals/pal-graded-eval.test.ts"
 ];
 
 export function planGradedEval(env = process.env) {
@@ -25,7 +25,7 @@ export function planGradedEval(env = process.env) {
     args: GRADED_EVAL_ARGS,
     env: {
       ...env,
-      REVORA_LIVE_EVAL: "1"
+      PAL_LIVE_EVAL: "1"
     }
   };
 }

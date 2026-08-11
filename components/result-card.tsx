@@ -2,10 +2,10 @@ import Link from "next/link";
 
 import type {
   ClinicalRoute,
-  RevoraRisk,
-  RevoraUserResponse
+  PalRisk,
+  PalUserResponse
 } from "../lib/client/ui-state";
-import { RISK_LABELS } from "../lib/revora/labels";
+import { RISK_LABELS } from "../lib/pal/labels";
 import { DisclaimerLine } from "./disclaimer-line";
 import { MealMemorySave } from "./meal-memory-save";
 import { ResultFeedback } from "./result-feedback";
@@ -29,13 +29,13 @@ const RISK_ICONS = {
 // non-result kind (upsell/clarify/not_food/out_of_scope/retry) carries it. This
 // pure predicate is the single gate the result branch reads.
 export function showPantryEntry(
-  kind: RevoraUserResponse["kind"],
-  risk?: RevoraRisk
+  kind: PalUserResponse["kind"],
+  risk?: PalRisk
 ): boolean {
   return kind === "result" && risk !== "SAFE";
 }
 
-// §6.1 verdict mapping lives in lib/revora/labels — one map, three surfaces.
+// §6.1 verdict mapping lives in lib/pal/labels — one map, three surfaces.
 // data-risk keeps the raw class for tests and styling.
 
 // Clinical-route eyebrows (W-01). The message body itself is approved ledger
@@ -111,7 +111,7 @@ export function ResultCard({
   food,
   inputMethod
 }: {
-  response: RevoraUserResponse;
+  response: PalUserResponse;
   actionDone?: boolean;
   onActionDone?: () => void;
   /** The checked meal text, echoed in the Meal row when the caller has it. */

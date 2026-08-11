@@ -8,8 +8,8 @@
  * captures are engineering evidence only; Tier 2 (consent-clean) captures
  * are panel-eligible. The tier is stamped into the output from the manifest.
  *
- * Usage: REVORA_LIVE_EVAL=1 OPENAI_API_KEY=... [OPENAI_BASE_URL=...] \
- *        REVORA_MODEL=... REVORA_VISION_MODEL=... \
+ * Usage: PAL_LIVE_EVAL=1 OPENAI_API_KEY=... [OPENAI_BASE_URL=...] \
+ *        PAL_MODEL=... PAL_VISION_MODEL=... \
  *        npx tsx scripts/dietitian-panel/capture-photo-outputs.mts \
  *          <out.json> <photos-manifest.json>
  */
@@ -17,8 +17,8 @@ import fs from "node:fs";
 
 import { composeDraftText } from "../../lib/client/photo-draft";
 import { createMealVisionClient } from "../../lib/meal/photo-extract";
-import { checkFood } from "../../lib/revora/service";
-import { createEvalModelClient } from "../../tests/support/revora-test-model";
+import { checkFood } from "../../lib/pal/service";
+import { createEvalModelClient } from "../../tests/support/pal-test-model";
 
 const out = process.argv[2];
 const manifestPath = process.argv[3];
@@ -95,8 +95,8 @@ fs.writeFileSync(
   out,
   JSON.stringify(
     {
-      model: process.env.REVORA_MODEL,
-      visionModel: process.env.REVORA_VISION_MODEL ?? null,
+      model: process.env.PAL_MODEL,
+      visionModel: process.env.PAL_VISION_MODEL ?? null,
       tier: manifest.tier,
       disclaimer: manifest.disclaimer ?? null,
       capturedAt: new Date().toISOString(),

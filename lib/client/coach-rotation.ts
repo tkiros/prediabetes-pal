@@ -1,4 +1,4 @@
-const STORAGE_KEY = "revora.coach.rotation";
+const STORAGE_KEY = "pal.coach.rotation";
 
 /**
  * A monotonic per-device counter that cycles the server's audited coach phrase

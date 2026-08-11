@@ -1,5 +1,5 @@
 import { PantryBuyButton } from "../../components/pantry-buy-button";
-import { BOUNDARY_DISCLAIMER } from "../../lib/revora/boundary-copy";
+import { BOUNDARY_DISCLAIMER } from "../../lib/pal/boundary-copy";
 import { resolvePantryPrice } from "../../lib/server/pantry-price";
 
 // Indexable on purpose: this is the cold-traffic front door for the one-time

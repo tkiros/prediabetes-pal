@@ -1,4 +1,4 @@
-import { SUPPORT_EMAIL } from "../../../lib/revora/contact";
+import { SUPPORT_EMAIL } from "../../../lib/pal/contact";
 
 export const metadata = {
   title: "Pantry Review — Prediabetes Pal",

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { STAGE_DESCRIPTORS, stageDescriptor } from "../../../lib/journey/stages";
-import { assertNoForbiddenClaims } from "../../../lib/revora/postprocess";
-import { loadSafetyContract } from "../../../lib/revora/safety-contract";
+import { assertNoForbiddenClaims } from "../../../lib/pal/postprocess";
+import { loadSafetyContract } from "../../../lib/pal/safety-contract";
 
 /**
  * Plan §P4.1: "The journey never claims to lower A1C, prevent diabetes, predict

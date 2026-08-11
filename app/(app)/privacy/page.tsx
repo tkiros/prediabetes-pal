@@ -3,8 +3,8 @@ import Link from "next/link";
 
 import { longitudinalInsightsEnabled } from "../../../lib/longitudinal-insights-flag";
 import { photoInputEnabled } from "../../../lib/photo-input-flag";
-import { loadSafetyContract } from "../../../lib/revora/safety-contract";
-import { SUPPORT_EMAIL } from "../../../lib/revora/contact";
+import { loadSafetyContract } from "../../../lib/pal/safety-contract";
+import { SUPPORT_EMAIL } from "../../../lib/pal/contact";
 
 export const metadata: Metadata = {
   title: "Privacy · Prediabetes Pal",

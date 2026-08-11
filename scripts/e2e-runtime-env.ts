@@ -8,7 +8,7 @@
  * disposable DATABASE_URL. Email is redirected to an owner-only disk mailbox;
  * all other provider paths are absent, synthetic, or deliberately disabled.
  */
-const E2E_AUTH_SECRET = "revora-e2e-smoke-only-secret-0000000000000000";
+const E2E_AUTH_SECRET = "pal-e2e-smoke-only-secret-0000000000000000";
 const E2E_HEALTH_DATA_KEY =
   "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 const E2E_VAPID_PUBLIC_KEY =
@@ -46,13 +46,13 @@ export function isolatedE2ERuntimeEnv(
     ...base,
 
     // Explicit disposable/local inputs.
-    AUTH_EMAIL_FROM: "Revora E2E <signin@revora.test>",
+    AUTH_EMAIL_FROM: "Prediabetes Pal E2E <signin@pal.test>",
     AUTH_EMAIL_STUB_DIR: base.AUTH_EMAIL_STUB_DIR?.trim() || "",
     AUTH_SECRET: E2E_AUTH_SECRET,
     DATABASE_POOL_MAX: "2",
     DATABASE_URL: isolatedDatabaseUrl(base.DATABASE_URL),
     HEALTH_DATA_KEY: E2E_HEALTH_DATA_KEY,
-    LEGAL_ENTITY_NAME: "Revora",
+    LEGAL_ENTITY_NAME: "Prediabetes Pal",
     LEGAL_TERMS_FINAL: "0",
     MEAL_EXTRACT_STUB: "1",
     NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3100",
@@ -63,8 +63,8 @@ export function isolatedE2ERuntimeEnv(
     // test seam (ignored in production builds, like the extract stubs above).
     PANTRY_PRICE_STUB: "1",
     PAYWALL_MODE: base.PAYWALL_MODE?.trim() || "legacy",
-    REVORA_ALLOW_NO_MEASUREMENT: "1",
-    SUPPORT_INBOX_EMAIL: "support@revora.test",
+    PAL_ALLOW_NO_MEASUREMENT: "1",
+    SUPPORT_INBOX_EMAIL: "support@pal.test",
     TRIAL_PRICE_VARIANT: "1299",
     VAPID_PUBLIC_KEY: E2E_VAPID_PUBLIC_KEY,
 
@@ -74,7 +74,7 @@ export function isolatedE2ERuntimeEnv(
 
     // Build/runtime provider isolation. Keep these keys present and empty so
     // Next cannot refill them from the developer's local env files.
-    ADMIN_EMAIL: "admin@revora.test",
+    ADMIN_EMAIL: "admin@pal.test",
     AUTH_URL: "",
     BLOB_READ_WRITE_TOKEN: "",
     CRON_SECRET: "",
@@ -109,11 +109,11 @@ export function isolatedE2ERuntimeEnv(
     RESEND_API_KEY: "",
     RESEND_WEBHOOK_SECRET: "",
     REVIEWER_TEST_SECRET: "",
-    REVORA_LAUNCH_MODE_OVERRIDE: "",
+    PAL_LAUNCH_MODE_OVERRIDE: "",
     // WS-2: model routing must not leak from the ambient shell into isolated
     // E2E — a provider-prefixed ambient model id would break the stubbed runs.
-    REVORA_MODEL: "",
-    REVORA_VISION_MODEL: "",
+    PAL_MODEL: "",
+    PAL_VISION_MODEL: "",
     RTDN_SHARED_TOKEN: "",
     SENTRY_AUTH_TOKEN: "",
     SENTRY_DSN: "",

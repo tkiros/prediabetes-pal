@@ -190,7 +190,7 @@ export function PaywallCard() {
           went live in production. The bullet that used to sell a
           longitudinal-insight summary stays removed — the thin insight is FREE
           onboarding value. Pinned by
-          tests/unit/revora/paywall-capability-truth.test.ts. */}
+          tests/unit/pal/paywall-capability-truth.test.ts. */}
       <ul className="page-copy expectation-list">
         <li>Unlimited daily checks</li>
         <li>Your full history, on every device</li>

@@ -20,7 +20,7 @@ progress:
 
 See: .planning/PROJECT.md (updated 2026-05-04)
 
-**Core value:** Revora must give a clear, evidence-grounded, permission-first answer to "Can I eat this?" in under 5 seconds without increasing food anxiety.
+**Core value:** Prediabetes Pal must give a clear, evidence-grounded, permission-first answer to "Can I eat this?" in under 5 seconds without increasing food anxiety.
 **Current focus:** Phase 04 — privacy-minimal-launch-controls
 
 ## Current Position
@@ -66,13 +66,13 @@ Progress: [█████████░] 87%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- Phase 1: Keep Revora prediabetes-only, qualitative, and explicitly non-medical.
+- Phase 1: Keep Prediabetes Pal prediabetes-only, qualitative, and explicitly non-medical.
 - Phase 2: Treat harmful SAFE classifications as the launch-blocking quality risk.
 - Phase 3: Preserve the one-page no-login mobile flow as the MVP interaction model.
 - Phase 4: Keep telemetry privacy-minimal and avoid raw food/A1C retention by default.
 - [Phase 04-02]: Middleware reads only launch-control state (not OPENAI_API_KEY) to avoid edge-runtime throw.
 - [Phase 04-02]: shouldPauseForOps() takes operator-supplied checksLast24h; no durable counter built in.
-- [Phase 04-02]: REVORA_LAUNCH_MODE_OVERRIDE is ignored in production environments.
+- [Phase 04-02]: PAL_LAUNCH_MODE_OVERRIDE is ignored in production environments.
 - [Phase 04-02]: Edge Config SDK dynamically imported; absent EDGE_CONFIG returns safe defaults.
 - Phase 5: Defer scanner, auth, saved history, and payments unless launch evidence clears the expansion gate.
 - [Phase 01]: Active claims validation scans only approved active ledger rows so policy docs can record banned language without false positives.
@@ -85,7 +85,7 @@ Recent decisions affecting current work:
 - [Phase 01]: Uncertain or under-described meals should move toward the more conservative allowed classification rather than toward reassuring SAFE output.
 - [Phase 01]: Approved clarification, refusal, and prompt-policy strings need explicit claim classes and validator coverage so the copy contract stays enforceable.
 - [Phase 02-guardrailed-inference-core-and-eval-harness]: Phase 2 prompt snippets and disclaimer copy are loaded directly from Phase 1 safety artifacts.
-- [Phase 02-guardrailed-inference-core-and-eval-harness]: Revora model output stays a flat strict JSON object with nullable required fields before server-side response shaping.
+- [Phase 02-guardrailed-inference-core-and-eval-harness]: Prediabetes Pal model output stays a flat strict JSON object with nullable required fields before server-side response shaping.
 - [Phase 02-guardrailed-inference-core-and-eval-harness]: checkFood retries one model or contract failure and then fails closed to controlled retry copy with the Phase 1 disclaimer.
 - [Phase 02-guardrailed-inference-core-and-eval-harness]: A1C routing and high-confidence non-food or ambiguous checks run deterministically before prompt/model invocation; only in-scope ok or carbs-only cases reach the model.
 - [Phase 02-guardrailed-inference-core-and-eval-harness]: Unsafe SAFE outputs are corrected with deterministic conservative floors for carbs-only and upper-band borderline contexts instead of trusting prompt obedience.
@@ -106,7 +106,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Run `node scripts/run-live-revora-evals.mjs` with `OPENAI_API_KEY` before public release.
+- Run `node scripts/run-live-pal-evals.mjs` with `OPENAI_API_KEY` before public release.
 - Set up Vercel Edge Config store with launch_mode / public_checks_enabled / incident_message keys before deployment.
 - Publish WAF rate-limit rule (10 req/10min/IP on /api/check) in Vercel Dashboard → Security → WAF.
 - Run `vercel login` then verify the rollback procedure from docs/ops/launch-controls.md before going live.

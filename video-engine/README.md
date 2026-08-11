@@ -101,5 +101,5 @@ no automated dump fetcher yet — you paste the VOC material in by hand.
 
 ## References
 
-- [`docs/Revora_Video_Engine_Plan.md`](../docs/Revora_Video_Engine_Plan.md) — the full plan.
+- [`docs/Prediabetes Pal_Video_Engine_Plan.md`](../docs/Prediabetes Pal_Video_Engine_Plan.md) — the full plan.
 - [`docs/superpowers/specs/2026-07-09-video-engine-slice-1-design.md`](../docs/superpowers/specs/2026-07-09-video-engine-slice-1-design.md) — the Slice 1 design spec.
