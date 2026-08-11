@@ -4,13 +4,37 @@
 > `docs/handoff/2026-08-10-revora-name-removal-session-handoff.md` — read it
 > first. It has the two blockers, the safety regression, and the traps.
 
+## ✅ #79 is merged — `e62a651`, deployed, verified
+
+The internal `revora` → `pal` rename landed on 2026-08-10 with **zero env
+changes**, on the strength of the fallback described in item 1 below.
+
+Verified, not assumed: `app/api/health/route.ts:68` calls `getPalEnv()`, which
+calls `resolveModelTransportConfig()` and reports `issues:["model_configuration"]`
+when the model id and `OPENAI_BASE_URL` disagree. Production on the merge SHA
+reports `issues:[]`, so the pair is coherent — the fallback is being read, or
+`PAL_MODEL` was already fine. Either way there is no outage and no silent
+downgrade.
+
+**Corrected:** the previous revision listed the Vercel project rename as
+needing a same-PR code change because `revora-git-main.vercel.app` is asserted
+in `tests/unit/pal/sw-dev-teardown.test.ts` and named in `.gitleaks.toml:15`.
+Both are wrong. The test asserts that host is **not** local dev — a hardcoded
+example string that keeps returning `false` whatever the project is called.
+The `.gitleaks.toml` mention is inside a historical comment about a 2026-07
+commit, not a live config value. A repo-wide grep for `revora-git` /
+`vercel.app` outside `docs/` returns exactly that one test line. **Renaming
+the Vercel project breaks no code.**
+
+---
+
 ## 🔴 Blocked on the owner — nothing else is
 
 1. **Vercel env** (values are encrypted → dashboard, not CLI):
    add `PAL_MODEL` and `PAL_VISION_MODEL` copied from the `REVORA_*` pair;
    set `NEXT_PUBLIC_APP_URL=https://prediabetespal.com`; **delete**
    `LEGAL_ENTITY_NAME`.
-   ✅ **No longer gates #79.** `activeModelId()` and both vision extractors now
+   ✅ **Did not gate #79** — it merged without them. `activeModelId()` and both vision extractors now
    read `REVORA_MODEL` / `REVORA_VISION_MODEL` as a fallback, so the merge is
    safe with production env untouched. The earlier note said an early merge
    would "silently downgrade the model" — that understated it: with
