@@ -486,38 +486,6 @@ export function FoodCheckForm() {
             onDiscard={() => setPhotoDraft(null)}
           />
         ) : null}
-        {/* First-run only: the guided first-check foods (ledger row
-            `onboarding-first-check`; segment-aware via the tour's on-device
-            answer). One tap fills the field; the user still runs the check. */}
-        {isFirstRun && input.food === "" && uiState.kind === "idle" ? (
-          <div data-testid="first-check-classics">
-            <p className="field-hint">
-              First time? Try one of the classics — three everyday breakfast
-              staples.
-            </p>
-            <div
-              className="chip-row"
-              role="group"
-              aria-label="Try one of the classics"
-            >
-              {classics.map((food) => (
-                <button
-                  key={food}
-                  type="button"
-                  className="selectable-chip"
-                  data-testid={`first-check-${food.replace(/\s+/g, "-")}`}
-                  onClick={() => {
-                    handleChange("food", food);
-                    setInputMethod("text");
-                    foodInputRef.current?.focus();
-                  }}
-                >
-                  {food}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
       </div>
 
       {a1cLocked && !errors.a1c ? (
@@ -577,6 +545,42 @@ export function FoodCheckForm() {
             ? "1 free check left today"
             : `${tasterRemaining} free checks left today`}
         </p>
+      ) : null}
+
+      {/* First-run only: the guided first-check foods (ledger row
+          `onboarding-first-check`; segment-aware via the tour's on-device
+          answer). One tap fills the field; the user still runs the check.
+          BELOW the CTA on purpose — mobile-check.spec pins the submit
+          button's top edge above the fold (A11Y-01), so nothing optional may
+          add height above it. */}
+      {isFirstRun && input.food === "" && uiState.kind === "idle" ? (
+        <div data-testid="first-check-classics">
+          <p className="field-hint">
+            First time? Try one of the classics — three everyday breakfast
+            staples.
+          </p>
+          <div
+            className="chip-row"
+            role="group"
+            aria-label="Try one of the classics"
+          >
+            {classics.map((food) => (
+              <button
+                key={food}
+                type="button"
+                className="selectable-chip"
+                data-testid={`first-check-${food.replace(/\s+/g, "-")}`}
+                onClick={() => {
+                  handleChange("food", food);
+                  setInputMethod("text");
+                  foodInputRef.current?.focus();
+                }}
+              >
+                {food}
+              </button>
+            ))}
+          </div>
+        </div>
       ) : null}
 
       {uiState.kind === "submitting" ||
