@@ -31,7 +31,27 @@ and one meal-photo upload (vision path). ⛔ `REVORA_MODEL` /
 `REVORA_VISION_MODEL` are **deliberately not deleted** and the code fallback
 stays — both gated on those two verifications *and* on the incident below.
 
-## 🔴 NEW 2026-08-11 — `/api/check` returns the fail-safe on every request
+## ✅ RESOLVED same day — root cause was a stale `OPENAI_API_KEY` in Vercel
+
+The owner topped up OpenRouter credits and pointed at the key in the local
+`.env` — which turned out to be a **different key** than the one Vercel
+carried (set 18 days prior; presumably rotated/recreated at top-up). Isolation
+that pinned it: the `.env` key passed (a) the OpenRouter key endpoint with
+credit remaining, (b) a chat completion on `openai/gpt-5.4-mini`, and (c) an
+**exact replica of the production `responses.create` shape** — `instructions` +
+`input`, `store:false`, `max_output_tokens:1024`, strict `json_schema` from
+`lib/pal/schemas.ts` — all 200. Production failing while the identical request
+succeeded left only the stored key.
+
+Fix: `OPENAI_API_KEY` overridden in **Production and Preview** from `.env`
+(stdin pipe, value never echoed), redeploy. Verified with two live guest
+checks: grilled-chicken salad → `risk:"SAFE"`, frosted cinnamon roll + orange
+juice → `risk:"HIGH"` with sensible swap/post-meal copy. `/api/health` stays
+`issues:[]`.
+
+Original incident record follows, kept for the paper trail.
+
+## ~~🔴 NEW 2026-08-11 — `/api/check` returns the fail-safe on every request~~
 
 Every guest check returns `kind:"retry"` ("couldn't produce a safe answer").
 Telemetry: `reasonCode:"provider_error"`, 350–600 ms — OpenRouter **processed
