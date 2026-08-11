@@ -13,11 +13,13 @@ Use the existing Neon owner as the migration role. Create a separate login
 with a generated password, then run the grant/revoke block below as the owner.
 Do not paste credentials into this file.
 
-> **2026-08-11 — the app role is being renamed** `revora_app` →
-> `prediabetespal_app` as the last step of the product rename. Use the
-> **Neon-console procedure** immediately below; the historical `psql` block
-> after it is kept because it documents what the current `revora_app` grants
-> actually are.
+> **2026-08-11 — ✅ DONE.** The app role was renamed `revora_app` →
+> `prediabetespal_app` and `revora_app` was dropped. Production runs on the new
+> role: governance check all-true (19/19 migrations), `/api/health` `db:"ok"`,
+> a live `/api/check`, and a real signin whose verification-token row was
+> confirmed written. The procedure below is retained as the reference for the
+> next role rotation; the historical `psql` block after it documents the grant
+> set that was reproduced.
 
 ### Neon-console procedure (current — no local credentials needed)
 
@@ -83,13 +85,19 @@ WHERE r.rolname = 'prediabetespal_app';
    URL and redeploy. ⛔ `DATABASE_MIGRATION_URL` stays out of Vercel.
 5. Verify `/api/health` → `db:"ok"` **and** a real signin (sessions live in
    Postgres, so a broken app role is also a login outage).
-6. Only then retire the old role — it owns no objects (`neondb_owner` does),
-   so `DROP OWNED` only strips its grants:
+6. Only then retire the old role. ⚠️ **`DROP OWNED BY` fails on Neon** with
+   `permission denied to drop objects` — `neondb_owner` is not a true
+   superuser. Revoke explicitly instead; the role owns no objects
+   (`neondb_owner` does), so this is equivalent:
 
 ```sql
 ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public REVOKE ALL ON TABLES FROM revora_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public REVOKE ALL ON SEQUENCES FROM revora_app;
-DROP OWNED BY revora_app;
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM revora_app;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM revora_app;
+REVOKE ALL ON SCHEMA public FROM revora_app;
+REVOKE ALL ON DATABASE neondb FROM revora_app;
+REVOKE revora_app FROM neondb_owner;   -- the owner is a member of the app role
 DROP ROLE revora_app;
 ```
 
