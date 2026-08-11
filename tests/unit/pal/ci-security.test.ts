@@ -38,6 +38,31 @@ describe("CI supply-chain controls", () => {
     const dependabot = fs.readFileSync(".github/dependabot.yml", "utf8");
     expect(dependabot).toContain("package-ecosystem: github-actions");
     expect(dependabot).toContain("package-ecosystem: npm");
-    expect(dependabot).toContain("package-ecosystem: docker");
+
+    // Docker is watched IF AND ONLY IF there is something for it to watch.
+    // Dependabot's docker ecosystem reads Dockerfiles, compose files and k8s
+    // manifests — PR #80 deleted the last of those (Dockerfile.cron) with the
+    // Railway decommission, so a bare `package-ecosystem: docker` entry became
+    // config that can only ever produce nothing.
+    //
+    // Asserting the biconditional rather than dropping the check keeps this
+    // honest in both directions: add a Dockerfile back without a Dependabot
+    // entry and this goes red, which is the property the original assertion
+    // was reaching for. The CI postgres service image stays digest-pinned
+    // regardless — that is asserted above, and Dependabot never covered it
+    // (workflow `services:` images are outside every ecosystem).
+    const dockerFiles = fs
+      .readdirSync(".", { recursive: true, encoding: "utf8" })
+      .filter(
+        (f) =>
+          !f.startsWith("node_modules") &&
+          !f.startsWith(".git/") &&
+          !f.includes("/node_modules/") &&
+          /(^|\/)(Dockerfile[^/]*|docker-compose\.ya?ml)$/.test(f)
+      );
+
+    expect(dependabot.includes("package-ecosystem: docker")).toBe(
+      dockerFiles.length > 0
+    );
   });
 });
