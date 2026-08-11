@@ -60,6 +60,17 @@ made the swap provably free — **0 pixels changed** on a 2x-DPR diff of live
 production before vs after the deploy, both viewports. Re-measure before ever
 refreshing them; a newer Google build is a typographic change, not a bump.
 
+🟢 **Found while verifying, pre-existing, still open:** `app/fonts.ts` claimed
+the reading face "ships with the landing route, not with every app route."
+False, and false before the self-host too — building `9abf90c` and reading its
+prerendered output shows `/about` already preloaded **both** woff2 files, same
+as now. `app/layout.tsx` imports `sans` from the module, and evaluating the
+module declares both faces. The comment is corrected; the ~28KB is unchanged
+and uncosted. If it matters, the fix is a separate module for `reading` that
+only `app/page.tsx` imports. Note that `landing-wiring-pins.test.ts:74` cannot
+catch this — it asserts `app/layout.tsx` does not *reference* `reading`, which
+is a source-level check, not a bundle-level one.
+
 ### Dependency PRs — grouping fixed, two majors left open on purpose (#87)
 
 Grouped Dependabot PRs were all-or-nothing, so one breaking major poisoned

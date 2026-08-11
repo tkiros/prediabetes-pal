@@ -71,10 +71,22 @@ export const sans = localFont({
 // font classNames on <body> would race by stylesheet injection order and could
 // flip the whole app's face. On the landing root it is the single, literal
 // (var-free) source of the landing body family — the same class-over-cascade
-// protection sans.className gives the app. Imported ONLY by app/page.tsx, so
+// protection sans.className gives the app. Nothing reads var(--font-body); the
+// variable stays declared only so a future consumer doesn't silently get an
+// undefined var.
+//
+// ⚠️ This block used to claim `reading` is "imported ONLY by app/page.tsx, so
 // Source Sans 3's @font-face + preloads ship with the landing route, not with
-// every app route. Nothing reads var(--font-body); the variable stays declared
-// only so a future consumer doesn't silently get an undefined var.
+// every app route." That is NOT true and was not true before the self-host
+// either — verified by building the pre-self-host commit (9abf90c) and reading
+// the prerendered output: `/about` already preloaded BOTH woff2 files, exactly
+// as it does now. Both faces preload on every route, because app/layout.tsx
+// imports `sans` from this module and evaluating the module declares both.
+//
+// Kept as a note rather than quietly deleted, because the false version was
+// load-bearing in review: it is the reason nobody costed the second face on app
+// routes. If that ~28KB matters, the fix is a separate module for `reading` that
+// only app/page.tsx imports — not a comment.
 export const reading = localFont({
   src: "./fonts/SourceSans3-Variable-latin.woff2",
   variable: "--font-body",
