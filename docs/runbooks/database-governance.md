@@ -10,9 +10,68 @@ The application and migration credentials have different jobs:
 ## One-time role split
 
 Use the existing Neon owner as the migration role. Create a separate login
-named `revora_app` with a generated password, then run the following as the
-owner. Replace `neondb_owner` with the actual owner role before executing the
-`ALTER DEFAULT PRIVILEGES` statements; do not paste credentials into this file.
+with a generated password, then run the grant/revoke block below as the owner.
+Do not paste credentials into this file.
+
+> **2026-08-11 — the app role is being renamed** `revora_app` →
+> `prediabetespal_app` as the last step of the product rename. Use the
+> **Neon-console procedure** immediately below; the historical `psql` block
+> after it is kept because it documents what the current `revora_app` grants
+> actually are.
+
+### Neon-console procedure (current — no local credentials needed)
+
+Neon project `dry-shadow-56131409`, database `neondb`, owner role
+`neondb_owner`. The console's SQL editor is **not** psql, so `\gexec` does not
+work there — these statements are already expanded.
+
+1. **Neon Console → Roles → Add role** → name `prediabetespal_app`. Let Neon
+   generate the password and **copy the pooled connection string it shows** —
+   it is displayed once. This step alone changes nothing about production.
+2. **Neon Console → SQL Editor**, as `neondb_owner`, run:
+
+```sql
+BEGIN;
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+REVOKE CREATE ON SCHEMA public FROM prediabetespal_app;
+REVOKE CREATE ON DATABASE neondb FROM prediabetespal_app;
+GRANT CONNECT ON DATABASE neondb TO prediabetespal_app;
+GRANT USAGE ON SCHEMA public TO prediabetespal_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO prediabetespal_app;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO prediabetespal_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO prediabetespal_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public
+  GRANT USAGE, SELECT ON SEQUENCES TO prediabetespal_app;
+COMMIT;
+```
+
+3. Confirm the grants landed (expect one row per table, 22 at the 2026-08-11
+   head):
+
+```sql
+SELECT count(*) FROM information_schema.table_privileges
+WHERE grantee = 'prediabetespal_app' AND privilege_type = 'SELECT';
+```
+
+4. Repoint `DATABASE_URL` in **Vercel** to the **pooled** `prediabetespal_app`
+   URL and redeploy. ⛔ `DATABASE_MIGRATION_URL` stays out of Vercel.
+5. Verify `/api/health` → `db:"ok"` **and** a real signin (sessions live in
+   Postgres, so a broken app role is also a login outage).
+6. Only then retire the old role — it owns no objects (`neondb_owner` does),
+   so `DROP OWNED` only strips its grants:
+
+```sql
+ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public REVOKE ALL ON TABLES FROM revora_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public REVOKE ALL ON SEQUENCES FROM revora_app;
+DROP OWNED BY revora_app;
+DROP ROLE revora_app;
+```
+
+There is **no tolerable partial state** between steps 4 and 5: repointing
+before the grants exist takes production's database away.
+
+### Historical `psql` block (documents the existing `revora_app` grants)
 
 Run this block with `psql` (it uses `\gexec` to quote the provider-generated
 database and owner-role identifiers safely):
