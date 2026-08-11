@@ -4405,3 +4405,38 @@ button.inline-link {
     animation: none;
   }
 }
+
+/* Layered health-data consent (welcome, 2026-08-11): one-line label above,
+   the full counsel-drafted paragraph in this expander at the point of
+   consent. */
+.consent-details {
+  margin-top: -4px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted, inherit);
+}
+
+.consent-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.consent-details-copy {
+  margin: 6px 0 0;
+}
+
+/* "Premium" tag on the photo method chip for non-entitled trial sessions. */
+.premium-tag {
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Known-A1C row on the check form ("Using your saved A1C: 5.8 · Change"). */
+.a1c-locked {
+  margin: 0;
+}

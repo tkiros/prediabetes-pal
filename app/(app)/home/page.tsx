@@ -120,12 +120,19 @@ export default async function HomePage() {
           : `${weekCount} meals checked this week.`,
     showFirstWin: showFirstWin(coach.streak, todayChecks.length),
     todayChecks,
-    nextAction: nextAction({
-      checkedToday: todayRows.length > 0,
-      undoneActionToday: todayRows.some(
-        (row) => row.risk !== "SAFE" && !row.actionDoneAt
-      )
-    }),
+    // Before the first check of the day the hero right above IS the next
+    // action — a "Check your next uncertain meal" line under it pointed at a
+    // second way to do the same thing (owner testing 2026-08-11). The line
+    // only renders once today has a check to follow up on.
+    nextAction:
+      todayRows.length > 0
+        ? nextAction({
+            checkedToday: true,
+            undoneActionToday: todayRows.some(
+              (row) => row.risk !== "SAFE" && !row.actionDoneAt
+            )
+          })
+        : null,
     planBox,
     planBoxAttention: planBox.attention,
     isDay0: rows.length === 0

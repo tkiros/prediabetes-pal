@@ -14,7 +14,6 @@ import {
   HIGH_RANGE_MESSAGE
 } from "../../../lib/pal/boundary-copy";
 import { RISK_LABELS } from "../../../lib/pal/labels";
-import { promotedInputsFor } from "../../../lib/pal/promise-registry";
 import { track } from "../../../lib/client/analytics";
 import {
   storedUtmChannel,
@@ -29,7 +28,6 @@ type Step =
   | "attribution"
   | "a1c"
   | "expectations"
-  | "first_check"
   | "boundary";
 
 // Segmentation prompt — one tap, kept on-device only (no server write). The
@@ -56,22 +54,10 @@ const ATTRIBUTION_CHIPS: ReadonlyArray<{ label: string; channel: Channel }> = [
   { label: "Somewhere else", channel: "other" }
 ];
 
-// The guided-first-check foods — everyday items whose impact surprises almost
-// everyone, so the very first check earns an "oh, huh" moment. Varied by what
-// brought the user here; the classics are the default. Derived from the promise
-// registry (the single source for every PROMOTED example) so the tour and the
-// landing demo can never drift — and so the deploy-blocking fixture test guards
-// that each classic still takes the route the tour implies.
-const FIRST_CHECK_CLASSICS = promotedInputsFor("onboarding");
-export const FIRST_CHECK_CHIPS_BY_SEGMENT: Record<
-  Segment,
-  readonly string[]
-> = {
-  "New A1C result": FIRST_CHECK_CLASSICS,
-  "Doctor's advice": ["brown rice", "granola", "fruit smoothie"],
-  "Family history": ["white bread", "grapes", "sweet tea"],
-  "Just checking": FIRST_CHECK_CLASSICS
-};
+// The guided-first-check chips moved to the check page's first-run empty state
+// (lib/client/first-check-chips.ts) when the standalone first_check tour step
+// was cut on 2026-08-11 — same "oh, huh" foods, one step less friction. The
+// segment answer stored below still steers which chips the check page shows.
 
 // Goal-gradient bar: never starts at zero — arriving counts as progress
 // (car-wash stamp study). Boundary is an exit, not a step, so it hides the bar.
@@ -80,8 +66,7 @@ export const STEP_PROGRESS: Record<Step, number> = {
   segment: 40,
   attribution: 48,
   a1c: 58,
-  expectations: 75,
-  first_check: 90,
+  expectations: 90,
   boundary: 0
 };
 
@@ -91,15 +76,8 @@ export const STEP_PROGRESS: Record<Step, number> = {
 // it is unit-testable in node without a component harness.
 export function stepCounter(step: Step, skipsA1c: boolean): string {
   const steps: readonly Step[] = skipsA1c
-    ? ["welcome", "segment", "attribution", "expectations", "first_check"]
-    : [
-        "welcome",
-        "segment",
-        "attribution",
-        "a1c",
-        "expectations",
-        "first_check"
-      ];
+    ? ["welcome", "segment", "attribution", "expectations"]
+    : ["welcome", "segment", "attribution", "a1c", "expectations"];
   const index = steps.indexOf(step);
   return index === -1 ? "" : `Step ${index + 1} of ${steps.length}`;
 }
@@ -118,7 +96,6 @@ export default function OnboardingPage() {
   const [a1cError, setA1cError] = useState<string | null>(null);
   const [a1cValue, setA1cValue] = useState<number | null>(null);
   const [boundaryMessage, setBoundaryMessage] = useState("");
-  const [segment, setSegment] = useState<Segment | null>(null);
   // Read after mount (not at render) so server HTML and first client paint
   // agree; a returning guest's counter settles to "of 4" before any tap.
   const [skipsA1c, setSkipsA1c] = useState(false);
@@ -134,7 +111,6 @@ export default function OnboardingPage() {
 
   function advanceFromSegment(choice?: Segment) {
     if (choice) {
-      setSegment(choice);
       try {
         window.localStorage.setItem("pal.segment.v1", choice);
       } catch {
@@ -153,10 +129,6 @@ export default function OnboardingPage() {
     });
     setStep(nextStepAfterAttribution(profileStore.get() !== null));
   }
-
-  const firstCheckChips = segment
-    ? FIRST_CHECK_CHIPS_BY_SEGMENT[segment]
-    : FIRST_CHECK_CLASSICS;
 
   function skipTour() {
     persistA1c();
@@ -190,7 +162,7 @@ export default function OnboardingPage() {
     setStep("expectations");
   }
 
-  // Persist on every INTENTIONAL exit from the tour — the classic tap AND
+  // Persist on every INTENTIONAL exit from the tour — completing it AND
   // "Skip setup and check a meal". Step 4 promises "It stays on this device",
   // so a deliberate exit must never drop the typed A1C and re-ask on /check.
   // Deliberately NOT persisted at step-4 Continue: a non-null profile is
@@ -203,14 +175,9 @@ export default function OnboardingPage() {
     }
   }
 
-  function startGuidedCheck(food: string) {
-    // Hand the chosen food to the home form via the same prefill path a
-    // one-tap re-check uses (food-check-form.tsx reads + clears pal.recheck).
-    try {
-      window.sessionStorage.setItem("pal.recheck", food);
-    } catch {
-      // storage unavailable — land on the form without a prefill
-    }
+  function completeTour() {
+    // Expectations is the last step now — the guided first-check chips wait on
+    // the check page's empty state (lib/client/first-check-chips.ts).
     persistA1c();
     track({ name: "onboarding_completed" });
     router.push("/check");
@@ -427,38 +394,10 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 className="primary-button"
-                onClick={() => setStep("first_check")}
+                onClick={completeTour}
               >
-                Continue
+                Check my first meal
               </button>
-            </>
-          ) : null}
-
-          {step === "first_check" ? (
-            <>
-              <p className="hero-eyebrow">Your first check</p>
-              <h1 className="page-title">Try one of the classics</h1>
-              <p className="page-copy">
-                Three everyday breakfast staples to start with. Tap one and
-                we&apos;ll set it up on the check page — one tap more to run it.
-              </p>
-              <div
-                className="chip-row"
-                role="group"
-                aria-label="Try one of the classics"
-              >
-                {firstCheckChips.map((food) => (
-                  <button
-                    key={food}
-                    type="button"
-                    className="selectable-chip"
-                    data-testid={`first-check-${food.replace(/\s+/g, "-")}`}
-                    onClick={() => startGuidedCheck(food)}
-                  >
-                    {food}
-                  </button>
-                ))}
-              </div>
             </>
           ) : null}
 

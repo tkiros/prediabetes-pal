@@ -20,13 +20,21 @@ type Plan = "monthly" | "annual";
  * wall shows a neutral loading/retry state and NO price — it never falls back
  * to a hard-coded ladder that could differ from what checkout will charge.
  */
-export function TrialWall({ declined = false }: { declined?: boolean }) {
+export function TrialWall({
+  declined = false,
+  initialEmail = ""
+}: {
+  declined?: boolean;
+  /** Session email when signed in — prefills the field, stays editable
+   *  (a different email may be trial-eligible). */
+  initialEmail?: string;
+}) {
   const { state, retry } = usePaywallConfig();
   const config = state.status === "ready" ? state.config : null;
   const [step, setStep] = useState<Step>("value");
   // Annual preselected when offered — it's the plan we flag as best value.
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // AUD-011: server-authoritative ineligible-trial disclosure. When set, the

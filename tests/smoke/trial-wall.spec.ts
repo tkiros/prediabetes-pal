@@ -85,22 +85,24 @@ test("taster: first-run walk lands a guided oatmeal check and meters used===1", 
   await page.goto(`${TRIAL}/check`);
   await expect(page).toHaveURL(/\/onboarding$/, { timeout: 60_000 });
 
-  // Walk welcome → segment → attribution → a1c → expectations → first_check
-  // (mirrors onboarding.spec).
+  // Walk welcome → segment → attribution → a1c → expectations (mirrors
+  // onboarding.spec); completing the tour lands on /check, where the guided
+  // chips wait in the empty state.
   await page.getByRole("button", { name: "Get started" }).click();
   await page.getByRole("button", { name: "New A1C result" }).click();
   await page.getByRole("button", { name: "Reddit", exact: true }).click();
   await page.getByLabel("Latest A1C").fill("6.1");
   await page.getByRole("button", { name: "Continue" }).click();
-  await page.getByRole("button", { name: "Continue" }).click();
 
   const paywall = page.waitForResponse((r) => r.url().includes("/api/paywall"));
-  await page.getByRole("button", { name: "oatmeal", exact: true }).click();
+  await page.getByRole("button", { name: "Check my first meal" }).click();
 
-  // Home, with the guided food + remembered A1C prefilled.
+  // The check page, with the guided chip filling the food and the remembered
+  // A1C shown as the saved-A1C row.
   await expect(page).toHaveURL(/\/check$/);
+  await page.getByRole("button", { name: "oatmeal", exact: true }).click();
   await expect(page.getByLabel(/eating/i)).toHaveValue("oatmeal");
-  await expect(page.getByLabel(/latest a1c/i)).toHaveValue("6.1");
+  await expect(page.getByTestId("a1c-locked")).toContainText("6.1");
 
   await paywall;
   await page.evaluate(

@@ -125,11 +125,17 @@ describe("promise registry drives promoted examples from the real precheck", () 
 });
 
 describe("promoted surfaces render the registry, not hardcoded fixtures", () => {
-  it("onboarding derives its first-check classics from the registry", () => {
-    const src = read("app/(app)/onboarding/page.tsx");
+  it("the first-check classics derive from the registry at their render site", () => {
+    // The chips moved from the onboarding first_check step to the check
+    // page's first-run empty state (2026-08-11); the guard moves with them.
+    const src = read("lib/client/first-check-chips.ts");
     expect(src).toMatch(/from\s+["'].*pal\/promise-registry["']/);
     // The literal food list is gone — it is derived from promotedInputsFor.
     expect(src).toMatch(/promotedInputsFor\(\s*["']onboarding["']\s*\)/);
+    // And the check form renders that module, not a retyped list.
+    expect(read("components/food-check-form.tsx")).toMatch(
+      /from\s+["'].*client\/first-check-chips["']/
+    );
     // promotedInputsFor("onboarding") is exactly the promoted classics.
     expect(promotedInputsFor("onboarding")).toEqual([
       "oatmeal",
