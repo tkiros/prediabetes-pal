@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PaywallCard } from "../../../components/paywall-card";
 import { TrialWall } from "../../../components/trial-wall";
 import { paywallMode } from "../../../lib/server/pricing";
+import { getSessionInfo } from "../../../lib/server/session";
 
 export const metadata = {
   title: "Premium — Prediabetes Pal",
@@ -16,10 +17,14 @@ export default async function SubscribePage({
 }) {
   const trial = paywallMode() === "trial";
   const declined = (await searchParams)?.declined === "1";
+  // A signed-in user already told us their email at sign-in — prefill it
+  // (still editable: a different email may be trial-eligible). Session
+  // resolution failing just leaves the field blank, as for guests.
+  const session = await getSessionInfo().catch(() => null);
   return (
     <div className="app-content--narrow">
         {trial ? (
-          <TrialWall declined={declined} />
+          <TrialWall declined={declined} initialEmail={session?.email ?? ""} />
         ) : (
           <section className="surface-card hero-card">
             <p className="hero-eyebrow">Prediabetes Pal Premium</p>

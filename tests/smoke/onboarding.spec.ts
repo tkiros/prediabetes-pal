@@ -23,7 +23,7 @@ async function answerAttribution(page: Page, chip = "Reddit") {
   await page.getByRole("button", { name: chip, exact: true }).click();
 }
 
-test("a new user walks welcome→segment→attribution→a1c→expectations→first_check into a guided check", async ({
+test("a new user walks welcome→segment→attribution→a1c→expectations into the check page's guided chips", async ({
   page
 }) => {
   await page.goto("/onboarding");
@@ -83,24 +83,24 @@ test("a new user walks welcome→segment→attribution→a1c→expectations→fi
     /not medical advice/i
   );
   await expectNoSeriousViolations(page);
-  await page.getByRole("button", { name: "Continue" }).click();
+  // Expectations is the final step — completing the tour lands on the check
+  // page, where the guided first-check chips wait in the empty state.
+  await page.getByRole("button", { name: "Check my first meal" }).click();
 
-  // Step 5: first check — three classics, no photo path
-  await expect(page.getByTestId("onboarding-step")).toHaveAttribute(
-    "data-step",
-    "first_check"
-  );
-  await expect(
-    page.getByText(/Three everyday breakfast staples/)
-  ).toBeVisible();
-  await expect(page.getByText(/photo|snap|camera/i)).toHaveCount(0);
-  await expectNoSeriousViolations(page);
-  await page.getByRole("button", { name: "oatmeal", exact: true }).click();
-
-  // Lands on home with the guided food prefilled and the A1C remembered
   await expect(page).toHaveURL(/\/check$/);
+  await expect(page.getByTestId("first-check-classics")).toBeVisible();
+  await expect(
+    page.getByText(/Try one of the classics/)
+  ).toBeVisible();
+  await page.getByRole("button", { name: "oatmeal", exact: true }).click();
   await expect(page.getByLabel(/eating/i)).toHaveValue("oatmeal");
+
+  // The remembered A1C renders as the compact saved-A1C row, not a re-ask —
+  // and "Change" reopens the field with the value intact.
+  await expect(page.getByTestId("a1c-locked")).toContainText("6.1");
+  await page.getByTestId("a1c-change").click();
   await expect(page.getByLabel(/latest a1c/i)).toHaveValue("6.1");
+  await expectNoSeriousViolations(page);
 });
 
 test("a returning guest with a saved A1C skips the A1C step", async ({
@@ -146,13 +146,13 @@ test("skip the tour leaves for the escape hatch, never looping back", async ({
 test("an A1C entered mid-tour survives 'Skip setup' — never re-asked on /check", async ({
   page
 }) => {
-  // Regression (design-review 2026-07-21): the A1C used to persist only on the
-  // step-6 classic tap, so entering 6.1 and then leaving via "Skip setup and
+  // Regression (design-review 2026-07-21): the A1C used to persist only on
+  // completing the tour, so entering 6.1 and then leaving via "Skip setup and
   // check a meal" dropped it and /check asked again — breaking step 4's
   // "It stays on this device" promise. Persistence fires on INTENTIONAL exits
-  // only (skip + classic tap), never mid-tour — a mid-tour persist would mark
-  // tab-close abandoners as onboarded forever (FirstRunGate keys on a
-  // non-null profile).
+  // only (skip + completing the tour), never mid-tour — a mid-tour persist
+  // would mark tab-close abandoners as onboarded forever (FirstRunGate keys
+  // on a non-null profile).
   await page.goto("/onboarding");
   await page.getByRole("button", { name: "Get started" }).click();
   await page.getByRole("button", { name: "New A1C result" }).click();
@@ -167,7 +167,8 @@ test("an A1C entered mid-tour survives 'Skip setup' — never re-asked on /check
   await page.getByRole("button", { name: "Skip setup and check a meal" }).click();
 
   await expect(page).toHaveURL(/\/check\?stay=1$/);
-  await expect(page.getByLabel(/latest a1c/i)).toHaveValue("6.1");
+  // Remembered A1C renders as the saved-A1C row — never a re-ask.
+  await expect(page.getByTestId("a1c-locked")).toContainText("6.1");
 });
 
 test("invalid A1C shows a field error, not progress", async ({ page }) => {

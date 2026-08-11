@@ -29,7 +29,8 @@ export type DashboardData = {
   weekSummary: string;
   showFirstWin: boolean;
   todayChecks: StoredCheck[];
-  nextAction: NextAction;
+  /** Null before today's first check — the hero is the next action then. */
+  nextAction: NextAction | null;
   planBox: PlanBoxData;
   /** True when the plan box carries actionable billing truth (D2). */
   planBoxAttention: boolean;
@@ -58,9 +59,11 @@ export function DashboardView({ data }: { data: DashboardData }) {
 
       <HomeCheckHero />
 
-      <p className="dash-next-action" data-testid="next-action">
-        <Link href={data.nextAction.href}>{data.nextAction.text}</Link>
-      </p>
+      {data.nextAction ? (
+        <p className="dash-next-action" data-testid="next-action">
+          <Link href={data.nextAction.href}>{data.nextAction.text}</Link>
+        </p>
+      ) : null}
 
       <section className="dash-card" aria-label="Today">
         <h3 className="dash-sect-title">Today</h3>

@@ -78,12 +78,17 @@ test("magic-link round trip: email → link → session → consent → profile"
   ).toEqual([]);
 
   await page.getByLabel("Latest A1C").fill("6.1");
+  // Layered consent (2026-08-11): one-line label; the full counsel paragraph
+  // sits in the expander at the point of consent.
+  await expect(
+    page.getByText(/How my health data is handled/)
+  ).toBeVisible();
   await page
-    .getByLabel(/I explicitly consent to Prediabetes Pal collecting and using my A1C/)
+    .getByLabel(/I consent to Prediabetes Pal storing and using my A1C/)
     .check();
   await page.getByTestId("welcome-save").click();
 
-  await expect(page).toHaveURL(/\/home$/);
+  await expect(page).toHaveURL(/\/check$/);
 
   // Session survives a reload; profile exists.
   const profile = await page.evaluate(async () => {

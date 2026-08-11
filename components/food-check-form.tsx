@@ -10,6 +10,7 @@ import {
   clarifyReasonForQuestion,
   type ClarifyReason
 } from "../lib/pal/clarify";
+import { firstCheckChips } from "../lib/client/first-check-chips";
 import { historyStore } from "../lib/client/history-store";
 import { profileStore } from "../lib/client/profile-store";
 import { useHydrated } from "../lib/client/use-hydrated";
@@ -87,6 +88,15 @@ export function FoodCheckForm() {
   // AUD-009: server-resolved entitlement. Defaults false (guest posture); an
   // entitled session skips the device taster gate/meter entirely.
   const [entitled, setEntitled] = useState(false);
+  // Known A1C renders as a compact "Using your saved A1C" row instead of
+  // re-asking (owner testing 2026-08-11: the field re-appearing on every
+  // check read as being asked again). "Change" reopens the input.
+  const [a1cLocked, setA1cLocked] = useState(false);
+  // First-run empty state: the guided first-check chips (the deleted
+  // onboarding first_check step, relocated). Static from mount — one check
+  // graduates the user out of them.
+  const [isFirstRun, setIsFirstRun] = useState(false);
+  const [classics] = useState<readonly string[]>(() => firstCheckChips());
   const foodInputRef = useRef<HTMLTextAreaElement | null>(null);
   const initialPrefillRef = useRef<{
     profile: ReturnType<typeof profileStore.get>;
@@ -151,6 +161,10 @@ export function FoodCheckForm() {
         a1c:
           current.a1c === "" && profile ? profile.a1c.toFixed(1) : current.a1c,
       }));
+      if (profile) {
+        setA1cLocked(true);
+      }
+      setIsFirstRun(historyStore.all().length === 0);
     }, 0);
 
     return () => window.clearTimeout(update);
@@ -417,7 +431,16 @@ export function FoodCheckForm() {
           {photoInputEnabled() ? (
             <PhotoInputButton
               onDraft={handlePhotoDraft}
+              // In trial mode photo drafts are Premium server-side (the
+              // photo-draft route 402s every non-premium session), so the chip
+              // says so up front and the wall shows BEFORE the camera — nobody
+              // takes a photo they can't use (owner testing 2026-08-11).
+              premium={mode === "trial" && !entitled}
               onRequestOpen={() => {
+                if (mode === "trial" && !entitled) {
+                  window.location.assign("/subscribe");
+                  return false;
+                }
                 // Same taster gate as handleSubmit: a walled taster never spends
                 // a draft call — the picker never opens. Entitled sessions pass.
                 if (shouldGateSubmit(mode, tasterStore.status(), entitled)) {
@@ -465,35 +488,52 @@ export function FoodCheckForm() {
         ) : null}
       </div>
 
-      <div className="field-stack">
-        <label htmlFor="a1c" className="field-label">
-          Latest A1C
-        </label>
-        <input
-          id="a1c"
-          name="a1c"
-          type="number"
-          inputMode="decimal"
-          step="0.1"
-          value={input.a1c}
-          onChange={(event) => {
-            handleChange("a1c", event.target.value);
-          }}
-          enterKeyHint="go"
-          placeholder="6.1"
-          aria-describedby={errors.a1c ? "a1c-error" : "a1c-help"}
-          aria-invalid={errors.a1c ? true : undefined}
-          className="text-input"
-        />
-        <p id="a1c-help" className="field-hint">
-          Enter one decimal place, like 6.1.
+      {a1cLocked && !errors.a1c ? (
+        // The device already knows the A1C (onboarding/profile) — show it
+        // instead of re-asking; "Change" reopens the field. The value still
+        // submits from the same input state.
+        <p className="field-hint a1c-locked" data-testid="a1c-locked">
+          Using your saved A1C: <strong>{input.a1c}</strong>{" "}
+          <button
+            type="button"
+            className="inline-link"
+            data-testid="a1c-change"
+            onClick={() => setA1cLocked(false)}
+          >
+            Change
+          </button>
         </p>
-        {errors.a1c ? (
-          <p id="a1c-error" className="field-error">
-            {errors.a1c}
+      ) : (
+        <div className="field-stack">
+          <label htmlFor="a1c" className="field-label">
+            Latest A1C
+          </label>
+          <input
+            id="a1c"
+            name="a1c"
+            type="number"
+            inputMode="decimal"
+            step="0.1"
+            value={input.a1c}
+            onChange={(event) => {
+              handleChange("a1c", event.target.value);
+            }}
+            enterKeyHint="go"
+            placeholder="6.1"
+            aria-describedby={errors.a1c ? "a1c-error" : "a1c-help"}
+            aria-invalid={errors.a1c ? true : undefined}
+            className="text-input"
+          />
+          <p id="a1c-help" className="field-hint">
+            Enter one decimal place, like 6.1.
           </p>
-        ) : null}
-      </div>
+          {errors.a1c ? (
+            <p id="a1c-error" className="field-error">
+              {errors.a1c}
+            </p>
+          ) : null}
+        </div>
+      )}
 
       <button type="submit" disabled={isSubmitting} className="primary-button">
         {isSubmitting ? "Checking..." : "Check this meal"}
@@ -505,6 +545,42 @@ export function FoodCheckForm() {
             ? "1 free check left today"
             : `${tasterRemaining} free checks left today`}
         </p>
+      ) : null}
+
+      {/* First-run only: the guided first-check foods (ledger row
+          `onboarding-first-check`; segment-aware via the tour's on-device
+          answer). One tap fills the field; the user still runs the check.
+          BELOW the CTA on purpose — mobile-check.spec pins the submit
+          button's top edge above the fold (A11Y-01), so nothing optional may
+          add height above it. */}
+      {isFirstRun && input.food === "" && uiState.kind === "idle" ? (
+        <div data-testid="first-check-classics">
+          <p className="field-hint">
+            First time? Try one of the classics — three everyday breakfast
+            staples.
+          </p>
+          <div
+            className="chip-row"
+            role="group"
+            aria-label="Try one of the classics"
+          >
+            {classics.map((food) => (
+              <button
+                key={food}
+                type="button"
+                className="selectable-chip"
+                data-testid={`first-check-${food.replace(/\s+/g, "-")}`}
+                onClick={() => {
+                  handleChange("food", food);
+                  setInputMethod("text");
+                  foodInputRef.current?.focus();
+                }}
+              >
+                {food}
+              </button>
+            ))}
+          </div>
+        </div>
       ) : null}
 
       {uiState.kind === "submitting" ||

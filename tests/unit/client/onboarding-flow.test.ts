@@ -34,39 +34,30 @@ describe("nextStepAfterAttribution (single-source A1C rule)", () => {
 });
 
 describe("stepCounter (visible Step X of N)", () => {
-  it("counts 6 steps for a new user, in order, with no holes", () => {
+  it("counts 5 steps for a new user, in order, with no holes", () => {
     const path = [
       "welcome",
       "segment",
       "attribution",
       "a1c",
-      "expectations",
-      "first_check"
+      "expectations"
     ] as const;
     expect(path.map((s) => stepCounter(s, false))).toEqual([
-      "Step 1 of 6",
-      "Step 2 of 6",
-      "Step 3 of 6",
-      "Step 4 of 6",
-      "Step 5 of 6",
-      "Step 6 of 6"
-    ]);
-  });
-
-  it("counts 5 contiguous steps for a returning guest who skips a1c", () => {
-    const path = [
-      "welcome",
-      "segment",
-      "attribution",
-      "expectations",
-      "first_check"
-    ] as const;
-    expect(path.map((s) => stepCounter(s, true))).toEqual([
       "Step 1 of 5",
       "Step 2 of 5",
       "Step 3 of 5",
       "Step 4 of 5",
       "Step 5 of 5"
+    ]);
+  });
+
+  it("counts 4 contiguous steps for a returning guest who skips a1c", () => {
+    const path = ["welcome", "segment", "attribution", "expectations"] as const;
+    expect(path.map((s) => stepCounter(s, true))).toEqual([
+      "Step 1 of 4",
+      "Step 2 of 4",
+      "Step 3 of 4",
+      "Step 4 of 4"
     ]);
   });
 
@@ -83,8 +74,7 @@ describe("STEP_PROGRESS (goal-gradient bar)", () => {
       "segment",
       "attribution",
       "a1c",
-      "expectations",
-      "first_check"
+      "expectations"
     ] as const;
     for (const step of visible) {
       expect(STEP_PROGRESS[step]).toBeGreaterThan(0);
@@ -98,16 +88,9 @@ describe("STEP_PROGRESS (goal-gradient bar)", () => {
       "segment",
       "attribution",
       "a1c",
-      "expectations",
-      "first_check"
+      "expectations"
     ] as const;
-    const skipA1c = [
-      "welcome",
-      "segment",
-      "attribution",
-      "expectations",
-      "first_check"
-    ] as const;
+    const skipA1c = ["welcome", "segment", "attribution", "expectations"] as const;
     for (const path of [full, skipA1c]) {
       for (let i = 1; i < path.length; i++) {
         expect(STEP_PROGRESS[path[i]]).toBeGreaterThan(STEP_PROGRESS[path[i - 1]]);

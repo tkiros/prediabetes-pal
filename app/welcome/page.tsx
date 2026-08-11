@@ -111,7 +111,9 @@ export default function WelcomePage() {
 
       setState("done");
       track({ name: "signin_completed" });
-      router.push("/home");
+      // Land where the product is: the check page (type / say it / photo) —
+      // not the dashboard (owner testing 2026-08-11).
+      router.push("/check");
     } catch {
       setError("Something went wrong — please try again.");
       setState("ready");
@@ -143,8 +145,8 @@ export default function WelcomePage() {
               <p className="page-copy">
                 Your history and coach follow you across devices now.
               </p>
-              <Link className="primary-button link-button" href="/home">
-                Back to your day
+              <Link className="primary-button link-button" href="/check">
+                Check a meal
               </Link>
             </>
           ) : (
@@ -186,22 +188,32 @@ export default function WelcomePage() {
                 />
                 {/* Explicit, purpose-bound health-data consent. Unchecked by
                     default, blocking for storage, and separately revocable
-                    from Account without deleting login or subscription. */}
+                    from Account without deleting login or subscription.
+                    Layered per owner decision 2026-08-11: one plain sentence
+                    up front, the full counsel-drafted paragraph (panel review
+                    2026-07-12 §intake copy) in the expander DIRECTLY at the
+                    point of consent — never moved into the Terms, which would
+                    bundle Art.-9-style consent into a contract click. */}
                 <label htmlFor="welcome-consent" className="consent-label">
-                  I explicitly consent to Prediabetes Pal collecting and using my A1C
-                  and submitted meal information (health data) to provide meal
-                  checks, saved history, and progress
+                  I consent to Prediabetes Pal storing and using my A1C and the
+                  meals I submit (health data) to provide my meal checks, saved
+                  history, and progress
                   {longitudinalInsightsEnabled() ? ", and personalized insights" : ""}.
-                  Each submitted meal and A1C is sent to OpenAI, via the
-                  OpenRouter gateway, to generate a response; Prediabetes Pal stores my
-                  A1C and saved meal text in
-                  encrypted form. I can withdraw this consent and erase the
-                  saved health data from Account without deleting my login or
-                  subscription, and I can continue in guest mode. Read the{" "}
-                  <Link href="/privacy">Privacy Notice</Link> for recipients,
-                  retention, transfers, and rights.
                 </label>
               </div>
+              <details className="consent-details">
+                <summary>How my health data is handled</summary>
+                <p className="consent-details-copy">
+                  Each submitted meal and A1C is sent to OpenAI, via the
+                  OpenRouter gateway, to generate a response; Prediabetes Pal
+                  stores my A1C and saved meal text in encrypted form. I can
+                  withdraw this consent and erase the saved health data from
+                  Account without deleting my login or subscription, and I can
+                  continue in guest mode. Read the{" "}
+                  <Link href="/privacy">Privacy Notice</Link> for recipients,
+                  retention, transfers, and rights.
+                </p>
+              </details>
               {error ? <p className="field-error">{error}</p> : null}
               <button
                 type="button"

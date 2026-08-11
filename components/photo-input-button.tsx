@@ -14,11 +14,15 @@ import { IconCamera } from "./icons";
 export function PhotoInputButton({
   onDraft,
   onRequestOpen,
-  disabled
+  disabled,
+  premium
 }: {
   onDraft: (result: PhotoDraftResult) => void;
   onRequestOpen: () => boolean; // false → gated (parent redirects); true → open picker
   disabled?: boolean;
+  /** True → the chip carries a "Premium" tag: photo drafts are paid-only for
+   *  this session, and tapping goes to the wall before any camera opens. */
+  premium?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDrafting, setIsDrafting] = useState(false);
@@ -66,6 +70,11 @@ export function PhotoInputButton({
       >
         <IconCamera size={20} />
         {isDrafting ? "Reading your photo..." : "Snap a photo"}
+        {premium && !isDrafting ? (
+          <span className="premium-tag" data-testid="photo-premium-tag">
+            Premium
+          </span>
+        ) : null}
       </button>
     </>
   );
