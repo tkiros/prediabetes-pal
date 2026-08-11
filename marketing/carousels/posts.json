@@ -1,0 +1,86 @@
+[
+  {
+    "part": 1,
+    "caption": "Thought the safe breakfast was oatmeal? Here is what Prediabetes Pal actually asked. pt. 1 #prediabetes #prediabetic #a1c #bloodsugar #newlydiagnosed",
+    "cover": {
+      "eyebrow": "Built only for prediabetes",
+      "title": "Same dinner, two ways",
+      "photo": null
+    },
+    "pairs": [
+      {
+        "kicker": "Breakfast",
+        "before": {
+          "role": "Instead of",
+          "name": "instant oatmeal, flavoured packet",
+          "verdict": "careful",
+          "img": null
+        },
+        "after": {
+          "role": "Try",
+          "name": "plain oats with berries and walnuts",
+          "verdict": "clear",
+          "img": null
+        },
+        "note": "Same food, two descriptions. Prediabetes Pal asks which one you meant before it answers."
+      },
+      {
+        "kicker": "Lunch",
+        "before": {
+          "role": "Instead of",
+          "name": "a white roll on its own",
+          "verdict": "careful",
+          "img": null
+        },
+        "after": {
+          "role": "Try",
+          "name": "turkey on whole grain with a side salad",
+          "verdict": "clear",
+          "img": null
+        },
+        "note": "Protein and vegetables alongside are what move this description from one label to the other."
+      },
+      {
+        "kicker": "Dinner",
+        "before": {
+          "role": "Instead of",
+          "name": "rice by itself",
+          "verdict": "careful",
+          "img": null
+        },
+        "after": {
+          "role": "Try",
+          "name": "rice with chicken and broccoli",
+          "verdict": "clear",
+          "img": null
+        },
+        "note": "Prediabetes Pal reads the whole plate, not just the one item you were worried about."
+      },
+      {
+        "kicker": "The 4pm snack",
+        "before": {
+          "role": "Instead of",
+          "name": "apple juice",
+          "verdict": "careful",
+          "img": null
+        },
+        "after": {
+          "role": "Try",
+          "name": "an apple with peanut butter",
+          "verdict": "clear",
+          "img": null
+        },
+        "note": "Describe it in your own words. No weighing, no barcode, no portion sizes."
+      }
+    ],
+    "cta": {
+      "title": "Check tonight's dinner.",
+      "url": "prediabetespal.com",
+      "lines": [
+        "10 checks free on your first day.",
+        "No login. No card. Nothing to install."
+      ],
+      "shot": "../screenshots/result-safe-phone.png"
+    }
+  }
+]

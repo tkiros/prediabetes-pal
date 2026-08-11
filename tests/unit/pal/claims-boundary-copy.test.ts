@@ -319,7 +319,12 @@ const EXTRA_SOURCES = [
   "lib/server/billing/emails.ts",
   "docs/runbooks/marketing-assets.md",
   // The AI-crawler summary is user-facing copy served verbatim — scan it raw.
-  "public/llms.txt"
+  "public/llms.txt",
+  // Social carousel copy (marketing/carousels/). Whole-file, no fence needed:
+  // this JSON is nothing BUT slide strings and captions. Off-site assets are
+  // the one public surface no audit reached before — the same gap as F-25,
+  // where a rejected line survived in the brief because nobody scans a brief.
+  "marketing/carousels/posts.json"
 ];
 
 /**
