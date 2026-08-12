@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { DemoCheckCard, demoExampleEyebrow } from "../components/demo-check-card";
+import { DemoCheckCard } from "../components/demo-check-card";
 import {
   EXAMPLE_RESULTS,
   ExampleResultCard,
@@ -9,9 +9,7 @@ import {
 } from "../components/example-result-card";
 import { LandingIncludes } from "../components/landing-includes";
 import { LandingPause } from "../components/landing-pause";
-import { WeekStrip } from "../components/week-strip";
 import { TASTER_LIMIT } from "../lib/client/taster-store";
-import { dayKeyLocal, verdictWeekView, type WeekRisk } from "../lib/coach/days";
 import type { PalRisk } from "../lib/client/ui-state";
 import { FREE_DAILY_CHECKS } from "../lib/free-tier";
 import { photoInputEnabled } from "../lib/photo-input-flag";
@@ -271,36 +269,6 @@ function ShowpieceAnswer({ risk }: { risk: PalRisk }) {
 }
 
 /**
- * ⭐ Carousel panel four's week — the REAL `WeekStrip`, the REAL derivation,
- * fixture data. The /demo contract (fixture props through shipped components)
- * applied to the landing rather than to a screenshot: nothing is drawn, and if
- * `verdictWeekView` or the strip's markup changes, this panel changes with it.
- * That is the whole reason it is a live component and not a fifth PNG.
- *
- * ⛔ THE DATE IS FIXED, and it has to be. A `new Date()` here would make the
- * page's markup depend on the day it was rendered, which is a hydration
- * mismatch waiting to happen and an un-diffable page besides. Nothing renders
- * a date — the strip draws day LETTERS — so pinning one costs the reader
- * nothing. It is a Sunday-to-Saturday span so the letters read S M T W T F S.
- *
- * ⛔ TWO DAYS ARE DELIBERATELY UNCHECKED and one verdict is deliberately the
- * worst one. A week of seven perfect days would be the fabricated social proof
- * this page has refused from the start, and the strip's own promise is that
- * quiet days are never marked against you — which only shows if there are
- * quiet days to see.
- */
-const WEEK_FIXTURE_CHECKS: Array<{ createdAt: string; risk: WeekRisk }> = [
-  { createdAt: "2026-08-09T12:30:00", risk: "SAFE" },
-  { createdAt: "2026-08-10T19:10:00", risk: "HIGH" },
-  { createdAt: "2026-08-12T08:05:00", risk: "SAFE" },
-  { createdAt: "2026-08-14T13:20:00", risk: "MODERATE" },
-  { createdAt: "2026-08-15T12:45:00", risk: "SAFE" }
-];
-// Parsed as LOCAL time, and `dayKeyLocal` formats back to local, so the seven
-// keys are the same seven days in every timezone.
-const WEEK_FIXTURE_NOW = new Date("2026-08-15T12:00:00");
-
-/**
  * ⚖️ THE INPUT-METHODS QUESTION, SETTLED 2026-08-11 — read this before adding
  * the camera to any sentence on this page.
  *
@@ -343,13 +311,6 @@ export default function LandingPage() {
   // different true answer in each mode, and answering it wrong is the one
   // unforced error this audience never forgives.
   const trialMode = paywallMode() === "trial";
-  // Carousel panel four. Derived here rather than at the call site so the
-  // fixture and the real derivation stay one expression — see the note above.
-  const fixtureWeek = verdictWeekView(
-    WEEK_FIXTURE_CHECKS,
-    dayKeyLocal,
-    WEEK_FIXTURE_NOW
-  );
   // FAQ copy as data: the visible <details> list and the FAQPage JSON-LD
   // render from these same strings, so the schema can never drift from the
   // page. Scanned by the claims-boundary audit like every string here.
@@ -1052,37 +1013,43 @@ export default function LandingPage() {
           </div>
           <LandingIncludes
             features={includes}
-            /* ⚖️ FOUR OF THE FIVE PANELS ARE NOW A REAL SURFACE (2026-08-11).
-               The previous pass shipped two real cards and three typographic
-               statement panels, on the reading that /meals and /journey could
-               only be captured in their empty states and /account is behind
-               auth. Two of those three turned out to be reachable, by two
-               different routes, and neither needed a drawing:
+            /* ⚖️ THREE REAL SURFACES, TWO STATEMENTS (2026-08-11). The previous
+               pass shipped two real cards and three typographic panels, on the
+               reading that /meals and /journey could only be captured in their
+               empty states and /account is behind auth. One of those three was
+               wrong:
 
                  3 · /meals — the SIGNED-OUT page falls back to the on-device
                    store, so seeding localStorage before navigation renders the
                    real screen with fixture rows. The capture script does it;
                    this is the /demo contract (real component, fixture data)
-                   pointed at a route.
-                 4 · the week — `WeekStrip` takes plain props, so it needs no
-                   capture at all. It renders LIVE here, off the real
-                   derivation, which is strictly better than a screenshot: it
-                   cannot go stale, it stays sharp and responsive, and it costs
-                   no bytes.
+                   pointed at a route rather than at a component.
 
-               ⛔ PANEL FIVE STAYS A STATEMENT, on the owner's ruling, and the
-               reason is not that it is hard. A real /account capture needs
-               three API routes mocked and would put a delete-my-health-data
-               control on a marketing page. Its copy already says the controls
-               live on your account page rather than showing them, so the
-               statement and the sentence agree — which was never true of the
-               two panels above.
+               ⛔ THE TEST EVERY PANEL HERE HAS TO PASS IS THIS BLOCK'S OWN
+               LEDE: the reader can see all five on the FREE checks. A panel
+               that pictures a surface they cannot reach makes that sentence
+               false, and it is the same failure as naming the camera in
+               feature one — see the note above the component. Two panels fail
+               it and stay prose:
 
-               ⛔ PANELS 1-4 CARRY THE ILLUSTRATION LABEL, panel 5 does not
-               need one. AUD-008: anything that looks like product output must
-               say it is an example until an authorised live capture exists.
-               The cards take `labelled`; the week strip gets the same string
-               from the same function, never retyped. */
+                 4 · the week — `WeekStrip` takes plain props, so it briefly
+                   rendered live here. Reverted: the only shipped screen that
+                   draws it is /journey, which answers a signed-out reader with
+                   a sign-in wall, and in this paywall mode an account needs a
+                   card. The FEATURE is free — a guest week strip renders on
+                   /meals and is visible at the top of panel three's capture —
+                   but that particular drawing is not.
+                 5 · the account controls — owner ruling, and the reason is not
+                   difficulty. A real capture needs three API routes mocked and
+                   would put a delete-my-health-data control on a marketing
+                   page. Its copy already says the controls live on your account
+                   page rather than showing them, so panel and sentence agree.
+
+               ⛔ PANELS 1-2 CARRY THE ILLUSTRATION LABEL (AUD-008: anything
+               that looks like product output says it is an example until an
+               authorised live capture exists). Panel 3 does not need one — it
+               is a real screenshot of the real screen, and the only thing
+               fixture about it is the reader's own typed history. */
             panels={[
               <div key="safe" className="landing-phone landing-includes-phone">
                 <ExampleResultCard risk="SAFE" labelled />
@@ -1106,11 +1073,30 @@ export default function LandingPage() {
                   decoding="async"
                 />
               </div>,
-              <div key="habits" className="landing-phone landing-includes-phone">
-                <div className="landing-includes-week">
-                  <p className="result-eyebrow">{demoExampleEyebrow(null)}</p>
-                  <WeekStrip week={fixtureWeek} isDay0={false} />
-                </div>
+              /* ⛔ THIS PANEL BRIEFLY RENDERED THE REAL `WeekStrip` AND MUST
+                 NOT AGAIN under this block's current lede. It is a live
+                 component taking plain props, so it looked like the cheapest
+                 real surface on the page — but the only shipped screen that
+                 draws it is /journey, and /journey answers a signed-out reader
+                 with a sign-in wall (verified 2026-08-11). In the shipped
+                 paywall mode an account needs a card, so the artifact sits
+                 behind one while the lede above promises the reader sees all
+                 five features on the FREE checks. Same failure as naming the
+                 camera in feature one, one panel over.
+                 ⚠️ The FEATURE is genuinely free — a guest week strip renders
+                 on /meals, and it is visible at the top of panel three's
+                 capture. It is the /journey DRAWING that is not free, which is
+                 why this is a statement rather than that picture.
+                 (A plain block comment, not a braced one: this is an ARRAY
+                 literal, and the braced form is JSX-children syntax.) */
+              <div key="habits" className="landing-includes-note">
+                <p className="landing-includes-note-lead">
+                  A week of answers, not a week of numbers.
+                </p>
+                <p>
+                  No calorie total, no macro split, no grade. The only thing
+                  that accumulates is the meals you already asked about.
+                </p>
               </div>,
               <div key="privacy" className="landing-includes-note">
                 <p className="landing-includes-note-lead">

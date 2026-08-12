@@ -3106,16 +3106,6 @@ button.inline-link {
   border-radius: clamp(14px, 1.8vw, 24px);
 }
 
-/* Panel four's surface. The week strip is a real app component rendered live,
-   so it arrives carrying the dashboard's own classes and no card around it —
-   this supplies the card and nothing else, at the frame's inner radius. */
-.landing-includes-week {
-  display: grid;
-  gap: 14px;
-  border-radius: clamp(14px, 1.8vw, 24px);
-  padding: clamp(18px, 2.2vw, 24px);
-  background: var(--surface);
-}
 
 /* This used to be a shared rule for the page's supporting prose — the scope
    note and the sources footnote at one weight, body colour rather than a
@@ -3427,8 +3417,20 @@ button.inline-link {
 
 /* Its own row, rule-separated. `min-height` is the design's and it is what
    keeps three meals of one, two and three lines from stepping the verdict rows
-   out of line with each other at desk width. */
+   out of line with each other at desk width.
+
+   ⚠️ CENTRED, and that is not decoration — it is what makes the floor
+   survivable STACKED. The min-height buys alignment ACROSS COLUMNS, and at
+   375px there are no columns: the third meal is one line, so a top-aligned row
+   left ~23px of blank between the text and the rule and read as a rendering
+   fault. Centring splits it either side, where it reads as an airy row.
+   ⛔ A min-width media query would be the other fix and is worse: this grid is
+   `auto-fit` precisely so it has no hand-picked breakpoint, and the viewport
+   where it goes two-up depends on the frame's padding — a guessed number would
+   be wrong in the band around it in one direction or the other. */
 .landing-verdict-meal {
+  display: flex;
+  align-items: center;
   margin: 0;
   padding: 24px 26px;
   border-bottom: 1px solid var(--border-soft);

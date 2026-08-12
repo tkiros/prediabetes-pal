@@ -412,37 +412,51 @@ function-specific evidence review plus a written owner decision to enable it.
 Production has it enabled. The record and reality disagree; that predates this
 session and only the owner can reconcile it.
 
-## Item 1 — carousel panels: 4 of 5 are now a real surface
+## Item 1 — carousel panels: 3 of 5 are a real surface
 
 | # | Panel | How |
 |---|---|---|
 | 1 | Check your meal | real `ExampleResultCard`, live, framed |
 | 2 | Make a better choice | real `ExampleResultCard`, live, framed |
 | 3 | Learn your patterns | **real `/meals` screen**, captured with seeded localStorage |
-| 4 | Build better habits | **real `WeekStrip`, rendered live** off `verdictWeekView` |
-| 5 | Stay in control | statement panel — owner ruling, see below |
+| 4 | Build better habits | statement panel — see the reverted attempt below |
+| 5 | Stay in control | statement panel — owner ruling |
 
-Two routes, neither of them a drawing:
+**Panel 3.** The signed-out `/meals` page falls back to the on-device store
+(`fetchHistoryPage` returns `guest`, then the page reads `historyStore.all()`),
+so seeding `pal.history.v1` via `addInitScript` before navigation renders the
+real screen with fixture rows. This is the `/demo` contract — real component,
+fixture data — pointed at a route instead of a component.
 
-- **Panel 3.** The signed-out `/meals` page falls back to the on-device store
-  (`fetchHistoryPage` returns `guest`, then the page reads `historyStore.all()`),
-  so seeding `pal.history.v1` via `addInitScript` before navigation renders the
-  real screen with fixture rows. This is the `/demo` contract — real component,
-  fixture data — pointed at a route instead of a component.
-- **Panel 4.** `WeekStrip` takes plain props, so it needed no capture at all. It
-  renders live from the real derivation with a fixed date. Strictly better than
-  a screenshot: it cannot go stale, stays sharp and responsive, and costs no
-  bytes. Two days are deliberately unchecked and one verdict is deliberately the
-  worst one — a flawless week would be fabricated social proof, and the strip's
-  own promise (quiet days are never marked against you) only shows if there are
-  quiet days to see.
+### ⚠️ Panel 4 was shipped real and then reverted. Read this before trying again.
+
+`WeekStrip` takes plain props, so it needed no capture at all — it rendered live
+off `verdictWeekView` with a fixed date, and it looked like the cheapest real
+surface on the page. It is not usable here.
+
+**The test every panel in this block has to pass is the block's own lede:** *"you
+can see all of them on the free checks before you decide anything."* The only
+shipped screen that draws `WeekStrip` is `/journey`, and a signed-out reader gets
+**"Sign in to see your journey"** (verified against a production build,
+2026-08-11). In the trial paywall mode an account needs a card. So the panel
+would have pictured a surface behind a card wall under a sentence promising
+free — the same failure as naming the camera in feature one, one panel over.
+
+⚠️ **The FEATURE is genuinely free.** A guest week strip does render on `/meals`
+— it is visible at the top of panel three's capture — but it is a different
+implementation (`.week-strip` on the meals page vs `.dash-week` in `WeekStrip`).
+It is the `/journey` **drawing** that is not free, not the capability.
+
+This is worth recording because the mistake was invisible to every gate: it
+typechecked, linted, passed 2,229 tests, passed axe, and measured within budget.
+Nothing in this repo tests "is the pictured surface reachable by the reader this
+page is addressing." The only thing that catches it is asking.
 
 **Panel 5 stays prose, on the owner's ruling, and the reason is not difficulty.**
 A real `/account` capture needs three API routes mocked and would put a
 delete-my-health-data control on a marketing page. Its copy already says the
 controls *live on your account page* rather than showing them, so panel and
-sentence agree — which was never true of panels 3 and 4. Recorded here as the
-Definition of Done allows.
+sentence agree. Recorded here as the Definition of Done allows.
 
 ⚠️ The element-shot-of-`/demo` problem is unchanged and still real: the app's
 fixed chrome paints over a captured element. What changed is that neither
@@ -525,7 +539,7 @@ All run against a production build with the deployed flags
 (`NEXT_PUBLIC_PHOTO_INPUT=1 PHOTO_INPUT_ENABLED=1`).
 
 ```
-lint          0 errors (3 pre-existing <img> warnings, now 3 not 2 — panel 3)
+lint          0 errors (3 <img> warnings: 2 pre-existing + panel 3's capture)
 typecheck     pass
 test          191 files | 2,229 passed | 2 skipped | 0 failed   (+4: the new capture pins)
 contract      9/9 validators
@@ -555,8 +569,18 @@ to play with and should re-measure.
 
 - Panel 5 is a statement panel by ruling, not by limitation. If it should become
   a real screen, the path is three `page.route` mocks in the capture script.
-- The legal-record vs production disagreement on photo input (above) is the
-  owner's to reconcile.
+- Panel 4 needs a guest-reachable week strip before it can be a picture. The
+  cheapest honest route is a second crop of the same `/meals` capture; the
+  reason it was not done that way is that both crops share the page header and
+  would read as the same screenshot twice.
+- **The legal-record vs production disagreement on photo input is the owner's to
+  reconcile — and it is COUPLED to `app-check.png`.** That capture shows three
+  input chips unconditionally, which is correct for production today. If the
+  flag is turned off to match `owner-risk-launch-decision-5f6abcb.md`, the
+  landing ships a picture of a camera the build does not have — the
+  unadvertised-feature gate, invisible to every test because it is pixels. ⛔
+  **Turning `NEXT_PUBLIC_PHOTO_INPUT` off requires re-running
+  `scripts/capture-landing-art.mjs` in the same change.**
 - Steps 2 and 3 carry no phone frame, for the reason given. If the owner wants
   step 2 framed anyway, the honest way is to render `DemoCheckCard` in the app's
   own layout there rather than framing the marketing table — which would
