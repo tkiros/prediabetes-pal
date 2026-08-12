@@ -182,31 +182,57 @@ export function ExampleResultCard({
  * grid carries the boundary line once for all three — three copies of it is
  * the fine-print pattern AUD-008 argues against. Do not add one here without
  * deleting the note, or the page states the same compliance line four times.
+ *
+ * ── 2026-08-11, the design file's §7 shape ────────────────────────────
+ * Owner ruling: the head of this block was centred and shortened in the same
+ * pass, and the cards themselves were left behind. They catch up here. What
+ * changed, against `Revora Landing(2).html` §7:
+ *
+ *  - The verdict is a ROUND DOT plus the word, not a tinted band with an icon.
+ *    The band is what made three cards read as three coloured boxes rather
+ *    than as one layout answering three ways, which is the whole claim of the
+ *    heading above them.
+ *  - ⛔ DROPPING THE ICON IS SAFE HERE AND WOULD NOT BE ON THE WEEK STRIP.
+ *    DESIGN.md's shape-carries-the-signal rail exists because `week-strip.tsx`
+ *    draws a day as a mark with NO text beside it, so colour would be the only
+ *    channel. Here the verdict word is set at 20px directly against the dot —
+ *    the text is the signal and the colour is reinforcement, so a reader who
+ *    sees no colour loses nothing.
+ *  - The meal gets its own rule-separated row; everything else shares one
+ *    padded body, so the note can bottom-align (`margin: auto 0 0`) and the
+ *    three cards line up along their last line at desk width.
+ *
+ * ⛔ Still no hexes. The design's per-card colour is the same risk token this
+ * file already read for the top rule it replaces.
  */
 export function LandingVerdictCard({ risk }: { risk: PalRisk }) {
   const example = EXAMPLE_RESULTS[risk];
-  const VerdictIcon = RISK_ICONS[risk];
   return (
     <article className="landing-verdict-card" data-risk={risk}>
       <p className="landing-verdict-meal">{example.meal}</p>
-      {/* The one tinted row, exactly as on the product card (DESIGN.md §10):
-          verdict colour is information, so it appears on the top rule and
-          here, nowhere else. */}
-      <p className="landing-verdict-signal" data-risk={risk}>
-        <VerdictIcon size={20} />
-        {RISK_LABELS[risk]}
-      </p>
-      <p className="landing-verdict-why">{example.why}</p>
-      {example.adjustment ? (
-        <p className="landing-verdict-try">
-          <strong>Adjustment:</strong> {example.adjustment}
+      <div className="landing-verdict-body">
+        {/* The dot is the only place verdict colour appears inside the card
+            now — the border carries it around the outside (DESIGN.md §10:
+            verdict colour is information, so it is spent where it informs and
+            nowhere else). aria-hidden because the word beside it says the
+            same thing, and a decorative span announced before every verdict is
+            noise. */}
+        <p className="landing-verdict-signal">
+          <span className="landing-verdict-dot" aria-hidden="true" />
+          {RISK_LABELS[risk]}
         </p>
-      ) : null}
-      {example.swap ? (
-        <p className="landing-verdict-try">
-          <strong>Swap:</strong> {example.swap}
-        </p>
-      ) : null}
+        <p className="landing-verdict-why">{example.why}</p>
+        {example.adjustment ? (
+          <p className="landing-verdict-try">
+            <strong>Adjustment:</strong> {example.adjustment}
+          </p>
+        ) : null}
+        {example.swap ? (
+          <p className="landing-verdict-try">
+            <strong>Swap:</strong> {example.swap}
+          </p>
+        ) : null}
+      </div>
     </article>
   );
 }

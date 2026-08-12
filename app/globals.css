@@ -2021,15 +2021,32 @@ button.inline-link {
   min-width: 0;
 }
 
-/* ⛔ No border, radius or shadow reaches the card itself — this is the FRAME
-   around it, and the card keeps its own recipe (landing-design-guards GUARD 1
-   scans every .landing selector for exactly that). */
-.landing-showpiece-phone {
+/* ── The phone frame ─────────────────────────────────────────
+   ⚖️ GENERALISED 2026-08-11, owner ruling: every app screen on this page reads
+   as being IN a phone. This recipe was the hero's alone; the steps' capture
+   and the carousel's panels now share it.
+
+   ⛔ NO BORDER, RADIUS OR SHADOW REACHES THE CARD ITSELF. This is the FRAME
+   around it and the card keeps its own recipe — landing-design-guards GUARD 1
+   scans every `.landing` selector for exactly that, and supplying those three
+   properties without naming `.result-card` is the whole point of the wrapper.
+   If a child's corners need to follow the frame, give the CHILD its own inner
+   radius; never reach in from here. */
+.landing-phone {
   width: 100%;
+  border-radius: clamp(22px, 2.8vw, 34px);
+  padding: clamp(8px, 1vw, 12px);
+  background: var(--text-strong);
+}
+
+/* The hero's frame stays the biggest one on the page. It is the showpiece, and
+   a step illustration or a carousel panel drawn at the same size competes with
+   it rather than supporting it. Later in the file than `.landing-phone` on
+   purpose — both are (0,1,0), so source order is what lets this win. */
+.landing-showpiece-phone {
   max-width: 380px;
   border-radius: clamp(28px, 3.4vw, 40px);
   padding: clamp(10px, 1.2vw, 14px);
-  background: var(--text-strong);
 }
 
 .landing-showpiece-aside {
@@ -2674,14 +2691,28 @@ button.inline-link {
 
 /* ⚠️ Capped, the same reachability reason as the showpiece's copy of this
    capture: at full column width a 390x700 shot is ~600px tall on a phone,
-   inside the page's longest section. Re-measure before raising it. */
+   inside the page's longest section. Re-measure before raising it.
+
+   ⚠️ THE CAP CAME DOWN WHEN THE FRAME WENT ON (2026-08-11), from
+   clamp(210px, 24vw, 272px), by about twice the frame's own padding. That is
+   deliberate arithmetic, not taste: a frame adds its padding to the rendered
+   width at every breakpoint, so keeping the old cap would have widened the
+   art and grown the page's tallest section. Framed, the shot occupies the
+   space the bare image used to. Raising one of these two numbers without
+   lowering the other is what a re-measure will catch. */
+.landing-step-phone {
+  max-width: clamp(190px, 22vw, 248px);
+}
+
+/* The image's own corners, so they follow the frame's rather than squaring off
+   inside it. Not `.landing-phone img` — this page has exactly one framed
+   image and a generic rule would also catch anything a later panel puts in a
+   frame. */
 .landing-step-art--shot img {
   display: block;
   width: 100%;
-  max-width: clamp(210px, 24vw, 272px);
   height: auto;
-  border: 1px solid var(--border-soft);
-  border-radius: 22px;
+  border-radius: clamp(14px, 1.8vw, 24px);
 }
 
 /* The one step with no artifact — its copy hands off to the three cards in the
@@ -3057,6 +3088,35 @@ button.inline-link {
   min-width: 0;
 }
 
+/* ⚖️ THE CAROUSEL'S PANELS SIT IN THE PHONE FRAME TOO (2026-08-11 ruling).
+   Narrower than the hero's 380px on purpose — this column supports the tab
+   list beside it, and at the hero's size it reads as a second showpiece. */
+.landing-includes-phone {
+  max-width: 330px;
+  margin-inline: auto;
+}
+
+/* A captured screen fills its frame; the frame supplies the outer corners and
+   this supplies the inner ones. Scoped to the framed panel rather than to
+   `.landing-phone img` so it cannot reach the hero or the steps. */
+.landing-includes-phone img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: clamp(14px, 1.8vw, 24px);
+}
+
+/* Panel four's surface. The week strip is a real app component rendered live,
+   so it arrives carrying the dashboard's own classes and no card around it —
+   this supplies the card and nothing else, at the frame's inner radius. */
+.landing-includes-week {
+  display: grid;
+  gap: 14px;
+  border-radius: clamp(14px, 1.8vw, 24px);
+  padding: clamp(18px, 2.2vw, 24px);
+  background: var(--surface);
+}
+
 /* This used to be a shared rule for the page's supporting prose — the scope
    note and the sources footnote at one weight, body colour rather than a
    de-emphasised legal grey, because neither is fine print. The group is down
@@ -3311,6 +3371,11 @@ button.inline-link {
    The Clear card has no Try row, because the engine cannot produce one for a
    SAFE verdict (F-04) — the layout has to survive that, and that survival is
    the argument the block exists to make. */
+/* ⚠️ NO `align-items: start` any more. The cards are flex columns whose last
+   paragraph bottom-aligns, and that only means anything if the three cards are
+   the same height — which is the default `stretch` this used to override. At
+   375px they stack one per row, so each row is still sized by its own content
+   and the change costs nothing there. */
 .landing-verdicts {
   display: grid;
   gap: 22px;
@@ -3318,82 +3383,130 @@ button.inline-link {
      in the middle, stacked on a phone — without a hand-picked breakpoint,
      which is what the fixed 3-column media query here used to be. */
   grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-  align-items: start;
 }
 
-/* ⚠️ `--surface`, not `--surface-muted`. These sat on a white SHEET until the
+/* ⚖️ THE DESIGN FILE'S CARD, 2026-08-11 — `Revora Landing(2).html` §7. The
+   2026-08-11 pass centred and shortened this block's HEAD and left the cards
+   on the old recipe; this is the other half of that ruling.
+
+   What changed: the coloured 4px top rule became a 1.5px border on all four
+   sides in the same colour, the radius went 16 → 26px, and the tinted verdict
+   band went away entirely (see the note in components/example-result-card.tsx
+   for why losing the icon with it is safe here and would not be on the week
+   strip).
+
+   ⚠️ `--surface`, not `--surface-muted`. These sat on a white SHEET until the
    v4 order moved the block to the page plane, and a muted card is a card that
    has stepped back from the sheet behind it. On `--page-bg` that same step
    lands within a hair of the ground and the three cards stop reading as
    objects. White is card material on the page plane — that is the whole rule.
-   Same value the design file draws. */
+   It is also where the design's own near-white card colour maps: this palette
+   is cool where the design file is warm, and the mapping has been token-wise
+   rather than hex-wise since 2026-08-06.
+
+   ⛔ This is the FLAT family. It does not name `.result-card` or
+   `.surface-card`, which is what lets it declare a border and a radius at all
+   — landing-design-guards GUARD 1 fails the build for any `.landing` selector
+   that shapes those two recipes. */
 .landing-verdict-card {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   background: var(--surface);
-  border: 1px solid var(--border-soft);
-  /* The 4px rule is the card's whole verdict signal at a glance — it is what
-     lets the reader see three different answers before reading a word. */
-  border-top: 4px solid var(--safe-border);
-  border-radius: 16px;
+  border: 1.5px solid var(--safe-border);
+  border-radius: 26px;
   overflow: hidden;
 }
 
 .landing-verdict-card[data-risk="MODERATE"] {
-  border-top-color: var(--moderate-border);
+  border-color: var(--moderate-border);
 }
 
 .landing-verdict-card[data-risk="HIGH"] {
-  border-top-color: var(--high-border);
+  border-color: var(--high-border);
 }
 
+/* Its own row, rule-separated. `min-height` is the design's and it is what
+   keeps three meals of one, two and three lines from stepping the verdict rows
+   out of line with each other at desk width. */
 .landing-verdict-meal {
   margin: 0;
-  padding: 18px 20px;
-  color: var(--text-strong);
+  padding: 24px 26px;
+  border-bottom: 1px solid var(--border-soft);
+  min-height: 96px;
+  color: var(--text-body);
   font-size: 17px;
-  font-weight: 600;
   line-height: 1.5;
 }
 
-/* The ONE tinted row on the card (DESIGN.md §10), same rule the product's own
-   card follows: verdict colour is information, so it appears on the top rule
-   and here, and nowhere else. */
+/* `flex: 1` so the body absorbs the card's spare height, which is what gives
+   the last paragraph something to push off. */
+.landing-verdict-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px 26px;
+}
+
 .landing-verdict-signal {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin: 0;
-  padding: 14px 20px;
-  border-top: 1px solid var(--border-soft);
-  background: var(--safe-bg);
-  color: var(--safe-text);
-  font-size: 18px;
-  font-weight: 700;
+  color: var(--text-strong);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
-.landing-verdict-signal[data-risk="MODERATE"] {
-  background: var(--moderate-bg);
-  color: var(--moderate-text);
+/* Colour is a RISK TOKEN keyed off the card's data-risk, never a hex at the
+   call site — the same vocabulary the hero's floating answers read. */
+.landing-verdict-dot {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--safe-border);
 }
 
-.landing-verdict-signal[data-risk="HIGH"] {
-  background: var(--high-bg);
-  color: var(--high-text);
+.landing-verdict-card[data-risk="MODERATE"] .landing-verdict-dot {
+  background: var(--moderate-border);
 }
 
-.landing-verdict-why,
-.landing-verdict-try {
+.landing-verdict-card[data-risk="HIGH"] .landing-verdict-dot {
+  background: var(--high-border);
+}
+
+.landing-verdict-why {
   margin: 0;
-  padding: 18px 20px;
-  border-top: 1px solid var(--border-soft);
   color: var(--text-body);
   font-size: 16.5px;
   line-height: 1.55;
 }
 
+/* `margin: auto 0 0` is the design's, and it is the reason the body is a flex
+   column: it pushes this paragraph to the card's floor so the three cards
+   align along their last line instead of their first.
+
+   ⚠️ 16px, NOT the design file's 15px. This page has a 16px floor for
+   everything except tracked uppercase labels (DESIGN.md rail 10), and the
+   sibling `.landing-verdict-note` block below carries the same instruction in
+   as many words. Nothing goes red if this ships at 15 — the duplicate
+   font-size pin counts declarations per selector and sees one either way — so
+   the deviation is recorded here instead. It is the only value in §7 that sits
+   under the floor. */
+.landing-verdict-try {
+  margin: auto 0 0;
+  color: var(--text-muted);
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.55;
+}
+
 .landing-verdict-try strong {
-  color: var(--text-strong);
+  color: var(--text-body);
+  font-style: normal;
 }
 
 /* The design's closing row: the illustration note on the left, the pill on the

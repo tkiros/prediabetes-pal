@@ -13,6 +13,16 @@
  *   npm run dev &
  *   node scripts/measure-landing.mjs            # -> human report
  *   node scripts/measure-landing.mjs --json     # -> machine record
+ *   node scripts/measure-landing.mjs --tab=2    # -> with carousel panel 3 open
+ *
+ * ⚠️ ONE TAB STATE PER RUN. The "what does it include" block is a tab list
+ * whose panels are different heights, and at 375px the panel sits INSIDE a
+ * desert — so the default reading only proves the page is legal with panel one
+ * showing. `--tab=N` (0-based, matching the DOM ids) opens another panel before
+ * the walk. Measure the TALLEST one before believing a green result; as of
+ * 2026-08-11 that is `--tab=2`, the meals capture. Without this flag the
+ * tallest panel was measured by hand and the next session could not reproduce
+ * the number.
  *
  * Definitions, stated so a later run can be compared to this one:
  *   EXIT     an <a href="/check"> inside <main> — the ways into the product.
@@ -36,6 +46,21 @@ await page.goto(URL, { waitUntil: "networkidle", timeout: 180_000 });
 
 // Real fonts, or every measurement is of a fallback face at the wrong metrics.
 await page.evaluate(() => document.fonts.ready);
+
+// Open a non-default carousel panel, if asked. Before the scroll walk, so the
+// walk measures the layout the reader would actually have.
+const tabArg = process.argv.find((a) => a.startsWith("--tab="));
+if (tabArg) {
+  const index = Number(tabArg.slice("--tab=".length));
+  const tab = page.locator(`#includes-tab-${index}`);
+  if ((await tab.count()) === 0) {
+    console.error(`no carousel tab #includes-tab-${index} on this page`);
+    process.exit(2);
+  }
+  await tab.click();
+  // The panel swap animates its own body open; let it settle before measuring.
+  await page.waitForTimeout(600);
+}
 
 // Walk the page once so any IntersectionObserver entrance has played. The
 // landing's one animation is transform/opacity only and cannot change layout,

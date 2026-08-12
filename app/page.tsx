@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { DemoCheckCard } from "../components/demo-check-card";
+import { DemoCheckCard, demoExampleEyebrow } from "../components/demo-check-card";
 import {
   EXAMPLE_RESULTS,
   ExampleResultCard,
@@ -9,7 +9,9 @@ import {
 } from "../components/example-result-card";
 import { LandingIncludes } from "../components/landing-includes";
 import { LandingPause } from "../components/landing-pause";
+import { WeekStrip } from "../components/week-strip";
 import { TASTER_LIMIT } from "../lib/client/taster-store";
+import { dayKeyLocal, verdictWeekView, type WeekRisk } from "../lib/coach/days";
 import type { PalRisk } from "../lib/client/ui-state";
 import { FREE_DAILY_CHECKS } from "../lib/free-tier";
 import { photoInputEnabled } from "../lib/photo-input-flag";
@@ -268,6 +270,63 @@ function ShowpieceAnswer({ risk }: { risk: PalRisk }) {
   );
 }
 
+/**
+ * ⭐ Carousel panel four's week — the REAL `WeekStrip`, the REAL derivation,
+ * fixture data. The /demo contract (fixture props through shipped components)
+ * applied to the landing rather than to a screenshot: nothing is drawn, and if
+ * `verdictWeekView` or the strip's markup changes, this panel changes with it.
+ * That is the whole reason it is a live component and not a fifth PNG.
+ *
+ * ⛔ THE DATE IS FIXED, and it has to be. A `new Date()` here would make the
+ * page's markup depend on the day it was rendered, which is a hydration
+ * mismatch waiting to happen and an un-diffable page besides. Nothing renders
+ * a date — the strip draws day LETTERS — so pinning one costs the reader
+ * nothing. It is a Sunday-to-Saturday span so the letters read S M T W T F S.
+ *
+ * ⛔ TWO DAYS ARE DELIBERATELY UNCHECKED and one verdict is deliberately the
+ * worst one. A week of seven perfect days would be the fabricated social proof
+ * this page has refused from the start, and the strip's own promise is that
+ * quiet days are never marked against you — which only shows if there are
+ * quiet days to see.
+ */
+const WEEK_FIXTURE_CHECKS: Array<{ createdAt: string; risk: WeekRisk }> = [
+  { createdAt: "2026-08-09T12:30:00", risk: "SAFE" },
+  { createdAt: "2026-08-10T19:10:00", risk: "HIGH" },
+  { createdAt: "2026-08-12T08:05:00", risk: "SAFE" },
+  { createdAt: "2026-08-14T13:20:00", risk: "MODERATE" },
+  { createdAt: "2026-08-15T12:45:00", risk: "SAFE" }
+];
+// Parsed as LOCAL time, and `dayKeyLocal` formats back to local, so the seven
+// keys are the same seven days in every timezone.
+const WEEK_FIXTURE_NOW = new Date("2026-08-15T12:00:00");
+
+/**
+ * ⚖️ THE INPUT-METHODS QUESTION, SETTLED 2026-08-11 — read this before adding
+ * the camera to any sentence on this page.
+ *
+ * The owner asked for all three input options to appear on the check screen.
+ * The 2026-08-11 handoff said that was impossible because photo assist is off;
+ * that was read off a LOCAL env and is wrong about the deployed build, where
+ * both gates are set and `/api/check/photo-draft` answers 200. So the control
+ * genuinely is on the shipped screen, and the CAPTURE at step one shows all
+ * three — which is what the ask was about.
+ *
+ * ⛔ THE COPY STILL SAYS TWO, AND THAT IS NOT AN OVERSIGHT.
+ * `components/food-check-form.tsx` passes `premium={mode === "trial" &&
+ * !entitled}`: in the shipped paywall mode a photo draft is paid-only, the
+ * chip carries a Premium tag, and the route 402s a free session before any
+ * camera opens. This page sells the FREE checks — the includes lede promises
+ * in as many words that a reader can see all five features on them — so
+ * folding the camera into that clause would advertise, as free, the one input
+ * method a free reader cannot use. That is the unadvertised-feature gate
+ * pointing the other way, and it is why the sentence stays at the two methods
+ * every reader actually gets.
+ *
+ * The camera is named in exactly one place instead: the photo FAQ below, which
+ * is already gated on the same build flag and is the only sentence with room
+ * to carry the qualifier. The capture shows the Premium tag as drawn, so the
+ * picture and the words agree.
+ */
 export default function LandingPage() {
   const androidWaitlist = storeWaitlistUrl("android");
   const iosWaitlist = storeWaitlistUrl("ios");
@@ -284,6 +343,13 @@ export default function LandingPage() {
   // different true answer in each mode, and answering it wrong is the one
   // unforced error this audience never forgives.
   const trialMode = paywallMode() === "trial";
+  // Carousel panel four. Derived here rather than at the call site so the
+  // fixture and the real derivation stay one expression — see the note above.
+  const fixtureWeek = verdictWeekView(
+    WEEK_FIXTURE_CHECKS,
+    dayKeyLocal,
+    WEEK_FIXTURE_NOW
+  );
   // FAQ copy as data: the visible <details> list and the FAQPage JSON-LD
   // render from these same strings, so the schema can never drift from the
   // page. Scanned by the claims-boundary audit like every string here.
@@ -322,8 +388,21 @@ export default function LandingPage() {
     ...(photoEnabled
       ? [
           {
+            // ⛔ THE PRICE CLAUSE IS LOAD-BEARING, not politeness. This answer
+            // shipped describing the camera with nothing about what it costs,
+            // while the control it describes carries a Premium tag on the
+            // screen and its route 402s a free session
+            // (components/food-check-form.tsx). A reader who met the camera
+            // here and the wall there would have been told half of it. The
+            // clause branches on the same paywall flag the account FAQ does,
+            // because in the other mode the gate is not there to describe.
+            // ⛔ Names the TIER, never an amount — this page states no price
+            // anywhere (§0.2 #4), and "Premium" is the same word the cancel
+            // answer already uses.
             q: "How does the photo check work?",
-            a: "Your photo becomes a draft list of what's on the plate. You review and confirm the words before anything is checked. The photo never skips your judgment. Photos are not kept."
+            a: trialMode
+              ? "A photo check is part of Premium — your free checks are typed or spoken. The photo becomes a draft list of what's on the plate, and you review and confirm the words before anything is checked. The photo never skips your judgment. Photos are not kept."
+              : "Your photo becomes a draft list of what's on the plate. You review and confirm the words before anything is checked. The photo never skips your judgment. Photos are not kept."
           }
         ]
       : []),
@@ -331,8 +410,10 @@ export default function LandingPage() {
       // 🆕 2026-08-06, the v2 design's one added question. "Say it" is a
       // shipped affordance, not an aspiration — .voice-input in globals.css
       // and inputMethod: z.enum(["text","voice","photo"]) in the history
-      // handler. Do not let it drift into naming photo input, which is
-      // gated above and off.
+      // handler. Do not let it drift into naming photo input unqualified: the
+      // control ships, but a photo draft is paid-only in this mode, and this
+      // answer is about the minimum a reader has to do. The photo FAQ above
+      // carries the camera, with its price named.
       q: "What do I actually have to do?",
       a: "Describe the meal in your own words — type it or say it. No weighing, no barcode, no portion sizes, no food database to search. If the description is ambiguous, Prediabetes Pal asks one question."
     },
@@ -368,9 +449,12 @@ export default function LandingPage() {
     {
       title: "Check your meal.",
       lede: "Know where a plate lands before you eat it",
-      body: `Describe what you are about to eat — ${
-        photoEnabled ? "type it, say it, or photograph it" : "type it or say it"
-      } — and get one answer in plain language: ${RISK_LABELS.SAFE}, ${RISK_LABELS.MODERATE}, or ${RISK_LABELS.HIGH}.`
+      // ⛔ TWO METHODS, UNCONDITIONALLY. This used to branch on the photo flag
+      // and name the camera as a third. It cannot: this block's own lede
+      // promises the reader sees all five features on the FREE checks, and a
+      // photo draft is paid-only in the shipped mode. See the note above the
+      // component.
+      body: `Describe what you are about to eat — type it or say it — and get one answer in plain language: ${RISK_LABELS.SAFE}, ${RISK_LABELS.MODERATE}, or ${RISK_LABELS.HIGH}.`
     },
     {
       title: "Make a better choice.",
@@ -579,7 +663,11 @@ export default function LandingPage() {
               {/* Restates the marquee's ledgered "Nothing to log". */}
               <span className="landing-showpiece-chip">no logging</span>
             </div>
-            <div className="landing-showpiece-phone">
+            {/* `landing-phone` is the shared frame recipe (2026-08-11); the
+                showpiece modifier only makes this instance the biggest one on
+                the page. See globals.css — the frame may never name the card
+                class it wraps. */}
+            <div className="landing-phone landing-showpiece-phone">
               <ExampleResultCard risk="SAFE" labelled withFineprint />
             </div>
             <div className="landing-showpiece-aside">
@@ -931,15 +1019,12 @@ export default function LandingPage() {
             ⭐ NEW 2026-08-11. See the `includes` note above for the three
             design bodies that were rewritten to match what this build ships.
 
-            ⛔ ONE ART SLOT, AND IT IS THE REAL COMPONENT, NOT A SCREENSHOT.
-            The design draws a five-shot carousel (input, swap, history, weekly
-            guidance, privacy) behind clickable feature cards. Three of those
-            five screens cannot be captured honestly: /meals and /journey render
-            from local history and an API, so a headless capture gets their
-            empty states, and /account is behind auth. This page's standing rule
-            since 2026-08-05 is that a drawn screen means "the product's screen
-            goes here" — so rather than illustrate three surfaces, it shows the
-            one artifact the page does not already carry, and shows it live.
+            ⛔ FOUR REAL SURFACES AND ONE STATEMENT — see the note at the
+            `panels` prop for which is which and why the fifth stays prose.
+            The design draws five phone mockups with invented product output;
+            what ships is four real surfaces in the design's frames, reached
+            two different ways (a seeded capture for the route, live props for
+            the component), and one honest paragraph.
 
             A MODERATE card, deliberately: the SAFE one is already in the
             showpiece, and MODERATE is the only verdict the engine lets carry
@@ -951,14 +1036,12 @@ export default function LandingPage() {
             same rule — which is exactly what the audit's own note says to do
             instead: describe, never quote.)
 
-            A capture was tried first and rejected: an element shot of /demo picks up
-            the app's fixed chrome painted over the card, and the live component
-            is sharper, responsive, selectable, and costs no bytes.
-
-            The carousel goes with the screenshots. Five clickable cards driving
-            one art panel needs client state to show four screens that do not
-            exist — the cards are the content, and as a static list they are
-            readable, keyboard-reachable and free. */}
+            ⚠️ AN ELEMENT SHOT OF /demo IS STILL THE WRONG TOOL, and the reason
+            is worth keeping: the app's fixed chrome paints over the captured
+            element. What changed is that neither surface needed one. A route
+            capture takes the whole viewport, chrome included, because there
+            the chrome is part of the screen; and a component that takes plain
+            props never needed a picture at all. */}
         <section className="landing-section landing-includes-section">
           <div className="landing-section-head">
             <h2 className="landing-h2">What does Prediabetes Pal include?</h2>
@@ -969,39 +1052,65 @@ export default function LandingPage() {
           </div>
           <LandingIncludes
             features={includes}
-            /* ⛔ FIVE PANELS, TWO OF WHICH ARE THE PRODUCT AND THREE OF WHICH
-               ARE DELIBERATELY NOT A SCREEN. The design draws five phone
-               mockups; three of those screens cannot be captured or rendered
-               honestly — /meals and /journey read from local history and an
-               API (headless they show their empty states) and /account is
-               behind auth — and the fourth option, drawing them, is what this
-               page has refused since 2026-08-05.
-               So: features one and two, which ARE the result card, render the
-               real card. Features three to five render a statement panel that
-               says where the thing lives instead of illustrating it. The swap
-               on click still happens; what changes is honest. Capturing the
-               three real screens needs seeded fixture state on /demo — a
-               follow-up, and the only way this becomes five screens. */
+            /* ⚖️ FOUR OF THE FIVE PANELS ARE NOW A REAL SURFACE (2026-08-11).
+               The previous pass shipped two real cards and three typographic
+               statement panels, on the reading that /meals and /journey could
+               only be captured in their empty states and /account is behind
+               auth. Two of those three turned out to be reachable, by two
+               different routes, and neither needed a drawing:
+
+                 3 · /meals — the SIGNED-OUT page falls back to the on-device
+                   store, so seeding localStorage before navigation renders the
+                   real screen with fixture rows. The capture script does it;
+                   this is the /demo contract (real component, fixture data)
+                   pointed at a route.
+                 4 · the week — `WeekStrip` takes plain props, so it needs no
+                   capture at all. It renders LIVE here, off the real
+                   derivation, which is strictly better than a screenshot: it
+                   cannot go stale, it stays sharp and responsive, and it costs
+                   no bytes.
+
+               ⛔ PANEL FIVE STAYS A STATEMENT, on the owner's ruling, and the
+               reason is not that it is hard. A real /account capture needs
+               three API routes mocked and would put a delete-my-health-data
+               control on a marketing page. Its copy already says the controls
+               live on your account page rather than showing them, so the
+               statement and the sentence agree — which was never true of the
+               two panels above.
+
+               ⛔ PANELS 1-4 CARRY THE ILLUSTRATION LABEL, panel 5 does not
+               need one. AUD-008: anything that looks like product output must
+               say it is an example until an authorised live capture exists.
+               The cards take `labelled`; the week strip gets the same string
+               from the same function, never retyped. */
             panels={[
-              <ExampleResultCard key="safe" risk="SAFE" labelled />,
-              <ExampleResultCard key="moderate" risk="MODERATE" labelled />,
-              <div key="history" className="landing-includes-note">
-                <p className="landing-includes-note-lead">
-                  Every check you run is saved, in the words you typed.
-                </p>
-                <p>
-                  Your meals page lists them by day. Nothing is scored and
-                  nothing is totalled — it is a record, so you have one.
-                </p>
+              <div key="safe" className="landing-phone landing-includes-phone">
+                <ExampleResultCard risk="SAFE" labelled />
               </div>,
-              <div key="habits" className="landing-includes-note">
-                <p className="landing-includes-note-lead">
-                  A week of answers, not a week of numbers.
-                </p>
-                <p>
-                  No calorie total, no macro split, no grade. The only thing
-                  that accumulates is the meals you already asked about.
-                </p>
+              <div
+                key="moderate"
+                className="landing-phone landing-includes-phone"
+              >
+                <ExampleResultCard risk="MODERATE" labelled />
+              </div>,
+              <div key="history" className="landing-phone landing-includes-phone">
+                {/* ⛔ The alt describes the SCREEN, not the benefit. It is a
+                    picture of a list; claiming it shows a reader learning
+                    anything would assert something the image cannot show. */}
+                <img
+                  src="/landing/app-meals.png"
+                  alt="The Prediabetes Pal meals screen on a phone: a strip of the last seven days across the top, then a list of recent checks — each one the meal in the words it was described in, the answer it got, and when it was checked."
+                  width={390}
+                  height={673}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>,
+              <div key="habits" className="landing-phone landing-includes-phone">
+                <div className="landing-includes-week">
+                  <p className="result-eyebrow">{demoExampleEyebrow(null)}</p>
+                  <WeekStrip week={fixtureWeek} isDay0={false} />
+                </div>
               </div>,
               <div key="privacy" className="landing-includes-note">
                 <p className="landing-includes-note-lead">
@@ -1076,17 +1185,34 @@ export default function LandingPage() {
                   the same screen described twice; the showpiece is now the
                   design's card composition and holds no screenshot, so the
                   described version moved here. landing-art.test.ts asserts on
-                  this exact string — it is the evidence for "describe the
-                  plate", so decorative alt would drop the argument. */}
+                  the opening of this attribute — it is the evidence for
+                  "describe the plate", so decorative alt would drop the
+                  argument.
+
+                  ⛔ THE ALT IS A PLAIN STRING AND MUST STAY ONE. The pin
+                  matches the literal characters that open the attribute, so
+                  swapping in an interpolated template would take the guard
+                  down WITHOUT failing it: the regex just stops matching source
+                  it no longer recognises, and nothing goes red.
+
+                  ⛔ It therefore may not count the input methods, even though
+                  the picture shows them. The control row is build-flagged
+                  while the capture is one committed file, so any number
+                  written here is right in one build and wrong in the other.
+                  Naming the row without counting it is true in both. The
+                  COPY beside it can count, because copy branches; see
+                  `inputMethods` above. */}
               <div className="landing-step-art landing-step-art--shot">
-                <img
-                  src="/landing/app-check.png"
-                  alt="The Prediabetes Pal check screen on a phone: one box to describe the meal, one field for your latest A1C, and a button to check it."
-                  width={390}
-                  height={700}
-                  loading="lazy"
-                  decoding="async"
-                />
+                <span className="landing-phone landing-step-phone">
+                  <img
+                    src="/landing/app-check.png"
+                    alt="The Prediabetes Pal check screen on a phone: one box to describe the meal in your own words, the input options beside it, one field for your latest A1C, and a button to check it."
+                    width={390}
+                    height={700}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </span>
               </div>
             </li>
             <li className="landing-step landing-step--art">
