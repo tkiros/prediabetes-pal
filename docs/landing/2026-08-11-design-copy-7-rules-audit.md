@@ -330,3 +330,234 @@ measure    16,083px, worst desert 1,977px / 2,001px — within budget
 3. **Unresolved and blocking for the 6 photo slots:** no source decided. Licensed
    stock, generated, or drop the photo column and let the `familiar` cards run as
    text-only? Text-only is the cheapest and loses nothing on the seven rules.
+
+---
+
+# Phase 4 — the four open items, closed (2026-08-11, later session)
+
+Continued from
+`docs/handoff/2026-08-11-landing-design-applied-phases-1-3-green-four-items-open-session-handoff.md`.
+Three of the four shipped as asked; one shipped 4/5 on an owner ruling. Two of
+the handoff's own premises turned out to be wrong, and correcting them is the
+most important thing in this section.
+
+## ⚠️ Correction 1 — Item 3 above is WRONG. The name was not clean.
+
+Phase 3 closed the owner's "Revora everywhere" report as not reproducible,
+having found 0 occurrences across seven rendered routes.
+
+**The occurrence was in `public/landing/app-check.png`** — the check-screen
+capture at step one, whose wordmark still read **Revora**. The capture predates
+the 2026-08-09 rename and no rename sweep could reach it, because the check
+scanned *rendered text* and the name was *pixels*.
+
+The owner was right and the page was wrong for two days. Re-capturing fixed it.
+
+**The lesson worth keeping:** every rename, claim and copy guard in this repo
+reads source or DOM. A committed screenshot is a hole in all of them at once.
+That is now the stated reason `landing-meals-capture` exists as a ledger row and
+why `landing-art.test.ts` pins each capture to the constants it renders.
+
+## ⚠️ Correction 2 — the photo-input premise was inverted
+
+The handoff recorded photo assist as OFF, gated twice and fail-closed, and
+warned that picturing it would advertise an absent capability.
+
+That was read off a **local** env. The deployed build has both gates set:
+
+- `prediabetespal.com/check` renders the third control's copy branch
+- `POST /api/check/photo-draft` in production answers **200**, not 404
+- the photo FAQ renders on the production landing page
+- `docs/release/truth-index.md` records both flags set in Vercel on 2026-07-21
+
+So the page was **under**-describing what ships, not over-describing it.
+
+**But the fix is not "name three methods", and this is the part that matters.**
+`components/food-check-form.tsx` passes `premium={mode === "trial" &&
+!entitled}`: in the shipped paywall mode a photo draft is Premium, the chip
+carries a Premium tag, and the route 402s a free session before any camera
+opens. This page sells the **free** checks — the includes lede promises in as
+many words that a reader sees all five features on them.
+
+Naming the camera in that clause would advertise, as free, the one input method
+a free reader cannot use. The pre-existing `photoEnabled ? …` branch in the
+includes body did exactly that in any build with the flag on, which is every
+deployed build.
+
+**What shipped, on the owner's (a) ruling:**
+
+| Surface | Before | Now |
+|---|---|---|
+| The capture | two chips, "Revora" wordmark | three chips **including the visible Premium tag**, correct wordmark |
+| includes body one | branched to three when flagged | two, unconditionally |
+| step one copy | two | two (unchanged) |
+| "What do I actually have to do?" | two | two (unchanged) |
+| photo FAQ | described the camera, no price | **leads with the price**, branched on `paywallMode()` |
+
+The picture shows all three options, which is what the ask was about; the words
+describe the two a free reader gets; and the Premium tag is legible in the
+screenshot, so picture and copy agree. The photo FAQ had been reaching real
+readers describing a paid feature with no mention that it was paid — that is the
+one thing here that was actively wrong in production, and it is fixed.
+
+⛔ **`tests/smoke/photo-check.spec.ts` was NOT inverted.** The handoff proposed
+it under the same wrong premise. It asserts the **flag-unset default candidate**
+is fail-closed — still true, still valuable, and inverting it would have deleted
+the guard rather than updated it. It passes unchanged (4/4).
+
+⚠️ **Left for the owner, outside landing scope:**
+`docs/legal/owner-risk-launch-decision-5f6abcb.md` states *"Meal photo-assist
+stays OFF. `NEXT_PUBLIC_PHOTO_INPUT` must remain unset"* and requires a
+function-specific evidence review plus a written owner decision to enable it.
+Production has it enabled. The record and reality disagree; that predates this
+session and only the owner can reconcile it.
+
+## Item 1 — carousel panels: 4 of 5 are now a real surface
+
+| # | Panel | How |
+|---|---|---|
+| 1 | Check your meal | real `ExampleResultCard`, live, framed |
+| 2 | Make a better choice | real `ExampleResultCard`, live, framed |
+| 3 | Learn your patterns | **real `/meals` screen**, captured with seeded localStorage |
+| 4 | Build better habits | **real `WeekStrip`, rendered live** off `verdictWeekView` |
+| 5 | Stay in control | statement panel — owner ruling, see below |
+
+Two routes, neither of them a drawing:
+
+- **Panel 3.** The signed-out `/meals` page falls back to the on-device store
+  (`fetchHistoryPage` returns `guest`, then the page reads `historyStore.all()`),
+  so seeding `pal.history.v1` via `addInitScript` before navigation renders the
+  real screen with fixture rows. This is the `/demo` contract — real component,
+  fixture data — pointed at a route instead of a component.
+- **Panel 4.** `WeekStrip` takes plain props, so it needed no capture at all. It
+  renders live from the real derivation with a fixed date. Strictly better than
+  a screenshot: it cannot go stale, stays sharp and responsive, and costs no
+  bytes. Two days are deliberately unchecked and one verdict is deliberately the
+  worst one — a flawless week would be fabricated social proof, and the strip's
+  own promise (quiet days are never marked against you) only shows if there are
+  quiet days to see.
+
+**Panel 5 stays prose, on the owner's ruling, and the reason is not difficulty.**
+A real `/account` capture needs three API routes mocked and would put a
+delete-my-health-data control on a marketing page. Its copy already says the
+controls *live on your account page* rather than showing them, so panel and
+sentence agree — which was never true of panels 3 and 4. Recorded here as the
+Definition of Done allows.
+
+⚠️ The element-shot-of-`/demo` problem is unchanged and still real: the app's
+fixed chrome paints over a captured element. What changed is that neither
+surface needed one. A route capture takes the whole viewport, chrome included,
+because there the chrome *is* the screen.
+
+## Item 2 — phone frames
+
+`.landing-showpiece-phone`'s recipe is now a `.landing-phone` utility, applied
+to the hero (biggest, still the showpiece), step one's capture, and every
+carousel panel that is a screen.
+
+**Height was paid for, not absorbed.** A frame adds its padding to the rendered
+width at every breakpoint, so the image caps came *down* by roughly twice the
+frame padding — step art from `clamp(210px, 24vw, 272px)` to
+`clamp(190px, 22vw, 248px)`. Framed art occupies the space the bare art did.
+
+⛔ The frame never names `.result-card` or `.surface-card`; it supplies border,
+radius and shadow from the **wrapper**, which is the only reason
+`landing-design-guards` GUARD 1 permits it at all. Children get their own inner
+radius; nothing reaches in.
+
+⚠️ **Steps 2 and 3 are not framed, and this is a deliberate deviation from the
+literal ask.** Step 2's art is `DemoCheckCard layout="table"` — a layout the app
+does not render, adopted as the design file's marketing treatment. Putting it in
+a phone frame would assert it *is* a screen, which is the fake-UI line this page
+has held since 2026-08-05. The design file agrees: it draws step two's demo as a
+bordered card, not a device. Step 3 carries no art by design — its copy hands
+off to the three cards below. **Every app screenshot on the page is framed;**
+steps 2 and 3 have no screenshot to frame. Flagged for the owner rather than
+silently skipped.
+
+## Item 4 — the three result cards
+
+Shipped to `Revora Landing(2).html` §7: 1.5px risk-coloured border on all four
+sides, 26px radius, rule-separated meal row at `min-height: 96px`, the tinted
+verdict band replaced by an 11px dot plus the verdict at 20px/800, and the change
+note italic and bottom-aligned via `margin: auto 0 0`.
+
+Two deliberate deviations, both recorded in `globals.css` beside the code:
+
+1. **The note ships at 16px, not the design's 15px.** DESIGN.md rail 10 sets a
+   16px floor on this page for everything except tracked uppercase labels, and
+   `.landing-verdict-note` carries the same instruction in as many words. ⚠️
+   Nothing goes red at 15px — the duplicate-font-size pin counts declarations
+   per selector and sees one either way — so this is the kind of deviation only
+   a note catches. It is the only §7 value under the floor.
+2. **Colours are risk tokens, never the design's hexes.** This palette is cool
+   where the design file is warm; the mapping has been token-wise since
+   2026-08-06.
+
+⛔ `align-items: start` came off `.landing-verdicts`. The bottom-aligned note is
+meaningless unless the cards are equal height, which is the default `stretch`
+that rule was overriding. At 375px they stack one per row, so it costs nothing
+there.
+
+⚠️ **The reference screenshot in the handoff is the BEFORE state.**
+`~/Pictures/Screenshot from 2026-08-11 20-58-18.png` shows the old H2 ("The same
+card, three times."), the coloured top rule and the tinted band — the state the
+owner complained about. Only the Stitch §7 block is the spec. Anyone checking
+this work against that PNG will re-introduce the band.
+
+## Two landmines removed
+
+1. **`capture-landing-art.mjs` no longer types a pixel height.** The stale
+   `clipH: 700` — carried as a standing warning in the handoff — would have cut
+   the suggestion chips in half, and re-deriving it by hand confirmed that (the
+   form card now ends at 923px, not 700). Each shot names the **element** its
+   capture should end at and the script measures it, so the clip follows the
+   layout. It throws with a readable message if the selector stops matching.
+   The script also now documents that it must run against a **production build**:
+   under `next dev` the check form never gets past its "One moment" placeholder
+   headless, so a dev capture photographs a loading state.
+2. **`measure-landing.mjs --tab=N`.** Bite #5 required measuring with the
+   tallest carousel panel open and gave no way to do it. Now reproducible.
+
+## Gates
+
+All run against a production build with the deployed flags
+(`NEXT_PUBLIC_PHOTO_INPUT=1 PHOTO_INPUT_ENABLED=1`).
+
+```
+lint          0 errors (3 pre-existing <img> warnings, now 3 not 2 — panel 3)
+typecheck     pass
+test          191 files | 2,229 passed | 2 skipped | 0 failed   (+4: the new capture pins)
+contract      9/9 validators
+build         compiled
+landing-a11y  12 passed
+photo-check   4 passed  (the fail-closed default candidate, unchanged)
+```
+
+**Reachability, every carousel state** — the measurement bite #5 asked for:
+
+```
+--tab=0   16,137px   worst desert 1,977px / 2,001px   within budget
+--tab=1   16,294px   worst desert 1,977px             within budget
+--tab=2   16,321px   worst desert 1,977px             within budget   ← tallest
+--tab=3   15,970px   worst desert 1,977px             within budget
+--tab=4   15,956px   worst desert 1,977px             within budget
+```
+
+⚠️ **The 1,977px worst desert is not any of this work.** It is the glance-strip
+exit → familiar-cards exit stretch, and it is unchanged in all five states. The
+handoff's "24px of headroom" is a real global figure but it describes a block
+nothing here touched; the frames and the taller panels land in deserts with
+600px+ of slack. Anyone adding height to the **six photo cards** still has 24px
+to play with and should re-measure.
+
+## What is still open
+
+- Panel 5 is a statement panel by ruling, not by limitation. If it should become
+  a real screen, the path is three `page.route` mocks in the capture script.
+- The legal-record vs production disagreement on photo input (above) is the
+  owner's to reconcile.
+- Steps 2 and 3 carry no phone frame, for the reason given. If the owner wants
+  step 2 framed anyway, the honest way is to render `DemoCheckCard` in the app's
+  own layout there rather than framing the marketing table — which would
+  overturn the 2026-08-06 ruling that adopted that table.
