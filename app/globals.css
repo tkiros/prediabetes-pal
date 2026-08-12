@@ -1890,11 +1890,11 @@ button.inline-link {
   text-transform: uppercase;
 }
 
-/* The stack is left-aligned everywhere else on the page; here it inherits the
-   hero's centre. No font-size — that stays in the base rule. */
-.landing-hero .landing-cta-stack {
-  justify-items: center;
-}
+/* ⚖️ EVERY EXIT IS CENTRED, owner ruling 2026-08-11 ("all the call to action
+   buttons should be aligned in the middle, they are all aligned on the left").
+   The hero used to be the exception and carried its own override here; now the
+   base rule below centres all fifteen and the override is gone. Its caption
+   centres with it — `.landing-cta-hint` inherits the stack's alignment. */
 
 /* ⚖️ THE DESIGN FILE'S SCALE, adopted verbatim 2026-08-06 on the owner's
    ruling that `Prediabetes Pal Landing.dc.html` is the target and is "way better and
@@ -1913,6 +1913,20 @@ button.inline-link {
   font-weight: 800;
   letter-spacing: -0.032em;
   text-wrap: balance;
+}
+
+/* Line two of the H1. A block span rather than a <br>: the two lines are
+   different sizes, so they need different leading, and the answer line has to
+   be able to wrap on its own without dragging the question's tracking with
+   it. Not a separate element in the accessibility tree — it stays inside the
+   <h1>, so the heading is still read as one sentence-pair. */
+.landing-h1-answer {
+  display: block;
+  margin-top: 0.18em;
+  font-size: 0.62em;
+  line-height: 1.1;
+  letter-spacing: -0.024em;
+  color: var(--text-body);
 }
 
 .landing-sub {
@@ -1943,8 +1957,9 @@ button.inline-link {
    section. One shape: button, optional caption beneath it. */
 .landing-cta-stack {
   display: grid;
-  justify-items: start;
+  justify-items: center;
   gap: 10px;
+  text-align: center;
 }
 
 .landing-cta-hint {
@@ -1967,43 +1982,140 @@ button.inline-link {
   padding: 0 0 clamp(38px, 5vw, 64px);
 }
 
-.landing-showpiece-panel {
-  border-radius: clamp(24px, 3vw, 40px);
-  padding: clamp(24px, 3.4vw, 50px);
-  background: var(--accent-strong);
-}
-
-.landing-showpiece-grid {
+/* ⚖️ THE CREAM-ON-HALO COMPOSITION, `Revora Landing(2).html`, owner ruling
+   2026-08-11. This was `--accent-strong` — the page's FIRST dark plane and one
+   of the two the alternation used as bookends. It is now light, which leaves
+   the final CTA as the only dark ground on the page. Recorded as an override,
+   not an accident: if the top of the page reads flat, restoring the dark panel
+   here is the first thing to try. */
+.landing-showpiece-stage {
+  position: relative;
   display: grid;
-  gap: clamp(24px, 3.2vw, 48px);
-  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: clamp(14px, 2.4vw, 30px);
+  grid-template-columns: 1fr;
+  justify-items: center;
   align-items: center;
+  padding: clamp(20px, 3vw, 44px) 0;
 }
 
-.landing-showpiece-art {
-  display: flex;
-  justify-content: center;
+/* The mint disc behind the phone. An element rather than a background on the
+   stage because it has to sit UNDER the floats and the card, and a background
+   would paint behind the whole grid including its own children's edges. */
+.landing-showpiece-halo {
+  position: absolute;
+  z-index: 0;
+  top: 8%;
+  left: 50%;
+  translate: -50% 0;
+  width: min(560px, 86%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--accent-tint);
+  pointer-events: none;
+}
+
+.landing-showpiece-phone,
+.landing-showpiece-aside {
+  position: relative;
+  z-index: 1;
   min-width: 0;
 }
 
-/* ⚠️ THE CAP IS A REACHABILITY DECISION, not a taste one. At 100% of a 375px
-   column this 390×700 capture renders ~600px tall, and it sits inside the
-   stretch between the hero's exit and the glance strip's — which is the
-   page's worst desert at every measurement this page has ever taken. 220px
-   narrow costs the image nothing legible and buys ~180px of that budget back.
-   Re-measure before raising it: node scripts/measure-landing.mjs */
-.landing-showpiece-art img {
-  display: block;
+/* ⛔ No border, radius or shadow reaches the card itself — this is the FRAME
+   around it, and the card keeps its own recipe (landing-design-guards GUARD 1
+   scans every .landing selector for exactly that). */
+.landing-showpiece-phone {
   width: 100%;
-  max-width: clamp(220px, 26vw, 300px);
-  height: auto;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 22px;
+  max-width: 380px;
+  border-radius: clamp(28px, 3.4vw, 40px);
+  padding: clamp(10px, 1.2vw, 14px);
+  background: var(--text-strong);
 }
 
-.landing-showpiece-card {
+.landing-showpiece-aside {
   display: grid;
-  min-width: 0;
+  gap: 12px;
+  width: 100%;
+  max-width: 380px;
+}
+
+/* The two answers this meal is NOT. Muted on purpose: they are context for the
+   card in the middle, and at equal weight the hero would have three verdicts
+   competing for the same glance. */
+.landing-showpiece-answer {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  padding: 16px 18px;
+  background: var(--surface);
+}
+
+.landing-showpiece-verdict {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  color: var(--text-strong);
+}
+
+/* Colour is a RISK TOKEN keyed off data-risk, never a hex at the call site —
+   same vocabulary result-card.tsx and the verdict trio read. */
+.landing-showpiece-dot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--safe-border);
+}
+
+.landing-showpiece-answer[data-risk="MODERATE"] .landing-showpiece-dot {
+  background: var(--moderate-border);
+}
+
+.landing-showpiece-answer[data-risk="HIGH"] .landing-showpiece-dot {
+  background: var(--high-border);
+}
+
+.landing-showpiece-meal {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--text-body);
+}
+
+.landing-showpiece-chip {
+  justify-self: start;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 9px 16px;
+  background: var(--surface);
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+/* Three columns once there is room, with the card wider than its context and
+   the second aside's chip pushed to the right edge so the two asides mirror
+   rather than repeat. Below this the stage is one centred column and the
+   floats read as two more cards, which is the honest phone layout — an
+   overlapping composition at 375px is a pile. */
+@media (min-width: 960px) {
+  .landing-showpiece-stage {
+    grid-template-columns: 1fr minmax(0, 400px) 1fr;
+    gap: clamp(18px, 2.2vw, 34px);
+  }
+
+  .landing-showpiece-aside:last-of-type {
+    justify-items: end;
+  }
+
+  .landing-showpiece-aside:last-of-type .landing-showpiece-chip {
+    justify-self: end;
+  }
 }
 
 .landing-showpiece .landing-card-caption {
@@ -2178,11 +2290,32 @@ button.inline-link {
   padding-inline: calc(50vw - 50%);
 }
 
+/* ⚖️ Owner ruling 2026-08-11 — the myth table and the verdict trio lead with
+   a centred head, per the design. Opt-in, not the default: the section heads
+   that sit beside a two-column body (the includes tabs, the steps) still read
+   better left, and centring a lede that runs four lines is how a landing page
+   starts looking like a brochure. */
+.landing-section-head--centred {
+  justify-items: center;
+  text-align: center;
+}
+
+.landing-section-head--centred .landing-h2,
+.landing-section-head--centred .landing-section-lede {
+  margin-inline: auto;
+}
+
 .landing-section-head {
   display: grid;
   gap: 12px;
   max-width: 640px;
   margin-bottom: 32px;
+}
+
+/* Centring needs the 640px measure centred too, or the head stays in the left
+   column and only its text centres inside it. */
+.landing-section-head--centred {
+  margin-inline: auto;
 }
 
 /* The design file's H2 step. Up from clamp(1.6rem, 4vw, 2.2rem) — 30.4→41.6px
@@ -2561,78 +2694,52 @@ button.inline-link {
   text-align: center;
 }
 
-/* ── The four pains ──────────────────────────────────────────
-   ⚖️ CARDS NOW, the v4 design file's, adopted 2026-08-08 on the owner's
-   ruling. This reverses this block's own long-standing rule ("typography, not
-   cards — boxing them would make them look like features") and two entries in
-   DESIGN.md §13 #8, "identical card grids" and "numbered section markers as
-   scaffolding".
+/* ── "If this sounds familiar" ───────────────────────────────
+   ⚖️ SIX PHOTO CARDS, `Revora Landing(2).html` §2, adopted 2026-08-11 in
+   place of the four ghost-numeral pains. The numeral treatment went with
+   them — a photograph and an oversized counter in one card are two
+   decorations competing, and the photograph is the one the design chose.
 
-   What contains the risk the old rule named: these are `--page-bg` on a white
-   SHEET, so they are the one card family on the page that is not white and
-   cannot be confused with the result card. And the numeral is not a marker
-   beside the text — it is oversized `--accent-tint` behind it, so it reads as
-   texture, not as a step the reader is being asked to follow in order.
+   What still contains the risk DESIGN.md §13 #8 named ("identical card
+   grids"): these are `--page-bg` on a white SHEET, so they remain the one
+   card family on this page that is not white and cannot be mistaken for the
+   result card.
 
-   Still a real <ol> with a CSS counter, not typed "01" content: the sequence
-   stays in the accessibility tree and renumbers itself if a fifth is added. */
-.landing-pains {
-  counter-reset: pain;
+   ⚠️ 320px, not the pains' 400px. Six cards at a 400px floor went 2-up and
+   left a 3x2 block reading as two stalled rows; at 320px it is the 3x2 the
+   design draws, and the copy is two short lines rather than a paragraph. */
+.landing-familiar {
   display: grid;
-  gap: clamp(14px, 1.9vw, 24px);
-  /* ⚠️ 400px IS THE DESIGN FILE'S TRACK FLOOR AND IT IS LOAD-BEARING. At 310px
-     these went 3-up at desk width and left a lone fourth card under three —
-     and the ghost numeral crowded a heading that now had 18ch to break in. At
-     400px the block is the 2x2 the design draws. */
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: clamp(14px, 1.9vw, 22px);
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
   min-width: 0;
 }
 
-.landing-pains li {
-  counter-increment: pain;
-  position: relative;
+/* Column, not grid rows: the art is pinned to the bottom of every card so the
+   six photographs line up across a row even when a heading wraps to two
+   lines and its neighbour does not. */
+.landing-familiar-card {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  display: grid;
-  gap: 12px;
-  align-content: start;
   border-radius: clamp(20px, 2.4vw, 26px);
-  padding: clamp(26px, 3.2vw, 40px);
   background: var(--page-bg);
 }
 
-/* Decorative only — the <ol> carries the sequence, and this never becomes the
-   sole channel for it. `--accent-tint` on `--page-bg` is deliberately barely
-   there: at any real contrast it competes with the heading it sits behind. */
-.landing-pains li::before {
-  content: "0" counter(pain);
-  position: absolute;
-  top: clamp(8px, 1.2vw, 16px);
-  right: clamp(16px, 2.2vw, 28px);
-  font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: clamp(3.4rem, 5.6vw, 5.2rem);
-  font-weight: 800;
-  letter-spacing: -0.05em;
-  line-height: 1;
-  color: var(--accent-tint);
-  pointer-events: none;
+.landing-familiar-copy {
+  flex: 1;
+  padding: clamp(24px, 2.8vw, 32px) clamp(22px, 2.6vw, 30px)
+    clamp(16px, 1.8vw, 22px);
 }
 
-/* ⛔ BOTH must stay positioned. The numeral is absolutely positioned, so
-   without a stacking context of their own the heading and the paragraph paint
-   UNDER it and the first word of each card sits behind a 5rem glyph. */
-.landing-pains h3,
-.landing-pains p {
-  position: relative;
-}
-
-.landing-pains h3 {
-  margin: 0;
+.landing-familiar-copy h3 {
+  margin: 0 0 12px;
   max-width: 18ch;
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: clamp(1.3rem, 2.1vw, 1.65rem);
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
   font-weight: 800;
   line-height: 1.16;
   letter-spacing: -0.028em;
@@ -2640,26 +2747,314 @@ button.inline-link {
   text-wrap: balance;
 }
 
-/* The design's 44x3 accent rule between the heading and the body. A pseudo
-   element rather than a <div>: it is punctuation, and punctuation does not
-   belong in the accessibility tree. */
-.landing-pains h3::after {
-  content: "";
-  display: block;
-  width: 44px;
-  height: 3px;
-  margin-top: 14px;
-  border-radius: 999px;
-  background: var(--accent);
+.landing-familiar-copy p {
+  margin: 0;
+  max-width: 34ch;
+  color: var(--text-body);
+  font-size: 16.5px;
+  line-height: 1.5;
+  text-wrap: pretty;
 }
 
-.landing-pains p {
+/* ⛔ aspect-ratio, not a fixed height. The intrinsic width/height on the tag
+   is what reserves the box before the file arrives; this keeps the crop
+   identical at every column width the auto-fit produces. */
+.landing-familiar-art {
+  display: block;
+  width: calc(100% - clamp(20px, 2.4vw, 28px));
+  height: auto;
+  aspect-ratio: 664 / 360;
+  object-fit: cover;
+  margin: 0 auto clamp(10px, 1.4vw, 14px);
+  border-radius: clamp(14px, 1.8vw, 18px);
+}
+
+/* ⚠️ MEASURED (DESIGN.md §11.1), not taste. Below 640px the six cards stack,
+   and at the 664/360 crop the block ran 2,357px — the exit under it still left
+   2,361px above, 360 over budget. A shallower crop on a phone takes ~85px off
+   each card and brings the stretch legal. Every photograph is a still life
+   framed with room to spare, so a letterbox costs none of them their subject.
+   Re-measure before changing it: node scripts/measure-landing.mjs */
+@media (max-width: 640px) {
+  .landing-familiar-art {
+    aspect-ratio: 664 / 225;
+  }
+}
+
+/* ── Myth vs reality ─────────────────────────────────────────
+   The design's two-column table, built as a <dl>. `subgrid` is what keeps
+   the myth and its reality on one baseline row across all eight pairs — the
+   alternative is a fixed row height that clips the longest reality line. */
+.landing-myths-heads,
+.landing-myth {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(12px, 2vw, 28px);
+}
+
+/* One object: the heads are the table's first row, so only the pair's outer
+   corners round and the seam between them is the heads' own bottom border. */
+.landing-myths-heads {
+  border: 1px solid var(--border-soft);
+  border-bottom: 0;
+  border-radius: clamp(18px, 2.2vw, 24px) clamp(18px, 2.2vw, 24px) 0 0;
+}
+
+.landing-myths {
+  border-top: 0;
+  border-radius: 0 0 clamp(18px, 2.2vw, 24px) clamp(18px, 2.2vw, 24px);
+}
+
+/* ⚖️ A HEADER ROW INSIDE THE TABLE, owner ruling 2026-08-11 (per the design's
+   screenshot): tinted, not floating above the border. */
+.landing-myths-heads {
+  padding: 16px clamp(16px, 2.2vw, 26px);
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--page-bg);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ⛔ WHITE, ON A WHITE SHEET, so the border is doing the work — and that is
+   deliberate. The owner asked for "the table in the white background"; the
+   design draws white-on-cream, and this page's ground at this position must
+   stay the sheet or the alternation breaks (the familiar cards are the sheet
+   before it and the what-changes band the accent after). Border and radius
+   define the object instead of a fill. */
+.landing-myths {
+  display: grid;
+  gap: 0;
   margin: 0;
-  max-width: 46ch;
+  border: 1px solid var(--border-soft);
+  border-radius: clamp(18px, 2.2vw, 24px);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+/* The table is an object, not a column of text — it centres in the measure
+   and stops short of the section's full width at desk sizes. */
+.landing-myths,
+.landing-myths-heads {
+  width: 100%;
+  max-width: 980px;
+  margin-inline: auto;
+}
+
+.landing-myth {
+  align-items: baseline;
+  padding: clamp(16px, 2vw, 22px) clamp(16px, 2.2vw, 26px);
+}
+
+.landing-myth + .landing-myth {
+  border-top: 1px solid var(--border-soft);
+}
+
+.landing-myth dt {
+  margin: 0;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  color: var(--text-muted);
+  font-size: 16.5px;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.landing-myth dd {
+  margin: 0;
+  color: var(--text-strong);
+  font-weight: 600;
+  font-size: 16.5px;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.landing-myth-icon {
+  flex: none;
+  font-size: 17px;
+  line-height: 1;
+}
+
+/* One column below the phone breakpoint. The dt keeps its muted colour and
+   the dd its weight, so a stacked pair still reads as claim → correction
+   without the column heads to lean on. */
+@media (max-width: 640px) {
+  .landing-myths-heads {
+    display: none;
+  }
+
+  .landing-myth {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+/* ── What Prediabetes Pal includes ───────────────────────────
+   Copy first in the DOM and in the source order, art second. The design puts
+   the art on the left at desk width; `order` does that visually without
+   making a screen reader hear a caption for a screenshot before it has been
+   told what the five features are. */
+.landing-includes-grid {
+  display: grid;
+  gap: clamp(24px, 3.4vw, 48px);
+  align-items: start;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .landing-includes-grid {
+    grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+  }
+
+  .landing-includes-art {
+    order: -1;
+    position: sticky;
+    top: clamp(84px, 9vw, 108px);
+  }
+}
+
+/* The list and its exit are one column, so the exit lands between the cards
+   and the result card once the grid stacks — see the measured note in
+   page.tsx. */
+.landing-includes-copy {
+  min-width: 0;
+}
+
+/* ⛔ ONE FILLED PILL PER VIEWPORT (DESIGN.md §Marketing landing). The
+   copy-column exit exists for the STACKED layout, where the result card sits
+   below the list and pushes the next exit out of budget. At two columns the
+   card is beside the list, the section's own exit is the only one needed, and
+   rendering both put two identical pills a gap apart. It is a duplicate link
+   to the same route, so hiding it costs no navigation.
+   ⚠️ 900px must stay in step with the grid breakpoint above. */
+@media (min-width: 900px) {
+  .landing-includes-copy .landing-cta-stack {
+    display: none;
+  }
+}
+
+.landing-includes {
+  display: grid;
+  gap: clamp(12px, 1.6vw, 16px);
+  margin: 0;
+  padding: 0;
+}
+
+/* ⚖️ TABS NOW, owner ruling 2026-08-11 — a click changes the panel beside
+   them. `button`, not a div with a handler: it is a real control and gets the
+   platform's focus ring, Enter/Space, and the 44px floor for free
+   (landing-design-guards GUARD 3 asserts every button carries it). */
+.landing-includes-tab {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  border: 1.5px solid var(--border-soft);
+  border-radius: clamp(18px, 2.2vw, 24px);
+  padding: clamp(18px, 2.2vw, 26px) clamp(20px, 2.6vw, 30px);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.landing-includes-tab:hover {
+  border-color: var(--accent);
+}
+
+.landing-includes-tab[data-selected] {
+  border-color: var(--accent-strong);
+  background: var(--surface);
+}
+
+.landing-includes-title {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: clamp(1.15rem, 1.8vw, 1.4rem);
+  font-weight: 800;
+  letter-spacing: -0.026em;
+  line-height: 1.2;
+  color: var(--text-strong);
+}
+
+.landing-includes-lede {
+  color: var(--accent-strong);
+  font-size: 15.5px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* ⛔ The body stays in the DOM for every tab — see the note in
+   landing-includes.tsx. `grid-template-rows` animates where `height: auto`
+   cannot, and the global prefers-reduced-motion block zeroes the transition. */
+.landing-includes-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
   color: var(--text-body);
-  font-size: 17.5px;
+  font-size: 16.5px;
+  line-height: 1.6;
+  opacity: 0;
+  transition:
+    grid-template-rows 220ms ease,
+    opacity 160ms ease,
+    margin-top 220ms ease;
+}
+
+.landing-includes-tab[data-selected] .landing-includes-body {
+  grid-template-rows: 1fr;
+  margin-top: 8px;
+  opacity: 1;
+}
+
+/* The row needs a min-height:0 child or the collapsed state still reserves the
+   text's height — the classic grid-collapse gotcha. */
+.landing-includes-body > * {
+  min-height: 0;
+}
+
+/* The three panels that are a statement rather than a screen — see the note at
+   the call site for why three of the design's five mockups do not exist. */
+.landing-includes-note {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: clamp(18px, 2.2vw, 26px);
+  padding: clamp(26px, 3.2vw, 38px);
+  background: var(--surface);
+}
+
+.landing-includes-note p {
+  margin: 0;
+  color: var(--text-body);
+  font-size: 16.5px;
   line-height: 1.6;
   text-wrap: pretty;
+}
+
+/* Scoped so it outranks `.landing-includes-note p` on specificity rather than
+   with !important. */
+.landing-includes-note .landing-includes-note-lead {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
+  font-weight: 800;
+  letter-spacing: -0.026em;
+  line-height: 1.25;
+  color: var(--text-strong);
+}
+
+/* ⛔ NO border, radius or shadow here. The child is the product's own result
+   card and its recipe belongs to the card, not to this page —
+   landing-design-guards.test.ts fails the build if a .landing selector
+   restyles it. Layout only. */
+.landing-includes-art {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
 }
 
 /* This used to be a shared rule for the page's supporting prose — the scope
@@ -3005,13 +3400,15 @@ button.inline-link {
    right, sharing one line at desk width. It wraps to stacked before either
    one gets squeezed — `flex-wrap` plus the note's own 54ch ceiling, not a
    breakpoint. */
+/* ⚖️ A CENTRED STACK, not the design's note-left/pill-right row (owner ruling
+   2026-08-11: every exit centres). A space-between row with a centred pill in
+   it is the misalignment that ruling was about. */
 .landing-verdict-close {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
+  display: grid;
+  justify-items: center;
+  gap: 20px;
   margin-top: 30px;
+  text-align: center;
 }
 
 /* `.result-disclaimer` sits in the shared 14px hints/meta group, which is the
@@ -3033,9 +3430,7 @@ button.inline-link {
 }
 
 .landing-verdict-note {
-  /* 54ch and no margin: both belong to `.landing-verdict-close` now, which
-     owns the gap and needs the note to stop short of the pill rather than
-     push it onto its own line. */
+  /* 54ch, centred, no margin — the close row owns the gap. */
   max-width: 54ch;
   margin: 0;
   color: var(--text-muted);

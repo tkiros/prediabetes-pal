@@ -516,10 +516,15 @@ misses the budget, the measured arrangement is the fallback and the adjacency is
      conduct instead, with step two ("it asks before it guesses") carrying the argument.
    - **Decorative glassmorphism** → `.landing-nav`. Not decorative: a capsule that floats over scrolling copy needs the
      blur to stay legible without going opaque. It also takes the system's second `box-shadow` (§5), for separation.
-   - **Identical card grids** + **numbered section markers as scaffolding** → `.landing-pains`. The cards are `--page-bg`
-     on a white sheet, so they are the page's one non-white card family and cannot be read as the result card; the
-     numeral is oversized `--accent-tint` **behind** the heading, texture rather than a marker beside it, and the
-     sequence still lives in a real `<ol>` counter rather than in typed content.
+   - **Identical card grids** → `.landing-familiar`. The cards are `--page-bg` on a white sheet, so they are the page's
+     one non-white card family and cannot be read as the result card. ⚖️ Superseded `.landing-pains` on 2026-08-11,
+     when `Revora Landing(2).html` replaced the four pains with six photo cards. The **numbered section markers**
+     override went with them: the ghost `::before` counter is gone, because a photograph and an oversized numeral in
+     one card are two decorations competing. Nothing on this page carries a typed step numeral now except
+     `.landing-steps`, whose pills are covered two rows above.
+   - **Identical card grids** (again) → `.landing-includes`. Five bordered cards beside the product's own result card,
+     added 2026-08-11 with the design's "What does Prediabetes Pal include?" block. Contained the same way the limits
+     trio is: border and radius only, no fill and no shadow, so the one filled card in view is still the result card.
    - **A looping animation** (§6, not §13) → `.landing-marquee`. See §6 for the two stop mechanisms it must keep.
 
 **NOT banned, and you will be tempted:** three price tiles (4/7 keep, surviving because the middle tile carries the least
