@@ -109,10 +109,14 @@ until the live PWA is stable (`docs/ops/play-twa-runbook.md`'s blocking note).
       decision to launch without professional counsel. It explicitly records
       that the candidate is not counsel-cleared and that internal GREEN is
       engineering evidence only.
-- [ ] `NEXT_PUBLIC_PHOTO_INPUT` and
-      `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` remain unset unless the corresponding
-      function has completed evidence review and explicit written owner
-      approval for a new reviewed build.
+- [x] `NEXT_PUBLIC_PHOTO_INPUT` is set to `1` in production with its server twin
+      `PHOTO_INPUT_ENABLED=1` — owner-authorized 2026-08-14,
+      `docs/legal/owner-decision-2026-08-14-photo-assist-on.md`. The feature is
+      advertised as **Premium** only; no free-tier promise names it.
+- [ ] `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` remains unset unless the function has
+      completed evidence review and explicit written owner approval for a new
+      reviewed build. ⚠️ `docs/release/truth-index.md:35` says its server twin
+      is already set in production — unresolved, owner has not ruled.
 - [ ] `LEGAL_ENTITY_NAME` and `SUPPORT_EMAIL` are set to real, monitored values;
       `/terms` and `/privacy` show them on the production domain.
 - [ ] Submit for review; respond to any Play reviewer follow-up promptly
