@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=664, height=360" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 664px; height: 360px; overflow: hidden; }
+      .ink {
+        fill: none;
+        stroke: #0a4a44;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      /* Same line, but filled with the GROUND so the shape occludes what is
+         behind it. Without this the door edge draws straight through the hand
+         and it reads as a blob — which is exactly what the first pass did. */
+      .solid {
+        fill: #e6f2ef;
+        stroke: #0a4a44;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="fridge-door"
+      data-start="0"
+      data-duration="1"
+      data-width="664"
+      data-height="360"
+    >
+      <!-- “Eat better.” Better than what? Nobody said.
+           An open fridge, the door swung toward the viewer, a few odds and
+           ends on the shelves. No hand — see the note further down.
+
+           ⚠️ The cabinet DELIBERATELY bleeds past the y 67-293 safe area. A
+           cabinet cropped top and bottom still reads as a cabinet; the shelves
+           and everything on them stay inside the band, because those are what
+           carry the picture.
+
+           ⛔ No legible text anywhere — the cartons and jars are shapes only.
+           `landing-familiar-cards` pins that, and digits count as text. -->
+      <svg id="fridge-door-art" width="664" height="360" viewBox="0 0 664 360" class="clip"
+           data-start="0" data-duration="1" data-track-index="1">
+        <rect x="0" y="0" width="664" height="360" fill="#e6f2ef" />
+
+        <!-- cabinet, and the opening inside it -->
+        <path class="ink" d="M250,26 L622,26 L622,350 L250,350" />
+        <path class="ink" d="M270,46 L602,46 L602,330 L270,330 Z" />
+
+        <!-- shelves -->
+        <path class="ink" d="M270,132 L602,132" />
+        <path class="ink" d="M270,214 L602,214" />
+        <path class="ink" d="M270,288 L602,288" />
+
+        <!-- top shelf: a carton with a peaked top, and a bottle -->
+        <path class="ink" d="M306,132 L306,84 L322,68 L338,68 L354,84 L354,132" />
+        <path class="ink" d="M306,84 L354,84" />
+        <path class="ink" d="M400,132 L400,96 Q400,88 408,84 L408,68 L424,68
+                             L424,84 Q432,88 432,96 L432,132" />
+
+        <!-- middle shelf: a covered bowl and two stacked tubs -->
+        <path class="ink" d="M304,214 C304,186 322,172 344,172
+                             C366,172 384,186 384,214" />
+        <path class="ink" d="M296,176 L392,176" />
+        <path class="ink" d="M452,214 L452,190 L520,190 L520,214" />
+        <path class="ink" d="M462,190 L462,168 L512,168 L512,190" />
+
+        <!-- bottom shelf: a wide crisper drawer -->
+        <path class="ink" d="M292,288 L292,244 L580,244 L580,288" />
+        <path class="ink" d="M408,262 L464,262" />
+
+        <!-- the door, swung open toward the viewer -->
+        <path class="ink" d="M250,26 L74,80 L74,300 L250,350" />
+        <path class="ink" d="M232,54 L96,96 L96,282 L232,320" />
+
+        <!-- Two door bins. We are looking at the door's INNER face — that is
+             what a fridge door shows once it is open — so bins belong here and
+             an outer handle does not. They also stop the door reading as a
+             blank flap. -->
+        <path class="ink" d="M107,127 L221,104 L221,135 L107,150 Z" />
+        <path class="ink" d="M107,198 L221,200 L221,231 L107,221 Z" />
+
+        <!-- ⛔ A HAND WAS DRAWN HERE TWICE AND REMOVED BOTH TIMES. First as a
+             gripping silhouette (read as a blob, because unfilled line art
+             lets the door edge draw straight through it), then as a filled
+             palm with four fingertips (read as a plug — uniform rounded bars
+             in a row are a comb, not a hand; real fingers vary in length and
+             curl).
+
+             It is gone rather than attempted a third time. The
+             `landing-familiar-cards` ledger row asks for "a still life or a
+             hand", so a still life satisfies it, and the hand was never what
+             this card argues: an open fridge with food in it and nothing
+             obvious to eat IS "better than what?". Do not add one back without
+             a better reason than filling the left third. -->
+        <!-- ponytail: still life, no hand -->
+      </svg>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["fridge-door"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

@@ -184,3 +184,74 @@ describe("the landing's meals capture cannot drift from the verdict words", () =
     expect(src).toMatch(/alt="The Prediabetes Pal meals screen on a phone:[^"]+"/);
   });
 });
+
+/**
+ * The six "If this sounds familiar" drawings (owner ruling 2026-08-14, which
+ * replaced the generated photographs this block shipped with).
+ *
+ * ⛔ Why this exists, and why it is THINNER than the two guards above. Those
+ * pin a value the capture renders as pixels — the free-check count, the three
+ * verdict words — because a screenshot defeats `copy-pins.test.ts` completely.
+ * A line drawing bakes no such value in, so there is nothing of that kind to
+ * pin here and inventing one would be theatre.
+ *
+ * What IS worth pinning is the coupling the repo has been bitten by twice: the
+ * page names six files, the files are produced OUTSIDE every gate this repo
+ * runs (a HyperFrames render in `videos/familiar-line-art/`), and a marketing
+ * page that 404s six images is invisible to lint, typecheck and the whole unit
+ * suite. `app-check.png` shipped a retired product name in pixels for two days
+ * for exactly this reason: no guard here reads an image.
+ */
+describe("the landing's six familiar drawings exist and are regenerable", () => {
+  const FAMILIAR_ART = [
+    "fridge-door",
+    "appointment-card",
+    "open-tabs",
+    "kitchen-scale",
+    "cleared-plate",
+    "empty-notebook"
+  ];
+
+  it.each(FAMILIAR_ART)("%s.png is on disk", (name) => {
+    expect(
+      fs.existsSync(path.join(process.cwd(), `public/landing/familiar/${name}.png`)),
+      `public/landing/familiar/${name}.png is missing. Re-render it:\n` +
+        `  cd videos/familiar-line-art && npx hyperframes render . ` +
+        `-c compositions/${name}.html --format=png-sequence -o renders/${name} --fps 1`
+    ).toBe(true);
+  });
+
+  it.each(FAMILIAR_ART)("%s is still named by the page", (name) => {
+    // The page interpolates the extension once, so the art key is what ties a
+    // file to a card. A renamed key with no renamed file is a silent 404.
+    expect(src).toContain(`art: "${name}"`);
+  });
+
+  it("the page still asks for .png, which is what the renderer emits", () => {
+    // ⚠️ Interpolated on purpose — one literal, six cards. If this ever goes
+    // back to .webp the six PNGs stop resolving and nothing else fails.
+    expect(src).toContain("`/landing/familiar/${art}.png`");
+  });
+
+  it("the compositions that produce them are committed", () => {
+    // An undocumented binary nobody can regenerate is how this page's previous
+    // screenshots went stale for a whole design era.
+    for (const name of FAMILIAR_ART) {
+      expect(
+        fs.existsSync(
+          path.join(process.cwd(), `videos/familiar-line-art/compositions/${name}.html`)
+        ),
+        `The drawing ${name}.png has no source composition. Do not hand-edit the PNG.`
+      ).toBe(true);
+    }
+  });
+
+  it("every drawing carries alt text that describes a drawing", () => {
+    // ⛔ `landing-familiar-cards` (copy ledger): the alt describes the PICTURE,
+    // never the product — these are mood, not evidence. They now describe a
+    // line drawing, because they used to describe a photograph and the medium
+    // changed underneath them.
+    const alts = src.match(/alt: "A line drawing of [^"]+"/g) ?? [];
+    expect(alts).toHaveLength(FAMILIAR_ART.length);
+  });
+});

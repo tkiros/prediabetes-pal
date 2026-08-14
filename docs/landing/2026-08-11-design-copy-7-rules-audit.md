@@ -165,6 +165,10 @@ The conditional shape of the swap survives untouched (F-04 / F-07).
 - **6 photos, generated** → `public/landing/familiar/*.webp`, 664×360, ~12KB
   each, 70KB for the set. Still lifes and one hand; no faces, no legible text.
   The prompts are below, verbatim — `app/page.tsx` points here for them.
+  ⛔ **SUPERSEDED 2026-08-14 — these are LINE DRAWINGS now**
+  (`public/landing/familiar/*.png`). See *Phase 5* at the foot of this file.
+  The prompts below stay as the record of what the photographs were; they no
+  longer describe anything the page renders.
 - **5 app screens** → ⚠️ **SUPERSEDED BY PHASE 3, BELOW.** In Phase 2 the
   carousel was dropped and the section showed a single live
   `<ExampleResultCard risk="MODERATE">`. Phase 3 restored the carousel as five
@@ -658,3 +662,113 @@ to play with and should re-measure.
   step 2 framed anyway, the honest way is to render `DemoCheckCard` in the app's
   own layout there rather than framing the marketing table — which would
   overturn the 2026-08-06 ruling that adopted that table.
+
+---
+
+# Phase 5 — the six familiar cards become line drawings
+
+**Date** 2026-08-14 · **Owner ruling** · **Branch** `feat/landing-familiar-line-art`
+
+The six generated photographs under *"If this sounds familiar, you're not the
+problem"* are replaced by six line drawings. **Same six subjects, same 664×360
+frame, one medium changed.** No copy moved; the `landing-familiar-cards` ledger
+row is amended, not superseded, because not one of its twelve lines changed.
+
+## Why HyperFrames, which is a video framework
+
+The owner asked for the drawings to be produced with `/hyperframes` and
+reaffirmed it after being told what it is. It renders video from HTML; its
+routing table has ten rows and every one produces a video. The applicable route
+is `/general-video`, whose contract does name *"static loop/poster"* as valid
+input, and `hyperframes render --format=png-sequence` on a one-frame
+composition emits exactly one PNG. **That output format was verified before any
+drawing was authored** — six compositions built against a wrong assumption
+about the renderer is the one failure that would have wasted the whole run.
+
+The alternative offered and declined was inline SVG, which would have been
+smaller, themeable from the app's tokens, and free of a second toolchain. The
+cost of the chosen route is that the art is raster, and that regenerating it
+needs a working `npx hyperframes`. **That cost is why the compositions are
+committed** (`videos/familiar-line-art/`) and why a test asserts they exist.
+
+## The two constraints that actually shaped the drawings
+
+1. ⛔ **`object-fit: cover`, cropping to `664 / 225` below 640px.** This is
+   already in `.landing-familiar-art`, measured in an earlier phase — the full
+   crop ran the block 360px over its reachability budget on a phone. A
+   photograph survives a centre crop. **A line drawing does not.** The usable
+   band is y 67–293 and nothing that carries a picture may leave it.
+
+   Two frames were built ignoring this and both broke on a real phone: the
+   laptop's base and table line sat at y 300–318, so the screen floated with
+   nothing under it, and the scale's counter line sat at y 296, so the scale
+   floated. **Both were caught by screenshotting the rendered block at 375px,
+   not by reasoning about it.** Neither would have failed a single gate.
+
+2. ⛔ **The ledger row's constraints, which survive the medium.** Still lifes
+   only — no faces, no legible text, nobody who could be read as a customer.
+   This page shows no social proof and a person here would manufacture some.
+   **Digits count as text**, which is why the kitchen scale's display reads two
+   dashes and the appointment card's writing is four bars. A weight or a date
+   rendered in pixels is a claim no copy guard in this repo can read.
+
+## What was drawn, and what was thrown away
+
+| Card | Drawing | Notes |
+|---|---|---|
+| “Eat better.” | open fridge, door swung toward the viewer, food on the shelves | **a hand was drawn twice and cut twice** — see below |
+| Six months away | appointment card lying askew, keys beside it | writing is four bars |
+| Every article disagrees | laptop on a bedside table, lamp, four tabs | tabs are tab-*shaped*; as plain rules the screen read as one paragraph |
+| The apps want an accountant | bowl heaped with rice on a flat scale | display reads two dashes |
+| You eat, then you worry | cleared plate, cutlery set down together, napkin | napkin took three passes |
+| Nothing to show the doctor | spiral notebook open, both pages blank, a pen | ruled lines drawn and removed — they read as a form waiting to be filled in, and the argument is that nothing was written |
+
+⚠️ **The hand.** The retired photograph for card one was *"a hand holding open
+a fridge door"*, and the ledger permits *"a still life **or** a hand"*. Drawn
+as an unfilled silhouette it read as a blob, because line art with no fill lets
+the door edge draw straight through it; drawn as a filled palm with four
+fingertips it read as a plug, because uniform rounded bars in a row are a comb.
+**It was cut rather than attempted a third time** — a still life satisfies the
+ledger, and an open fridge with food in it and nothing obvious to eat already
+*is* "better than what?".
+
+⚠️ **Occlusion is the technique that made the set work.** Two shapes needed to
+hide what sits behind them (the rice covering the back of the bowl's rim, and
+the hand while it still existed). A `.solid` class — the same stroke, filled
+with the ground colour — does that. Without it every overlap reads as glass.
+
+## Style
+
+Single weight, one hue, both derived from the app's own tokens rather than
+chosen: line `--accent-strong` `#0a4a44`, ground `--accent-tint` `#e6f2ef`.
+**Stroke is 3px at 664 wide, which lands at 1.5px on the ~330px display box —
+the same hairline the design file uses for the result-card border.** The cards
+sit at `--page-bg` on a full-bleed white sheet, so a white art panel would have
+read as a nested card and *cards earn existence*.
+
+## Gates
+
+Aspect ratio is unchanged, so nothing moved:
+
+```
+page length   16,431px   →   16,431px      identical
+worst desert   1,977px   →    1,977px      identical, within the 2,001px budget
+hyperframes check                          passed — 0 errors, 0 warnings, 9 layout samples
+```
+
+⚠️ **The set got heavier: ~70KB of `.webp` became ~103KB of `.png`** (10–29KB
+per file). Line art compresses well losslessly, but PNG still carries an alpha
+channel this art does not use — every frame paints an opaque ground rect,
+because `--format=png-sequence` writes RGBA and a CSS `body` background does
+not survive into it. Nobody set a size budget for this block and the format
+follows from the owner's choice of renderer, so it was not re-opened. Recorded
+because this file tracks the number.
+
+`tests/unit/pal/landing-art.test.ts` gained 15 assertions. They are deliberately
+**thinner** than the two capture guards above them: those pin a value the
+screenshot bakes into pixels (the free-check count, the three verdict words),
+and a line drawing bakes in no such value. What they do pin is the coupling
+this repo has been bitten by — six files named by the page, produced entirely
+outside every gate it runs, where a 404 on a marketing surface is invisible to
+lint, typecheck and the whole unit suite. `app-check.png` shipped a retired
+product name in pixels for two days for exactly that reason.

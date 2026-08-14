@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=2088, height=792" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 2088px;
+        height: 792px;
+        overflow: hidden;
+        background: #ffffff;
+      }
+      .cell { position: absolute; width: 664px; height: 360px; }
+    </style>
+  </head>
+  <body>
+    <!-- CONTACT SHEET. Not a deliverable — the six cells are, one PNG each.
+
+         It exists for two reasons: `hyperframes check` validates the project's
+         index.html and nothing else (there is no per-file flag), and
+         general-video § 7 wants an inspected contact sheet in the handoff.
+         Mounting the six stills here gets both from one file.
+
+         ⚠️ The cells are laid out in the order the landing renders them
+         (`FAMILIAR` in app/page.tsx), so this sheet and the page can be read
+         side by side. Keep them in step. -->
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="1"
+      data-width="2088"
+      data-height="792"
+    >
+      <div class="cell clip" style="left: 24px; top: 24px"
+           data-composition-id="fridge-door"
+           data-composition-src="compositions/fridge-door.html"
+           data-start="0" data-duration="1" data-track-index="1"></div>
+      <div class="cell clip" style="left: 712px; top: 24px"
+           data-composition-id="appointment-card"
+           data-composition-src="compositions/appointment-card.html"
+           data-start="0" data-duration="1" data-track-index="2"></div>
+      <div class="cell clip" style="left: 1400px; top: 24px"
+           data-composition-id="open-tabs"
+           data-composition-src="compositions/open-tabs.html"
+           data-start="0" data-duration="1" data-track-index="3"></div>
+      <div class="cell clip" style="left: 24px; top: 408px"
+           data-composition-id="kitchen-scale"
+           data-composition-src="compositions/kitchen-scale.html"
+           data-start="0" data-duration="1" data-track-index="4"></div>
+      <div class="cell clip" style="left: 712px; top: 408px"
+           data-composition-id="cleared-plate"
+           data-composition-src="compositions/cleared-plate.html"
+           data-start="0" data-duration="1" data-track-index="5"></div>
+      <div class="cell clip" style="left: 1400px; top: 408px"
+           data-composition-id="empty-notebook"
+           data-composition-src="compositions/empty-notebook.html"
+           data-start="0" data-duration="1" data-track-index="6"></div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

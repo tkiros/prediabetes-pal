@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=664, height=360" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 664px; height: 360px; overflow: hidden; }
+      .ink {
+        fill: none;
+        stroke: #0a4a44;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="empty-notebook"
+      data-start="0"
+      data-duration="1"
+      data-width="664"
+      data-height="360"
+    >
+      <!-- Nothing to show the doctor. An open notebook, both pages blank, a
+           pen resting in the gutter.
+
+           ⛔ THE PAGES STAY EMPTY. Ruled lines were drawn and removed: they
+           read as a form waiting to be filled in, and this card's whole
+           argument is that six months went by and nothing was written down.
+           The spiral carries the detail instead. Empty is the subject, not a
+           thing missing from the drawing. -->
+      <svg id="empty-notebook-art" width="664" height="360" viewBox="0 0 664 360" class="clip"
+           data-start="0" data-duration="1" data-track-index="1">
+        <rect x="0" y="0" width="664" height="360" fill="#e6f2ef" />
+
+        <!-- the two open pages, seen slightly from above so they splay -->
+        <path class="ink" d="M332,116 C288,96 196,84 108,90
+                             L74,268 C170,260 274,272 332,292" />
+        <path class="ink" d="M332,116 C376,96 468,84 556,90
+                             L590,268 C494,260 390,272 332,292" />
+
+        <!-- the gutter -->
+        <path class="ink" d="M332,116 L332,292" />
+
+        <!-- page edges, so the block reads as paper rather than card -->
+        <path class="ink" d="M104,102 C188,97 274,108 326,126" />
+        <path class="ink" d="M560,102 C476,97 390,108 338,126" />
+
+        <!-- spiral binding through the gutter -->
+        <path class="ink" d="M320,130 C314,122 330,116 336,124" />
+        <path class="ink" d="M320,158 C314,150 330,144 336,152" />
+        <path class="ink" d="M320,186 C314,178 330,172 336,180" />
+        <path class="ink" d="M320,214 C314,206 330,200 336,208" />
+        <path class="ink" d="M320,242 C314,234 330,228 336,236" />
+        <path class="ink" d="M320,270 C314,262 330,256 336,264" />
+
+        <!-- the pen, lying in the gutter -->
+        <path class="ink" d="M356,146 L448,258" />
+        <path class="ink" d="M368,140 L460,252" />
+        <path class="ink" d="M356,146 L368,140" />
+        <path class="ink" d="M448,258 L460,252 L452,276 Z" />
+        <path class="ink" d="M380,168 L392,162" />
+      </svg>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["empty-notebook"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

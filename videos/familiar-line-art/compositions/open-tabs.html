@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=664, height=360" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 664px; height: 360px; overflow: hidden; }
+      .ink {
+        fill: none;
+        stroke: #0a4a44;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="open-tabs"
+      data-start="0"
+      data-duration="1"
+      data-width="664"
+      data-height="360"
+    >
+      <!-- Every article disagrees. A laptop open on a bedside table, a lamp
+           beside it, four tabs open and nothing settled.
+
+           ⛔ THE TAB STRIP AND THE BODY LINES ARE THE WHOLE POINT AND THEY MAY
+           NOT BECOME LEGIBLE. They are bars standing in for text. The moment a
+           word is readable this frame is making a claim, and no copy guard in
+           the repo can read a PNG. -->
+      <svg id="open-tabs-art" width="664" height="360" viewBox="0 0 664 360" class="clip"
+           data-start="0" data-duration="1" data-track-index="1">
+        <rect x="0" y="0" width="664" height="360" fill="#e6f2ef" />
+
+        <!-- ⛔ EVERYTHING WAS RAISED ~30px ON 2026-08-14. The table line and the
+             laptop's base sat at y=300-318, below the 293 crop line, so on a
+             phone the screen floated with no base under it and read as a
+             broken panel. Verified on the rendered page, not reasoned about:
+             the block was screenshotted at 375px. Keep the base above 293. -->
+        <path class="ink" d="M24,272 L640,272" />
+
+        <!-- screen -->
+        <path class="ink" d="M188,272 L212,94 Q213,84 224,84
+                             L512,84 Q523,84 524,94 L548,272" />
+        <path class="ink" d="M226,102 L510,102 L534,258 L202,258 Z" />
+
+        <!-- Four browser tabs. ⚠️ The first pass drew these as four short
+             RULES and the screen read as one long paragraph — the tabs have to
+             be tab-SHAPED or the count, which is the whole joke, is invisible.
+             Rounded at the top, sitting on the strip line. -->
+        <path class="ink" d="M232,134 L232,120 A7,7 0 0 1 239,113
+                             L289,113 A7,7 0 0 1 296,120 L296,134" />
+        <path class="ink" d="M302,134 L302,120 A7,7 0 0 1 309,113
+                             L359,113 A7,7 0 0 1 366,120 L366,134" />
+        <path class="ink" d="M372,134 L372,120 A7,7 0 0 1 379,113
+                             L429,113 A7,7 0 0 1 436,120 L436,134" />
+        <path class="ink" d="M442,134 L442,120 A7,7 0 0 1 449,113
+                             L499,113 A7,7 0 0 1 506,120 L506,134" />
+        <path class="ink" d="M230,134 L508,134" />
+
+        <!-- The article underneath, as bars. Three, not four: the tabs are the
+             subject and the prose is only there to say a page is open. -->
+        <path class="ink" d="M246,174 L476,174" />
+        <path class="ink" d="M248,204 L492,204" />
+        <path class="ink" d="M250,234 L418,234" />
+
+        <!-- base -->
+        <path class="ink" d="M170,272 L566,272 L582,290 L154,290 Z" />
+        <path class="ink" d="M318,281 L418,281" />
+
+        <!-- a bedside lamp, switched on beside it -->
+        <path class="ink" d="M56,272 L56,212" />
+        <path class="ink" d="M26,212 L90,212 L76,160 L40,160 Z" />
+        <path class="ink" d="M34,272 L78,272" />
+      </svg>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["open-tabs"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>
