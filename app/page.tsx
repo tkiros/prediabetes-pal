@@ -1231,17 +1231,26 @@ export default function LandingPage() {
                   Type “oatmeal” and see what it asks you.
                 </Link>
               </div>
-              <div className="landing-step-art landing-step-art--live">
+              <div className="landing-step-art">
                 {/* ⚖️ OWNER RULING 2026-08-14, overturning 2026-08-06. This
                     used to render the design file's six-row label-gutter
                     table, which the app does not draw anywhere. Framing that
                     would have asserted it was a screen — so the table went
                     instead, and the component's own shape got the frame.
 
-                    ⛔ This is now the ONLY unframed-to-framed surface on the
-                    page whose pixels are live DOM rather than a capture, and
-                    that is the point: it is the real component at phone
-                    width, so the frame is telling the truth.
+                    ⛔ WHY THE FRAME IS ENTITLED TO ASSERT A SCREEN, which is
+                    the test panel 4 failed: this component's default layout
+                    renders inside `/check` itself, below the form, and again
+                    on `/demo`. Both answer 200 signed out in production —
+                    checked 2026-08-14, not inferred. A reader who follows the
+                    link in the copy beside this lands on the surface the
+                    frame is showing them. Re-check that before changing what
+                    goes in here; a frame around an unreachable surface is the
+                    defect this page shipped once already.
+
+                    ⛔ This is the only framed surface on the page whose pixels
+                    are live DOM rather than a capture, and that is the point:
+                    it is the real component at phone width.
 
                     ⚠️ `.landing-step-screen` exists because the bezel needs a
                     page plane behind the card, exactly as the step-one

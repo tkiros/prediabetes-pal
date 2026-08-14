@@ -508,6 +508,24 @@ its only consumer. Leaving a marketing-only layout in a component that three
 routes import is the same drift GUARD 1 blocks in CSS, wearing a different hat —
 and this one had no guard at all.
 
+⛔ **The reachability test — the one panel 4 failed — was run, not assumed.**
+A phone frame asserts that what it holds is a screen, so the question is bite
+#11's: *can the reader this page addresses actually get there?*
+
+| Surface | Signed-out, production, 2026-08-14 |
+|---|---|
+| `/check` — renders this exact component below the form (`app/(app)/check/page.tsx`) | **200** |
+| `/demo` — renders it as the first section | **200** |
+
+The step-two copy links to `/check`, so a reader who takes the invitation lands
+on the surface the frame just showed them. The frame is a **crop** of a
+reachable page, which is what every app screenshot on this page is. It is not
+panel 4's failure — that one pictured a drawing only `/journey` renders, behind
+a sign-in wall, under a lede promising the reader could see it free.
+
+⚠️ **Re-run those two checks before changing what goes inside this frame.** No
+gate in this repo can see reachability.
+
 **Three things this change is quietly buying, and their costs:**
 
 1. ⛔ **The 2026-08-06 nesting ruling is live again on the landing.** That ruling

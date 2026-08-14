@@ -109,9 +109,12 @@ until the live PWA is stable (`docs/ops/play-twa-runbook.md`'s blocking note).
       decision to launch without professional counsel. It explicitly records
       that the candidate is not counsel-cleared and that internal GREEN is
       engineering evidence only.
-- [x] `NEXT_PUBLIC_PHOTO_INPUT` is set to `1` in production with its server twin
-      `PHOTO_INPUT_ENABLED=1` — owner-authorized 2026-08-14,
-      `docs/legal/owner-decision-2026-08-14-photo-assist-on.md`. The feature is
+- [x] `NEXT_PUBLIC_PHOTO_INPUT` is **authorized** at `1` in production with its
+      server twin `PHOTO_INPUT_ENABLED=1` — owner decision 2026-08-14,
+      `docs/legal/owner-decision-2026-08-14-photo-assist-on.md`. Verified live
+      the same day: `POST https://prediabetespal.com/api/check/photo-draft`
+      answers **400** (route present, body rejected), not the **404** a build
+      with the flag unset returns before any model call. The feature is
       advertised as **Premium** only; no free-tier promise names it.
 - [ ] `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` remains unset unless the function has
       completed evidence review and explicit written owner approval for a new

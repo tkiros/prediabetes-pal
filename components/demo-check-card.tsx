@@ -76,7 +76,17 @@ export function DemoCheckCard() {
         You type: <strong>{example.input}</strong>
       </p>
 
-      {/* Step 2 — Prediabetes Pal asks one clarifying question instead of guessing. */}
+      {/* Step 2 — Prediabetes Pal asks one clarifying question instead of guessing.
+
+          ⛔ KEEP `data-testid="demo-clarify"` AND KEEP THIS BLOCK WHERE IT IS.
+          The landing's one animation is this element plus every FOLLOWING
+          SIBLING on a 520ms delay, so the pause reads as a pause
+          (`.landing-pause-stage`, globals.css). Reorder these blocks and the
+          beat silently lands on a different part of the flow; move this one
+          later and the reveal covers less of it. Nothing goes red — the
+          selectors still match, they just match the wrong thing. This warning
+          used to live in the deleted table layout and its CSS; those were the
+          only two copies. */}
       <div
         className="result-card"
         data-kind="clarify"

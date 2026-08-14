@@ -144,7 +144,12 @@ page the design file's six-row labelled table. ⛔ REVERSED 2026-08-14: the prop
 owner ruled that step two's art gets a phone frame, and a frame asserts that what it holds is a screen — so the honest
 move was to drop the table rather than frame a shape no route draws. The landing now renders the component's default
 layout inside `.landing-step-live-phone`, which means **the nesting the 2026-08-06 ruling routed around is back on the
-landing, at phone width, on purpose**: it is what a reader actually sees at `/check`.
+landing, at phone width, on purpose.**
+
+⛔ **The frame is entitled to assert a screen, and this is the test panel 4 failed.** That default layout renders inside
+`/check` — below the form, `app/(app)/check/page.tsx` — and again as `/demo`'s first section. Both answer `200` signed
+out in production, verified 2026-08-14. The landing frames a crop of a page a reader can reach by following the link in
+the copy beside it, which is a crop, not a fabrication. **Re-verify that before changing what goes in this frame.**
 
 **The work item above is therefore live again on all three routes, not two.** Fixing the wrapper fixes the landing too
 now, which is the argument for doing it — but the 2026-08-06 shape is no longer implemented anywhere to lift from. It
