@@ -117,15 +117,24 @@ until the live PWA is stable (`docs/ops/play-twa-runbook.md`'s blocking note).
       with the flag unset returns before any model call. The feature is
       advertised as **Premium** only; no free-tier promise names it.
 - [x] `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` is **authorized** at `1` in production
-      with its server twin `LONGITUDINAL_INSIGHTS_ENABLED=1` — owner decision
-      2026-08-14, `docs/legal/owner-decision-2026-08-14-longitudinal-insights-on.md`.
-      Client flag verified live the same day: `https://prediabetespal.com/privacy`
-      renders `derived pattern summaries` and `personalized pattern summaries`,
-      which that page emits only when the flag is `1`. ⚠️ The **server twin was
-      not** verified live — `GET /api/coach` 401s before the flag branch, so
-      there is no unauthenticated probe; it is inferred from the production
-      twin guard in `next.config.ts`. The insight is **free**, not Premium; no
-      surface may price it.
+      — owner decision 2026-08-14,
+      `docs/legal/owner-decision-2026-08-14-longitudinal-insights-on.md`.
+      Verified live the same day: `https://prediabetespal.com/privacy` renders
+      `derived pattern summaries` and `personalized pattern summaries`, which
+      that page emits only when the flag is `1`. The insight is **free**, not
+      Premium; no surface may price it.
+- [ ] ⛔ `LONGITUDINAL_INSIGHTS_ENABLED` — **the runtime kill switch has never
+      been observed in production.** This box stays unticked deliberately.
+      `GET /api/coach` returns 401 at `app/api/coach/route.ts:29` before the
+      flag branch at line 62, so no unauthenticated probe exists — unlike the
+      photo twin's 400-vs-404. All that is known is that `next.config.ts`
+      throws on a production build whose client flag is `1` with the twin
+      unset, so the twin was set **when the live build ran**; it is read per
+      request, so a later env edit could have diverged. ⛔ `vercel env pull`
+      cannot close this — it returns an empty string for this flag *and* for
+      `PHOTO_INPUT_ENABLED`, which is provably on. To tick this box, observe
+      the insight in an authenticated `GET /api/coach` response against
+      production.
 - [ ] `LEGAL_ENTITY_NAME` and `SUPPORT_EMAIL` are set to real, monitored values;
       `/terms` and `/privacy` show them on the production domain.
 - [ ] Submit for review; respond to any Play reviewer follow-up promptly

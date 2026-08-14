@@ -125,7 +125,9 @@ the false "weekly insights are Premium" bullet was removed.
 
 ### Landing exposure, swept 2026-08-14
 
-- `app/page.tsx:441` — includes-carousel panel **"Learn your patterns."**
+- `app/page.tsx`, the `includes` entry titled **"Learn your patterns."** — the
+  includes-carousel panel. (Cited by title, not line: it sits at 426 on this
+  branch and 441 once the line-art PR lands.)
   Body: *"A history of what you actually ate, so the meals that keep coming
   back and the easiest changes to them are visible without logging anything."*
   It promises a history the reader browses, illustrated by the real `/meals`
@@ -147,10 +149,18 @@ rename guard in this repo.
 
 - `docs/legal/owner-risk-launch-decision-5f6abcb.md` — the 2026-07-12 bullet
   gains a superseded pointer; its text is unchanged
-- `docs/legal/counsel-brief.md` — longitudinal row, and the gate record
+- `docs/legal/counsel-brief.md` — longitudinal row, the now-historical
+  "disabled pending" heading, the retained-questions item that called both
+  functions dormant, and the gate record. ⚠️ The gate record spells out that of
+  the two conditions the 2026-07-12 decision set — a function-specific evidence
+  review **and** an explicit written owner decision — only the second exists.
+  No evidence-review artifact was produced for either function. Do not let a
+  later edit round that up.
 - `docs/ops/env-reference.md` — `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS`,
   `LONGITUDINAL_INSIGHTS_ENABLED`
-- `docs/ops/launch-checklist.md` — the flag-remains-unset checkbox
+- `docs/ops/launch-checklist.md` — the flag-remains-unset checkbox, **split in
+  two**: the client flag ticks (verified live), the server twin stays unticked
+  because it never was
 - `docs/handoff/human-actions-required.md` — the keep-unset line
 - `docs/release/truth-index.md` — the `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` row
 

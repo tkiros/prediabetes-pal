@@ -300,12 +300,27 @@ gate is replaced by the dated owner-risk decision for this exact candidate.
 This is not a legal opinion or a finding of compliance, and no artifact may
 state `COUNSEL GATE: CLEARED`. Meal photo-assist and longitudinal insights stay
 disabled unless a later function-specific evidence review and explicit written
-owner decision authorize a new reviewed build. **Both conditions were met on
-2026-08-14** — `docs/legal/owner-decision-2026-08-14-photo-assist-on.md` and
-`docs/legal/owner-decision-2026-08-14-longitudinal-insights-on.md` authorize
-the two functions as ratifications of a state production had already been in
-since 2026-07-21, the written decision following the build rather than
-preceding it. The waived counsel review is **unchanged** by either. Paid entry
-points remain
+owner decision authorize a new reviewed build.
+
+⚠️ **Both functions were enabled on 2026-07-21 without that sequence, and were
+ratified in writing on 2026-08-14** —
+`docs/legal/owner-decision-2026-08-14-photo-assist-on.md` and
+`docs/legal/owner-decision-2026-08-14-longitudinal-insights-on.md`. Read those
+entries for what they do and do not claim. In particular:
+
+- **The explicit written owner decision exists.** Dated, per function.
+- ⛔ **The function-specific evidence review does not.** No such artifact was
+  produced for either function. The build and the deployment proof came first
+  and the written decision came after, which both entries record rather than
+  paper over.
+- The reviewed build and deployment proof exist, but predate the decisions
+  they were supposed to follow.
+
+So one of the two stated conditions was met and one was not. Neither entry
+claims otherwise, and neither clears the counsel gate: the waived professional
+review is **unchanged** by both, and no artifact may still state
+`COUNSEL GATE: CLEARED`.
+
+Paid entry points remain
 separately fail-closed until the real operator and commercial facts are supplied
 and the live assent path is proved.
