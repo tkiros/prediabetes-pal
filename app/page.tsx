@@ -1231,15 +1231,31 @@ export default function LandingPage() {
                   Type “oatmeal” and see what it asks you.
                 </Link>
               </div>
-              <div className="landing-step-art">
-                {/* The design file's six-row label-gutter table. The layout is
-                    a prop rather than the component's only shape because
-                    `/check` and `/demo` render this same component, and a
-                    marketing drawing does not get to restyle an in-app
-                    surface. */}
-                <LandingPause>
-                  <DemoCheckCard layout="table" />
-                </LandingPause>
+              <div className="landing-step-art landing-step-art--live">
+                {/* ⚖️ OWNER RULING 2026-08-14, overturning 2026-08-06. This
+                    used to render the design file's six-row label-gutter
+                    table, which the app does not draw anywhere. Framing that
+                    would have asserted it was a screen — so the table went
+                    instead, and the component's own shape got the frame.
+
+                    ⛔ This is now the ONLY unframed-to-framed surface on the
+                    page whose pixels are live DOM rather than a capture, and
+                    that is the point: it is the real component at phone
+                    width, so the frame is telling the truth.
+
+                    ⚠️ `.landing-step-screen` exists because the bezel needs a
+                    page plane behind the card, exactly as the step-one
+                    capture shows one. Without it the card sits flush and the
+                    frame reads as an outline drawn around a card rather than
+                    a phone. It may not reach into the card itself —
+                    landing-design-guards GUARD 1. */}
+                <div className="landing-phone landing-step-live-phone">
+                  <div className="landing-step-screen">
+                    <LandingPause>
+                      <DemoCheckCard />
+                    </LandingPause>
+                  </div>
+                </div>
               </div>
             </li>
             {/* ⛔ NO ART, and the copy says why: this step hands off to the

@@ -1606,10 +1606,7 @@ button.inline-link {
 .landing-glance-fact,
 .landing-offer-what,
 .landing-limits-card h3,
-.landing-verdict-signal,
-.landing-demo-eyebrow,
-.landing-demo-label,
-.landing-demo-signal {
+.landing-verdict-signal {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
@@ -2704,6 +2701,39 @@ button.inline-link {
   max-width: clamp(190px, 22vw, 248px);
 }
 
+/* ⚠️ DELIBERATELY NOT `.landing-step-phone`, and the difference is the whole
+   reason this class exists. That cap wraps a SCALING IMAGE, where a smaller
+   number just draws the picture smaller. This one wraps LIVE DOM, where the
+   width does not scale the content — it sets the wrap, and therefore sets the
+   height. Borrowing the 248px cap here would reflow a full result card into a
+   thumbnail-width column and roughly double its height, inside the desert
+   that already had the tightest slack in this section.
+
+   390px is the phone the rest of the page is drawn at (`app-check.png` is
+   390x700), so the frame is honest: this is the component at the width a
+   phone actually gives it. Wider reads as a tablet and stops making the
+   point. Re-measure if this number moves:
+   node scripts/measure-landing.mjs --tab=2 */
+.landing-step-live-phone {
+  max-width: 390px;
+}
+
+/* The page plane behind the card. A phone shows an app on a background, not a
+   card welded to the bezel — step one's capture shows exactly that, and
+   without this the frame reads as an outline someone drew around a card.
+
+   ⛔ It supplies its own background and radius and NEVER names `.surface-card`
+   or `.result-card`. Restyling the product's card from a landing selector is
+   what landing-design-guards GUARD 1 forbids, and the claim that guard
+   protects — that marketing shows the card unmodified — is the only reason
+   rendering the real component here is worth anything. */
+.landing-step-screen {
+  display: block;
+  border-radius: clamp(14px, 1.8vw, 24px);
+  padding: clamp(8px, 1.6vw, 14px);
+  background: var(--page-bg);
+}
+
 /* The image's own corners, so they follow the frame's rather than squaring off
    inside it. Not `.landing-phone img` — this page has exactly one framed
    image and a generic rule would also catch anything a later panel puts in a
@@ -3166,130 +3196,13 @@ button.inline-link {
   line-height: 1.65;
 }
 
-/* ── §5's demo, the design file's six-row table ───────────────
-   `<DemoCheckCard layout="table" />`. One card, six labelled rows — You type /
-   Prediabetes Pal / You answer / Signal / Why / Try — instead of the app layout's two
-   nested result cards. The nesting was the problem the drawing solves: a card
-   inside a card inside a marketing section gave the reader three borders to
-   parse before the first word, and the clarify beat was the inner one.
-
-   ⚠️ This family styles the LANDING's layout of that component only. The app's
-   `/check` and `/demo` render the same component's default layout in
-   `.surface-card`, untouched. Do not "unify" them — a marketing drawing has
-   no authority over an in-app surface.
-
-   ⛔ Row order is load-bearing. The reveal below targets the Prediabetes Pal row and
-   every SIBLING AFTER IT, so reordering the rows silently changes which part
-   of the flow the pause lands on. */
-.landing-demo {
-  display: grid;
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-radius: 20px;
-  overflow: hidden;
-}
-
-/* One of the two places rail 10's 16px floor does not apply — a tracked
-   uppercase label, at the size the whole page sets them. AUD-008: the text is
-   COMPUTED from the registry's capture state, never typed. */
-.landing-demo-eyebrow {
-  margin: 0;
-  padding: 14px clamp(18px, 5vw, 24px);
-  background: var(--accent-tint);
-  color: var(--accent-strong);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-/* ⚠️ THE GUTTER NARROWS ON A PHONE, and the drawing does not say so because
-   it was drawn at 1280px. Held at the design's 96px it left 213px for the
-   text at 375px — every long row wrapped to six lines and §5 grew past the
-   §11.1 reachability budget, which is a hard build failure, not a preference.
-
-   The floor is 64px because that is what the PRODUCT's own label gutter
-   measures (`.anatomy-row`): the app already answered what this column should
-   be on a phone, and the answer does not need inventing twice. Between the
-   two it interpolates, so there is no breakpoint to land wrong on. */
-.landing-demo-row {
-  display: grid;
-  grid-template-columns: clamp(64px, 17vw, 96px) minmax(0, 1fr);
-  gap: clamp(12px, 3vw, 18px);
-  /* Same argument as the gutter, same two endpoints: the product's own row
-     padding at the bottom, the drawing's at the top. Six rows make this the
-     tallest single element on the page, so 4px a row is 48px of a budget
-     measured in pixels. */
-  padding: clamp(14px, 4vw, 18px) clamp(18px, 5vw, 24px);
-  border-top: 1px solid var(--border-soft);
-}
-
-/* The first row's edge is the eyebrow strip's colour change; a rule there too
-   would read as a double line. */
-.landing-demo-row:first-of-type {
-  border-top: 0;
-}
-
-/* The two rows where Prediabetes Pal is the one speaking are tinted, which is what
-   makes the exchange legible as an exchange rather than as six equal rows.
-   Both carry the MODERATE tint because the answer this flow ends in is
-   MODERATE — the tint is the verdict, not decoration. */
-.landing-demo-row--ask {
-  background: var(--moderate-bg);
-}
-
-.landing-demo-label {
-  padding-top: 4px;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-/* What the READER supplied, in both places they supply something. Weight, not
-   colour: it has to be distinguishable from Prediabetes Pal's own lines at a glance
-   while staying plain text.
-
-   ⛔ It looks like a field and must never become one. No input, not
-   focusable, no caret — the static-fixture contract is pinned in
-   demo-check-card.test.ts. */
-.landing-demo-entry {
-  color: var(--text-strong);
-  font-size: 17px;
-  font-weight: 600;
-  line-height: 1.5;
-}
-
-.landing-demo-value {
-  color: var(--text-body);
-  font-size: 17px;
-  line-height: 1.55;
-}
-
-.landing-demo-value strong {
-  color: var(--text-strong);
-}
-
-/* ⚠️ (0,2,0), and it has to be: the lead IS a <strong> inside
-   `.landing-demo-value`, so the rule above is (0,1,1) and beats a bare class.
-   Written as a descendant pair rather than as `strong.landing-demo-lead` so
-   the reason is visible — this is the row where Prediabetes Pal asks rather than
-   answers, and it carries the verdict colour the answer will arrive in. */
-.landing-demo-value .landing-demo-lead {
-  color: var(--moderate-text);
-}
-
-.landing-demo-signal {
-  color: var(--moderate-text);
-  font-size: 19px;
-  font-weight: 700;
-}
-
-.landing-demo-fineprint {
-  padding: clamp(14px, 4vw, 18px) clamp(18px, 5vw, 24px);
-  border-top: 1px solid var(--border-soft);
-}
+/* `.landing-demo*` stood here — the design file's six-row label-gutter table,
+   ~120 lines styling a shape `<DemoCheckCard>` no longer renders. Deleted
+   2026-08-14 with the owner ruling that put step two's art in a phone frame:
+   a frame asserts the thing inside it is a screen, and the app draws no such
+   table anywhere. The component's default layout — the one `/check` and
+   `/demo` actually render — took its place, so the landing now styles none of
+   it and GUARD 1 has one less family to police. */
 
 /* The page's ONE animation. Two beats: the clarify card at 220ms, then
    everything after it — the "You answer:" line and the result card — at 240ms

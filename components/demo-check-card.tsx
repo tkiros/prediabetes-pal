@@ -33,8 +33,9 @@ export function demoExampleEyebrow(lastLiveCaptureAt: string | null): string {
 }
 
 /**
- * The three ledgered lines (`demo-check-reason` / `-adjustment` / `-swap`),
- * hoisted so the two layouts below cannot drift apart. Typed ONCE — two copies
+ * The three ledgered lines (`demo-check-reason` / `-adjustment` / `-swap`).
+ * Hoisted when there were two layouts to keep in step; kept hoisted now there
+ * is one, because the reason was never the second layout. Typed ONCE — two copies
  * of a ledgered string is how a card and its ledger row quietly stop agreeing,
  * and `demo-check-card.test.ts` pins these against the ledger by source match,
  * which a second copy would still satisfy.
@@ -46,77 +47,20 @@ const ADJUSTMENT =
 const SWAP = "Steel-cut oats hold up steadier than instant packets.";
 
 /**
- * `layout="table"` is the LANDING's rendering: the design file's six-row
- * label-gutter table (You type / Prediabetes Pal / You answer / Signal / Why / Try).
- * The default is the app's, and it is the default deliberately — `/check` and
- * `/demo` render this component too, and the design file is a marketing
- * drawing with no authority over an in-app surface. Changing the default
- * restyles two app routes to match a landing page.
+ * ONE shape, the app's. Until 2026-08-14 a `layout="table"` prop rendered a
+ * second, landing-only shape — the design file's six-row label-gutter
+ * drawing. It went with the owner ruling that put step two's art inside a
+ * phone frame: a frame asserts that what it holds is a screen, and no route
+ * in this app draws that table. The landing now renders what `/check` and
+ * `/demo` render, which is the only version of this component that was ever
+ * true.
  *
- * Both layouts read the same registry entry and the same three consts above,
- * so the only thing that varies is the shape.
+ * ⛔ Do not reintroduce a marketing-only layout here. A prop that lets a
+ * landing page restyle an in-app surface is the same drift
+ * `landing-design-guards` GUARD 1 blocks in CSS, wearing a different hat.
  */
-export function DemoCheckCard({ layout }: { layout?: "table" } = {}) {
+export function DemoCheckCard() {
   const example = OATMEAL_EXAMPLE;
-  if (layout === "table") {
-    return (
-      <section
-        className="landing-demo"
-        aria-label="Example check"
-        data-testid="demo-check-card"
-      >
-        <p className="landing-demo-eyebrow">
-          {demoExampleEyebrow(example.lastLiveCaptureAt)}
-        </p>
-        <div className="landing-demo-row">
-          <span className="landing-demo-label">You type</span>
-          <span className="landing-demo-entry">{example.input}</span>
-        </div>
-        {/* ⚠️ KEEP `data-testid="demo-clarify"` AND KEEP THIS ROW WHERE IT IS.
-            The page's one animation is `[data-testid="demo-clarify"]` plus its
-            following siblings on a 520ms delay, so the pause reads as a pause
-            (globals.css, `.landing-pause-stage`). In this layout every later
-            row is a sibling, which is what makes the beat land on the answer
-            rather than on one nested box. */}
-        <div
-          className="landing-demo-row landing-demo-row--ask"
-          data-testid="demo-clarify"
-        >
-          <span className="landing-demo-label">Prediabetes Pal</span>
-          <span className="landing-demo-value">
-            <strong className="landing-demo-lead">Need one more detail</strong>
-            <br />
-            {example.expectedClarifyQuestion}
-          </span>
-        </div>
-        <div className="landing-demo-row">
-          <span className="landing-demo-label">You answer</span>
-          <span className="landing-demo-entry">{example.followUp}</span>
-        </div>
-        <div className="landing-demo-row landing-demo-row--ask">
-          <span className="landing-demo-label">Signal</span>
-          <span className="landing-demo-signal" data-risk="MODERATE">
-            Be careful
-          </span>
-        </div>
-        <div className="landing-demo-row">
-          <span className="landing-demo-label">Why</span>
-          <span className="landing-demo-value">{REASON}</span>
-        </div>
-        <div className="landing-demo-row">
-          <span className="landing-demo-label">Try</span>
-          <span className="landing-demo-value">
-            <strong>Adjustment:</strong> {ADJUSTMENT}
-            <br />
-            <strong>Swap:</strong> {SWAP}
-          </span>
-        </div>
-        <div className="landing-demo-fineprint">
-          <DisclaimerLine />
-        </div>
-      </section>
-    );
-  }
   return (
     <section
       className="surface-card hero-card"

@@ -489,6 +489,61 @@ off to the three cards below. **Every app screenshot on the page is framed;**
 steps 2 and 3 have no screenshot to frame. Flagged for the owner rather than
 silently skipped.
 
+### ⚖️ OWNER RULING, 2026-08-14 — step 2 is framed, and the table is gone
+
+The owner took the second branch the paragraph above offered: **render step two
+in the app's real layout, then frame that.** The table was never framed — it was
+deleted.
+
+| | Before | After |
+|---|---|---|
+| Component call | `<DemoCheckCard layout="table" />` | `<DemoCheckCard />` |
+| Shape | design file's six-row label-gutter table | the layout `/check` and `/demo` render |
+| Wrapper | bare `.landing-step-art` | `.landing-phone .landing-step-live-phone` → `.landing-step-screen` |
+| CSS | `.landing-demo-*`, ~120 lines | none — the landing styles no part of it |
+| Card families on the page | three | **two** |
+
+**Why the whole prop went rather than just the call site.** `app/page.tsx` was
+its only consumer. Leaving a marketing-only layout in a component that three
+routes import is the same drift GUARD 1 blocks in CSS, wearing a different hat —
+and this one had no guard at all.
+
+**Three things this change is quietly buying, and their costs:**
+
+1. ⛔ **The 2026-08-06 nesting ruling is live again on the landing.** That ruling
+   routed *around* the card-in-card nesting by adopting the flat table; the
+   landing now shows the nesting, at phone width, because that is what a reader
+   meets at `/check`. `DESIGN.md` §11's work item went from two routes to three.
+   The flat shape is no longer implemented anywhere to lift from — it is in this
+   file and in git.
+2. ⚠️ **`.landing-step-live-phone` is 390px and may NOT borrow
+   `.landing-step-phone`'s `clamp(190px, 22vw, 248px)`.** That cap wraps a
+   *scaling image*, where a smaller number just draws the picture smaller. This
+   one wraps *live DOM*, where width sets the wrap and therefore sets the
+   height. 390px is what `app-check.png` is drawn at, so the frame is honest.
+3. ⚠️ **`.landing-step-screen` is not decoration.** The bezel needs a page plane
+   behind the card — step one's capture has one — or the frame reads as an
+   outline drawn around a card. It supplies its own background and radius and
+   names neither card class, which is what keeps GUARD 1 true. **That guard just
+   stopped being academic:** §5 now puts a real `.surface-card` inside a landing
+   wrapper for the first time.
+
+**Measured, production build, `--tab=2`.** The desert this art lands in is the
+one from the step-two exit to the next CTA — the same region that hard-failed
+this budget once before, at 2,172px, and forced the exit link out of step three.
+
+```
+before   1,318px      after   1,428px      budget 2,001px      +110px, 573px slack
+page     16,321px  →  16,431px             worst desert 1,977px, unchanged
+```
+
+The growth is small because at 375px the frame is near full width anyway, so the
+card reflows at roughly the width the table already used. **The number that would
+have blown it is the width**, not the layout — see cost 2.
+
+⚠️ **Step 3 is still unframed and that has not changed.** It carries no art at
+all. There was nothing to frame and nothing was invented to fill it.
+
 ## Item 4 — the three result cards
 
 Shipped to `Revora Landing(2).html` §7: 1.5px risk-coloured border on all four
