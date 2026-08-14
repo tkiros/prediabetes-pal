@@ -57,10 +57,16 @@ functions below may later be enabled.
 This section covers both **Longitudinal insights** and **Imaging input** for
 the meal photo-assist function.
 
+⚠️ **The heading is now historical.** Both functions were authorized on
+2026-08-14 and both are ON in production; neither is still "disabled pending".
+The heading and the *Default candidate state* column are kept because they name
+what the 2026-07-12 candidate was, which is what the SHA-bound packet
+describes. The **Enforcement** column is the live rule.
+
 | Function | Default candidate state | Enforcement |
 | --- | --- | --- |
 | Meal photo-assist | **ON in production since 2026-07-21**, authorized 2026-08-14 (`docs/legal/owner-decision-2026-08-14-photo-assist-on.md`). OFF is still the default-candidate state. | `NEXT_PUBLIC_PHOTO_INPUT` must equal exact `1`; otherwise the client control is absent and `POST /api/check/photo-draft` returns `404` before model use (`lib/photo-input-flag.ts`, route handler, smoke/unit tests). Advertised, but as **Premium** — the draft 402s a free session, so no free-tier promise may name it |
-| Longitudinal insights | OFF and unadvertised | `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` must equal exact `1`; otherwise derivation returns `null`, server coach payloads contain no insight, guest/signed-in dashboards and daily loop render none, and paid/product copy omits the promise (`lib/longitudinal-insights-flag.ts`, `lib/coach/insights.ts`, boundary tests) |
+| Longitudinal insights | **ON in production since 2026-07-21**, authorized 2026-08-14 (`docs/legal/owner-decision-2026-08-14-longitudinal-insights-on.md`). OFF is still the default-candidate state. | `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` must equal exact `1`; otherwise derivation returns `null`, server coach payloads contain no insight, guest/signed-in dashboards and daily loop render none (`lib/longitudinal-insights-flag.ts`, `lib/coach/insights.ts`, boundary tests). The runtime kill switch is the server twin `LONGITUDINAL_INSIGHTS_ENABLED` (`app/api/coach/route.ts:62`). Describable in product copy, but **free, not Premium** — the entitlement gate in that route covers progress/BAI only, so no surface may price the insight |
 
 Both are build-time gates. Enabling either requires a new reviewed build and
 deployment; an operator cannot silently activate the reviewed binary at
@@ -156,8 +162,11 @@ and any jurisdiction-specific disclosures. Do not infer them from this brief.
 ## Questions retained for any future professional review
 
 1. FDA intended-use/device analysis for the actual A1C handling, result labels,
-   one-shot meal function, disabled longitudinal function, disabled meal-photo
-   function, and separate Pantry Review function.
+   one-shot meal function, longitudinal function, meal-photo function, and
+   separate Pantry Review function. ⚠️ The longitudinal and photo functions
+   were described here as *disabled* until 2026-08-14; both are now authorized
+   and live, so a review answering this question must analyse them as **enabled
+   production functions**, not as dormant code.
 2. Permitted/prohibited in-product, support, store, listing, acquisition, and
    advertising language, including whether each active claim has an adequate
    substantiation basis under FTC standards.
@@ -291,6 +300,12 @@ gate is replaced by the dated owner-risk decision for this exact candidate.
 This is not a legal opinion or a finding of compliance, and no artifact may
 state `COUNSEL GATE: CLEARED`. Meal photo-assist and longitudinal insights stay
 disabled unless a later function-specific evidence review and explicit written
-owner decision authorize a new reviewed build. Paid entry points remain
+owner decision authorize a new reviewed build. **Both conditions were met on
+2026-08-14** — `docs/legal/owner-decision-2026-08-14-photo-assist-on.md` and
+`docs/legal/owner-decision-2026-08-14-longitudinal-insights-on.md` authorize
+the two functions as ratifications of a state production had already been in
+since 2026-07-21, the written decision following the build rather than
+preceding it. The waived counsel review is **unchanged** by either. Paid entry
+points remain
 separately fail-closed until the real operator and commercial facts are supplied
 and the live assent path is proved.

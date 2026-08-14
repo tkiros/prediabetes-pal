@@ -116,10 +116,16 @@ until the live PWA is stable (`docs/ops/play-twa-runbook.md`'s blocking note).
       answers **400** (route present, body rejected), not the **404** a build
       with the flag unset returns before any model call. The feature is
       advertised as **Premium** only; no free-tier promise names it.
-- [ ] `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` remains unset unless the function has
-      completed evidence review and explicit written owner approval for a new
-      reviewed build. ⚠️ `docs/release/truth-index.md:35` says its server twin
-      is already set in production — unresolved, owner has not ruled.
+- [x] `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` is **authorized** at `1` in production
+      with its server twin `LONGITUDINAL_INSIGHTS_ENABLED=1` — owner decision
+      2026-08-14, `docs/legal/owner-decision-2026-08-14-longitudinal-insights-on.md`.
+      Client flag verified live the same day: `https://prediabetespal.com/privacy`
+      renders `derived pattern summaries` and `personalized pattern summaries`,
+      which that page emits only when the flag is `1`. ⚠️ The **server twin was
+      not** verified live — `GET /api/coach` 401s before the flag branch, so
+      there is no unauthenticated probe; it is inferred from the production
+      twin guard in `next.config.ts`. The insight is **free**, not Premium; no
+      surface may price it.
 - [ ] `LEGAL_ENTITY_NAME` and `SUPPORT_EMAIL` are set to real, monitored values;
       `/terms` and `/privacy` show them on the production domain.
 - [ ] Submit for review; respond to any Play reviewer follow-up promptly
