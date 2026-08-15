@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=664, height=360" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 664px; height: 360px; overflow: hidden; }
+      .ink {
+        fill: none;
+        stroke: #0a4a44;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      /* Filled with the GROUND, so a shape occludes what sits behind it — the
+         rice has to hide the back of the bowl's rim or the heap reads as a
+         transparent dome sitting on a line. */
+      .solid {
+        fill: #e6f2ef;
+        stroke: #0a4a44;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="kitchen-scale"
+      data-start="0"
+      data-duration="1"
+      data-width="664"
+      data-height="360"
+    >
+      <!-- The apps want an accountant. A bowl of rice on a digital scale.
+
+           ⛔ THE DISPLAY SHOWS TWO DASHES, NOT A NUMBER, AND MUST NOT SHOW ONE.
+           Digits are legible text under the `landing-familiar-cards` ledger
+           row, and a weight on a marketing frame is a number this product
+           never gives. Two dashes read as "no reading yet", which is both safe
+           and the more honest picture. -->
+      <svg id="kitchen-scale-art" width="664" height="360" viewBox="0 0 664 360" class="clip"
+           data-start="0" data-duration="1" data-track-index="1">
+        <rect x="0" y="0" width="664" height="360" fill="#e6f2ef" />
+
+        <!-- ⛔ RAISED AND ENLARGED 2026-08-14. The counter line sat at y=296,
+             below the 293 crop line, so on a phone the scale floated with
+             nothing under it. It was also the smallest drawing in the set of
+             six by a clear margin, which broke the optical scale the other
+             five share. Verified against the rendered block at 375px, not
+             reasoned about. Keep the counter above 293. -->
+        <path class="ink" d="M30,280 L634,280" />
+
+        <!-- the scale: a low slab with a display lip at the front -->
+        <path class="ink" d="M126,240 L538,240 Q552,240 552,253
+                             L552,264 Q552,276 538,276
+                             L126,276 Q112,276 112,264
+                             L112,253 Q112,240 126,240 Z" />
+        <path class="ink" d="M148,240 L516,240" />
+
+        <!-- ⛔ DISPLAY PANEL, EMPTY. Two strokes stood inside it and rendered
+             as "--" in a bezel — a glyph, which BRIEF.md forbids ("Legible
+             text includes digits, so the kitchen scale's display stays
+             blank") and which contradicted the card's alt text ("its display
+             reads nothing"). Three sources, two of them wrong. The bezel
+             alone says "this thing has a display"; nothing in it says what it
+             shows. Do not put a reading back. -->
+        <path class="ink" d="M258,248 L406,248 L406,268 L258,268 Z" />
+
+        <!-- The bowl. ⚠️ Its rim is an ELLIPSE, not the straight line the first
+             pass drew — a straight rim flattens the bowl into a pie and the
+             heap above it stops reading as contents. -->
+        <path class="ink" d="M172,176 C176,230 228,244 332,244
+                             C436,244 488,230 492,176" />
+        <ellipse class="ink" cx="332" cy="176" rx="160" ry="24" />
+
+        <!-- Uncooked rice, heaped above the rim. Filled, so it covers the back
+             of the rim the way a heap of rice actually would. -->
+        <path class="solid" d="M214,180 C240,142 292,130 332,130
+                               C372,130 424,142 450,180
+                               C410,196 378,200 332,200
+                               C286,200 254,196 214,180 Z" />
+        <path class="ink" d="M274,160 L288,153" />
+        <path class="ink" d="M308,146 L322,141" />
+        <path class="ink" d="M348,144 L362,148" />
+        <path class="ink" d="M382,156 L396,163" />
+        <path class="ink" d="M296,176 L310,171" />
+        <path class="ink" d="M342,174 L356,178" />
+      </svg>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["kitchen-scale"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=664, height=360" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 664px; height: 360px; overflow: hidden; }
+      /* One weight everywhere. 3px at 664 wide lands at 1.5px on the ~330px
+         display box — the hairline DESIGN.md uses for the result-card border. */
+      .ink {
+        fill: none;
+        stroke: #0a4a44;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="cleared-plate"
+      data-start="0"
+      data-duration="1"
+      data-width="664"
+      data-height="360"
+    >
+      <!-- "You eat, then you worry" — a cleared plate, cutlery set down
+           together, a crumpled napkin. Top-down.
+
+           ⛔ SAFE AREA IS y 67-293. Below 640px the landing crops this to
+           664x225 with object-fit: cover. Nothing that carries the picture may
+           sit outside that band. -->
+      <svg id="cleared-plate-art" width="664" height="360" viewBox="0 0 664 360" class="clip"
+           data-start="0" data-duration="1" data-track-index="1">
+        <!-- ⛔ The ground is a RECT, not a CSS background. png-sequence writes
+             RGBA and the body's background does not survive into the alpha
+             channel — the first render of this frame came out transparent. -->
+        <rect x="0" y="0" width="664" height="360" fill="#e6f2ef" />
+
+        <!-- plate -->
+        <circle class="ink" cx="248" cy="180" r="110" />
+        <circle class="ink" cx="248" cy="180" r="83" />
+
+        <!-- knife and fork laid parallel at four o'clock: the finished-eating
+             position, which is the whole point of the drawing -->
+        <!-- ⛔ NEGATIVE. SVG rotate() is CLOCKWISE, and the handles already
+             start below the plate's centre, so +38 swings them to about 7:30 —
+             the mirror of the finished signal, which is not a signal at all.
+             This shipped as rotate(38 …) and read backwards. -->
+        <g transform="rotate(-38 248 180)">
+          <g transform="translate(224 180)">
+            <!-- fork -->
+            <path class="ink" d="M-11,-64 A11,11 0 0 1 11,-64 L11,-48
+                                 Q11,-42 5,-40 L4,58 A4.5,4.5 0 0 1 -4,58
+                                 L-5,-40 Q-11,-42 -11,-48 Z" />
+            <path class="ink" d="M-5.5,-70 L-5.5,-46" />
+            <path class="ink" d="M0,-72 L0,-46" />
+            <path class="ink" d="M5.5,-70 L5.5,-46" />
+          </g>
+          <g transform="translate(272 180)">
+            <!-- knife -->
+            <path class="ink" d="M-6,-72 Q7,-62 7,-36 L-6,-36 Z" />
+            <path class="ink" d="M-5,-36 L-5,54 A5,5 0 0 0 5,54 L5,-36" />
+          </g>
+        </g>
+
+        <!-- Crumpled napkin. Two earlier passes failed the same way: straight
+             edges read as a folded box, then a smooth convex outline read as
+             a melon. Fabric needs a LOBED silhouette — bulges with pinched
+             valleys between them — and creases that CONVERGE, because that is
+             what gathering cloth in one hand actually does. -->
+        <g transform="translate(508 182)">
+          <path class="ink" d="M-70,-2
+                               C-66,-28 -50,-42 -30,-38
+                               C-20,-36 -16,-30 -6,-33
+                               C6,-37 14,-50 34,-44
+                               C52,-39 56,-24 68,-16
+                               C82,-7 80,13 64,23
+                               C51,31 44,27 36,34
+                               C25,45 6,53 -11,47
+                               C-25,42 -28,34 -40,36
+                               C-57,39 -72,24 -70,-2 Z" />
+          <path class="ink" d="M-30,-38 C-24,-25 -15,-16 -7,-7" />
+          <path class="ink" d="M34,-44 C23,-29 8,-16 -7,-7" />
+          <path class="ink" d="M68,-16 C42,-13 14,-10 -7,-7" />
+          <path class="ink" d="M-11,47 C-10,28 -8,10 -7,-7" />
+          <path class="ink" d="M-70,-2 C-48,-4 -27,-6 -7,-7" />
+        </g>
+      </svg>
+    </div>
+
+    <script>
+      // Static frame. The contract wants a paused, seek-safe timeline on
+      // window.__timelines; there is nothing to animate, so it holds no tweens.
+      window.__timelines = window.__timelines || {};
+      window.__timelines["cleared-plate"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

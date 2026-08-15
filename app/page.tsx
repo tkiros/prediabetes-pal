@@ -70,15 +70,30 @@ const MARQUEE_LINES = [
  * which supersedes `landing-audience-pains` (deactivated in the same pass; all
  * four of its pains survive here, restated in the reader's voice).
  *
- * Each card is a MOMENT, not a category, and the design draws a photograph
- * under each one. The photographs are generated stills, not stock of real
- * people: every one is a still life or a hand, nobody's face, no legible text.
- * That is deliberate and it is the only honest option here — a photograph of a
- * person on a prediabetes page reads as a customer, and this page has no
- * customers to show yet (`no fabricated social proof`, below). The six
- * generation prompts are recorded verbatim in
- * `docs/landing/2026-08-11-design-copy-7-rules-audit.md`, because a re-crop or
- * a seventh card needs the brief and nothing else in the repo carries it.
+ * Each card is a MOMENT, not a category, and the design draws a picture under
+ * each one.
+ *
+ * ⚖️ OWNER RULING 2026-08-14: those pictures are LINE DRAWINGS, not the
+ * generated photographs this block shipped with. Same six subjects, same
+ * frame, one medium changed. The constraint that shaped the photographs is
+ * unchanged and still binding: every one is a still life, nobody's face, no
+ * legible text — a picture of a person on a prediabetes page reads as a
+ * customer, and this page has no customers to show yet (`no fabricated social
+ * proof`, below).
+ *
+ * ⛔ THE DRAWINGS ARE BUILT FROM SOURCE, and the source is committed:
+ * `videos/familiar-line-art/` (HyperFrames, one composition per card, rendered
+ * `--format=png-sequence` to a single frame). Regenerate, never hand-edit the
+ * PNGs — an undocumented binary nobody can rebuild is how this page's previous
+ * screenshots went stale for a whole design era. The generation prompts for
+ * the retired photographs stay in
+ * `docs/landing/2026-08-11-design-copy-7-rules-audit.md` as the record of what
+ * they were.
+ *
+ * ⚠️ 664x360 IS LOAD-BEARING and the drawings are built to it. `.landing-familiar-art`
+ * pins that aspect ratio and crops to 664/225 below 640px, so each frame keeps
+ * its subject inside the middle band. A frame drawn to a different ratio moves
+ * six card heights at once.
  *
  * ⛔ `alt` describes the PICTURE, never the product. These are mood, not
  * evidence — an alt that says "a person struggling to choose a healthy meal"
@@ -89,37 +104,37 @@ const FAMILIAR = [
     title: "“Eat better.”",
     lines: ["Better than what?", "Nobody said."],
     art: "fridge-door",
-    alt: "A hand holding open a fridge door in a dim kitchen, the interior light spilling out."
+    alt: "A line drawing of an open fridge seen from the front, its door swung toward you, a carton and a bottle and a couple of tubs on the shelves."
   },
   {
     title: "Six months away",
     lines: ["That’s your next appointment.", "Dinner is tonight."],
     art: "appointment-card",
-    alt: "A small paper appointment card and a set of keys on a wooden kitchen table."
+    alt: "A line drawing of a small appointment card lying askew on a table, four ruled lines standing in for the writing on it, a set of keys beside it."
   },
   {
     title: "Every article disagrees",
     lines: ["Fruit’s fine. Fruit’s sugar.", "You’ve read both. Twice."],
     art: "open-tabs",
-    alt: "A laptop open on a bedside table at night, its screen glowing in a dark bedroom."
+    alt: "A line drawing of an open laptop on a bedside table with a lamp beside it, four browser tabs across the top of the screen and an article below them."
   },
   {
     title: "The apps want an accountant",
     lines: ["Weigh it. Log it. Scan it.", "You asked about dinner."],
     art: "kitchen-scale",
-    alt: "A bowl of uncooked rice resting on a white digital kitchen scale."
+    alt: "A line drawing of a bowl heaped with uncooked rice, sitting on a flat digital kitchen scale whose display reads nothing."
   },
   {
     title: "You eat, then you worry",
     lines: ["The hour after the meal", "is the worst part."],
     art: "cleared-plate",
-    alt: "A cleared dinner plate with the knife and fork set down together, beside a crumpled napkin."
+    alt: "A line drawing of a cleared dinner plate seen from above, the knife and fork set down together across it, a crumpled napkin beside it."
   },
   {
     title: "Nothing to show the doctor",
     lines: ["Six months of meals.", "No record of a single one."],
     art: "empty-notebook",
-    alt: "An open notebook with blank pages and a pen resting in the gutter."
+    alt: "A line drawing of a spiral notebook lying open, both pages blank, a pen resting across the right-hand one."
   }
 ] as const;
 
@@ -902,8 +917,8 @@ export default function LandingPage() {
               between is supposed to be your job to figure out.
             </p>
           </div>
-          {/* ⚖️ SIX CARDS WITH PHOTOGRAPHS, replacing the four ghost-numeral
-              pains. The ghost numerals go with them: a photograph and a
+          {/* ⚖️ SIX CARDS WITH LINE DRAWINGS, replacing the four ghost-numeral
+              pains. The ghost numerals go with them: a picture and a
               counter in the same card is two decorations arguing.
               (⛔ The word for "how a thing is styled" that starts with t-r-e-a
               cannot appear on this line. claims-boundary-copy.test.ts strips
@@ -913,7 +928,14 @@ export default function LandingPage() {
               ⛔ `loading="lazy"` on all six and fixed width/height on every
               one — six images below the fold with no intrinsic size is six
               layout shifts, and this block sits directly above a measured
-              exit. The files are 664×360 webp, ~12KB each. */}
+              exit. The files are 664×360 PNG, 10–31KB each.
+
+              ⚠️ THIS NOTE SAID PHOTOGRAPHS AND WEBP UNTIL 2026-08-15, three
+              weeks after the owner ruled the pictures are drawings and a
+              fortnight after the last webp left the repo. The docblock 700
+              lines above was rewritten in that pass and this one was not —
+              and this is the one an editor standing at the markup reads.
+              Both are pinned to the same medium now; move one, move both. */}
           <ul className="landing-familiar" role="list">
             {FAMILIAR.map(({ title, lines, art, alt }) => (
               <li key={art} className="landing-familiar-card">
@@ -927,7 +949,7 @@ export default function LandingPage() {
                 </div>
                 <img
                   className="landing-familiar-art"
-                  src={`/landing/familiar/${art}.webp`}
+                  src={`/landing/familiar/${art}.png`}
                   alt={alt}
                   width={664}
                   height={360}

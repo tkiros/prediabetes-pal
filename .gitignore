@@ -50,3 +50,10 @@ vercel-env*.txt
 # video-engine rendered assets (large binaries; regenerate from specs)
 video-engine/output/**/assets/
 .gstack/
+
+# HyperFrames render output (videos/*). The deliverables are copied into
+# public/ and committed there; renders/ is the intermediate directory the CLI
+# writes and is reproducible from compositions/.
+videos/*/renders/
+videos/*/node_modules/
+videos/*/.hyperframes/

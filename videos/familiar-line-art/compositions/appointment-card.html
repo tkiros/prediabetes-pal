@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=664, height=360" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 664px; height: 360px; overflow: hidden; }
+      .ink {
+        fill: none;
+        stroke: #0a4a44;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="appointment-card"
+      data-start="0"
+      data-duration="1"
+      data-width="664"
+      data-height="360"
+    >
+      <!-- Six months away — that's your next appointment, dinner is tonight.
+           A small appointment card dropped on the table with a set of keys.
+
+           ⛔ THE CARD'S WRITING IS FOUR BARS AND MUST STAY BARS. A real date
+           on a marketing frame would be both legible text (banned by
+           `landing-familiar-cards`) and a specific clinical claim in pixels no
+           copy guard can read. The bars say "something was written here"
+           without saying what. -->
+      <svg id="appointment-card-art" width="664" height="360" viewBox="0 0 664 360" class="clip"
+           data-start="0" data-duration="1" data-track-index="1">
+        <rect x="0" y="0" width="664" height="360" fill="#e6f2ef" />
+
+        <!-- ⚠️ Two full-width grain lines stood here and were removed. At
+             y=104 and y=286 they landed almost exactly on the mobile crop's
+             edges, so they read as framing rules drawn around the picture
+             rather than as a table.
+
+             ⛔ REMOVING BOTH WAS AN OVERCORRECTION and it shipped. With no
+             ground at all, the mobile crop (y 67–293) showed the card and the
+             keys hanging in empty tint — the same defect caught twice during
+             this commit on the laptop and the scale, missed here. The alt
+             text says the card lies "askew on a table"; a screen-reader user
+             was told about a surface no sighted reader could see.
+
+             ONE line, not two: two read as a frame, one reads as the table's
+             front edge. y=280 is the counter line kitchen-scale.html already
+             uses, 13px clear of the crop edge and 18px below the card's
+             lowest rotated corner (y≈262). Keep them in step — if one moves,
+             move both. -->
+        <path class="ink" d="M30,280 L634,280" />
+
+        <!-- the appointment card, lying slightly askew -->
+        <g transform="rotate(-7 232 186)">
+          <path class="ink" d="M136,124 L328,124 Q338,124 338,134
+                               L338,240 Q338,250 328,250
+                               L136,250 Q126,250 126,240
+                               L126,134 Q126,124 136,124 Z" />
+          <path class="ink" d="M150,156 L232,156" />
+          <path class="ink" d="M150,182 L314,182" />
+          <path class="ink" d="M150,206 L286,206" />
+          <path class="ink" d="M150,228 L206,228" />
+        </g>
+
+        <!-- a set of keys: ring, two keys, dropped beside the card -->
+        <circle class="ink" cx="446" cy="176" r="30" />
+        <circle class="ink" cx="446" cy="176" r="21" />
+        <g transform="rotate(28 470 190)">
+          <path class="ink" d="M470,182 L556,182 L556,196 L548,196 L548,206
+                               L540,206 L540,196 L524,196 L524,208
+                               L516,208 L516,196 L470,196 Z" />
+        </g>
+        <g transform="rotate(62 466 198)">
+          <path class="ink" d="M466,192 L544,192 L544,204 L536,204 L536,214
+                               L528,214 L528,204 L512,204 L512,216
+                               L504,216 L504,204 L466,204 Z" />
+        </g>
+      </svg>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["appointment-card"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

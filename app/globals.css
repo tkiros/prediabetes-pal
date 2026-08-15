@@ -2842,9 +2842,23 @@ button.inline-link {
 /* ⚠️ MEASURED (DESIGN.md §11.1), not taste. Below 640px the six cards stack,
    and at the 664/360 crop the block ran 2,357px — the exit under it still left
    2,361px above, 360 over budget. A shallower crop on a phone takes ~85px off
-   each card and brings the stretch legal. Every photograph is a still life
-   framed with room to spare, so a letterbox costs none of them their subject.
-   Re-measure before changing it: node scripts/measure-landing.mjs */
+   each card and brings the stretch legal.
+   Re-measure before changing it: node scripts/measure-landing.mjs
+
+   ⛔ THIS CROP IS DESTRUCTIVE AND THE DRAWINGS ARE BUILT AROUND IT. The note
+   here used to end "every photograph is a still life framed with room to
+   spare, so a letterbox costs none of them their subject" — true of the
+   generated photographs this block shipped with, false of what replaced them,
+   and it stayed after the medium changed. A photograph survives a centre crop
+   because its subject is diffuse; a line drawing is a few strokes on empty
+   ground, and cutting 135px of the 360 removes whole objects. Three frames
+   were broken here across two sessions on exactly this reading.
+
+   ⚠️ THE USABLE BAND IS y 67–293 of the 664×360 frame. Ink outside it is not
+   on the phone. Changing this ratio re-crops all six drawings at once and is
+   invisible to every gate in this repo — screenshot the block at 375px, all
+   six cards, before and after. `videos/familiar-line-art/BRIEF.md` carries
+   the band as a rule for anyone drawing a new one. */
 @media (max-width: 640px) {
   .landing-familiar-art {
     aspect-ratio: 664 / 225;
