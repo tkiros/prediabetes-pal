@@ -1156,7 +1156,15 @@ export default function LandingPage() {
             </p>
           </div>
           <ol className="landing-steps">
-            <li className="landing-step landing-step--art">
+            {/* `--art` is what splits the row into copy and art columns, so it
+                has to travel with the picture. Without this, the photo-off
+                build reserves the art column and draws step one as half a row
+                of copy beside dead space — the empty right column the owner
+                marked with red X's in 2026-08. Step three already renders
+                without the modifier and is the shape this degrades to. */}
+            <li
+              className={`landing-step${photoEnabled ? " landing-step--art" : ""}`}
+            >
               <div className="landing-step-copy">
                 <span className="landing-step-pill">Step one</span>
                 <h3>Describe the plate in front of you</h3>
