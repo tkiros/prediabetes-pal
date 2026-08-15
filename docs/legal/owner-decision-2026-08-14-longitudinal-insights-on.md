@@ -63,6 +63,32 @@ unauthenticated surface discriminates the server twin. The photo case had one
 (`POST /api/check/photo-draft`, 404 when the flag is unset); this function has
 none.
 
+> **Addendum, 2026-08-15 — the paragraph above is superseded, and the record
+> of it is kept because it was the reasoning at the time.**
+>
+> "A runtime probe is impossible" was true only of the surfaces that then
+> existed. `app/api/health/route.ts` now reports all four server twins as
+> boolean-only state (the `checkoutGate` shape: names a state, exposes no
+> config value). **Observed 2026-08-15T15:36Z on production:**
+> `flagTwins.longitudinalInsights: "on"`, alongside `photoInput`,
+> `mealMemory` and `learningJourney` all on, `status: healthy`, `issues: []`.
+>
+> The evidence for this function is therefore **no longer weaker than the
+> photo precedent** — it is now of the same kind, an observation of the live
+> value rather than an inference from the build-time guard. The
+> `docs/ops/launch-checklist.md` box is ticked on that basis.
+>
+> ⚠️ One correction worth carrying: the probe this decision asked for would
+> have been **wrong**. An authenticated `GET /api/coach` returns
+> `insight: null` when the flag is off *and* when `deriveInsight` bails under
+> `MIN_CHECKS_FOR_INSIGHT` (5). Tried 2026-08-15 against a real signed-in
+> production account with zero checks — `insight: null`, `tier: "free"` — the
+> no-data branch. Read as evidence it would have ticked the box on a null
+> that says nothing about the flag. ⛔ Do not reinstate that instruction.
+>
+> ⚠️ Unchanged: the value is read per request, so this records it **at that
+> timestamp**. Re-read `/api/health` after any env change.
+
 ⛔ **`vercel env pull` cannot settle this and must not be cited as if it
 could.** `vercel env ls production` shows all four flags *present*. Pulling
 `--environment=production` returns **empty strings for all four** — including
