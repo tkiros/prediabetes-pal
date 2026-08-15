@@ -446,7 +446,14 @@ export default function LandingPage() {
 
      ⛔ EACH PANEL LIVES ON ITS FEATURE, not in a second array beside
      this one. The tab and the panel it opens are one thing; splitting
-     them across two lists let entry counts drift silently. */
+     them across two lists let entry counts drift silently.
+
+     ⛔ COMMENTS BETWEEN THE ENTRIES BELOW ARE PLAIN BLOCK COMMENTS, never
+     the braced form. This is an ARRAY literal — the braced form is
+     JSX-children syntax and is a parse error here. The warning used to sit
+     on the `panels` prop that these entries absorbed; the hazard moved
+     with the JSX rather than going away, and the next person adding a
+     sixth entry meets it. */
   const includes = [
     {
       title: "Check your meal.",
