@@ -116,10 +116,25 @@ until the live PWA is stable (`docs/ops/play-twa-runbook.md`'s blocking note).
       answers **400** (route present, body rejected), not the **404** a build
       with the flag unset returns before any model call. The feature is
       advertised as **Premium** only; no free-tier promise names it.
-- [ ] `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` remains unset unless the function has
-      completed evidence review and explicit written owner approval for a new
-      reviewed build. ⚠️ `docs/release/truth-index.md:35` says its server twin
-      is already set in production — unresolved, owner has not ruled.
+- [x] `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` is **authorized** at `1` in production
+      — owner decision 2026-08-14,
+      `docs/legal/owner-decision-2026-08-14-longitudinal-insights-on.md`.
+      Verified live the same day: `https://prediabetespal.com/privacy` renders
+      `derived pattern summaries` and `personalized pattern summaries`, which
+      that page emits only when the flag is `1`. The insight is **free**, not
+      Premium; no surface may price it.
+- [ ] ⛔ `LONGITUDINAL_INSIGHTS_ENABLED` — **the runtime kill switch has never
+      been observed in production.** This box stays unticked deliberately.
+      `GET /api/coach` returns 401 at `app/api/coach/route.ts:29` before the
+      flag branch at line 62, so no unauthenticated probe exists — unlike the
+      photo twin's 400-vs-404. All that is known is that `next.config.ts`
+      throws on a production build whose client flag is `1` with the twin
+      unset, so the twin was set **when the live build ran**; it is read per
+      request, so a later env edit could have diverged. ⛔ `vercel env pull`
+      cannot close this — it returns an empty string for this flag *and* for
+      `PHOTO_INPUT_ENABLED`, which is provably on. To tick this box, observe
+      the insight in an authenticated `GET /api/coach` response against
+      production.
 - [ ] `LEGAL_ENTITY_NAME` and `SUPPORT_EMAIL` are set to real, monitored values;
       `/terms` and `/privacy` show them on the production domain.
 - [ ] Submit for review; respond to any Play reviewer follow-up promptly

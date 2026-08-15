@@ -75,8 +75,12 @@ environment-variable presence does not close them.
   authorized 2026-08-14 (`docs/legal/owner-decision-2026-08-14-photo-assist-on.md`).
   ⛔ if you ever unset these, re-capture `public/landing/app-check.png` in the
   same change; it pictures the photo chip and no test reads pixels
-· keep `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` unset in preview/production until the
-  function has completed evidence review and explicit written owner approval
+· `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS`=`1` + `LONGITUDINAL_INSIGHTS_ENABLED`=`1`
+  in production — authorized 2026-08-14
+  (`docs/legal/owner-decision-2026-08-14-longitudinal-insights-on.md`).
+  ⛔ `vercel env pull` returns an empty string for both; that is the CLI failing
+  to read them back, **not** proof they are off. Check `/privacy` for
+  `derived pattern summaries` instead
 
 ## §3 Money
 
@@ -267,7 +271,11 @@ business decision:
 - ✅ **Owner-risk decision** — professional review was waived/deferred. The
   SHA-bound decision is recorded in
   `docs/legal/owner-risk-launch-decision-5f6abcb.md`; it does not claim counsel
-  clearance. Photo-assist and longitudinal insights remain off.
+  clearance. Photo-assist and longitudinal insights were recorded there as off;
+  both were **authorized ON on 2026-08-14** by the two dated entries beside it
+  (`owner-decision-2026-08-14-photo-assist-on.md`,
+  `owner-decision-2026-08-14-longitudinal-insights-on.md`). The waived counsel
+  review is unchanged by either.
 - ☐ **Create the `support@<domain>` inbox** and route it to whoever owns
   Tier 1/2 in `docs/ops/support-playbook.md`'s escalation ladder.
 - ☐ **Stand up an uptime monitor** against `https://<domain>/api/health`
