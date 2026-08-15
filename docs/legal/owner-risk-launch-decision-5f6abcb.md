@@ -40,8 +40,16 @@ core product:
 It does not authorize these functions:
 
 - Meal photo-assist stays **OFF**. `NEXT_PUBLIC_PHOTO_INPUT` must remain unset.
+  **⛔ SUPERSEDED 2026-08-14** by
+  `docs/legal/owner-decision-2026-08-14-photo-assist-on.md`. Photo-assist is
+  now authorized and ON in production. This line is left standing because it
+  is what was decided on 2026-07-12; it is no longer the operating
+  instruction.
 - Longitudinal insights stay **OFF**.
   `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` must remain unset.
+  ⚠️ **Still in force as a decision, but production disagrees** —
+  `docs/release/truth-index.md:35` records `LONGITUDINAL_INSIGHTS_ENABLED=1`
+  set in Vercel production. The owner has not ruled on this one. Open item.
 - No advertising or paid promise may imply that either disabled function is
   available.
 

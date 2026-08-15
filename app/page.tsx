@@ -3,11 +3,14 @@ import Link from "next/link";
 
 import { DemoCheckCard } from "../components/demo-check-card";
 import {
+  EXAMPLE_RESULTS,
   ExampleResultCard,
   LandingVerdictCard
 } from "../components/example-result-card";
+import { LandingIncludes } from "../components/landing-includes";
 import { LandingPause } from "../components/landing-pause";
 import { TASTER_LIMIT } from "../lib/client/taster-store";
+import type { PalRisk } from "../lib/client/ui-state";
 import { FREE_DAILY_CHECKS } from "../lib/free-tier";
 import { photoInputEnabled } from "../lib/photo-input-flag";
 import { BOUNDARY_DISCLAIMER } from "../lib/pal/boundary-copy";
@@ -60,6 +63,128 @@ const MARQUEE_LINES = [
   "No weighing, no barcode",
   "One card, not a dashboard"
 ];
+
+/**
+ * ⭐ NEW 2026-08-11, `Revora Landing(2).html` §2 — the six-card replacement for
+ * the four-pain list this block used to be. Ledger `landing-familiar-cards`,
+ * which supersedes `landing-audience-pains` (deactivated in the same pass; all
+ * four of its pains survive here, restated in the reader's voice).
+ *
+ * Each card is a MOMENT, not a category, and the design draws a photograph
+ * under each one. The photographs are generated stills, not stock of real
+ * people: every one is a still life or a hand, nobody's face, no legible text.
+ * That is deliberate and it is the only honest option here — a photograph of a
+ * person on a prediabetes page reads as a customer, and this page has no
+ * customers to show yet (`no fabricated social proof`, below). The six
+ * generation prompts are recorded verbatim in
+ * `docs/landing/2026-08-11-design-copy-7-rules-audit.md`, because a re-crop or
+ * a seventh card needs the brief and nothing else in the repo carries it.
+ *
+ * ⛔ `alt` describes the PICTURE, never the product. These are mood, not
+ * evidence — an alt that says "a person struggling to choose a healthy meal"
+ * would be asserting something the image cannot show.
+ */
+const FAMILIAR = [
+  {
+    title: "“Eat better.”",
+    lines: ["Better than what?", "Nobody said."],
+    art: "fridge-door",
+    alt: "A hand holding open a fridge door in a dim kitchen, the interior light spilling out."
+  },
+  {
+    title: "Six months away",
+    lines: ["That’s your next appointment.", "Dinner is tonight."],
+    art: "appointment-card",
+    alt: "A small paper appointment card and a set of keys on a wooden kitchen table."
+  },
+  {
+    title: "Every article disagrees",
+    lines: ["Fruit’s fine. Fruit’s sugar.", "You’ve read both. Twice."],
+    art: "open-tabs",
+    alt: "A laptop open on a bedside table at night, its screen glowing in a dark bedroom."
+  },
+  {
+    title: "The apps want an accountant",
+    lines: ["Weigh it. Log it. Scan it.", "You asked about dinner."],
+    art: "kitchen-scale",
+    alt: "A bowl of uncooked rice resting on a white digital kitchen scale."
+  },
+  {
+    title: "You eat, then you worry",
+    lines: ["The hour after the meal", "is the worst part."],
+    art: "cleared-plate",
+    alt: "A cleared dinner plate with the knife and fork set down together, beside a crumpled napkin."
+  },
+  {
+    title: "Nothing to show the doctor",
+    lines: ["Six months of meals.", "No record of a single one."],
+    art: "empty-notebook",
+    alt: "An open notebook with blank pages and a pen resting in the gutter."
+  }
+] as const;
+
+/**
+ * ⭐ NEW 2026-08-11, `Revora Landing(2).html` §3, ledger `landing-myth-reality`
+ * — "Why “eating healthy” still leaves you guessing". The one section on this page with no shipped
+ * predecessor, and one of the two the owner called out as the design's
+ * polished work.
+ *
+ * ⛔ EVERY REALITY IS A STATEMENT ABOUT FOOD OR ABOUT THIS PAGE'S OWN CONDUCT,
+ * never about a health outcome. That is what keeps eight consecutive
+ * myth-busting rows on the safe side of the claims boundary
+ * (tests/unit/pal/claims-boundary-copy.test.ts scans this file). "Refined carbs
+ * behave a lot like it" is a statement about carbohydrate, not a promise about
+ * anyone's blood sugar; row 7 is a statement about what the product cannot do.
+ *
+ * The icons are decoration and carry `aria-hidden` at the call site — the myth
+ * text is the term, and an emoji read aloud before every row is noise.
+ */
+const MYTHS = [
+  {
+    icon: "🍬",
+    myth: "“Just cut sugar.”",
+    reality: "Refined carbs behave a lot like it."
+  },
+  {
+    icon: "🥣",
+    myth: "“Healthy food is healthy.”",
+    reality:
+      "Oatmeal, smoothies, juice — reputation isn’t the whole story."
+  },
+  {
+    icon: "📓",
+    myth: "“Log everything and you’ll learn.”",
+    reality: "You’ll learn to log. Not what to order."
+  },
+  {
+    icon: "🍎",
+    myth: "“Fruit is off-limits.”",
+    reality: "It depends what’s on the plate with it."
+  },
+  {
+    icon: "💪",
+    myth: "“It’s a willpower thing.”",
+    reality: "Nobody gave you instructions to follow."
+  },
+  {
+    icon: "⏳",
+    myth: "“You’ll figure it out by your next visit.”",
+    reality: "Six months of guessing isn’t a method."
+  },
+  {
+    icon: "📱",
+    myth: "“An app can read your blood sugar.”",
+    // The one row that is about this product, and it is a DENIAL of a
+    // capability rather than a claim of one. It belongs in a myth table
+    // precisely because a reader arriving from a CGM ad needs it early.
+    reality: "Prediabetes Pal can’t, and won’t pretend to."
+  },
+  {
+    icon: "🧍",
+    myth: "“You’re doing something wrong.”",
+    reality: "You were handed a number and left alone with it."
+  }
+] as const;
 
 // Marketing landing (DESIGN.md §Marketing landing). The app lives at /check;
 // this page's one job is credibility + the first check. No fabricated social
@@ -122,6 +247,54 @@ function LandingPrimaryCta({
   );
 }
 
+/**
+ * One of the two answers floating beside the hero's card — the verdict word
+ * and the meal it belongs to, nothing else.
+ *
+ * ⛔ Reads the shipped fixtures rather than taking props for the copy.
+ * `EXAMPLE_RESULTS` is the same map the full card renders from and
+ * `RISK_LABELS` is the only source of the three verdict words (copy-pins), so
+ * a float can never disagree with the card it is a summary of.
+ */
+function ShowpieceAnswer({ risk }: { risk: PalRisk }) {
+  return (
+    <p className="landing-showpiece-answer" data-risk={risk}>
+      <span className="landing-showpiece-verdict">
+        <span className="landing-showpiece-dot" aria-hidden="true" />
+        {RISK_LABELS[risk]}
+      </span>
+      <span className="landing-showpiece-meal">{EXAMPLE_RESULTS[risk].meal}</span>
+    </p>
+  );
+}
+
+/**
+ * ⚖️ THE INPUT-METHODS QUESTION, SETTLED 2026-08-11 — read this before adding
+ * the camera to any sentence on this page.
+ *
+ * The owner asked for all three input options to appear on the check screen.
+ * The 2026-08-11 handoff said that was impossible because photo assist is off;
+ * that was read off a LOCAL env and is wrong about the deployed build, where
+ * both gates are set and `/api/check/photo-draft` answers 200. So the control
+ * genuinely is on the shipped screen, and the CAPTURE at step one shows all
+ * three — which is what the ask was about.
+ *
+ * ⛔ THE COPY STILL SAYS TWO, AND THAT IS NOT AN OVERSIGHT.
+ * `components/food-check-form.tsx` passes `premium={mode === "trial" &&
+ * !entitled}`: in the shipped paywall mode a photo draft is paid-only, the
+ * chip carries a Premium tag, and the route 402s a free session before any
+ * camera opens. This page sells the FREE checks — the includes lede promises
+ * in as many words that a reader can see all five features on them — so
+ * folding the camera into that clause would advertise, as free, the one input
+ * method a free reader cannot use. That is the unadvertised-feature gate
+ * pointing the other way, and it is why the sentence stays at the two methods
+ * every reader actually gets.
+ *
+ * The camera is named in exactly one place instead: the photo FAQ below, which
+ * is already gated on the same build flag and is the only sentence with room
+ * to carry the qualifier. The capture shows the Premium tag as drawn, so the
+ * picture and the words agree.
+ */
 export default function LandingPage() {
   const androidWaitlist = storeWaitlistUrl("android");
   const iosWaitlist = storeWaitlistUrl("ios");
@@ -176,8 +349,21 @@ export default function LandingPage() {
     ...(photoEnabled
       ? [
           {
+            // ⛔ THE PRICE CLAUSE IS LOAD-BEARING, not politeness. This answer
+            // shipped describing the camera with nothing about what it costs,
+            // while the control it describes carries a Premium tag on the
+            // screen and its route 402s a free session
+            // (components/food-check-form.tsx). A reader who met the camera
+            // here and the wall there would have been told half of it. The
+            // clause branches on the same paywall flag the account FAQ does,
+            // because in the other mode the gate is not there to describe.
+            // ⛔ Names the TIER, never an amount — this page states no price
+            // anywhere (§0.2 #4), and "Premium" is the same word the cancel
+            // answer already uses.
             q: "How does the photo check work?",
-            a: "Your photo becomes a draft list of what's on the plate. You review and confirm the words before anything is checked. The photo never skips your judgment. Photos are not kept."
+            a: trialMode
+              ? "A photo check is part of Premium — your free checks are typed or spoken. The photo becomes a draft list of what's on the plate, and you review and confirm the words before anything is checked. The photo never skips your judgment. Photos are not kept."
+              : "Your photo becomes a draft list of what's on the plate. You review and confirm the words before anything is checked. The photo never skips your judgment. Photos are not kept."
           }
         ]
       : []),
@@ -185,14 +371,197 @@ export default function LandingPage() {
       // 🆕 2026-08-06, the v2 design's one added question. "Say it" is a
       // shipped affordance, not an aspiration — .voice-input in globals.css
       // and inputMethod: z.enum(["text","voice","photo"]) in the history
-      // handler. Do not let it drift into naming photo input, which is
-      // gated above and off.
+      // handler. Do not let it drift into naming photo input unqualified: the
+      // control ships, but a photo draft is paid-only in this mode, and this
+      // answer is about the minimum a reader has to do. The photo FAQ above
+      // carries the camera, with its price named.
       q: "What do I actually have to do?",
       a: "Describe the meal in your own words — type it or say it. No weighing, no barcode, no portion sizes, no food database to search. If the description is ambiguous, Prediabetes Pal asks one question."
     },
     {
       q: "How do I cancel?",
       a: "One tap, on your account page, effective at the end of the paid period. No retention screens, no email hoops. Deleting your account removes your data with it."
+    }
+  ];
+  /**
+   * ⭐ NEW 2026-08-11, `Revora Landing(2).html` §4 ("What does Revora
+   * include?"), ledger `landing-includes-five` — the second section the owner
+   * named as the design's polished work, renamed for the 2026-08-09 rename.
+   * It does not double-cover `landing-what-you-get`: this block names what the
+   * FREE checks show, that row names what a subscription adds.
+   *
+   * ⛔ THREE OF THE DESIGN'S FIVE BODIES CLAIM THINGS THIS BUILD DOES NOT SHIP
+   * UNCONDITIONALLY, and each is rewritten rather than adopted:
+   *  - "type, speak, or photograph" — photo input is `photoInputEnabled()`,
+   *    off in this build. Branches off the same flag the FAQ does.
+   *  - "a structured learning journey" — `weeklyLearning` in
+   *    lib/server/capabilities.ts is premium AND server-flagged, so it cannot
+   *    be listed as something the product "includes".
+   *  - "without calorie counting, streaks, or guilt" — components/streak-chip
+   *    ships inside the daily loop, so "no streaks" is false. The line names
+   *    the three things that genuinely are absent: weighing, calorie totals,
+   *    and a score.
+   * The conditional shape of the swap survives the rewrite untouched (F-04 /
+   * F-07): "when a meal needs adjusting", never a promise it always arrives.
+   *
+   * Verdict words interpolate from RISK_LABELS, never retyped (copy-pins).
+   */
+  /* ⚖️ THREE REAL SURFACES, TWO STATEMENTS (2026-08-11). The previous
+     pass shipped two real cards and three typographic panels, on the
+     reading that /meals and /journey could only be captured in their
+     empty states and /account is behind auth. One of those three was
+     wrong:
+
+       3 · /meals — the SIGNED-OUT page falls back to the on-device
+         store, so seeding localStorage before navigation renders the
+         real screen with fixture rows. The capture script does it;
+         this is the /demo contract (real component, fixture data)
+         pointed at a route rather than at a component.
+
+     ⛔ THE TEST EVERY PANEL HERE HAS TO PASS IS THIS BLOCK'S OWN
+     LEDE: the reader can see all five on the FREE checks. A panel
+     that pictures a surface they cannot reach makes that sentence
+     false, and it is the same failure as naming the camera in
+     feature one — see the note above the component. Two panels fail
+     it and stay prose:
+
+       4 · the week — `WeekStrip` takes plain props, so it briefly
+         rendered live here. Reverted: the only shipped screen that
+         draws it is /journey, which answers a signed-out reader with
+         a sign-in wall, and in this paywall mode an account needs a
+         card. The FEATURE is free — a guest week strip renders on
+         /meals and is visible at the top of panel three's capture —
+         but that particular drawing is not.
+       5 · the account controls — owner ruling, and the reason is not
+         difficulty. A real capture needs three API routes mocked and
+         would put a delete-my-health-data control on a marketing
+         page. Its copy already says the controls live on your account
+         page rather than showing them, so panel and sentence agree.
+
+     ⛔ PANELS 1-2 CARRY THE ILLUSTRATION LABEL (AUD-008: anything
+     that looks like product output says it is an example until an
+     authorised live capture exists). Panel 3 does not need one — it
+     is a real screenshot of the real screen, and the only thing
+     fixture about it is the reader's own typed history.
+
+     ⛔ EACH PANEL LIVES ON ITS FEATURE, not in a second array beside
+     this one. The tab and the panel it opens are one thing; splitting
+     them across two lists let entry counts drift silently.
+
+     ⛔ COMMENTS BETWEEN THE ENTRIES BELOW ARE PLAIN BLOCK COMMENTS, never
+     the braced form. This is an ARRAY literal — the braced form is
+     JSX-children syntax and is a parse error here. The warning used to sit
+     on the `panels` prop that these entries absorbed; the hazard moved
+     with the JSX rather than going away, and the next person adding a
+     sixth entry meets it. */
+  const includes = [
+    {
+      title: "Check your meal.",
+      lede: "Know where a plate lands before you eat it",
+      // ⛔ TWO METHODS, UNCONDITIONALLY. This used to branch on the photo flag
+      // and name the camera as a third. It cannot: this block's own lede
+      // promises the reader sees all five features on the FREE checks, and a
+      // photo draft is paid-only in the shipped mode. See the note above the
+      // component.
+      body: `Describe what you are about to eat — type it or say it — and get one answer in plain language: ${RISK_LABELS.SAFE}, ${RISK_LABELS.MODERATE}, or ${RISK_LABELS.HIGH}.`,
+      panel: (
+        <div className="landing-phone landing-includes-phone">
+          <ExampleResultCard risk="SAFE" labelled />
+        </div>
+      )
+    },
+    {
+      title: "Make a better choice.",
+      lede: "A swap when the meal needs one, and nothing when it doesn’t",
+      body: "You never just get told no. When a meal needs adjusting you get a practical change or a safer swap — and when it does not, you get told that instead.",
+      /* A MODERATE card, deliberately: the SAFE one is already in the
+         showpiece, and MODERATE is the only verdict the engine lets carry
+         adjustment copy at all — which is what feature two describes.
+         (⛔ Describing it took three tries. The unconditional-swap family
+         matches an indefinite article followed by that noun in any sentence
+         with no conditional in it, a JSX comment is scanned like rendered
+         copy, and quoting the offending phrase to warn about it trips the
+         same rule — which is exactly what the audit's own note says to do
+         instead: describe, never quote.) */
+      panel: (
+        <div className="landing-phone landing-includes-phone">
+          <ExampleResultCard risk="MODERATE" labelled />
+        </div>
+      )
+    },
+    {
+      title: "Learn your patterns.",
+      lede: "Your own meals, saved in your own words",
+      body: "A history of what you actually ate, so the meals that keep coming back and the easiest changes to them are visible without logging anything.",
+      panel: (
+        <div className="landing-phone landing-includes-phone">
+          {/* ⛔ The alt describes the SCREEN, not the benefit. It is a
+              picture of a list; claiming it shows a reader learning
+              anything would assert something the image cannot show. */}
+          {/* ⛔ NOT `loading="lazy"`, and this is the one image on the page
+              that must not be. It sits inside a tabpanel that starts
+              `hidden`, and a lazy image in a display:none subtree is never
+              fetched at all — the browser has nothing to intersect. So the
+              request only started when the reader clicked the tab, and the
+              first thing they got for their click was an empty dark phone
+              frame while 123KB arrived. Eager here means it loads with the
+              section, which is the behaviour the click assumes. */}
+          <img
+            src="/landing/app-meals.png"
+            alt="The Prediabetes Pal meals screen on a phone: a strip of the last seven days across the top, then a list of recent checks — each one the meal in the words it was described in, the answer it got, and when it was checked."
+            width={390}
+            height={673}
+            fetchPriority="low"
+            decoding="async"
+          />
+        </div>
+      )
+    },
+    {
+      title: "Build better habits.",
+      lede: "No weighing, no calorie total, no score",
+      body: "Your week shows up as the answers you already got, not as a number to chase. Nothing to weigh and nothing to hit.",
+      /* ⛔ THIS PANEL BRIEFLY RENDERED THE REAL `WeekStrip` AND MUST
+         NOT AGAIN under this block's current lede. It is a live
+         component taking plain props, so it looked like the cheapest
+         real surface on the page — but the only shipped screen that
+         draws it is /journey, and /journey answers a signed-out reader
+         with a sign-in wall (verified 2026-08-11). In the shipped
+         paywall mode an account needs a card, so the artifact sits
+         behind one while the lede above promises the reader sees all
+         five features on the FREE checks. Same failure as naming the
+         camera in feature one, one panel over.
+         ⚠️ The FEATURE is genuinely free — a guest week strip renders
+         on /meals, and it is visible at the top of panel three's
+         capture. It is the /journey DRAWING that is not free, which is
+         why this is a statement rather than that picture. */
+      panel: (
+        <div className="landing-includes-note">
+          <p className="landing-includes-note-lead">
+            A week of answers, not a week of numbers.
+          </p>
+          <p>
+            No calorie total, no macro split, no grade. The only thing that
+            accumulates is the meals you already asked about.
+          </p>
+        </div>
+      )
+    },
+    {
+      title: "Stay in control.",
+      lede: "Private by design, and clear about where it stops",
+      body: "Your A1C and meal text are encrypted at rest and stored only with your explicit consent. Download all of it, or delete all of it, from your account page.",
+      panel: (
+        <div className="landing-includes-note">
+          <p className="landing-includes-note-lead">
+            Download all of it, or delete all of it, in one tap.
+          </p>
+          <p>
+            Both live on your account page. Deleting the account removes the
+            data with it.
+          </p>
+        </div>
+      )
     }
   ];
   // Machine-readable summary for Google rich results and AI answer engines.
@@ -313,8 +682,20 @@ export default function LandingPage() {
           {/* The category answer IS the headline — it used to be an eyebrow
               above a headline that said the same thing twice (ledger
               `landing-hero-moment`). */}
+          {/* ⚖️ TWO LINES NOW, `Revora Landing(2).html`'s, adopted
+              2026-08-11. Line one is the reader's own question and line two is
+              the shipped H1 unchanged.
+              ⛔ This is NOT the eyebrow ledger `landing-hero-moment` deleted.
+              That one RESTATED the category above a headline that already said
+              it. "Can I eat this?" states nothing about the product — it is the
+              sentence the reader arrived typing, and line two is the answer to
+              it. Cutting it costs the page its only line of recognition above
+              the fold. */}
           <h1 className="landing-h1">
-            A meal checker built only for prediabetes.
+            Can I eat this?
+            <span className="landing-h1-answer">
+              A meal checker built only for prediabetes.
+            </span>
           </h1>
           {/* `the plate in front of you` is load-bearing and may not be cut
               for pixels: the H1 reads categorised, not recognised, and this
@@ -332,50 +713,59 @@ export default function LandingPage() {
         </section>
 
         {/* ── The showpiece ─────────────────────────────────────
-            The v4 design file's signature moment: the input screen and the
-            card it returns, side by side on the page's first dark ground.
+            ⚖️ THE `Revora Landing(2).html` COMPOSITION, owner ruling
+            2026-08-11: one answer held in a phone frame on a mint halo, with
+            the two answers it is NOT floating either side of it.
 
-            ⛔ BOTH HALVES ARE REAL, neither is drawn. The design mocks up a
-            handset with invented values because a static drawing cannot embed
-            a live screen; the rule this page has held since 2026-08-05 is that
-            drawn UI in a mockup means "the product's screen goes here". Left
-            is a real capture of /check (`node scripts/capture-landing-art.mjs`),
-            right is the product's own result component rendered from the same
-            fixture block 4's first card reads — which is exactly what block 4's
-            note tells the reader.
+            ⛔ EVERY CARD HERE IS REAL. The centre is the product's own
+            `ExampleResultCard`; the two floats read `EXAMPLE_RESULTS` for
+            their meal and `RISK_LABELS` for their word, so neither can drift
+            from the card in block 7 that shows them in full. The design draws
+            invented meals with invented verdicts — these are the shipped
+            fixtures instead.
 
-            ⛔ The card's label renders from demoExampleEyebrow(null) inside the
-            component, never typed here: the day an authorised live capture
-            lands, that function returns "A real check, captured <date>" and a
-            hand-written "An illustrated example" becomes a false claim.
+            ⚠️ THIS COSTS THE PAGE ITS FIRST DARK PLANE, and that is a
+            deliberate override of DESIGN.md §11's alternation, not an
+            oversight. The block was `--accent-strong` and was one of the two
+            dark grounds the page used as bookends; the design draws it cream
+            on mint. The remaining dark moment is the final CTA. Taken with the
+            cost stated: the hero now runs light for four consecutive planes,
+            and if the page reads flat at the top, THIS is the change to
+            revisit first.
 
-            ⛔ The capture bakes the free-check count in as PIXELS. That is the
-            one number every other surface interpolates from TASTER_LIMIT so it
-            cannot drift, and no copy audit can read a PNG. landing-art.test.ts
-            pins the coupling: move TASTER_LIMIT and it fails, naming the
-            re-capture command. */}
+            ⚠️ THE /check CAPTURE MOVED TO STEP ONE and took its described alt
+            with it. landing-art.test.ts asserts the page still references the
+            PNG *and* still carries the long alt, so step one's `alt=""` became
+            the described version in the same edit — it is now the only copy of
+            that image on the page, so there is nothing left for it to
+            duplicate. */}
         <section className="landing-showpiece">
-          <div className="landing-showpiece-panel">
-            <div className="landing-showpiece-grid">
-              <div className="landing-showpiece-art">
-                <img
-                  src="/landing/app-check.png"
-                  alt="The Prediabetes Pal check screen on a phone: one box to describe the meal, one field for your latest A1C, and a button to check it."
-                  width={390}
-                  height={700}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </div>
-              <div className="landing-showpiece-card">
-                <ExampleResultCard risk="SAFE" labelled withFineprint />
-              </div>
+          <div className="landing-showpiece-stage">
+            {/* Decoration, and the only reason it is an element at all is that
+                a radial-gradient background on the stage would sit behind the
+                floats too. Out of the a11y tree. */}
+            <div className="landing-showpiece-halo" aria-hidden="true" />
+            <div className="landing-showpiece-aside">
+              <ShowpieceAnswer risk="MODERATE" />
+              {/* Restates the marquee's ledgered "Nothing to log". */}
+              <span className="landing-showpiece-chip">no logging</span>
+            </div>
+            {/* `landing-phone` is the shared frame recipe (2026-08-11); the
+                showpiece modifier only makes this instance the biggest one on
+                the page. See globals.css — the frame may never name the card
+                class it wraps. */}
+            <div className="landing-phone landing-showpiece-phone">
+              <ExampleResultCard risk="SAFE" labelled withFineprint />
+            </div>
+            <div className="landing-showpiece-aside">
+              {/* The clarify question, the same one the steps block names. */}
+              <span className="landing-showpiece-chip">plain or sweetened?</span>
+              <ShowpieceAnswer risk="HIGH" />
             </div>
           </div>
           <p className="landing-card-caption">
-            This is the whole screen. No score, no dashboard, no change to
-            make: this meal already looks balanced, so that is the whole
-            answer.
+            One card, whatever the answer is. This meal already looks balanced,
+            so there is no change to make — and that is the whole answer.
           </p>
         </section>
 
@@ -497,8 +887,14 @@ export default function LandingPage() {
             the head above a 2×2 grid, so there is nothing to hold in view. */}
         <section className="landing-section landing-section--sheet landing-problem">
           <div className="landing-section-head landing-problem-head">
+            {/* ⚖️ THE DESIGN FILE'S H2, adopted 2026-08-11 over "Six months is
+                a long time to guess." Both name the same gap; this one names
+                the reader's position in it and takes the blame off them
+                explicitly, which is the whole argument the six cards below
+                make. The six-month framing is not lost — it is card two, the
+                lede here, and the myth table's sixth row. */}
             <h2 className="landing-h2">
-              Six months is a long time to guess.
+              If this sounds familiar, you’re not the problem.
             </h2>
             <p className="landing-section-lede">
               Nobody handed you a plan. You were handed a number, two words
@@ -506,44 +902,48 @@ export default function LandingPage() {
               between is supposed to be your job to figure out.
             </p>
           </div>
-          {/* An <ol>, numbered by CSS counter rather than by typing "01" into
-              the markup. The design draws the numerals as content; a real list
-              gets the same pixels, keeps the sequence in the accessibility
-              tree, and cannot fall out of order when someone inserts a fifth
-              pain. */}
-          <ol className="landing-pains">
-            <li>
-              <h3>The advice was two words long.</h3>
-              <p>
-                “Eat better.” Better than what? Is oatmeal fine? Is the
-                sandwich at lunch a problem? Nobody said, and the appointment
-                is in six months.
-              </p>
-            </li>
-            <li>
-              <h3>Every article contradicts the last one.</h3>
-              <p>
-                Fruit is fine, fruit is sugar. Rice is out, brown rice is in.
-                You have read all of it and you still do not know about the
-                plate in front of you tonight.
-              </p>
-            </li>
-            <li>
-              <h3>The apps want you to become an accountant.</h3>
-              <p>
-                Weigh it, log it, scan the barcode, hit your macros. You did
-                not ask for a second job. You asked what to do about dinner.
-              </p>
-            </li>
-            <li>
-              <h3>So you guess, and then you worry.</h3>
-              <p>
-                You eat the thing, and spend the next hour wondering whether
-                it was a mistake. That loop is the actual cost of being told
-                nothing.
-              </p>
-            </li>
-          </ol>
+          {/* ⚖️ SIX CARDS WITH PHOTOGRAPHS, replacing the four ghost-numeral
+              pains. The ghost numerals go with them: a photograph and a
+              counter in the same card is two decorations arguing.
+              (⛔ The word for "how a thing is styled" that starts with t-r-e-a
+              cannot appear on this line. claims-boundary-copy.test.ts strips
+              only comment-LEADING lines, so the second line of a JSX comment
+              is audited exactly like rendered copy — it caught this one.)
+
+              ⛔ `loading="lazy"` on all six and fixed width/height on every
+              one — six images below the fold with no intrinsic size is six
+              layout shifts, and this block sits directly above a measured
+              exit. The files are 664×360 webp, ~12KB each. */}
+          <ul className="landing-familiar" role="list">
+            {FAMILIAR.map(({ title, lines, art, alt }) => (
+              <li key={art} className="landing-familiar-card">
+                <div className="landing-familiar-copy">
+                  <h3>{title}</h3>
+                  <p>
+                    {lines[0]}
+                    <br />
+                    {lines[1]}
+                  </p>
+                </div>
+                <img
+                  className="landing-familiar-art"
+                  src={`/landing/familiar/${art}.webp`}
+                  alt={alt}
+                  width={664}
+                  height={360}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </li>
+            ))}
+          </ul>
+          {/* ⚠️ MEASURED POSITION (DESIGN.md §11.1), and an exit the four-pain
+              block it replaces did not need. Six carded pains with a
+              photograph each run 2,357px at 375px against the four's ~1,400 —
+              measured, the glance strip's pill to the scope panel's ran 2,756px,
+              755 over. Re-measure before removing it:
+              node scripts/measure-landing.mjs */}
+          <LandingPrimaryCta spaced />
         </section>
 
         {/* ── Scope ─────────────────────────────────────────────
@@ -575,6 +975,62 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* ── Why "eating healthy" still leaves you guessing ──────
+            ⭐ NEW 2026-08-11, `Revora Landing(2).html` §3, and one of the two
+            sections the owner named as the design's polished work. The page
+            had no myth-correction block at all; the objection it answers
+            ("I already eat healthily") was reaching the FAQ unanswered.
+
+            ⚠️ PLANE. It sits AFTER the scope panel, not before it, purely so
+            the alternation holds: the familiar cards are the sheet before it
+            and the what-changes band is the accent ground after, so a second
+            sheet here would put two white planes back to back. Thematically
+            either position works — this one also lets the scope panel say what
+            the product is for before eight rows argue why the usual advice
+            isn't enough.
+
+            A <dl>, not the design's <table>. The design draws a two-column
+            grid with "Myth" and "Reality" heads; a dl renders the same pixels,
+            stacks on a phone without the display:block hack a real table
+            needs, and dt→dd already carries the pairing to a screen reader —
+            which is what lets the column heads be decorative. */}
+        <section className="landing-section landing-section--sheet landing-myths-section">
+          <div className="landing-section-head landing-section-head--centred">
+            <h2 className="landing-h2">
+              Why “eating healthy” still leaves you guessing
+            </h2>
+            <p className="landing-section-lede">
+              Most food advice was never written for this specific range.
+            </p>
+          </div>
+          {/* aria-hidden: the dt/dd relationship is the real header
+              association, and a screen reader announcing "Myth / Reality"
+              once at the top of a stacked list would describe a two-column
+              layout the listener never gets. */}
+          <div className="landing-myths-heads" aria-hidden="true">
+            <span>Myth</span>
+            <span>Reality</span>
+          </div>
+          <dl className="landing-myths">
+            {MYTHS.map(({ icon, myth, reality }) => (
+              <div key={myth} className="landing-myth">
+                <dt>
+                  <span className="landing-myth-icon" aria-hidden="true">
+                    {icon}
+                  </span>
+                  {myth}
+                </dt>
+                <dd>{reality}</dd>
+              </div>
+            ))}
+          </dl>
+          {/* ⚠️ MEASURED POSITION (DESIGN.md §11.1). Eight rows is the tallest
+              single list on the page; without an exit here the stretch from
+              the scope panel's pill to the dark band's ran over budget.
+              Re-measure before removing it: node scripts/measure-landing.mjs */}
+          <LandingPrimaryCta spaced />
         </section>
 
         {/* ── What actually changes ─────────────────────────────
@@ -646,6 +1102,57 @@ export default function LandingPage() {
           <LandingPrimaryCta spaced onDark />
         </section>
 
+        {/* ── What Prediabetes Pal includes ──────────────────────
+            ⭐ NEW 2026-08-11. See the `includes` note above for the three
+            design bodies that were rewritten to match what this build ships.
+
+            ⛔ FOUR REAL SURFACES AND ONE STATEMENT — see the note at the
+            `panels` prop for which is which and why the fifth stays prose.
+            The design draws five phone mockups with invented product output;
+            what ships is four real surfaces in the design's frames, reached
+            two different ways (a seeded capture for the route, live props for
+            the component), and one honest paragraph.
+
+            A MODERATE card, deliberately: the SAFE one is already in the
+            showpiece, and MODERATE is the only verdict the engine lets carry
+            adjustment copy at all — which is what feature two describes.
+            (⛔ Describing it took three tries. The unconditional-swap family
+            matches an indefinite article followed by that noun in any sentence
+            with no conditional in it, a JSX comment is scanned like rendered
+            copy, and quoting the offending phrase to warn about it trips the
+            same rule — which is exactly what the audit's own note says to do
+            instead: describe, never quote.)
+
+            ⚠️ AN ELEMENT SHOT OF /demo IS STILL THE WRONG TOOL, and the reason
+            is worth keeping: the app's fixed chrome paints over the captured
+            element. What changed is that neither surface needed one. A route
+            capture takes the whole viewport, chrome included, because there
+            the chrome is part of the screen; and a component that takes plain
+            props never needed a picture at all. */}
+        <section className="landing-section landing-includes-section">
+          <div className="landing-section-head">
+            <h2 className="landing-h2">What does Prediabetes Pal include?</h2>
+            <p className="landing-section-lede">
+              Five things, and you can see all of them on the free checks
+              before you decide anything.
+            </p>
+          </div>
+          <LandingIncludes items={includes} />
+          {/* ⚠️ THIS SECTION'S ONLY EXIT, and it is measured, not decorative.
+              The result card, this section's foot, and the steps head all sit
+              between it and the oatmeal dare, which is the next exit.
+              Re-measure before removing it: node scripts/measure-landing.mjs
+
+              ⛔ It used to be described here as the second of a pair, the
+              first being an exit inside the copy column. There is no such
+              exit: the copy column renders the tab list and nothing else, and
+              the media query that hid the imagined one at desk width matched
+              no element for as long as it existed. Both are gone. A note that
+              describes a different page is worse than no note — the next
+              person to re-measure would have read this one. */}
+          <LandingPrimaryCta spaced />
+        </section>
+
         {/* ── How it works ──────────────────────────────────────
             ⭐ NEW 2026-08-08, the v4 design file's §6, and the block the page
             has been missing since the old how-it-works section was deleted.
@@ -683,7 +1190,15 @@ export default function LandingPage() {
             </p>
           </div>
           <ol className="landing-steps">
-            <li className="landing-step landing-step--art">
+            {/* `--art` is what splits the row into copy and art columns, so it
+                has to travel with the picture. Without this, the photo-off
+                build reserves the art column and draws step one as half a row
+                of copy beside dead space — the empty right column the owner
+                marked with red X's in 2026-08. Step three already renders
+                without the modifier and is the shape this degrades to. */}
+            <li
+              className={`landing-step${photoEnabled ? " landing-step--art" : ""}`}
+            >
               <div className="landing-step-copy">
                 <span className="landing-step-pill">Step one</span>
                 <h3>Describe the plate in front of you</h3>
@@ -692,24 +1207,60 @@ export default function LandingPage() {
                   barcode, no portion sizes, no food database to search.
                 </p>
               </div>
-              {/* The same real capture the showpiece carries, and the design
-                  file duplicates it the same way — it draws the input screen
-                  in the hero AND again here, with different text typed. ⛔
-                  alt="" is deliberate and is not laziness: the paragraph
-                  beside it describes this screen in words, so a second full
-                  alt would make a screen reader hear the same thing twice.
-                  The showpiece's copy carries the described version, which is
-                  the one landing-art.test.ts pins. */}
-              <div className="landing-step-art landing-step-art--shot">
-                <img
-                  src="/landing/app-check.png"
-                  alt=""
-                  width={390}
-                  height={700}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </div>
+              {/* ⛔ THE PAGE'S ONLY COPY OF THIS CAPTURE, and it carries the
+                  described alt. Until 2026-08-11 the showpiece rendered it too
+                  and this one was `alt=""` so a screen reader would not hear
+                  the same screen described twice; the showpiece is now the
+                  design's card composition and holds no screenshot, so the
+                  described version moved here. landing-art.test.ts asserts on
+                  the opening of this attribute — it is the evidence for
+                  "describe the plate", so decorative alt would drop the
+                  argument.
+
+                  ⛔ THE ALT IS A PLAIN STRING AND MUST STAY ONE. The pin
+                  matches the literal characters that open the attribute, so
+                  swapping in an interpolated template would take the guard
+                  down WITHOUT failing it: the regex just stops matching source
+                  it no longer recognises, and nothing goes red.
+
+                  ⛔ It therefore may not count the input methods, even though
+                  the picture shows them. The control row is build-flagged
+                  while the capture is one committed file, so any number
+                  written here is right in one build and wrong in the other.
+                  Naming the row without counting it is true in both. The
+                  COPY beside it can count, because copy branches; see
+                  `inputMethods` above.
+
+                  ⛔ AND SO MUST THE PICTURE. `app-check.png` is captured
+                  against a photo-flag-ON build — scripts/capture-landing-art
+                  waits on `[data-testid='photo-input-button']` — so it bakes
+                  in the third chip and its Premium tag. Unbranched, a
+                  photo-off build would advertise a control `/check` does not
+                  draw. Every other photo-dependent surface on this page
+                  already branches (the FAQ, the includes body); this one was
+                  the exception, and prose in `docs/ops/env-reference.md` was
+                  the only thing holding it — no gate reads a PNG.
+
+                  OFF-STATE: no art, not a second capture. A step with copy
+                  and no picture is true in that build; a picture of a screen
+                  the reader cannot get is not. Committing a second 100KB
+                  screenshot for a state the owner has authorized never to
+                  happen (`docs/legal/owner-decision-2026-08-14-photo-assist-on.md`)
+                  buys nothing. */}
+              {photoEnabled ? (
+                <div className="landing-step-art landing-step-art--shot">
+                  <span className="landing-phone landing-step-phone">
+                    <img
+                      src="/landing/app-check.png"
+                      alt="The Prediabetes Pal check screen on a phone: one box to describe the meal in your own words, the input options beside it, one field for your latest A1C, and a button to check it."
+                      width={390}
+                      height={680}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </span>
+                </div>
+              ) : null}
             </li>
             <li className="landing-step landing-step--art">
               <div className="landing-step-copy">
@@ -742,14 +1293,39 @@ export default function LandingPage() {
                 </Link>
               </div>
               <div className="landing-step-art">
-                {/* The design file's six-row label-gutter table. The layout is
-                    a prop rather than the component's only shape because
-                    `/check` and `/demo` render this same component, and a
-                    marketing drawing does not get to restyle an in-app
-                    surface. */}
-                <LandingPause>
-                  <DemoCheckCard layout="table" />
-                </LandingPause>
+                {/* ⚖️ OWNER RULING 2026-08-14, overturning 2026-08-06. This
+                    used to render the design file's six-row label-gutter
+                    table, which the app does not draw anywhere. Framing that
+                    would have asserted it was a screen — so the table went
+                    instead, and the component's own shape got the frame.
+
+                    ⛔ WHY THE FRAME IS ENTITLED TO ASSERT A SCREEN, which is
+                    the test panel 4 failed: this component's default layout
+                    renders inside `/check` itself, below the form, and again
+                    on `/demo`. Both answer 200 signed out in production —
+                    checked 2026-08-14, not inferred. A reader who follows the
+                    link in the copy beside this lands on the surface the
+                    frame is showing them. Re-check that before changing what
+                    goes in here; a frame around an unreachable surface is the
+                    defect this page shipped once already.
+
+                    ⛔ This is the only framed surface on the page whose pixels
+                    are live DOM rather than a capture, and that is the point:
+                    it is the real component at phone width.
+
+                    ⚠️ `.landing-step-screen` exists because the bezel needs a
+                    page plane behind the card, exactly as the step-one
+                    capture shows one. Without it the card sits flush and the
+                    frame reads as an outline drawn around a card rather than
+                    a phone. It may not reach into the card itself —
+                    landing-design-guards GUARD 1. */}
+                <div className="landing-phone landing-step-live-phone">
+                  <div className="landing-step-screen">
+                    <LandingPause>
+                      <DemoCheckCard />
+                    </LandingPause>
+                  </div>
+                </div>
               </div>
             </li>
             {/* ⛔ NO ART, and the copy says why: this step hands off to the
@@ -783,21 +1359,24 @@ export default function LandingPage() {
 
         {/* ── The three answers ─────────────────────────────────── */}
         <section className="landing-section" id="live-example">
-          <div className="landing-section-head">
+          {/* ⚖️ CENTRED AND SHORTENED, owner ruling 2026-08-11, from
+              `Revora Landing(2).html` §7. The H2 is the design's — it says what
+              the three cards are instead of describing them — and the lede
+              drops from five lines to two.
+              ⛔ The clause that survived the cut is the load-bearing one:
+              "says so and stops" is the F-04 behaviour (`assertNoUnsafeSafeFields`
+              throws on a Clear result carrying a change), so it is the one
+              sentence here that is falsifiable against shipped code rather than
+              a description of the layout. What went was the paragraph
+              explaining that card one repeats the hero's card — true, but it
+              was the page narrating its own construction. */}
+          <div className="landing-section-head landing-section-head--centred">
             {/* AUD-008: "the kind of answer", not "the actual answer" — the
                 cards below are illustrations until a live capture exists. */}
-            <h2 className="landing-h2">The same card, three times.</h2>
-            {/* Sentence 2 exists because the showpiece's card and card 1 below
-                are byte-identical — same meal, same result-safe-example row —
-                under an H2 that says "three times". Naming the duplicate
-                converts it into the block's evidence; a fourth meal fixture
-                would cost two ledger rows to say less. */}
+            <h2 className="landing-h2">Three meals. One layout. No score.</h2>
             <p className="landing-section-lede">
-              One layout, whatever the answer is. The first card is the one
-              from the top of this page, next to the two you have not seen.
-              The {RISK_LABELS.SAFE} card carries no change to make, because
-              when a meal already looks balanced Prediabetes Pal says so and stops. It
-              does not invent a correction to look useful.
+              When a meal already looks balanced, Prediabetes Pal says so and
+              stops. It does not invent a correction to look useful.
             </p>
           </div>
           {/* ⚖️ THE DESIGN FILE'S FLAT CARD, NOT THE PRODUCT'S — owner ruling,
@@ -826,69 +1405,82 @@ export default function LandingPage() {
         </section>
 
         {/* ── Limits ────────────────────────────────────────────
-            Ledger `landing-limits-trio` covers the two commitment cards; the
-            third is BOUNDARY_DISCLAIMER, which renders from its constant in
-            the footer and is ledgered with it. */}
+            Ledger `landing-limits-trio` covers the two commitment cards and
+            `landing-sources-note` the first.
+            ⚠️ BOUNDARY_DISCLAIMER USED TO RENDER HERE TOO, inside card three,
+            and does not any more (2026-08-11 shortening). It is not lost: the
+            footer renders it from the same constant on every page, which is
+            where it is ledgered and where the legal line belongs. Do not
+            re-add it here — a page that states the disclaimer twice in two
+            screenfuls is the "article, not landing page" the owner called
+            out. */}
         <section className="landing-section landing-section--sheet">
-          <div className="landing-section-head">
-            <h2 className="landing-h2">Calm, and honest about its limits</h2>
+          <div className="landing-section-head landing-section-head--centred">
+            {/* ⚖️ THE DESIGN FILE'S H2, adopted 2026-08-11. "Calm, and honest
+                about its limits" describes the section; this one states the
+                trade the section is actually making, and it is the page's
+                clearest line of non-desperation — the thing that makes a
+                limits block read as confidence rather than as hedging. */}
+            <h2 className="landing-h2">
+              We’d rather be trusted than impressive.
+            </h2>
             <p className="landing-section-lede">
-              No miracle promises. Prediabetes Pal earns trust the slow way — by
-              telling you exactly what it measures and where it stops.
+              Three commitments you can check, not promises you have to take on
+              faith.
             </p>
           </div>
-          {/* ⚖️ THREE EQUAL CARDS, the v4 design file's. This was a two-column
-              split — a wide sources card beside a stacked trio — which left
-              the sources column ending half a section above the last card.
-              The design puts all three in one `minmax(290px, 1fr)` row, and
-              merges the data promise and the boundary line into the third,
-              which is why that card carries two headings. */}
+          {/* ⚖️ SHORTENED, owner ruling 2026-08-11: "it looks like an
+              article rather than landing page copy, and the elements are
+              misaligned and look awkward". Both complaints had the same cause
+              — the Sources card carried three paragraphs beside two cards
+              carrying one each, so the row could never line up and the block
+              read as prose in a grid.
+
+              The fix is subtractive. Three cards, one paragraph each, equal
+              height. ⛔ WHAT WAS CUT IS THE HEDGING, NOT THE SUBSTANCE:
+              "Prediabetes Pal's general meal-planning principles map to
+              public-health guidance and cited nutrition research" plus the
+              paragraph explaining that those sources are not evidence of a
+              health result both go — the FIRST because /how-it-works is where
+              the methodology actually lives and this was a summary of a
+              summary, the SECOND because it is a disclaimer about a claim this
+              page no longer makes anywhere. Nothing falsifiable was removed:
+              both surviving commitments are still checkable against shipped
+              behaviour, which is the only reason they may sit under a heading
+              about honesty. The link to the full sources stays, and it is now
+              the card's whole job. */}
           <div className="landing-limits">
-            {/* The sources, ledger `landing-sources-note`. The proof band that used to carry them
-              is gone: a component whose primary affordance — a stat slot —
-              has to be neutered for the content to be safe is the wrong
-              component. Rail 7 is now discharged structurally, because no
-              number-shaped slot exists to put a number into, rather than by a
-              CSS comment asking nobody to. The one cited-trial statistic in
-              the corpus stays off this page — family `study-association`,
-              exempt only on /how-it-works. (Naming that trial here, even in
-              a comment, goes red: claims-boundary-copy.test.ts strips only
-              comment-LEADING lines, so a JSX comment is audited exactly like
-              rendered copy. It caught two drafts of this very note.) */}
-          <div className="landing-sources">
-            <h3>Sources</h3>
-            <p>
-              Prediabetes Pal&apos;s general meal-planning principles map to
-              public-health guidance and cited nutrition research — that carbs
-              raise blood sugar, that pairing them with protein, fibre or
-              nonstarchy vegetables can slow the rise, and that less-refined
-              carbs generally land more gently than highly refined ones.
-            </p>
-            <p>
-              Those sources support narrow educational statements about food.
-              They are not evidence that Prediabetes Pal produces a particular health
-              result, and nothing on this page claims otherwise.
-            </p>
-            <p>
-              <Link className="inline-link" href="/how-it-works">
-                Read the sources and the limits
-              </Link>
-              .
-            </p>
+            {/* Ledger `landing-sources-note`, narrowed. The one cited-trial
+                statistic in the corpus stays off this page — family
+                `study-association`, exempt only on /how-it-works. (Naming that
+                trial here, even in a comment, goes red:
+                claims-boundary-copy.test.ts strips only comment-LEADING lines,
+                so a JSX comment is audited exactly like rendered copy.) */}
+            <div className="landing-limits-card">
+              <h3>Sources you can check</h3>
+              <p>
+                The food principles behind every answer are public-health
+                guidance and cited nutrition research, not our opinion.
+              </p>
+              <p>
+                <Link className="inline-link" href="/how-it-works">
+                  Read the sources and the limits
+                </Link>
+              </p>
             </div>
-            {/* Ledger `landing-limits-trio`. Both of these are falsifiable
-                against shipped behaviour rather than being assertions — which
-                is the only reason they are allowed to sit under a heading
-                about honesty. The clarify claim is the one DemoCheckCard
-                renders from the promise registry two blocks up; the consent
-                clause was checked against schema.ts (`consentedAt`, notNull)
-                and /privacy, which lists storing health data without explicit
-                consent among the things Prediabetes Pal does not do. */}
+            {/* Ledger `landing-limits-trio`. Both are falsifiable against
+                shipped behaviour rather than being assertions — which is the
+                only reason they are allowed to sit under a heading about
+                honesty. The clarify claim is the one DemoCheckCard renders from
+                the promise registry two blocks up; the consent clause was
+                checked against schema.ts (`consentedAt`, notNull) and /privacy,
+                which lists storing health data without explicit consent among
+                the things Prediabetes Pal does not do. */}
             <div className="landing-limits-card">
               <h3>When we&apos;re unsure, we say so</h3>
               <p>
-                If a food is ambiguous, Prediabetes Pal asks one clarifying question
-                instead of guessing — and errs on the careful side.
+                If a food is ambiguous, Prediabetes Pal asks one clarifying
+                question instead of guessing — and errs on the careful side.
               </p>
             </div>
             <div className="landing-limits-card">
@@ -897,10 +1489,6 @@ export default function LandingPage() {
                 Your A1C and meal text are encrypted at rest, stored only with
                 your explicit consent, and deleted — all of it — in one tap.
               </p>
-              <h3>Not medical advice</h3>
-              {/* The constant, not a retyped copy — the footer renders the
-                  same string from the same import. */}
-              <p>{BOUNDARY_DISCLAIMER}</p>
             </div>
           </div>
           {/* ⚠️ MEASURED POSITION (§11.1) — this and the exit in the dark band
@@ -908,80 +1496,34 @@ export default function LandingPage() {
           <LandingPrimaryCta spaced />
         </section>
 
-        {/* ── The offer ─────────────────────────────────────────
-            Ledger `landing-offer-stages` (+ `landing-what-you-get` for stage
-            3's body).
+        {/* ── The offer ladder was DELETED here ─────────────────
+            ⚖️ OWNER RULING 2026-08-11: "remove this part". The three-stage
+            "Try it before you pay a cent" block (ledger `landing-offer-stages`,
+            plus `landing-what-you-get` for stage three's body) is gone, and
+            both rows are flipped Active No in the same pass.
 
-            ⛔ NO AMOUNT, EVER. This block exists precisely because deleting
-            every price left the reader learning a card was involved at the
-            trial wall, which is the bait-and-switch the honesty positioning
-            exists to rule out. It fixes that by disclosing the SHAPE of the
-            ladder and promising the figure arrives before any charge — not by
-            putting the figure back. Adding one here re-breaks §0.2 #4 and
-            fails landing-paywall-copy.test.ts on the spot.
+            ⚠️ WHAT THIS COSTS, recorded so the next pass does not rediscover
+            it. The 2026-08-11 copy audit scored this page against the seven
+            psychology rules and rule 7 ("price objections are value
+            objections") passed ONLY because of this block plus the FAQ. The
+            block was also the answer to a specific failure the page had in
+            2026-08-05: with every price deleted, a reader learned a card was
+            involved at the trial wall, which is the bait-and-switch the
+            honesty positioning exists to rule out.
 
-            Stage 2 branches off the same live flag the FAQ does, for the same
-            reason: "what happens after day one" has a different true answer
-            per mode, and copy-pins asserts on RENDERED output that trial
-            never claims a daily allowance while legacy always does.
-
-            ⚖️ CARDED NOW, the v4 design file's, with stage 3 tinted. The note
-            left when the `.landing-price-*` tiles were deleted said a
-            replacement should earn the system's one shadow rather than
-            inherit it — these do not take it. Border and radius only. */}
-        <section className="landing-section landing-offer-section">
-          <div className="landing-section-head">
-            <h2 className="landing-h2">Try it before you pay a cent</h2>
-            <p className="landing-section-lede">
-              Three stages, and you find out the exact cost before any of them
-              charges you.
-            </p>
-          </div>
-          <ol className="landing-offer">
-            <li>
-              <span className="landing-offer-when">Day one</span>
-              <span className="landing-offer-what">
-                {TASTER_LIMIT} free checks
-              </span>
-              <p>
-                No login, no card. See how the answers feel at your own table.
-              </p>
-            </li>
-            <li>
-              <span className="landing-offer-when">
-                {trialMode ? "Your free week" : "After day one"}
-              </span>
-              <span className="landing-offer-what">
-                {trialMode
-                  ? "Seven days free"
-                  : `${FREE_DAILY_CHECKS} free checks a day`}
-              </span>
-              <p>
-                {trialMode
-                  ? "A card is required and nothing is charged. Before it ends, we email you the exact date and amount."
-                  : "A free account, still no card. Keep checking at your own pace and see whether it earns a place in your week."}
-              </p>
-            </li>
-            <li className="landing-offer-final">
-              <span className="landing-offer-when">After that</span>
-              <span className="landing-offer-what">You decide</span>
-              <p>
-                Unlimited checks, your history on every device, and one
-                optional reminder. Cancel in one tap from your account page —
-                not an email.
-              </p>
-            </li>
-          </ol>
-          <p className="landing-offer-note">
-            Nothing here renews without telling you first.
-          </p>
-        </section>
+            What still carries it, and why rule 7 degrades to PARTIAL rather
+            than back to FAIL: the FAQ's "Do I need an account or a card to try
+            it?" answer is branch-aware off the same `paywallMode()` flag this
+            block used, and the marquee still says cancel is one tap and not an
+            email. If a reader ever reports being surprised by a card, this
+            block — not a new one — is the thing to restore. */}
 
         {/* ── FAQ ─────────────────────────────────────────────── */}
-        <section
-          className="landing-section landing-section--sheet landing-faq-section"
-          id="faq"
-        >
+        {/* ⚠️ NO LONGER A SHEET (2026-08-11). The offer ladder used to sit
+            between this and the limits block and was the page-ground plane
+            that separated them; with it deleted, two white sheets ran back to
+            back. This one drops to the page ground so the alternation holds. */}
+        <section className="landing-section landing-faq-section" id="faq">
           <div className="landing-section-head">
             <h2 className="landing-h2">Fair questions</h2>
           </div>

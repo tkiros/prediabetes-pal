@@ -139,12 +139,21 @@ the worst available answer: too different to read as one surface, too similar to
 > eyebrow and the two typed lines; the two `.result-card`s stay untouched at 22px. That removes the nesting, the delta
 > and the mosaic without editing the card the marketing page exists to show. **Product work item; three routes import it.**
 
-⚖️ **2026-08-06 — discharged on the landing, still open on the other two routes.** `<DemoCheckCard layout="table" />`
-gives the marketing page the design file's six-row labelled table: no nesting, no 2px delta, one surface at 20px, and
-the eyebrow and the two typed lines exactly where the ruling above put them. It is a **layout prop, not a replacement**,
-because `/check` and `/demo` render the same component and a marketing drawing has no authority over an in-app surface —
-so those two still nest, and the work item above is still theirs. The ruling's shape is now implemented once and can be
-lifted rather than redesigned.
+⚖️ **2026-08-06 — discharged on the landing via `<DemoCheckCard layout="table" />`, a layout prop giving the marketing
+page the design file's six-row labelled table. ⛔ REVERSED 2026-08-14: the prop and its CSS family are deleted.** The
+owner ruled that step two's art gets a phone frame, and a frame asserts that what it holds is a screen — so the honest
+move was to drop the table rather than frame a shape no route draws. The landing now renders the component's default
+layout inside `.landing-step-live-phone`, which means **the nesting the 2026-08-06 ruling routed around is back on the
+landing, at phone width, on purpose.**
+
+⛔ **The frame is entitled to assert a screen, and this is the test panel 4 failed.** That default layout renders inside
+`/check` — below the form, `app/(app)/check/page.tsx` — and again as `/demo`'s first section. Both answer `200` signed
+out in production, verified 2026-08-14. The landing frames a crop of a page a reader can reach by following the link in
+the copy beside it, which is a crop, not a fabrication. **Re-verify that before changing what goes in this frame.**
+
+**The work item above is therefore live again on all three routes, not two.** Fixing the wrapper fixes the landing too
+now, which is the argument for doing it — but the 2026-08-06 shape is no longer implemented anywhere to lift from. It
+is recorded in this file and in git, not in code.
 
 ⛔ **Do not restate a nested-card ban. This file has never had one** — the previous version gave nested cards a radius
 and used it. `impeccable` bans them; this file does not. The rule above is about one 2px delta, not a category.
@@ -363,17 +372,22 @@ face.
   was *marketing shows the product's card, unmodified*. The price tile went with the pricing section on 2026-08-05. The
   unmodified-card claim then went **from page-wide to hero-only**, because the design file draws §5's demo and §6's three
   answers as flat illustrations rather than as the product's card, and the owner chose the design file over the claim,
-  with the drift cost stated. Three families now:
+  with the drift cost stated. **Two families now** — the third went on 2026-08-14, see below:
   1. **The result card, inherited and unmodified** — the hero, `<ExampleResultCard labelled withFineprint />`. This is
      where the claim survives, and it is the one card a reader meets before any argument, which is the right place for
      it to survive if it only survives once.
   2. **`.landing-verdict-*`** — §6's three flat illustrations. `--surface-muted`, 1px `--border-soft`, a 4px risk-token
      top rule, 16px radius, no labels, no disclaimer row.
-  3. **`.landing-demo-*`** — §5's six-row label-gutter table, the landing's layout of `<DemoCheckCard layout="table" />`.
+  3. ~~**`.landing-demo-*`** — §5's six-row label-gutter table.~~ **DELETED 2026-08-14** with the `layout="table"` prop,
+     on the owner ruling that framed step two. §5 now renders family 1's component in its own layout inside a phone
+     frame, so **the count of card families on this page went back down to two** — and the second place the claim
+     survives is §5.
   ⛔ **The override ban is UNCHANGED and still tested.** No `.landing*` selector may declare `border`, `border-radius` or
   `box-shadow` on `.result-card` or `.surface-card` (landing-design-guards GUARD 1 — the claim no longer "owes a test";
-  it has had one since 2026-08-05). Families 2 and 3 are separate class families precisely so the guard keeps meaning
-  what it says: they do not restyle the card, they are not the card.
+  it has had one since 2026-08-05). ⚠️ **The 2026-08-14 change made that guard load-bearing where it used to be
+  academic**: §5 now puts a real `.surface-card` inside a landing wrapper, so the frame and its screen plane supply
+  background, radius and padding from selectors that name only themselves. The temptation to reach in and match the
+  card's corners to the bezel's is exactly what the guard exists to stop.
   ⚠️ **What the ruling actually cost.** Nothing re-renders families 2 and 3 when `result-card.tsx`'s recipe changes, so
   the illustrations can drift from the product's LOOK silently and no test will say so. Two things contain it, and both
   must be preserved by anything that touches them: every string comes from the one fixture set in
@@ -516,10 +530,15 @@ misses the budget, the measured arrangement is the fallback and the adjacency is
      conduct instead, with step two ("it asks before it guesses") carrying the argument.
    - **Decorative glassmorphism** → `.landing-nav`. Not decorative: a capsule that floats over scrolling copy needs the
      blur to stay legible without going opaque. It also takes the system's second `box-shadow` (§5), for separation.
-   - **Identical card grids** + **numbered section markers as scaffolding** → `.landing-pains`. The cards are `--page-bg`
-     on a white sheet, so they are the page's one non-white card family and cannot be read as the result card; the
-     numeral is oversized `--accent-tint` **behind** the heading, texture rather than a marker beside it, and the
-     sequence still lives in a real `<ol>` counter rather than in typed content.
+   - **Identical card grids** → `.landing-familiar`. The cards are `--page-bg` on a white sheet, so they are the page's
+     one non-white card family and cannot be read as the result card. ⚖️ Superseded `.landing-pains` on 2026-08-11,
+     when `Revora Landing(2).html` replaced the four pains with six photo cards. The **numbered section markers**
+     override went with them: the ghost `::before` counter is gone, because a photograph and an oversized numeral in
+     one card are two decorations competing. Nothing on this page carries a typed step numeral now except
+     `.landing-steps`, whose pills are covered two rows above.
+   - **Identical card grids** (again) → `.landing-includes`. Five bordered cards beside the product's own result card,
+     added 2026-08-11 with the design's "What does Prediabetes Pal include?" block. Contained the same way the limits
+     trio is: border and radius only, no fill and no shadow, so the one filled card in view is still the result card.
    - **A looping animation** (§6, not §13) → `.landing-marquee`. See §6 for the two stop mechanisms it must keep.
 
 **NOT banned, and you will be tempted:** three price tiles (4/7 keep, surviving because the middle tile carries the least

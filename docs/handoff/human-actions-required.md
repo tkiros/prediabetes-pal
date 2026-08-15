@@ -71,8 +71,11 @@ environment-variable presence does not close them.
 · `NEXT_PUBLIC_APP_URL` 
 · ⚙`REVIEWER_TEST_SECRET` (**preview only**) 
 · `NEXT_PUBLIC_REVIEWER_MODE` (**preview only, never production**)
-· keep `NEXT_PUBLIC_PHOTO_INPUT` and
-  `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` unset in preview/production until each
+· `NEXT_PUBLIC_PHOTO_INPUT`=`1` + `PHOTO_INPUT_ENABLED`=`1` in production —
+  authorized 2026-08-14 (`docs/legal/owner-decision-2026-08-14-photo-assist-on.md`).
+  ⛔ if you ever unset these, re-capture `public/landing/app-check.png` in the
+  same change; it pictures the photo chip and no test reads pixels
+· keep `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` unset in preview/production until the
   function has completed evidence review and explicit written owner approval
 
 ## §3 Money

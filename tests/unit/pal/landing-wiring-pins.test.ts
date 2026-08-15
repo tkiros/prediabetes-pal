@@ -112,7 +112,40 @@ describe("landing font wiring (FINDING-030)", () => {
     expect(rule?.[1]).toContain("font-size: 22px;");
   });
 
-  it("no landing selector declares font-size twice", () => {
+  it("every comment in globals.css is closed", () => {
+    // ⛔ AN UNTERMINATED `/* */` IS A BUILD ERROR AND ONLY THE BUILD SEES IT.
+    // Editing a long explanatory comment — which this file is largely made of
+    // — and leaving the original's `*/` behind turns the rest of that prose
+    // into bare CSS text. Turbopack fails on it; typecheck, lint, the contract
+    // validators and all 2,200 unit tests do not, so the mistake survives
+    // every fast gate and costs a full build to find. This is the fast gate.
+    // Learned the direct way on 2026-08-15.
+    const css = read("app/globals.css");
+    const opens = css.match(/\/\*/g)?.length ?? 0;
+    const closes = css.match(/\*\//g)?.length ?? 0;
+    expect(
+      { opens, closes },
+      "app/globals.css has an unbalanced comment. The build will fail with a parse error at the line where the stray prose starts, which is not where the missing marker is."
+    ).toEqual({ opens: closes, closes });
+    // Balanced counts still allow `/* a */ b */`, so walk it.
+    let rest = css;
+    let guard = 0;
+    while (rest.includes("/*")) {
+      if (guard++ > 5000) throw new Error("comment scan did not terminate");
+      const start = rest.indexOf("/*");
+      const end = rest.indexOf("*/", start + 2);
+      expect(end, `unclosed /* near: ${rest.slice(start, start + 90)}`).toBeGreaterThan(-1);
+      const between = rest.slice(0, start);
+      expect(
+        between.includes("*/"),
+        `stray */ outside a comment near: ${between.slice(-90)}`
+      ).toBe(false);
+      rest = rest.slice(end + 2);
+    }
+    expect(rest.includes("*/"), "stray */ after the last comment").toBe(false);
+  });
+
+  it("no landing selector declares font-size or font-family twice", () => {
     // The 2026-07-27 legibility pass originally shipped as a block APPENDED
     // after the landing rules, so ~26 selectors carried two competing
     // font-size declarations and only source order decided which won. That is
@@ -120,20 +153,43 @@ describe("landing font wiring (FINDING-030)", () => {
     // defeated .landing-cta--sm (the nav pill rendered 17px, not 15px). The
     // values now live in the base rules; this fails if a second declaration
     // for the same landing selector creeps back in.
-    const css = read("app/globals.css");
+    //
+    // ⛔ FONT-FAMILY IS PINNED TOO, and it was not until 2026-08-15. This
+    // counted only bodies containing `font-size:`, so `.landing-verdict-signal`
+    // carrying the sans stack in BOTH the grouped family rule and its own block
+    // was invisible to it — the same two-declarations-one-source-order shape
+    // the test was written for, in the other property. Add a property here
+    // rather than writing a second near-identical test.
+    // ⛔ COMMENTS STRIPPED FIRST, and that is not tidiness. The selector group
+    // below is `[^{}]*`, which spans newlines, so a rule preceded by a `/* */`
+    // block matched with the COMMENT GLUED TO THE FRONT of its selector — and
+    // this file comments almost every landing rule. `sel.startsWith(".landing")`
+    // then rejected it, so the guard silently skipped most of the rules it was
+    // written to police. It passed on a duplicate that was sitting in the file.
+    const PINNED = ["font-size", "font-family"] as const;
+    const css = read("app/globals.css").replace(/\/\*[\s\S]*?\*\//g, "");
     const seen = new Map<string, number>();
 
+    // ⛔ `(?:^|\n)` IS NON-CAPTURING, and that is the whole test. It used to
+    // capture, so the destructuring below bound `selector` to the newline and
+    // `body` to the selector text — `sel.startsWith(".landing")` was false for
+    // every rule in the file and this guard has never once looked at CSS. It
+    // was green against ~26 known duplicates when it shipped. Verify a change
+    // here by re-introducing a duplicate and watching it go red.
     for (const [, selector, body] of css.matchAll(
-      /(^|\n)([^@{}\n][^{}]*)\{([^}]*)\}/g
+      /(?:^|\n)([^@{}\n][^{}]*)\{([^}]*)\}/g
     )) {
       const sel = selector.trim();
       // Landing element rules only. Media-query and pseudo-state blocks are
       // legitimate overrides of a base value, not accidental duplicates.
       if (!sel.startsWith(".landing")) continue;
       if (sel.includes(":") || sel.includes("@")) continue;
-      if (!/font-size:/.test(body)) continue;
-      for (const one of sel.split(",").map((s) => s.trim())) {
-        seen.set(one, (seen.get(one) ?? 0) + 1);
+      for (const prop of PINNED) {
+        if (!body.includes(`${prop}:`)) continue;
+        for (const one of sel.split(",").map((s) => s.trim())) {
+          const key = `${one} { ${prop} }`;
+          seen.set(key, (seen.get(key) ?? 0) + 1);
+        }
       }
     }
 

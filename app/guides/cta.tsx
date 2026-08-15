@@ -7,7 +7,7 @@ import { TASTER_LIMIT } from "../../lib/client/taster-store";
 // never retyped (the copy-pins invariant).
 export function GuideCta({ label = "Check a meal now" }: { label?: string }) {
   return (
-    <div className="landing-cta-stack landing-cta-stack--spaced">
+    <div className="landing-cta-stack landing-cta-stack--spaced landing-cta-stack--start">
       <Link className="landing-cta" href="/check">
         {label}
       </Link>

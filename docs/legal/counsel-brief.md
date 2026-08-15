@@ -59,7 +59,7 @@ the meal photo-assist function.
 
 | Function | Default candidate state | Enforcement |
 | --- | --- | --- |
-| Meal photo-assist | OFF and unadvertised | `NEXT_PUBLIC_PHOTO_INPUT` must equal exact `1`; otherwise the client control is absent and `POST /api/check/photo-draft` returns `404` before model use (`lib/photo-input-flag.ts`, route handler, smoke/unit tests) |
+| Meal photo-assist | **ON in production since 2026-07-21**, authorized 2026-08-14 (`docs/legal/owner-decision-2026-08-14-photo-assist-on.md`). OFF is still the default-candidate state. | `NEXT_PUBLIC_PHOTO_INPUT` must equal exact `1`; otherwise the client control is absent and `POST /api/check/photo-draft` returns `404` before model use (`lib/photo-input-flag.ts`, route handler, smoke/unit tests). Advertised, but as **Premium** — the draft 402s a free session, so no free-tier promise may name it |
 | Longitudinal insights | OFF and unadvertised | `NEXT_PUBLIC_LONGITUDINAL_INSIGHTS` must equal exact `1`; otherwise derivation returns `null`, server coach payloads contain no insight, guest/signed-in dashboards and daily loop render none, and paid/product copy omits the promise (`lib/longitudinal-insights-flag.ts`, `lib/coach/insights.ts`, boundary tests) |
 
 Both are build-time gates. Enabling either requires a new reviewed build and
