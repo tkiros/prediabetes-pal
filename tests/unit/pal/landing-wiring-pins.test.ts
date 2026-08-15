@@ -112,6 +112,39 @@ describe("landing font wiring (FINDING-030)", () => {
     expect(rule?.[1]).toContain("font-size: 22px;");
   });
 
+  it("every comment in globals.css is closed", () => {
+    // ⛔ AN UNTERMINATED `/* */` IS A BUILD ERROR AND ONLY THE BUILD SEES IT.
+    // Editing a long explanatory comment — which this file is largely made of
+    // — and leaving the original's `*/` behind turns the rest of that prose
+    // into bare CSS text. Turbopack fails on it; typecheck, lint, the contract
+    // validators and all 2,200 unit tests do not, so the mistake survives
+    // every fast gate and costs a full build to find. This is the fast gate.
+    // Learned the direct way on 2026-08-15.
+    const css = read("app/globals.css");
+    const opens = css.match(/\/\*/g)?.length ?? 0;
+    const closes = css.match(/\*\//g)?.length ?? 0;
+    expect(
+      { opens, closes },
+      "app/globals.css has an unbalanced comment. The build will fail with a parse error at the line where the stray prose starts, which is not where the missing marker is."
+    ).toEqual({ opens: closes, closes });
+    // Balanced counts still allow `/* a */ b */`, so walk it.
+    let rest = css;
+    let guard = 0;
+    while (rest.includes("/*")) {
+      if (guard++ > 5000) throw new Error("comment scan did not terminate");
+      const start = rest.indexOf("/*");
+      const end = rest.indexOf("*/", start + 2);
+      expect(end, `unclosed /* near: ${rest.slice(start, start + 90)}`).toBeGreaterThan(-1);
+      const between = rest.slice(0, start);
+      expect(
+        between.includes("*/"),
+        `stray */ outside a comment near: ${between.slice(-90)}`
+      ).toBe(false);
+      rest = rest.slice(end + 2);
+    }
+    expect(rest.includes("*/"), "stray */ after the last comment").toBe(false);
+  });
+
   it("no landing selector declares font-size or font-family twice", () => {
     // The 2026-07-27 legibility pass originally shipped as a block APPENDED
     // after the landing rules, so ~26 selectors carried two competing
