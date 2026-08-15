@@ -112,7 +112,7 @@ describe("landing font wiring (FINDING-030)", () => {
     expect(rule?.[1]).toContain("font-size: 22px;");
   });
 
-  it("no landing selector declares font-size twice", () => {
+  it("no landing selector declares font-size or font-family twice", () => {
     // The 2026-07-27 legibility pass originally shipped as a block APPENDED
     // after the landing rules, so ~26 selectors carried two competing
     // font-size declarations and only source order decided which won. That is
@@ -120,20 +120,43 @@ describe("landing font wiring (FINDING-030)", () => {
     // defeated .landing-cta--sm (the nav pill rendered 17px, not 15px). The
     // values now live in the base rules; this fails if a second declaration
     // for the same landing selector creeps back in.
-    const css = read("app/globals.css");
+    //
+    // ⛔ FONT-FAMILY IS PINNED TOO, and it was not until 2026-08-15. This
+    // counted only bodies containing `font-size:`, so `.landing-verdict-signal`
+    // carrying the sans stack in BOTH the grouped family rule and its own block
+    // was invisible to it — the same two-declarations-one-source-order shape
+    // the test was written for, in the other property. Add a property here
+    // rather than writing a second near-identical test.
+    // ⛔ COMMENTS STRIPPED FIRST, and that is not tidiness. The selector group
+    // below is `[^{}]*`, which spans newlines, so a rule preceded by a `/* */`
+    // block matched with the COMMENT GLUED TO THE FRONT of its selector — and
+    // this file comments almost every landing rule. `sel.startsWith(".landing")`
+    // then rejected it, so the guard silently skipped most of the rules it was
+    // written to police. It passed on a duplicate that was sitting in the file.
+    const PINNED = ["font-size", "font-family"] as const;
+    const css = read("app/globals.css").replace(/\/\*[\s\S]*?\*\//g, "");
     const seen = new Map<string, number>();
 
+    // ⛔ `(?:^|\n)` IS NON-CAPTURING, and that is the whole test. It used to
+    // capture, so the destructuring below bound `selector` to the newline and
+    // `body` to the selector text — `sel.startsWith(".landing")` was false for
+    // every rule in the file and this guard has never once looked at CSS. It
+    // was green against ~26 known duplicates when it shipped. Verify a change
+    // here by re-introducing a duplicate and watching it go red.
     for (const [, selector, body] of css.matchAll(
-      /(^|\n)([^@{}\n][^{}]*)\{([^}]*)\}/g
+      /(?:^|\n)([^@{}\n][^{}]*)\{([^}]*)\}/g
     )) {
       const sel = selector.trim();
       // Landing element rules only. Media-query and pseudo-state blocks are
       // legitimate overrides of a base value, not accidental duplicates.
       if (!sel.startsWith(".landing")) continue;
       if (sel.includes(":") || sel.includes("@")) continue;
-      if (!/font-size:/.test(body)) continue;
-      for (const one of sel.split(",").map((s) => s.trim())) {
-        seen.set(one, (seen.get(one) ?? 0) + 1);
+      for (const prop of PINNED) {
+        if (!body.includes(`${prop}:`)) continue;
+        for (const one of sel.split(",").map((s) => s.trim())) {
+          const key = `${one} { ${prop} }`;
+          seen.set(key, (seen.get(key) ?? 0) + 1);
+        }
       }
     }
 

@@ -109,12 +109,18 @@ const HISTORY_FIXTURE = `(() => {
 
 await mkdir("public/landing", { recursive: true });
 const browser = await chromium.launch();
-const page = await browser.newPage({
-  viewport: { width: 390, height: 844 },
-  deviceScaleFactor: 2
-});
+
+const VIEWPORT = { width: 390, height: 844 };
 
 for (const shot of SHOTS) {
+  // ⛔ ONE PAGE PER SHOT, not one page for the run. `addInitScript` registers
+  // for every subsequent navigation on the page that receives it, so a seeded
+  // shot used to leak its localStorage fixture into every shot after it. That
+  // was inert only because the seeded shot happens to be last — an ordering
+  // dependency nothing asserted. A fresh page makes the seed genuinely
+  // per-shot and costs one browser context.
+  const page = await browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 2 });
+
   if (shot.seedHistory) {
     // Before `goto`, or the page reads the store before the seed lands.
     await page.addInitScript(`
@@ -137,7 +143,13 @@ for (const shot of SHOTS) {
     if (!el) return null;
     // 8px into the gap under the element, so the cut is clearly past it rather
     // than shaving its bottom border.
-    return Math.round(el.getBoundingClientRect().bottom + scrollY + 8);
+    //
+    // ⛔ VIEWPORT COORDINATES, deliberately — no `+ scrollY`. The screenshot
+    // below is NOT `fullPage`, and a non-fullPage `clip` is read against the
+    // viewport. Adding the scroll offset mixed document and viewport space;
+    // it was inert only because nothing on these two routes scrolls before
+    // the capture, which is not a property anything enforces.
+    return Math.round(el.getBoundingClientRect().bottom + 8);
   }, shot.clipTo);
 
   if (clipH === null) {
@@ -146,11 +158,28 @@ for (const shot of SHOTS) {
     );
   }
 
+  // ⛔ A non-fullPage clip is SILENTLY TRIMMED to the viewport. Push the
+  // element this shot ends at below 844px and the capture would just stop
+  // there — the exact stale-crop failure `clipTo` exists to prevent, back
+  // again and invisible. Throw instead.
+  //
+  // ⚠️ The fix is NOT `fullPage: true`. Both PNGs' dimensions are pinned in
+  // tests/unit/pal/landing-art.test.ts against what app/page.tsx declares, so
+  // changing what the capture contains owes a re-capture — which needs a
+  // production build carrying the deployed flags (see the header). Taller
+  // shots want a taller viewport here, and the pinned heights updated with it.
+  if (clipH > VIEWPORT.height) {
+    throw new Error(
+      `${shot.file}: ${shot.clipTo} ends at ${clipH}px, past the ${VIEWPORT.height}px viewport. Playwright would trim the clip silently. Raise VIEWPORT.height, re-capture, and update the declared height in app/page.tsx.`
+    );
+  }
+
   await page.screenshot({
     path: shot.file,
-    clip: { x: 0, y: 0, width: 390, height: clipH }
+    clip: { x: 0, y: 0, width: VIEWPORT.width, height: clipH }
   });
-  console.log(`captured ${shot.file}  390x${clipH}`);
+  console.log(`captured ${shot.file}  ${VIEWPORT.width}x${clipH}`);
+  await page.close();
 }
 
 await browser.close();

@@ -17,6 +17,13 @@ import { useRef, useState, type ReactNode } from "react";
  * whole card recipe into the client bundle to render markup that never
  * changes. This component owns one number and nothing else.
  *
+ * ⛔ ONE ARRAY OF PAIRS, NOT TWO PARALLEL ARRAYS. Until 2026-08-15 this took
+ * `features` and `panels` separately, with nothing tying entry N of one to
+ * entry N of the other. A sixth feature added without a sixth panel produced a
+ * tab whose `aria-controls` pointed at no element and an empty art column, and
+ * every gate stayed green — the tabs are generated, so no reviewer sees the
+ * mismatch either. Pairing them in one object makes that unrepresentable.
+ *
  * ⛔ WHAT THE DESIGN FILE DOES AND THIS DOES NOT: its `AppMockup` draws five
  * invented phone screens with invented product output — "Excellent balance of
  * lean protein, complex carbs, and fiber. Enjoy your meal!" and "may cause a
@@ -35,17 +42,20 @@ import { useRef, useState, type ReactNode } from "react";
  * clickable and only respond to Tab is the failure mode axe cannot see.
  */
 export function LandingIncludes({
-  features,
-  panels
+  items
 }: {
-  features: ReadonlyArray<{ title: string; lede: string; body: string }>;
-  panels: ReactNode[];
+  items: ReadonlyArray<{
+    title: string;
+    lede: string;
+    body: string;
+    panel: ReactNode;
+  }>;
 }) {
   const [active, setActive] = useState(0);
   const tabs = useRef<Array<HTMLButtonElement | null>>([]);
 
   function onKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
-    const last = features.length - 1;
+    const last = items.length - 1;
     let next: number | null = null;
     if (event.key === "ArrowRight" || event.key === "ArrowDown") {
       next = active === last ? 0 : active + 1;
@@ -73,7 +83,7 @@ export function LandingIncludes({
           aria-label="What Prediabetes Pal includes"
           aria-orientation="vertical"
         >
-          {features.map((feature, i) => {
+          {items.map((feature, i) => {
             const selected = i === active;
             return (
               <button
@@ -115,12 +125,19 @@ export function LandingIncludes({
         </div>
       </div>
       <div className="landing-includes-art">
-        {panels.map((panel, i) => (
+        {items.map(({ title, panel }, i) => (
           <div
-            key={features[i]?.title ?? i}
+            key={title}
             role="tabpanel"
             id={`includes-panel-${i}`}
             aria-labelledby={`includes-tab-${i}`}
+            // ⛔ FOCUSABLE, per the same WAI-ARIA pattern the tab list above
+            // follows. Panels 4 and 5 are prose with nothing focusable inside
+            // them, so without this a keyboard reader arrowing to those tabs
+            // has no way to reach the content the tab just selected — Tab
+            // jumps straight past the panel to the section's exit. axe cannot
+            // see it: it only ever inspects the one panel that is not hidden.
+            tabIndex={0}
             hidden={i !== active}
           >
             {panel}

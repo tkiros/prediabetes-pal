@@ -151,12 +151,33 @@ describe("the landing's meals capture cannot drift from the verdict words", () =
     // Both shots come from one script, and the script derives its clip from
     // the DOM rather than a typed pixel height — the stale `clipH` that cut
     // the check capture's suggestion chips in half is what that replaced.
+    //
+    // ⛔ THE ASSERTION IS THE ABSENCE OF A TYPED HEIGHT, not the presence of
+    // the word `clipTo`. `toContain("clipTo")` was satisfied by the script's
+    // own COMMENTS — the ones explaining why the typed height was removed —
+    // so reverting to `clipH: 700` left this test green while restoring the
+    // exact defect it was written to catch.
     const script = fs.readFileSync(
       path.join(process.cwd(), "scripts/capture-landing-art.mjs"),
       "utf8"
     );
     expect(script).toContain("public/landing/app-meals.png");
-    expect(script).toContain("clipTo");
+    // ⛔ CODE ONLY. The script's header explains, in prose, that it used to
+    // carry `clipH: 700` — so asserting against the raw file makes the record
+    // of the defect trip the guard against the defect. That is the same
+    // read-the-comments-as-code mistake this test was fixed for, inverted.
+    const code = script
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+    expect(
+      code,
+      "capture-landing-art.mjs declares a literal clipH again. The clip must be MEASURED from the element named by clipTo — a typed pixel height goes stale the next time /check or /meals moves, and no test can see a mis-cropped PNG."
+    ).not.toMatch(/clipH\s*:\s*\d/);
+    // Every shot names the element it ends at, as a real property.
+    const shots = code.match(/^\s*file:\s*"/gm) ?? [];
+    const clipTos = code.match(/^\s*clipTo:\s*"/gm) ?? [];
+    expect(clipTos.length, "every shot needs its own clipTo").toBe(shots.length);
+    expect(shots.length).toBeGreaterThanOrEqual(2);
   });
 
   it("carries alt text describing the screen", () => {

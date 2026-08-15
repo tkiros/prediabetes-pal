@@ -406,6 +406,47 @@ export default function LandingPage() {
    *
    * Verdict words interpolate from RISK_LABELS, never retyped (copy-pins).
    */
+  /* ⚖️ THREE REAL SURFACES, TWO STATEMENTS (2026-08-11). The previous
+     pass shipped two real cards and three typographic panels, on the
+     reading that /meals and /journey could only be captured in their
+     empty states and /account is behind auth. One of those three was
+     wrong:
+
+       3 · /meals — the SIGNED-OUT page falls back to the on-device
+         store, so seeding localStorage before navigation renders the
+         real screen with fixture rows. The capture script does it;
+         this is the /demo contract (real component, fixture data)
+         pointed at a route rather than at a component.
+
+     ⛔ THE TEST EVERY PANEL HERE HAS TO PASS IS THIS BLOCK'S OWN
+     LEDE: the reader can see all five on the FREE checks. A panel
+     that pictures a surface they cannot reach makes that sentence
+     false, and it is the same failure as naming the camera in
+     feature one — see the note above the component. Two panels fail
+     it and stay prose:
+
+       4 · the week — `WeekStrip` takes plain props, so it briefly
+         rendered live here. Reverted: the only shipped screen that
+         draws it is /journey, which answers a signed-out reader with
+         a sign-in wall, and in this paywall mode an account needs a
+         card. The FEATURE is free — a guest week strip renders on
+         /meals and is visible at the top of panel three's capture —
+         but that particular drawing is not.
+       5 · the account controls — owner ruling, and the reason is not
+         difficulty. A real capture needs three API routes mocked and
+         would put a delete-my-health-data control on a marketing
+         page. Its copy already says the controls live on your account
+         page rather than showing them, so panel and sentence agree.
+
+     ⛔ PANELS 1-2 CARRY THE ILLUSTRATION LABEL (AUD-008: anything
+     that looks like product output says it is an example until an
+     authorised live capture exists). Panel 3 does not need one — it
+     is a real screenshot of the real screen, and the only thing
+     fixture about it is the reader's own typed history.
+
+     ⛔ EACH PANEL LIVES ON ITS FEATURE, not in a second array beside
+     this one. The tab and the panel it opens are one thing; splitting
+     them across two lists let entry counts drift silently. */
   const includes = [
     {
       title: "Check your meal.",
@@ -415,27 +456,105 @@ export default function LandingPage() {
       // promises the reader sees all five features on the FREE checks, and a
       // photo draft is paid-only in the shipped mode. See the note above the
       // component.
-      body: `Describe what you are about to eat — type it or say it — and get one answer in plain language: ${RISK_LABELS.SAFE}, ${RISK_LABELS.MODERATE}, or ${RISK_LABELS.HIGH}.`
+      body: `Describe what you are about to eat — type it or say it — and get one answer in plain language: ${RISK_LABELS.SAFE}, ${RISK_LABELS.MODERATE}, or ${RISK_LABELS.HIGH}.`,
+      panel: (
+        <div className="landing-phone landing-includes-phone">
+          <ExampleResultCard risk="SAFE" labelled />
+        </div>
+      )
     },
     {
       title: "Make a better choice.",
       lede: "A swap when the meal needs one, and nothing when it doesn’t",
-      body: "You never just get told no. When a meal needs adjusting you get a practical change or a safer swap — and when it does not, you get told that instead."
+      body: "You never just get told no. When a meal needs adjusting you get a practical change or a safer swap — and when it does not, you get told that instead.",
+      /* A MODERATE card, deliberately: the SAFE one is already in the
+         showpiece, and MODERATE is the only verdict the engine lets carry
+         adjustment copy at all — which is what feature two describes.
+         (⛔ Describing it took three tries. The unconditional-swap family
+         matches an indefinite article followed by that noun in any sentence
+         with no conditional in it, a JSX comment is scanned like rendered
+         copy, and quoting the offending phrase to warn about it trips the
+         same rule — which is exactly what the audit's own note says to do
+         instead: describe, never quote.) */
+      panel: (
+        <div className="landing-phone landing-includes-phone">
+          <ExampleResultCard risk="MODERATE" labelled />
+        </div>
+      )
     },
     {
       title: "Learn your patterns.",
       lede: "Your own meals, saved in your own words",
-      body: "A history of what you actually ate, so the meals that keep coming back and the easiest changes to them are visible without logging anything."
+      body: "A history of what you actually ate, so the meals that keep coming back and the easiest changes to them are visible without logging anything.",
+      panel: (
+        <div className="landing-phone landing-includes-phone">
+          {/* ⛔ The alt describes the SCREEN, not the benefit. It is a
+              picture of a list; claiming it shows a reader learning
+              anything would assert something the image cannot show. */}
+          {/* ⛔ NOT `loading="lazy"`, and this is the one image on the page
+              that must not be. It sits inside a tabpanel that starts
+              `hidden`, and a lazy image in a display:none subtree is never
+              fetched at all — the browser has nothing to intersect. So the
+              request only started when the reader clicked the tab, and the
+              first thing they got for their click was an empty dark phone
+              frame while 123KB arrived. Eager here means it loads with the
+              section, which is the behaviour the click assumes. */}
+          <img
+            src="/landing/app-meals.png"
+            alt="The Prediabetes Pal meals screen on a phone: a strip of the last seven days across the top, then a list of recent checks — each one the meal in the words it was described in, the answer it got, and when it was checked."
+            width={390}
+            height={673}
+            fetchPriority="low"
+            decoding="async"
+          />
+        </div>
+      )
     },
     {
       title: "Build better habits.",
       lede: "No weighing, no calorie total, no score",
-      body: "Your week shows up as the answers you already got, not as a number to chase. Nothing to weigh and nothing to hit."
+      body: "Your week shows up as the answers you already got, not as a number to chase. Nothing to weigh and nothing to hit.",
+      /* ⛔ THIS PANEL BRIEFLY RENDERED THE REAL `WeekStrip` AND MUST
+         NOT AGAIN under this block's current lede. It is a live
+         component taking plain props, so it looked like the cheapest
+         real surface on the page — but the only shipped screen that
+         draws it is /journey, and /journey answers a signed-out reader
+         with a sign-in wall (verified 2026-08-11). In the shipped
+         paywall mode an account needs a card, so the artifact sits
+         behind one while the lede above promises the reader sees all
+         five features on the FREE checks. Same failure as naming the
+         camera in feature one, one panel over.
+         ⚠️ The FEATURE is genuinely free — a guest week strip renders
+         on /meals, and it is visible at the top of panel three's
+         capture. It is the /journey DRAWING that is not free, which is
+         why this is a statement rather than that picture. */
+      panel: (
+        <div className="landing-includes-note">
+          <p className="landing-includes-note-lead">
+            A week of answers, not a week of numbers.
+          </p>
+          <p>
+            No calorie total, no macro split, no grade. The only thing that
+            accumulates is the meals you already asked about.
+          </p>
+        </div>
+      )
     },
     {
       title: "Stay in control.",
       lede: "Private by design, and clear about where it stops",
-      body: "Your A1C and meal text are encrypted at rest and stored only with your explicit consent. Download all of it, or delete all of it, from your account page."
+      body: "Your A1C and meal text are encrypted at rest and stored only with your explicit consent. Download all of it, or delete all of it, from your account page.",
+      panel: (
+        <div className="landing-includes-note">
+          <p className="landing-includes-note-lead">
+            Download all of it, or delete all of it, in one tap.
+          </p>
+          <p>
+            Both live on your account page. Deleting the account removes the
+            data with it.
+          </p>
+        </div>
+      )
     }
   ];
   // Machine-readable summary for Google rich results and AI answer engines.
@@ -1011,111 +1130,19 @@ export default function LandingPage() {
               before you decide anything.
             </p>
           </div>
-          <LandingIncludes
-            features={includes}
-            /* ⚖️ THREE REAL SURFACES, TWO STATEMENTS (2026-08-11). The previous
-               pass shipped two real cards and three typographic panels, on the
-               reading that /meals and /journey could only be captured in their
-               empty states and /account is behind auth. One of those three was
-               wrong:
+          <LandingIncludes items={includes} />
+          {/* ⚠️ THIS SECTION'S ONLY EXIT, and it is measured, not decorative.
+              The result card, this section's foot, and the steps head all sit
+              between it and the oatmeal dare, which is the next exit.
+              Re-measure before removing it: node scripts/measure-landing.mjs
 
-                 3 · /meals — the SIGNED-OUT page falls back to the on-device
-                   store, so seeding localStorage before navigation renders the
-                   real screen with fixture rows. The capture script does it;
-                   this is the /demo contract (real component, fixture data)
-                   pointed at a route rather than at a component.
-
-               ⛔ THE TEST EVERY PANEL HERE HAS TO PASS IS THIS BLOCK'S OWN
-               LEDE: the reader can see all five on the FREE checks. A panel
-               that pictures a surface they cannot reach makes that sentence
-               false, and it is the same failure as naming the camera in
-               feature one — see the note above the component. Two panels fail
-               it and stay prose:
-
-                 4 · the week — `WeekStrip` takes plain props, so it briefly
-                   rendered live here. Reverted: the only shipped screen that
-                   draws it is /journey, which answers a signed-out reader with
-                   a sign-in wall, and in this paywall mode an account needs a
-                   card. The FEATURE is free — a guest week strip renders on
-                   /meals and is visible at the top of panel three's capture —
-                   but that particular drawing is not.
-                 5 · the account controls — owner ruling, and the reason is not
-                   difficulty. A real capture needs three API routes mocked and
-                   would put a delete-my-health-data control on a marketing
-                   page. Its copy already says the controls live on your account
-                   page rather than showing them, so panel and sentence agree.
-
-               ⛔ PANELS 1-2 CARRY THE ILLUSTRATION LABEL (AUD-008: anything
-               that looks like product output says it is an example until an
-               authorised live capture exists). Panel 3 does not need one — it
-               is a real screenshot of the real screen, and the only thing
-               fixture about it is the reader's own typed history. */
-            panels={[
-              <div key="safe" className="landing-phone landing-includes-phone">
-                <ExampleResultCard risk="SAFE" labelled />
-              </div>,
-              <div
-                key="moderate"
-                className="landing-phone landing-includes-phone"
-              >
-                <ExampleResultCard risk="MODERATE" labelled />
-              </div>,
-              <div key="history" className="landing-phone landing-includes-phone">
-                {/* ⛔ The alt describes the SCREEN, not the benefit. It is a
-                    picture of a list; claiming it shows a reader learning
-                    anything would assert something the image cannot show. */}
-                <img
-                  src="/landing/app-meals.png"
-                  alt="The Prediabetes Pal meals screen on a phone: a strip of the last seven days across the top, then a list of recent checks — each one the meal in the words it was described in, the answer it got, and when it was checked."
-                  width={390}
-                  height={673}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </div>,
-              /* ⛔ THIS PANEL BRIEFLY RENDERED THE REAL `WeekStrip` AND MUST
-                 NOT AGAIN under this block's current lede. It is a live
-                 component taking plain props, so it looked like the cheapest
-                 real surface on the page — but the only shipped screen that
-                 draws it is /journey, and /journey answers a signed-out reader
-                 with a sign-in wall (verified 2026-08-11). In the shipped
-                 paywall mode an account needs a card, so the artifact sits
-                 behind one while the lede above promises the reader sees all
-                 five features on the FREE checks. Same failure as naming the
-                 camera in feature one, one panel over.
-                 ⚠️ The FEATURE is genuinely free — a guest week strip renders
-                 on /meals, and it is visible at the top of panel three's
-                 capture. It is the /journey DRAWING that is not free, which is
-                 why this is a statement rather than that picture.
-                 (A plain block comment, not a braced one: this is an ARRAY
-                 literal, and the braced form is JSX-children syntax.) */
-              <div key="habits" className="landing-includes-note">
-                <p className="landing-includes-note-lead">
-                  A week of answers, not a week of numbers.
-                </p>
-                <p>
-                  No calorie total, no macro split, no grade. The only thing
-                  that accumulates is the meals you already asked about.
-                </p>
-              </div>,
-              <div key="privacy" className="landing-includes-note">
-                <p className="landing-includes-note-lead">
-                  Download all of it, or delete all of it, in one tap.
-                </p>
-                <p>
-                  Both live on your account page. Deleting the account removes
-                  the data with it.
-                </p>
-              </div>
-            ]}
-          />
-          {/* ⚠️ THE SECOND EXIT IN THIS SECTION, and like the steps block's
-              pair it is measured, not decorative. One exit inside the copy
-              column fixed the stretch above it and left 2,097px below —
-              the result card, this section's foot, and the steps head all sit
-              between it and the oatmeal dare, which is the next exit. Two
-              exits split the section into three legal stretches; one does not.
-              Re-measure before removing it: node scripts/measure-landing.mjs */}
+              ⛔ It used to be described here as the second of a pair, the
+              first being an exit inside the copy column. There is no such
+              exit: the copy column renders the tab list and nothing else, and
+              the media query that hid the imagined one at desk width matched
+              no element for as long as it existed. Both are gone. A note that
+              describes a different page is worse than no note — the next
+              person to re-measure would have read this one. */}
           <LandingPrimaryCta spaced />
         </section>
 

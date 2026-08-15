@@ -1604,7 +1604,6 @@ button.inline-link {
 .landing-faq summary,
 .landing-footer-col h3,
 .landing-glance-fact,
-.landing-offer-what,
 .landing-limits-card h3,
 .landing-verdict-signal {
   font-family: var(--font-sans), system-ui, sans-serif;
@@ -1868,7 +1867,7 @@ button.inline-link {
    does not, and which is the scope-first framing every other Approved row
    uses. It answers "is this for me" before the headline answers "what is it".
 
-   Tracked uppercase under the 16px floor, the same carve-out `.landing-offer-when`
+   Tracked uppercase under the 16px floor, the same carve-out `.landing-step-pill`
    and `.anatomy-label` already take: the floor exists for PROSE read by
    40-to-60-year-olds, and this is a five-word positional label. */
 .landing-hero-eyebrow {
@@ -2645,7 +2644,7 @@ button.inline-link {
 /* ⚖️ THE STEP PILL — the v4 design file's, and DESIGN.md §13 #8 lists "Step N
    eyebrows" as a confirmed anti-pattern (7/7 collapse). Reversed on the
    owner's 2026-08-08 ruling. Tracked uppercase under the 16px prose floor,
-   the same carve-out `.landing-offer-when` and `.anatomy-label` take. */
+   the same carve-out `.landing-hero-eyebrow` and `.anatomy-label` take. */
 .landing-step-pill {
   border-radius: 999px;
   padding: 6px 14px;
@@ -3000,19 +2999,14 @@ button.inline-link {
   min-width: 0;
 }
 
-/* ⛔ ONE FILLED PILL PER VIEWPORT (DESIGN.md §Marketing landing). The
-   copy-column exit exists for the STACKED layout, where the result card sits
-   below the list and pushes the next exit out of budget. At two columns the
-   card is beside the list, the section's own exit is the only one needed, and
-   rendering both put two identical pills a gap apart. It is a duplicate link
-   to the same route, so hiding it costs no navigation.
-   ⚠️ 900px must stay in step with the grid breakpoint above. */
-@media (min-width: 900px) {
-  .landing-includes-copy .landing-cta-stack {
-    display: none;
-  }
-}
-
+/* ⛔ NO COPY-COLUMN EXIT RULE HERE. This carried
+   `.landing-includes-copy .landing-cta-stack { display: none }` inside a
+   900px media query, with a paragraph explaining which of two pills it
+   suppressed at desk width. There has only ever been one pill: the copy
+   column holds the tab list and nothing else, so the selector matched no
+   element in any build. Deleted along with the page comment that described
+   the same phantom pair — see the exit at the foot of this section in
+   app/page.tsx. Restore only if a second exit actually moves in there. */
 .landing-includes {
   display: grid;
   gap: clamp(12px, 1.6vw, 16px);
@@ -3160,40 +3154,18 @@ button.inline-link {
    became §4 and its sentence became `.landing-section-lede`, and
    `.landing-cancel` / `.landing-pantry-note` went 2026-08-05 with the pricing
    section they lived in. Body colour over muted is the part worth keeping. */
-/* ⚖️ A CARD, per the design file. §11 allows this page one card family and
-   the result card is it — this is the one addition, and it is deliberate: the
-   sources paragraph is the page's evidence, and the design gives it a surface
-   so it reads as a citation block rather than more prose. It sits in a
-   WHITE SHEET now (the v4 order), so it takes `--page-bg` rather than
-   `--surface`: a white card on a white sheet is the card/section ambiguity the
-   strict alternation exists to prevent. On a sheet, a card goes DOWN a plane.
-   ⛔ It does not touch the result-card recipe — see `landing-design-guards`
-   GUARD 1. */
-.landing-sources {
-  display: grid;
-  gap: 14px;
-  align-content: start;
-  margin: 0;
-  padding: clamp(24px, 2.8vw, 34px);
-  background: var(--page-bg);
-  border-radius: clamp(18px, 2.2vw, 22px);
-  color: var(--text-body);
-  font-size: 17px;
-  line-height: 1.6;
-}
+/* The `.landing-sources` family stood here — a surfaced citation block for the
+   page's evidence paragraph, deleted 2026-08-15 alongside `.landing-offer*`
+   for the same reason: the v5 rebuild removed the markup and left the rules
+   matching nothing. The ledger names `landing-sources-note` survive in
+   app/page.tsx as ledger references, not as class names.
 
-.landing-sources h3 {
-  margin: 0;
-  font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 19.5px;
-  font-weight: 700;
-  line-height: 1.25;
-  color: var(--text-strong);
-}
-
-.landing-sources p {
-  margin: 0;
-}
+   Worth knowing if an evidence card returns: it took `--page-bg`, not
+   `--surface`, because it sat in a white SHEET and a white card on a white
+   sheet is exactly the card/section ambiguity the strict plane alternation
+   exists to prevent. On a sheet, a card goes DOWN a plane. It also stayed
+   clear of the result-card recipe — `landing-design-guards` GUARD 1 fails the
+   build for any `.landing` selector that shapes it. */
 
 /* `.landing-claims` stood here — the four subscription lines, deleted
    2026-08-05 with the pricing section. Worth knowing if a "what you get"
@@ -3379,13 +3351,17 @@ button.inline-link {
   padding: 24px 26px;
 }
 
+/* ⚠️ NO `font-family` HERE. This selector is in the grouped display-type rule
+   near the top of the landing block, which is where the sans stack is declared
+   for all of it. Declaring it a second time is the two-competing-declarations
+   shape that the duplicate pin exists to stop — and that pin now counts
+   font-family as well as font-size, so a second one fails the suite. */
 .landing-verdict-signal {
   display: flex;
   align-items: center;
   gap: 10px;
   margin: 0;
   color: var(--text-strong);
-  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -3417,8 +3393,21 @@ button.inline-link {
 }
 
 /* `margin: auto 0 0` is the design's, and it is the reason the body is a flex
-   column: it pushes this paragraph to the card's floor so the three cards
-   align along their last line instead of their first.
+   column: it pushes this paragraph to the card's floor.
+
+   ⚠️ THAT ALIGNS TWO CARDS OF THE THREE, not all three, and the note here used
+   to claim all three. The Clear card has no Try row to push — `EXAMPLE_RESULTS.SAFE`
+   carries neither an adjustment nor a swap, because F-04 forbids it — so it has
+   nothing carrying this margin and its last line stops short. Measured at
+   1200px: 86px under the Clear card's last line against 25px (the padding
+   alone) under the other two, on 358px cards.
+
+   ⛔ That 61px is NOT a defect to close, and `align-items: start` is not the
+   fix — see the note on `.landing-verdicts`, which removed it deliberately.
+   This section's own lede is that a balanced meal gets an answer and nothing
+   more; the short card is that sentence rendered. Filling the space would need
+   the Clear card to carry a fourth paragraph it is contractually barred from
+   having. Verify with a screenshot before touching it either way. */
 
    ⚠️ 16px, NOT the design file's 15px. This page has a 16px floor for
    everything except tracked uppercase labels (DESIGN.md rail 10), and the
@@ -3560,16 +3549,16 @@ button.inline-link {
   border-radius: 6px;
 }
 
-/* ── The glance strip, the dark band, the limits and the offer ─
+/* ── The glance strip, the dark band and the limits ──────────
    Added 2026-08-06 (v2 design file), re-planed and partly re-carded 2026-08-08
-   (v4). ⚠️ The note that stood here said all four were RULE-TOPPED and never
-   carded, on a one-plane rule that no longer exists. Two of them are cards
-   now — see `.landing-offer li` and `.landing-limits-card` — and each
-   carries its own reason. What DID survive the change: none of them takes the
-   system's one `box-shadow`. The `.landing-price-*` family that stood where
-   the offer block now stands carried it, and the note left when those tiles
-   were deleted said a replacement should EARN that shadow rather than inherit
-   it (DESIGN.md §5). Border and radius only.
+   (v4). ⚠️ The note that stood here said all of them were RULE-TOPPED and
+   never carded, on a one-plane rule that no longer exists. `.landing-limits-card`
+   is a card and carries its own reason. (The offer block was the fourth member
+   of this group and the second card; it and its CSS are gone as of 2026-08-15
+   — see the tombstone near the foot of this file.) What DID survive the
+   change: none of them takes the system's one `box-shadow`, and a replacement
+   for any of them should EARN that shadow rather than inherit it
+   (DESIGN.md §5). Border and radius only.
 
    Type is DESIGN.md §11's table, which now carries the design file's own
    13px tracked-uppercase micro-labels: the 16px floor is a PROSE floor, and a
@@ -3861,85 +3850,24 @@ button.inline-link {
   text-wrap: pretty;
 }
 
-/* §10. The three stages. An <ol> because the order is the argument — day one,
-   then the middle, then the decision — and a reader on a screen reader should
-   hear that it is a sequence of three. */
-.landing-offer {
-  display: grid;
-  gap: clamp(14px, 1.9vw, 24px);
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
+/* The `.landing-offer*` family stood here — §10's three-stage ladder (day one,
+   the middle, the decision) as an <ol> of three cards, plus its 13px uppercase
+   stage label and its closing note. Deleted 2026-08-15: the v5 rebuild removed
+   the block that rendered them and left ~80 lines of CSS matching no element,
+   in the same pass that correctly deleted `.landing-pains` and
+   `.landing-demo*`. This was the omission, not a survivor.
 
-/* ⚖️ CARDED, the v4 design file's, in place of the rule-topped columns.
-   ⛔ Border and radius only — NO shadow. The note left behind when the
-   `.landing-price-*` tiles were deleted from this exact spot said a
-   replacement block should EARN the system's one box-shadow rather than
-   inherit it (DESIGN.md §5). These do not: three stages of an offer ladder do
-   not need to lift off the page, they need to be told apart from the page. */
-.landing-offer li {
-  display: grid;
-  gap: 8px;
-  align-content: start;
-  border: 1px solid var(--border-soft);
-  border-radius: 20px;
-  padding: clamp(22px, 2.6vw, 30px);
-  background: var(--surface);
-}
-
-/* Stage three is the one the reader is deciding about, so it is the one that
-   is tinted. `--accent-tint` with a stronger border keeps it a card in the
-   same family rather than a second treatment. */
-.landing-offer-final {
-  background: var(--accent-tint);
-}
-
-/* ⚖️ The design file's 13px uppercase stage label, adopted 2026-08-06. It had
-   been rewritten to 18px sentence case because §11 bans eyebrows and floors
-   fineprint at 16px; the owner then ruled the design file is the target.
-
-   The floor is not being waived blindly. It exists for PROSE — the reason is
-   40-to-60-year-olds reading paragraphs on a phone — and these are two-word
-   positional labels ("Day one", "After that") that name a column rather than
-   being read as sentences. The identical treatment already ships INSIDE the
-   result card on this very page (`.result-eyebrow`, `.anatomy-label`), so the
-   page was never actually free of it. ⛔ Do not reach for this size for
-   anything a reader has to read as a sentence. */
-.landing-offer-when {
-  font-size: 13px;
-  line-height: 1.45;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.landing-offer-what {
-  font-size: 22px;
-  font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-
-.landing-offer li p {
-  margin: 2px 0 0;
-  max-width: 40ch;
-  font-size: 17px;
-  line-height: 1.55;
-  color: var(--text-body);
-  text-wrap: pretty;
-}
-
-/* The close. Full weight, because "nothing renews without telling you first"
-   is the sentence the whole no-amount block is built to earn. */
-.landing-offer-note {
-  margin: 30px 0 0;
-  font-size: 19px;
-  line-height: 1.65;
-  font-weight: 600;
-}
+   Two things in it are worth knowing if a staged offer block ever returns:
+     · The cards took a border and a radius and NO shadow, deliberately. The
+       note left when the `.landing-price-*` tiles were deleted from this spot
+       said a replacement should EARN the system's one box-shadow (DESIGN.md
+       §5) rather than inherit it; three stages of a ladder need to be told
+       apart from the page, not lifted off it.
+     · The stage label was the page's one sub-16px carve-out besides the result
+       card's own labels, on the owner's 2026-08-06 ruling that the design file
+       is the target. The floor exists for PROSE; those were two-word
+       positional labels naming a column. ⛔ That carve-out does not transfer
+       to anything a reader has to read as a sentence. */
 
 @media print {
   .report-actions,
