@@ -17,14 +17,32 @@ problem" block (`app/page.tsx`, `FAMILIAR`). Owner asked for drawings instead
 of photographs; owner also chose this framework over inline SVG after being
 told HyperFrames is a video tool. Single-weight line art, one hue.
 
-Each drawing keeps the SUBJECT of the photograph it replaces, so the change is
-medium-only and the six `alt` strings stay true after swapping "photograph"
-for "line drawing". Nothing here is a new claim.
+Each drawing keeps the SUBJECT of the photograph it replaces — the fridge, the
+appointment card, the tabs, the scale, the plate, the notebook. Nothing here is
+a new claim: these are mood, and the copy-ledger row below governs what they
+may contain.
+
+⚠️ **"Medium-only" was the plan, not the outcome, and this paragraph used to
+say otherwise.** Two things changed with the medium:
+
+- **Card one lost its hand.** The retired photograph had one; drawn unfilled it
+  read as a blob, and as a filled palm it read as a plug. It is not in the
+  shipped frame. ⛔ If a hand is wanted it needs a DIFFERENT approach, not a
+  third attempt at the same one.
+- **All six `alt` strings were rewritten**, not patched by swapping one noun.
+  They describe what is actually drawn, which is not what the photographs
+  showed. `app/page.tsx` holds them; `landing-art.test.ts` pins that each one
+  opens "A line drawing of".
 
 ## Assets
 
-- ../../public/landing/familiar/*.webp — the six photographs being replaced, 664x360. Delete after the PNGs land.
 - ../../DESIGN.md — brand truth (general-video § 6). Not a video design spec; the app's.
+
+The six photographs these replaced were `public/landing/familiar/*.webp`. They
+are **deleted** — this list named them as inputs long after they left the repo.
+The generation prompts that produced them survive in
+`docs/landing/2026-08-11-design-copy-7-rules-audit.md` as the record of what
+they were; nothing in this project reads them.
 
 ## Notes
 
@@ -37,7 +55,21 @@ the box before the file loads. The block was measured at that crop and has
 (`app/globals.css`, measured — the full crop ran the block 360px over its
 reachability budget on a phone). A photograph survives a centre crop; a line
 drawing does not. **Nothing load-bearing may sit in the top or bottom 67px.**
-Treat the middle 664x225 as the only safe area.
+Treat the middle 664x225 — y 67 to 293 — as the only safe area.
+
+⚠️ **"Nothing load-bearing" is the rule, and a deliberate exception exists.**
+`fridge-door.html` bleeds its cabinet past the band on purpose: a cabinet
+cropped top and bottom still reads as a cabinet, while the shelves and
+everything on them — which carry the picture — stay inside it. The test is
+whether the SUBJECT survives the crop, not whether ink stays inside a
+rectangle. That exception was recorded only in the composition's own comment
+until 2026-08-15; if you take another one, record it in both places.
+
+⛔ **The crop is invisible to every gate in this repo.** Lint, typecheck, the
+unit suite, the contract validators and the axe spec all stay green through a
+drawing that loses its subject on a phone. The only check is to screenshot the
+block at **375px** — and to re-screenshot **all six** when you re-render one,
+because three frames place their lowest ink within ~1px of the crop edge.
 
 ⛔ **Constraints inherited from the `landing-familiar-cards` copy-ledger row,
 all still binding:** every frame is a still life or a hand — **no faces, no

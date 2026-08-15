@@ -189,13 +189,19 @@ describe("the landing's meals capture cannot drift from the verdict words", () =
  * The six "If this sounds familiar" drawings (owner ruling 2026-08-14, which
  * replaced the generated photographs this block shipped with).
  *
- * ⛔ Why this exists, and why it is THINNER than the two guards above. Those
- * pin a value the capture renders as pixels — the free-check count, the three
- * verdict words — because a screenshot defeats `copy-pins.test.ts` completely.
- * A line drawing bakes no such value in, so there is nothing of that kind to
- * pin here and inventing one would be theatre.
+ * ⛔ Why this exists. The two guards above pin a value the capture renders as
+ * pixels — the free-check count, the three verdict words — because a
+ * screenshot defeats `copy-pins.test.ts` completely.
  *
- * What IS worth pinning is the coupling the repo has been bitten by twice: the
+ * ⚠️ This block used to claim a line drawing bakes no such value in, and was
+ * deliberately thin on that basis. It was wrong. Every composition hardcodes
+ * `--accent-strong` and `--accent-tint` as literal hexes, because a renderer
+ * outside this repo cannot read a CSS custom property — so these six PNGs
+ * carry two design tokens as pixels, in the same way the captures carry
+ * copy. The colour pin at the foot of this block is that coupling, and the
+ * 664x360 pin is the other one the thin version missed.
+ *
+ * What is ALSO worth pinning is the coupling the repo has been bitten by twice: the
  * page names six files, the files are produced OUTSIDE every gate this repo
  * runs (a HyperFrames render in `videos/familiar-line-art/`), and a marketing
  * page that 404s six images is invisible to lint, typecheck and the whole unit
@@ -203,28 +209,68 @@ describe("the landing's meals capture cannot drift from the verdict words", () =
  * for exactly this reason: no guard here reads an image.
  */
 describe("the landing's six familiar drawings exist and are regenerable", () => {
-  const FAMILIAR_ART = [
-    "fridge-door",
-    "appointment-card",
-    "open-tabs",
-    "kitchen-scale",
-    "cleared-plate",
-    "empty-notebook"
-  ];
+  // ⛔ DERIVED FROM THE PAGE, NEVER HAND-COPIED. This was a literal array
+  // transcribed from `FAMILIAR` in app/page.tsx, which meant a seventh card
+  // added there with no PNG behind it passed every assertion in this file
+  // while the page 404'd an image — the guard would have been checking the six
+  // names it already knew about and nothing else. Reading the page's own keys
+  // is what makes "the page names a file that is not there" detectable at all.
+  const FAMILIAR_ART = [...src.matchAll(/art: "([a-z-]+)"/g)].map((m) => m[1]);
+
+  // ⛔ The re-render command every failure below prints. Kept in one place so
+  // the three that name it cannot drift apart, and correct in the two ways the
+  // old copy was not: it PINS the CLI version (the project pins 0.7.86 in its
+  // own npm scripts precisely so a re-render is reproducible; bare
+  // `npx hyperframes` fetches whatever is current and silently renders with a
+  // different engine), and it does not stop at `-o renders/<name>`, which is a
+  // gitignored path. Following the old text verbatim left the test still red
+  // with no idea why, because the PNG the page reads had never been updated.
+  const rerender = (name: string) =>
+    `  cd videos/familiar-line-art\n` +
+    `  npx --yes hyperframes@0.7.86 render . -c compositions/${name}.html \\\n` +
+    `    --format=png-sequence -o renders/${name} --fps 1\n` +
+    `  cp renders/${name}/frame_000001.png ../../public/landing/familiar/${name}.png\n` +
+    `  npx --yes hyperframes@0.7.86 check .\n` +
+    `  # then re-screenshot ALL SIX cards at 375px — the crop is 664/225 there\n` +
+    `  # and three frames place their lowest ink within ~1px of its edge.`;
+
+  it("the page names exactly six drawings", () => {
+    // The block IS six cards (ledger `landing-familiar-cards`), and every
+    // assertion below is generated from this list — an empty or short match
+    // would make the whole describe vacuously green, which is the failure mode
+    // a derived list trades for the hand-copied one it replaces.
+    expect(
+      FAMILIAR_ART,
+      "app/page.tsx no longer yields six `art:` keys. If a card was added or removed deliberately, update this count and the copy ledger together."
+    ).toHaveLength(6);
+    expect(new Set(FAMILIAR_ART).size).toBe(FAMILIAR_ART.length);
+  });
 
   it.each(FAMILIAR_ART)("%s.png is on disk", (name) => {
     expect(
       fs.existsSync(path.join(process.cwd(), `public/landing/familiar/${name}.png`)),
-      `public/landing/familiar/${name}.png is missing. Re-render it:\n` +
-        `  cd videos/familiar-line-art && npx hyperframes render . ` +
-        `-c compositions/${name}.html --format=png-sequence -o renders/${name} --fps 1`
+      `public/landing/familiar/${name}.png is missing. Re-render it:\n${rerender(name)}`
     ).toBe(true);
   });
 
-  it.each(FAMILIAR_ART)("%s is still named by the page", (name) => {
-    // The page interpolates the extension once, so the art key is what ties a
-    // file to a card. A renamed key with no renamed file is a silent 404.
-    expect(src).toContain(`art: "${name}"`);
+  it.each(FAMILIAR_ART)("%s is 664x360, the ratio the card is built to", (name) => {
+    // ⛔ 664x360 IS LOAD-BEARING, as app/page.tsx says in as many words:
+    // `.landing-familiar-art` pins that aspect ratio and crops to 664/225
+    // below 640px, so a frame drawn to a different ratio moves six card
+    // heights at once and re-crops six drawings. Nothing pinned it — the guard
+    // called fs.existsSync and stopped, so a re-render at another size shipped
+    // green. The two app captures are pinned this way; this is the same read.
+    //
+    // ⚠️ NO deviceScaleFactor here. The capture script shoots at 2x so its
+    // PNGs are twice their CSS size; HyperFrames renders these 1:1, so the
+    // header IS the declared size. Do not copy the `/2` from the block above.
+    const header = fs
+      .readFileSync(path.join(process.cwd(), `public/landing/familiar/${name}.png`))
+      .subarray(16, 24);
+    expect(
+      [header.readUInt32BE(0), header.readUInt32BE(4)],
+      `${name}.png is ${header.readUInt32BE(0)}x${header.readUInt32BE(4)}, not 664x360. The card's aspect-ratio and its 664/225 phone crop are both built to that frame. Re-render it:\n${rerender(name)}`
+    ).toEqual([664, 360]);
   });
 
   it("the page still asks for .png, which is what the renderer emits", () => {
@@ -253,5 +299,45 @@ describe("the landing's six familiar drawings exist and are regenerable", () => 
     // changed underneath them.
     const alts = src.match(/alt: "A line drawing of [^"]+"/g) ?? [];
     expect(alts).toHaveLength(FAMILIAR_ART.length);
+  });
+
+  it("the ink and ground the drawings bake in are still the page's tokens", () => {
+    // ⛔ THE DOCBLOCK ABOVE USED TO SAY "A line drawing bakes no such value in".
+    // That is false, and it is the reason this test exists. Every composition
+    // hardcodes the palette as literal hexes — a renderer outside this repo
+    // cannot read a CSS custom property — so the drawings carry two of the
+    // page's design tokens as PIXELS. Change either token and six images ship
+    // the old colour against the new ground, with lint, typecheck, the axe
+    // spec and every other gate green: exactly the drift the TASTER_LIMIT and
+    // RISK_LABELS pins above exist to stop, in colour rather than in words.
+    //
+    // The fix when this fails is to re-render, not to edit the number here.
+    const css = fs.readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
+    const token = (name: string) =>
+      css.match(new RegExp(`--${name}:\\s*(#[0-9a-f]{3,8})`, "i"))?.[1]?.toLowerCase();
+
+    // Ink, then ground. Named here so a failure says which is which.
+    const ink = token("accent-strong");
+    const ground = token("accent-tint");
+    expect([ink, ground], "app/globals.css no longer defines both accent tokens").toEqual([
+      "#0a4a44",
+      "#e6f2ef"
+    ]);
+
+    for (const name of FAMILIAR_ART) {
+      const composition = fs.readFileSync(
+        path.join(process.cwd(), `videos/familiar-line-art/compositions/${name}.html`),
+        "utf8"
+      );
+      for (const [role, hex] of [
+        ["ink (--accent-strong)", ink],
+        ["ground (--accent-tint)", ground]
+      ] as const) {
+        expect(
+          composition.toLowerCase(),
+          `${name}.html no longer carries ${hex} as its ${role}. The six PNGs are rendered from these files and bake the colour in, so a token change means a re-render, not an edit to this test:\n${rerender(name)}`
+        ).toContain(hex!);
+      }
+    }
   });
 });

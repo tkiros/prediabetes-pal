@@ -14,16 +14,12 @@
         stroke-linecap: round;
         stroke-linejoin: round;
       }
-      /* Same line, but filled with the GROUND so the shape occludes what is
-         behind it. Without this the door edge draws straight through the hand
-         and it reads as a blob — which is exactly what the first pass did. */
-      .solid {
-        fill: #e6f2ef;
-        stroke: #0a4a44;
-        stroke-width: 3;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-      }
+      /* A `.solid` rule stood here — the same line filled with the ground so a
+         shape could occlude what is behind it. Its only user was the hand,
+         which has now been drawn twice and cut twice (unfilled it read as a
+         blob; filled it read as a plug), so the rule was six lines explaining
+         a shape that is not in this file. `kitchen-scale.html` keeps its own
+         copy because something there actually uses it. */
     </style>
   </head>
   <body>

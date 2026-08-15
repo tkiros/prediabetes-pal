@@ -756,18 +756,46 @@ worst desert   1,977px   →    1,977px      identical, within the 2,001px budge
 hyperframes check                          passed — 0 errors, 0 warnings, 9 layout samples
 ```
 
-⚠️ **The set got heavier: ~70KB of `.webp` became ~103KB of `.png`** (10–29KB
-per file). Line art compresses well losslessly, but PNG still carries an alpha
-channel this art does not use — every frame paints an opaque ground rect,
-because `--format=png-sequence` writes RGBA and a CSS `body` background does
-not survive into it. Nobody set a size budget for this block and the format
-follows from the owner's choice of renderer, so it was not re-opened. Recorded
-because this file tracks the number.
+⚠️ **The set got heavier: ~70KB of `.webp` became 105.4KB of `.png`** (10.4–30.7KB
+per file). Nobody set a size budget for this block, so it was not re-opened.
+Recorded because this file tracks the number.
 
-`tests/unit/pal/landing-art.test.ts` gained 15 assertions. They are deliberately
-**thinner** than the two capture guards above them: those pin a value the
-screenshot bakes into pixels (the free-check count, the three verdict words),
-and a line drawing bakes in no such value. What they do pin is the coupling
+⛔ **The cause recorded here was wrong, and being wrong it foreclosed the fix.**
+This paragraph said PNG "still carries an alpha channel this art does not use"
+and that `--format=png-sequence` writes RGBA. It does not: all six files are
+`8-bit/color RGB, non-interlaced` — no alpha channel exists in any of them
+(`file public/landing/familiar/*.png`). The weight is ordinary truecolour PNG
+on flat art, which is a format choice, not something inherent to the renderer.
+
+Measured 2026-08-15 against the six shipped frames:
+
+| | total |
+|---|---|
+| shipped truecolour PNG | 105.4KB |
+| the same pixels, 256-colour palette PNG | 45.0KB |
+| the same pixels, lossless WebP | 40.7KB |
+
+Six flat colours per drawing quantise without visible loss, so ~60KB is
+available whenever anyone wants it. ⛔ Not taken here: re-encoding changes the
+bytes the page ships, and every change to these frames owes a re-screenshot of
+all six at 375px. It is a deliberate open item, not an inherent cost.
+
+`tests/unit/pal/landing-art.test.ts` gained 15 assertions, deliberately
+**thinner** than the two capture guards above them on the reading that those
+pin a value the screenshot bakes into pixels (the free-check count, the three
+verdict words) and a line drawing bakes in no such value.
+
+⛔ **That reading was wrong and the guards were widened on 2026-08-15.** Every
+composition hardcodes `--accent-strong` and `--accent-tint` as literal hexes,
+because a renderer outside this repo cannot read a CSS custom property — so
+these drawings bake in two design tokens exactly as the captures bake in copy.
+Move either token and six images ship the old colour against the new ground
+with every gate green. The block now pins that coupling, pins each frame at
+664x360 (the ratio the card and its phone crop are both built to, previously
+unguarded), and derives the six names from the page instead of a hand-copied
+list that could not see a seventh card.
+
+What they already pinned is the coupling
 this repo has been bitten by — six files named by the page, produced entirely
 outside every gate it runs, where a 404 on a marketing surface is invisible to
 lint, typecheck and the whole unit suite. `app-check.png` shipped a retired

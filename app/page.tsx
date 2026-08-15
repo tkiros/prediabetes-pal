@@ -917,8 +917,8 @@ export default function LandingPage() {
               between is supposed to be your job to figure out.
             </p>
           </div>
-          {/* ⚖️ SIX CARDS WITH PHOTOGRAPHS, replacing the four ghost-numeral
-              pains. The ghost numerals go with them: a photograph and a
+          {/* ⚖️ SIX CARDS WITH LINE DRAWINGS, replacing the four ghost-numeral
+              pains. The ghost numerals go with them: a picture and a
               counter in the same card is two decorations arguing.
               (⛔ The word for "how a thing is styled" that starts with t-r-e-a
               cannot appear on this line. claims-boundary-copy.test.ts strips
@@ -928,7 +928,14 @@ export default function LandingPage() {
               ⛔ `loading="lazy"` on all six and fixed width/height on every
               one — six images below the fold with no intrinsic size is six
               layout shifts, and this block sits directly above a measured
-              exit. The files are 664×360 webp, ~12KB each. */}
+              exit. The files are 664×360 PNG, 10–31KB each.
+
+              ⚠️ THIS NOTE SAID PHOTOGRAPHS AND WEBP UNTIL 2026-08-15, three
+              weeks after the owner ruled the pictures are drawings and a
+              fortnight after the last webp left the repo. The docblock 700
+              lines above was rewritten in that pass and this one was not —
+              and this is the one an editor standing at the markup reads.
+              Both are pinned to the same medium now; move one, move both. */}
           <ul className="landing-familiar" role="list">
             {FAMILIAR.map(({ title, lines, art, alt }) => (
               <li key={art} className="landing-familiar-card">
