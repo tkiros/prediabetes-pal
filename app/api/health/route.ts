@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 
+import { learningJourneyServerEnabled } from "../../../lib/learning-journey-flag";
+import { longitudinalInsightsServerEnabled } from "../../../lib/longitudinal-insights-flag";
+import { mealMemoryServerEnabled } from "../../../lib/meal-memory-flag";
 import { getLaunchControls } from "../../../lib/pal/launch-controls";
 import { getPalEnv } from "../../../lib/pal/env";
 import { rateLimitConfigState } from "../../../lib/pal/rate-limit";
 import { captureServerError } from "../../../lib/pal/sentry-capture";
+import { photoInputServerEnabled } from "../../../lib/photo-input-flag";
 import { getDb, schema, type Db } from "../../../lib/server/db";
 
 export const runtime = "nodejs";
@@ -82,6 +86,7 @@ export function createHealthHandler(deps: HealthDeps = {}) {
           upstash: rateLimitConfigState(),
           emailDelivery,
           billingWebhook,
+          flagTwins: flagTwinStates(),
           db,
           crons,
         },
@@ -127,6 +132,9 @@ export function createHealthHandler(deps: HealthDeps = {}) {
         // whether LEGAL_TERMS_FINAL is set. Same predicate as checkoutGate() in
         // app/api/billing/handlers.ts. Exposes no config values.
         checkoutGate: process.env.LEGAL_TERMS_FINAL === "0" ? "closed" : "open",
+        // Runtime state of the four kill switches. See flagTwinStates() — this
+        // is the only place any of them is observable after the build.
+        flagTwins: flagTwinStates(),
         // These bounded states contain no secrets, URLs, timestamps, or counts.
         // Unlike the process-liveness route, this endpoint is product readiness:
         // stateful features and scheduled recovery paths must actually work.
@@ -141,6 +149,33 @@ export function createHealthHandler(deps: HealthDeps = {}) {
 export const GET = createHealthHandler();
 
 const NO_STORE_HEADERS = { "Cache-Control": "no-store" } as const;
+
+/**
+ * The four NEXT_PUBLIC/server twin pairs `next.config.ts` fails a production
+ * build over. That build guard proves each twin was set AT BUILD TIME; these
+ * are read per request, so a later env edit can diverge from the build with
+ * nothing anywhere to show it.
+ *
+ * ⚠️ Why this exists: `LONGITUDINAL_INSIGHTS_ENABLED` had no runtime probe at
+ * all. `GET /api/coach` 401s before it ever reads the flag, and once signed in
+ * its no-data path returns the SAME `insight: null` the disabled flag returns
+ * (`deriveInsight` bails under MIN_CHECKS_FOR_INSIGHT first) — so a hand probe
+ * could not tell "killed" from "nothing to say". Its launch-checklist box sat
+ * deliberately unticked for want of exactly this.
+ *
+ * Boolean-only, like `checkoutGate` above: names a state, exposes no config
+ * value. ⛔ Deliberately NOT wired into `readinessIssues` — that drives
+ * `ok:false` and a 503, and a flag being off is an intended operating state,
+ * not an outage. Monitor these; do not page on them.
+ */
+function flagTwinStates() {
+  return {
+    photoInput: photoInputServerEnabled() ? "on" : "off",
+    longitudinalInsights: longitudinalInsightsServerEnabled() ? "on" : "off",
+    mealMemory: mealMemoryServerEnabled() ? "on" : "off",
+    learningJourney: learningJourneyServerEnabled() ? "on" : "off",
+  } as const;
+}
 
 function readinessIssues(input: {
   environment: "preview" | "production" | "development" | "test";

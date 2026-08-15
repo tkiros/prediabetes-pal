@@ -91,6 +91,81 @@ describe("createHealthHandler — db + cron probes (P7)", () => {
     vi.unstubAllEnvs();
   });
 
+  // ⚠️ This is the ONLY runtime observation of the four kill switches.
+  // next.config.ts fails a production build on a client-on/server-off pair,
+  // which proves the twin at BUILD time; these are read per request, so a
+  // later env edit diverges silently. LONGITUDINAL_INSIGHTS_ENABLED had no
+  // probe at all before this: /api/coach 401s before the flag branch, and its
+  // no-data path returns the same `insight: null` the disabled flag returns.
+  it("reports each server twin's runtime state, on only for an exact '1'", async () => {
+    const createHealthHandler = await importHandler();
+    const GET = createHealthHandler({ db: () => testDb.db, now: () => NOW });
+
+    const twins = [
+      ["PHOTO_INPUT_ENABLED", "photoInput"],
+      ["LONGITUDINAL_INSIGHTS_ENABLED", "longitudinalInsights"],
+      ["MEAL_MEMORY_ENABLED", "mealMemory"],
+      ["LEARNING_JOURNEY_ENABLED", "learningJourney"],
+    ] as const;
+
+    // Each twin must be read from its OWN variable. Reported together, four
+    // states wired to one env read would look identical to four correct ones
+    // for as long as they happen to agree — so every case pins all four at
+    // once: the one under test, and the other three held explicitly at "0".
+    // ⚠️ Stub all four every time rather than relying on unstub to clear
+    // them. This suite replaces `process.env` wholesale in beforeEach, and a
+    // first draft that leaned on `vi.unstubAllEnvs()` read a stale "on".
+    for (const [env, key] of twins) {
+      for (const [value, expected] of [
+        ["1", "on"],
+        ["0", "off"],
+        ["", "off"],
+        ["true", "off"], // fail-closed: only the exact string "1" enables
+      ] as const) {
+        for (const [otherEnv] of twins) {
+          vi.stubEnv(otherEnv, otherEnv === env ? value : "0");
+        }
+
+        const payload = await (await GET()).json();
+        expect(
+          payload.flagTwins[key],
+          `${key} must read ${env}=${JSON.stringify(value)} as "${expected}"`,
+        ).toBe(expected);
+
+        for (const [, otherKey] of twins) {
+          if (otherKey === key) continue;
+          expect(
+            payload.flagTwins[otherKey],
+            `${otherKey} turned on when only ${env} was set — the twins share one env read`,
+          ).toBe("off");
+        }
+        vi.unstubAllEnvs();
+      }
+    }
+  });
+
+  // ⛔ A flag being off is an intended operating state, not an outage. Wiring
+  // a twin into readinessIssues would 503 production on a deliberate kill.
+  it("never lets a twin being off degrade readiness", async () => {
+    const createHealthHandler = await importHandler();
+    const GET = createHealthHandler({ db: () => testDb.db, now: () => NOW });
+
+    for (const env of [
+      "PHOTO_INPUT_ENABLED",
+      "LONGITUDINAL_INSIGHTS_ENABLED",
+      "MEAL_MEMORY_ENABLED",
+      "LEARNING_JOURNEY_ENABLED",
+    ]) {
+      vi.stubEnv(env, "0");
+      const payload = await (await GET()).json();
+      expect(
+        payload.issues.join(","),
+        `${env}=0 leaked into readiness issues`,
+      ).not.toMatch(/flag|twin|photo|insight|memory|journey/i);
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("reports crons:ok when all five heartbeats are fresh", async () => {
     await testDb.db.insert(schema.cronHeartbeat).values([
       { name: "nudge", lastRunAt: new Date(NOW.getTime() - 30 * 60 * 1000) }, // 30m ago

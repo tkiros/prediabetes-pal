@@ -110,6 +110,11 @@ describe("GET /api/health", () => {
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
     // Hermetic against a local shell exporting the kill switch.
     delete process.env.LEGAL_TERMS_FINAL;
+    // Same reason, for the four flag twins reported below.
+    delete process.env.PHOTO_INPUT_ENABLED;
+    delete process.env.LONGITUDINAL_INSIGHTS_ENABLED;
+    delete process.env.MEAL_MEMORY_ENABLED;
+    delete process.env.LEARNING_JOURNEY_ENABLED;
 
     const response = await GET();
     const payload = await response.json();
@@ -133,6 +138,17 @@ describe("GET /api/health", () => {
       // G8: boolean-only W-04 gate state; open unless LEGAL_TERMS_FINAL="0"
       // (owner WTP decision 2026-07-17, commit 8c30265 — kill switch inverted)
       checkoutGate: "open",
+      // Runtime state of the four kill switches next.config.ts pairs at build
+      // time. Deleted above, so all four read off — the fail-closed default.
+      // ⚠️ This is a whole-payload toEqual precisely so a new key cannot reach
+      // the response without someone reading it against "without exposing
+      // secrets" in the title. These are booleans by name, never values.
+      flagTwins: {
+        photoInput: "off",
+        longitudinalInsights: "off",
+        mealMemory: "off",
+        learningJourney: "off",
+      },
       db: "unconfigured",
       crons: {
         nudge: "unknown",
@@ -156,6 +172,10 @@ describe("GET /api/health", () => {
     delete process.env.EDGE_CONFIG;
     delete process.env.UPSTASH_REDIS_REST_URL;
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    delete process.env.PHOTO_INPUT_ENABLED;
+    delete process.env.LONGITUDINAL_INSIGHTS_ENABLED;
+    delete process.env.MEAL_MEMORY_ENABLED;
+    delete process.env.LEARNING_JOURNEY_ENABLED;
 
     const response = await GET();
     const payload = await response.json();
@@ -171,6 +191,15 @@ describe("GET /api/health", () => {
       upstash: "unconfigured",
       emailDelivery: "unconfigured",
       billingWebhook: "unconfigured",
+      // The missing-config path returns early, before checkoutGate — but it
+      // still reports the twins, so a deploy that is degraded for an unrelated
+      // reason does not go dark on which kill switches are live.
+      flagTwins: {
+        photoInput: "off",
+        longitudinalInsights: "off",
+        mealMemory: "off",
+        learningJourney: "off",
+      },
       db: "unconfigured",
       crons: {
         nudge: "unknown",
