@@ -41,6 +41,23 @@ prod-env-check.txt
 *env-dump.txt
 vercel-env*.txt
 
+# Bare secret at the repo root — 45 bytes, a base64 32-byte key, no extension
+# and no `.env` in the name, so every rule above missed it. It sat untracked
+# but NOT ignored next to this repo's standing "never `git add .`" rule, which
+# is the same gap that shipped a live VERCEL_OIDC_TOKEN in N-21 above: one
+# absent-minded `git add .` was the whole distance between here and a committed
+# credential. Glob the siblings too — the next one will not reuse this name.
+.gh_sec*
+.secrets
+*.secret
+
+# Agent/editor tooling written into the working tree by local sessions. None of
+# it is project source, all of it is regenerated per machine, and together it is
+# ~20 of the untracked files that make `git add <dir>` dangerous here.
+.claude/
+.agents/
+.impeccable/
+
 # misc
 .DS_Store
 *.tsbuildinfo
