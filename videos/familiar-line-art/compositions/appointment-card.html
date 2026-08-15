@@ -40,8 +40,21 @@
         <!-- ⚠️ Two full-width grain lines stood here and were removed. At
              y=104 and y=286 they landed almost exactly on the mobile crop's
              edges, so they read as framing rules drawn around the picture
-             rather than as a table. The card and the keys carry the frame on
-             their own. -->
+             rather than as a table.
+
+             ⛔ REMOVING BOTH WAS AN OVERCORRECTION and it shipped. With no
+             ground at all, the mobile crop (y 67–293) showed the card and the
+             keys hanging in empty tint — the same defect caught twice during
+             this commit on the laptop and the scale, missed here. The alt
+             text says the card lies "askew on a table"; a screen-reader user
+             was told about a surface no sighted reader could see.
+
+             ONE line, not two: two read as a frame, one reads as the table's
+             front edge. y=280 is the counter line kitchen-scale.html already
+             uses, 13px clear of the crop edge and 18px below the card's
+             lowest rotated corner (y≈262). Keep them in step — if one moves,
+             move both. -->
+        <path class="ink" d="M30,280 L634,280" />
 
         <!-- the appointment card, lying slightly askew -->
         <g transform="rotate(-7 232 186)">

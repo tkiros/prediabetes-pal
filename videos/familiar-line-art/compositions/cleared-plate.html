@@ -46,7 +46,11 @@
 
         <!-- knife and fork laid parallel at four o'clock: the finished-eating
              position, which is the whole point of the drawing -->
-        <g transform="rotate(38 248 180)">
+        <!-- ⛔ NEGATIVE. SVG rotate() is CLOCKWISE, and the handles already
+             start below the plate's centre, so +38 swings them to about 7:30 —
+             the mirror of the finished signal, which is not a signal at all.
+             This shipped as rotate(38 …) and read backwards. -->
+        <g transform="rotate(-38 248 180)">
           <g transform="translate(224 180)">
             <!-- fork -->
             <path class="ink" d="M-11,-64 A11,11 0 0 1 11,-64 L11,-48
