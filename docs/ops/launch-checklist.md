@@ -123,18 +123,30 @@ until the live PWA is stable (`docs/ops/play-twa-runbook.md`'s blocking note).
       `derived pattern summaries` and `personalized pattern summaries`, which
       that page emits only when the flag is `1`. The insight is **free**, not
       Premium; no surface may price it.
-- [ ] ⛔ `LONGITUDINAL_INSIGHTS_ENABLED` — **the runtime kill switch has never
-      been observed in production.** This box stays unticked deliberately.
-      `GET /api/coach` returns 401 at `app/api/coach/route.ts:29` before the
-      flag branch at line 62, so no unauthenticated probe exists — unlike the
-      photo twin's 400-vs-404. All that is known is that `next.config.ts`
-      throws on a production build whose client flag is `1` with the twin
-      unset, so the twin was set **when the live build ran**; it is read per
-      request, so a later env edit could have diverged. ⛔ `vercel env pull`
-      cannot close this — it returns an empty string for this flag *and* for
-      `PHOTO_INPUT_ENABLED`, which is provably on. To tick this box, observe
-      the insight in an authenticated `GET /api/coach` response against
-      production.
+- [x] `LONGITUDINAL_INSIGHTS_ENABLED` — **observed at runtime in production**,
+      2026-08-15T15:36Z, `GET https://prediabetespal.com/api/health` →
+      `flagTwins.longitudinalInsights: "on"`. All four twins read on
+      (`photoInput`, `longitudinalInsights`, `mealMemory`, `learningJourney`),
+      `status: healthy`, `issues: []`.
+
+      This box sat unticked across several sessions for want of any probe, and
+      the probe it asked for would have been **wrong**. The old text said to
+      "observe the insight in an authenticated `GET /api/coach` response" —
+      but that route returns `insight: null` when the flag is off *and* when
+      `deriveInsight` bails under `MIN_CHECKS_FOR_INSIGHT` (5,
+      `lib/coach/insights.ts`), which is the state any account with few checks
+      is in. The two are indistinguishable. Tried on 2026-08-15 against a real
+      signed-in production account with zero checks: `insight: null`,
+      `tier: "free"`, every `verdictWeek` day `checked: false` — the no-data
+      branch, proving nothing about the flag. ⛔ Do not restore that
+      instruction; a null there is not evidence.
+
+      `app/api/health/route.ts` now reports all four server twins as
+      boolean-only state, the same shape as `checkoutGate`. That is the probe.
+      ⛔ Still true: `vercel env pull` cannot close this — it returns an empty
+      string for this flag *and* for `PHOTO_INPUT_ENABLED`, which is provably
+      on (Trap 1). ⚠️ Read per request, so this records the value **at that
+      timestamp**; re-read `/api/health` after any env change.
 - [ ] `LEGAL_ENTITY_NAME` and `SUPPORT_EMAIL` are set to real, monitored values;
       `/terms` and `/privacy` show them on the production domain.
 - [ ] Submit for review; respond to any Play reviewer follow-up promptly
