@@ -776,9 +776,43 @@ Measured 2026-08-15 against the six shipped frames:
 | the same pixels, lossless WebP | 40.7KB |
 
 Six flat colours per drawing quantise without visible loss, so ~60KB is
-available whenever anyone wants it. ⛔ Not taken here: re-encoding changes the
-bytes the page ships, and every change to these frames owes a re-screenshot of
-all six at 375px. It is a deliberate open item, not an inherent cost.
+available whenever anyone wants it. ⛔ Not taken at the time: re-encoding
+changes the bytes the page ships, and every change to these frames owes a
+re-screenshot of all six at 375px. It was a deliberate open item, not an
+inherent cost.
+
+✅ **Taken 2026-08-15.** All six re-encoded to 256-colour palette PNG via
+`sharp` (`palette: true, colours: 256, effort: 10`), and the re-screenshot debt
+above was paid — all six shot at 375px and looked at.
+
+| | total |
+|---|---|
+| was, truecolour PNG | 105.4KB |
+| now, 256-colour palette PNG | **43.9KB** (−58.4%) |
+
+Beat the 45.0KB estimate. **PNG, not the 40.7KB WebP** — `landing-art.test.ts`
+pins each frame's dimensions from the *PNG header*, `page.tsx`'s `art:` keys
+and the JSX comment beside the markup both name PNG, and `FAMILIAR_ART` is
+derived from those keys. A format change cascades through four places to save
+a further 3KB.
+
+⚠️ The re-encode is **not** pixel-identical, and it does not need to be — the
+originals carried anti-aliased edge shades past 256. What was verified instead
+is the coupling this file spent the paragraph below getting wrong:
+
+- `#0a4a44` (`--accent-strong`) and `#e6f2ef` (`--accent-tint`) are present
+  **exactly** in all six output files. The two design tokens these PNGs carry
+  as pixels did not move.
+- Worst single-channel deviation anywhere across the six: **2/255**
+  (`open-tabs`); 1/255 in the other five.
+- Fewer than **0.3%** of subpixels changed at all, all of them on
+  anti-aliased edges.
+
+⛔ Re-verify those three if anyone re-encodes again. "It looks fine" is not the
+check — the check is that the two token hexes survive as exact values, because
+six images silently carrying a near-miss of the brand colour is precisely the
+failure mode the widened guards below exist to catch, and no test in this repo
+reads a pixel.
 
 `tests/unit/pal/landing-art.test.ts` gained 15 assertions, deliberately
 **thinner** than the two capture guards above them on the reading that those
