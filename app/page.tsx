@@ -1187,19 +1187,38 @@ export default function LandingPage() {
                   written here is right in one build and wrong in the other.
                   Naming the row without counting it is true in both. The
                   COPY beside it can count, because copy branches; see
-                  `inputMethods` above. */}
-              <div className="landing-step-art landing-step-art--shot">
-                <span className="landing-phone landing-step-phone">
-                  <img
-                    src="/landing/app-check.png"
-                    alt="The Prediabetes Pal check screen on a phone: one box to describe the meal in your own words, the input options beside it, one field for your latest A1C, and a button to check it."
-                    width={390}
-                    height={700}
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </span>
-              </div>
+                  `inputMethods` above.
+
+                  ⛔ AND SO MUST THE PICTURE. `app-check.png` is captured
+                  against a photo-flag-ON build — scripts/capture-landing-art
+                  waits on `[data-testid='photo-input-button']` — so it bakes
+                  in the third chip and its Premium tag. Unbranched, a
+                  photo-off build would advertise a control `/check` does not
+                  draw. Every other photo-dependent surface on this page
+                  already branches (the FAQ, the includes body); this one was
+                  the exception, and prose in `docs/ops/env-reference.md` was
+                  the only thing holding it — no gate reads a PNG.
+
+                  OFF-STATE: no art, not a second capture. A step with copy
+                  and no picture is true in that build; a picture of a screen
+                  the reader cannot get is not. Committing a second 100KB
+                  screenshot for a state the owner has authorized never to
+                  happen (`docs/legal/owner-decision-2026-08-14-photo-assist-on.md`)
+                  buys nothing. */}
+              {photoEnabled ? (
+                <div className="landing-step-art landing-step-art--shot">
+                  <span className="landing-phone landing-step-phone">
+                    <img
+                      src="/landing/app-check.png"
+                      alt="The Prediabetes Pal check screen on a phone: one box to describe the meal in your own words, the input options beside it, one field for your latest A1C, and a button to check it."
+                      width={390}
+                      height={680}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </span>
+                </div>
+              ) : null}
             </li>
             <li className="landing-step landing-step--art">
               <div className="landing-step-copy">

@@ -1959,6 +1959,16 @@ button.inline-link {
   text-align: center;
 }
 
+/* ⛔ `.landing-cta-stack` IS NOT LANDING-ONLY. `app/guides/cta.tsx` reuses the
+   assembly on every guide page, where the surrounding body copy is left
+   aligned — so the landing's centring ruling (its fifteen exits) leaked into a
+   reading column it was never about. This opts back out. Anything else that
+   borrows the class outside the landing wants this modifier too. */
+.landing-cta-stack--start {
+  justify-items: start;
+  text-align: left;
+}
+
 .landing-cta-hint {
   margin: 0;
   font-size: 18px;
@@ -2853,24 +2863,26 @@ button.inline-link {
   gap: clamp(12px, 2vw, 28px);
 }
 
-/* One object: the heads are the table's first row, so only the pair's outer
-   corners round and the seam between them is the heads' own bottom border. */
-.landing-myths-heads {
-  border: 1px solid var(--border-soft);
-  border-bottom: 0;
-  border-radius: clamp(18px, 2.2vw, 24px) clamp(18px, 2.2vw, 24px) 0 0;
-}
-
-.landing-myths {
-  border-top: 0;
-  border-radius: 0 0 clamp(18px, 2.2vw, 24px) clamp(18px, 2.2vw, 24px);
-}
-
 /* ⚖️ A HEADER ROW INSIDE THE TABLE, owner ruling 2026-08-11 (per the design's
-   screenshot): tinted, not floating above the border. */
+   screenshot): tinted, not floating above the border.
+
+   One object: the heads are the table's first row, so only the pair's outer
+   corners round and the seam between them is the heads' own bottom border.
+
+   ⛔ ONE RULE PER SELECTOR HERE. This and `.landing-myths` below were each
+   declared twice — an earlier pair setting the seam, a later pair using the
+   `border` shorthand and the four-corner radius, same specificity, later in
+   source. The later pair won both times, so the seam was dead: the table
+   rendered a 2px double rule between the heads and the first myth, and the
+   list's rounded top corners met the heads' square bottom ones, notching both
+   sides above 640px. Folded into one rule each. A second
+   `.landing-myths-heads { border: … }` anywhere below will silently undo the
+   seam again, because the shorthand resets `border-bottom`. */
 .landing-myths-heads {
   padding: 16px clamp(16px, 2.2vw, 26px);
+  border: 1px solid var(--border-soft);
   border-bottom: 1px solid var(--border-soft);
+  border-radius: clamp(18px, 2.2vw, 24px) clamp(18px, 2.2vw, 24px) 0 0;
   background: var(--page-bg);
   font-size: 13px;
   font-weight: 700;
@@ -2890,7 +2902,11 @@ button.inline-link {
   gap: 0;
   margin: 0;
   border: 1px solid var(--border-soft);
-  border-radius: clamp(18px, 2.2vw, 24px);
+  /* No top border and no top radii: the heads row above supplies both, and
+     doubling them is what produced the 2px rule and the corner notch. See the
+     one-rule-per-selector warning on `.landing-myths-heads`. */
+  border-top: 0;
+  border-radius: 0 0 clamp(18px, 2.2vw, 24px) clamp(18px, 2.2vw, 24px);
   background: var(--surface);
   overflow: hidden;
 }

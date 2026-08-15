@@ -56,6 +56,49 @@ describe("the landing's captured artwork cannot drift from the free tier", () =>
     ).toBe(true);
   });
 
+  it("only renders in a photo-flag-ON build, because that is what it pictures", () => {
+    // ⛔ The capture is taken against a photo-flag-ON build —
+    // capture-landing-art.mjs waits on [data-testid='photo-input-button'] — so
+    // it bakes in the third input chip and its Premium tag. Rendered
+    // unconditionally, a photo-off build advertises a control /check does not
+    // draw. Every other photo-dependent surface on the page already branches
+    // on photoInputEnabled(); this one did not, and the only thing holding it
+    // was a sentence in docs/ops/env-reference.md. No gate reads a PNG, so
+    // this pins the branch in source instead.
+    //
+    // ⚠️ SOURCE, NOT RENDER — same caveat as the alt pin below.
+    const guarded = /\{photoEnabled \? \([\s\S]{0,400}?src="\/landing\/app-check\.png"/;
+    expect(
+      src,
+      "app-check.png must render inside a `photoEnabled ?` branch — it pictures the photo chip"
+    ).toMatch(guarded);
+  });
+
+  it("declares the height the PNG actually is, or the box collapses on load", () => {
+    // The <img> has no CSS aspect-ratio, so the browser reserves the box from
+    // these attributes and re-lays out when the bytes arrive. app-check.png
+    // went 1400 -> 1360 device px when clipH became derived rather than typed,
+    // and height={700} was left behind: a ~2.9% collapse directly above a
+    // measured exit. Read the real size instead of trusting a literal.
+    for (const [file, name] of [
+      [ART, "app-check.png"],
+      [MEALS_ART, "app-meals.png"]
+    ] as const) {
+      const header = fs.readFileSync(path.join(process.cwd(), file)).subarray(16, 24);
+      // deviceScaleFactor 2 in the capture script, so CSS px is half.
+      const cssW = header.readUInt32BE(0) / 2;
+      const cssH = header.readUInt32BE(4) / 2;
+      const declared = src.match(
+        new RegExp(`src="/landing/${name.replace(".", "\\.")}"[\\s\\S]{0,400}?width=\\{(\\d+)\\}\\s*height=\\{(\\d+)\\}`)
+      );
+      expect(declared, `no width/height found next to ${name}`).not.toBeNull();
+      expect(
+        [Number(declared![1]), Number(declared![2])],
+        `${name} is ${cssW}x${cssH} CSS px; app/page.tsx declares ${declared![1]}x${declared![2]}. Re-run node scripts/capture-landing-art.mjs or fix the attributes.`
+      ).toEqual([cssW, cssH]);
+    }
+  });
+
   it("carries alt text, because the capture makes an argument", () => {
     // It sits opposite "The apps want you to become an accountant" and is the
     // evidence for that claim. Decorative alt would drop the argument for
