@@ -7,6 +7,13 @@ and Gate 2 (`docs/production-implementation-plan-2026-07-01.md` §11) to
 that sequence plus everything specific to the **Play/TWA** launch on top of
 it. Check items off in order; do not skip ahead.
 
+> **Reconciled against production 2026-08-15** (live `/api/health` read +
+> repo greps): 30 boxes open, 5 ticked. Unticked does **not** mean undone —
+> two open boxes below are annotated **Partial** with the exact clauses
+> production has already satisfied. Before executing any box, verify each
+> of its clauses against reality; a probe that satisfies one clause is not
+> a tick.
+
 ---
 
 ## 0. Gate 1 confirmation (Heavy-Build DoD) — must already be true
@@ -30,15 +37,30 @@ until the live PWA is stable (`docs/ops/play-twa-runbook.md`'s blocking note).
 
 - [ ] **Railway Postgres** provisioned; `DATABASE_URL` set in Vercel
       (preview + production); `npx drizzle-kit migrate` run against it
-      (`docs/ops/env-reference.md`).
+      (`docs/ops/env-reference.md`). **Partial 2026-08-15**: the
+      production clause is proven (`/api/health` → `db: "ok"`); the
+      **preview** `DATABASE_URL` and the migrate-run clauses remain
+      unverified — a production health read says nothing about either.
 - [ ] **Umami Cloud** configured with `NEXT_PUBLIC_UMAMI_SRC` +
       `NEXT_PUBLIC_UMAMI_WEBSITE_ID` in Vercel (preview + production); one
       allowlisted browser event is visible exactly once in the intended
       provider website. Self-hosting is not a launch requirement.
+      **Partial 2026-08-15**: production renders both the
+      `cloud.umami.is/script.js` tag and
+      `data-website-id: bc2160bc-c3d9-4866-9a93-eb768c1caace` (visible in
+      the RSC payload — a plain-attribute grep misses it behind JSON
+      escaping). Still open: the **preview** scope and the dashboard
+      receipt of one allowlisted event. ⛔ Do not tick on page-source
+      evidence — a loaded script and an arriving event are different
+      things.
 - [ ] All other ⚙-marked and plain secrets from `docs/ops/env-reference.md`
       confirmed present in Vercel for both preview and production scopes
       (cross-check against `docs/handoff/human-actions-required.md` §2 —
       do not re-derive the list here, it is the source of truth).
+      **Partial 2026-08-15**: `/api/health` reports `upstash`,
+      `emailDelivery` and `billingWebhook` all `configured` in
+      production; the full both-scopes cross-check against the
+      env-reference list remains open.
 - [ ] `REVIEWER_TEST_SECRET` + `NEXT_PUBLIC_REVIEWER_MODE=1` set on
       **preview only**, confirmed absent from production
       (`docs/ops/env-reference.md`).
@@ -48,7 +70,7 @@ until the live PWA is stable (`docs/ops/play-twa-runbook.md`'s blocking note).
 - [ ] Run `DATABASE_URL=<preview-url> HEALTH_DATA_KEY=<preview-key> node
       scripts/seed-reviewer-account.mjs` against the preview database.
       Idempotent — safe to re-run.
-- [ ] Confirm `reviewer@revora.test` signs in via `/signin`'s "Reviewer
+- [ ] Confirm `reviewer@pal.test` signs in via `/signin`'s "Reviewer
       access" disclosure on the **preview** deploy and lands as a fully
       onboarded Premium account (`docs/ops/play-listing.md` §10).
 - [ ] Confirm the same reviewer-signin path 404s on the **production**
@@ -56,9 +78,12 @@ until the live PWA is stable (`docs/ops/play-twa-runbook.md`'s blocking note).
 
 ## 3. Cron + health verification
 
-- [ ] `/api/health` on the production deploy shows `crons.nudge` and
+- [x] `/api/health` on the production deploy shows `crons.nudge` and
       `crons.baiWeekly` as `ok` (not `stale`/`never`) after each cron has
-      had at least one scheduled run.
+      had at least one scheduled run. **Verified 2026-08-15**: live
+      production payload showed all five crons `ok` (`nudge`, `baiWeekly`,
+      `trialPrecharge`, `pantrySweep`, `stripeReconcile`), with
+      `status: "healthy"`, `issues: []`.
 - [ ] Sentry canary: trigger one real error on a deployed preview and
       confirm it lands in Sentry (`docs/handoff/human-actions-required.md`
       P7 entry).
