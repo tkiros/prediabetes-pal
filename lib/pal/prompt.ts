@@ -23,8 +23,15 @@ export type PalPromptPayload = {
  * 2026-07-16.2 — doc-19 step E.1(a): starch-count anchor for restaurant-scale
  * meals. All 8 unanimous rejected-band cases in the re-run panel were
  * multi-starch plates or oversized single-starch portions held at MODERATE.
+ *
+ * 2026-08-16.1 — consistency fix (launch-controls §12): the starch-count
+ * anchor's sub-6.3 branch said "at least MODERATE and leans HIGH", and the
+ * canonical two-starch meal flipped MODERATE/HIGH 38% of runs while decisive
+ * branches measured 0 flips. Every branch is now decisive: multi-starch at
+ * normal portions is MODERATE below 6.3 and HIGH at 6.3+; oversized or
+ * pressure-for-reassurance is HIGH at any band.
  */
-export const PROMPT_VERSION = "2026-07-16.2";
+export const PROMPT_VERSION = "2026-08-16.1";
 
 export function buildPalPrompt(options: {
   request: CheckRequest;
@@ -75,7 +82,13 @@ export function buildPalPrompt(options: {
       // Refined-grain/potato only: beans, lentils, and intact whole grains
       // buffer — counting them would over-flag the cultural staples doc 18
       // protected (dal with rotis, gallo pinto, feijoada).
-      "Count the refined-starch sources. Two or more distinct refined-grain or potato starches in one meal (bread plus chips, breading plus mashed potatoes plus a biscuit, taco shells plus a flour tortilla, pasta plus breaded cutlet), or one such starch at an oversized portion (a footlong roll, a bread bowl, half a pizza, several frozen entrees), makes the meal HIGH at A1C 6.3 or above; below 6.3 it is at least MODERATE and leans HIGH. Protein or fat alongside does not buffer that much refined starch, but beans, lentils, and intact whole grains are not refined starches and a staple dish they anchor can stay MODERATE.",
+      // 2026-08-16.1: the sub-6.3 branch used to read "at least MODERATE and
+      // leans HIGH" — a deliberately soft zone the model answered per-sample
+      // (38% MODERATE/HIGH flip at N=50, launch-controls §12). Every branch is
+      // now decisive; the eval labels (stratum-multistarch-*) accept both
+      // classes below 6.3, so MODERATE-at-normal-portions picks inside the
+      // panel-ratified range while oversized/pressure stays HIGH at any band.
+      "Count the refined-starch sources. One refined-grain or potato starch at an oversized portion (a footlong roll, a bread bowl, half a pizza, several frozen entrees, multiple label servings) is HIGH at any in-scope A1C. Two or more distinct refined-grain or potato starches in one meal (bread plus chips, breading plus mashed potatoes plus a biscuit, taco shells plus a flour tortilla, pasta plus breaded cutlet) make the meal HIGH at A1C 6.3 or above; below 6.3 the same multi-starch meal at normal portions is MODERATE, not HIGH, and becomes HIGH only if a starch portion is explicitly oversized (stated quantity or label math) or the user is pressuring for reassurance; an unstated portion counts as a normal serving for this rule. Protein or fat alongside does not buffer that much refined starch, but beans, lentils, and intact whole grains are not refined starches and a staple dish they anchor can stay MODERATE.",
       // Doc 18 item 17i: the same band anchors the review rubric uses.
       "A1C calibration: 5.7-5.9 standard caution (borderline carb-containing meals still avoid casual SAFE); 6.0-6.2 elevated (borderline meals lean MODERATE unless clearly low impact); 6.3-6.4 high (uncertain carb-containing meals never return SAFE). The same meal can only get more cautious as A1C rises, never more reassuring.",
       "SAFE results keep adjustment and swap null.",
@@ -100,6 +113,11 @@ export function buildPalPrompt(options: {
       'Food: chicken pad thai | A1C: 6.1 -> {"kind":"result","components":["rice noodles","chicken","sweet tamarind sauce","peanuts"],"glycemic_driver":"rice noodles","risk":"MODERATE","reason":"The rice noodles and sweet sauce carry most of the blood-sugar load even with the chicken alongside.","adjustment":"Ask for extra chicken or vegetables and go lighter on the noodles.","swap":"If you have the option, choose a stir-fry that swaps most of the noodles for vegetables.","question":null,"examples":[],"policy_flags":[]}',
       'Food: zucchini noodles with turkey meatballs | A1C: 6.4 -> {"kind":"result","components":["zucchini noodles","turkey meatballs","tomato sauce"],"glycemic_driver":null,"risk":"SAFE","reason":"This looks like a steady pick because zucchini noodles keep the plate low-carb and the meatballs add protein.","adjustment":null,"swap":null,"question":null,"examples":[],"policy_flags":["safe_food"]}',
       'Food: 2 servings of granola, 47g carbs per serving | A1C: 6.0 -> {"kind":"result","components":["granola"],"glycemic_driver":"granola","risk":"HIGH","reason":"Two label servings doubles an already carb-dense food, which makes this a heavy load in one sitting.","adjustment":null,"swap":"If you want it, keep to a single serving with Greek yogurt instead of the double bowl.","question":null,"examples":[],"policy_flags":["borderline"]}',
+      // 2026-08-16.1: the decisive sub-6.3 multi-starch branch needs its own
+      // worked example — without one the model pattern-matched multi-starch
+      // plates to HIGH ~5-8% of runs despite the rule (launch-controls §12).
+      // Deliberately NOT the §12 benchmark meal, so the anchor generalizes.
+      'Food: pasta with garlic bread | A1C: 6.0 -> {"kind":"result","components":["pasta","garlic bread"],"glycemic_driver":"pasta","risk":"MODERATE","reason":"The pasta and garlic bread stack two refined starches, which carries most of the blood-sugar load even with nothing oversized on the plate.","adjustment":"Halve the pasta or skip the garlic bread so one starch anchors the plate.","swap":"If you have the option, trade the garlic bread for a side salad.","question":null,"examples":[],"policy_flags":["borderline"]}',
       "Return only one flat JSON object that matches the supplied schema. Use null for unavailable required fields and never add extra properties.",
       "Use kind=result for in-scope meal guidance with a SAFE, MODERATE, or HIGH risk. Use kind=clarify for one concrete question. Use kind=not_food for non-food refusal with concrete food examples. Use kind=carbs_only when the meal is mostly refined carbs and needs conservative handling.",
       "Do not include markdown, disclaimers, or prose outside the JSON object. The server adds the user disclaimer."

@@ -15,9 +15,11 @@ it. Check items off in order; do not skip ahead.
 > of its clauses against reality; a probe that satisfies one clause is
 > not a tick, and presence in `vercel env ls` is not validity (two
 > preview values sat as placeholders for 24 days).
-> ⛔ **New launch blocker 2026-08-16**: engine consistency measured at
-> **38% flip rate** vs the ≥95% modal-class target — see §3 and
-> `docs/ops/launch-controls.md` §12.
+> ✅ **2026-08-16 blocker CLEARED same day**: the 38% flip rate was
+> prompt-rule ambiguity (the starch-count anchor's soft "leans HIGH"
+> branch), not sampling noise. Prompt `2026-08-16.1` makes every branch
+> decisive; re-measure at N=50 passed at **0.0% flip** (45/45 MODERATE,
+> 127/127 cumulative). Full record: `docs/ops/launch-controls.md` §12.
 
 ---
 
@@ -145,6 +147,14 @@ until the live PWA is stable (`docs/ops/play-twa-runbook.md`'s blocking note).
       `docs/ops/launch-controls.md` §12. The box's ask (run + record) is
       done; the **result blocks §8 rollout** until the P7 determinism
       remediation (`lib/pal/openai-client.ts`) lands and a re-run passes.
+      **RESOLVED 2026-08-16 (same day):** diagnosis controls proved
+      prompt-rule ambiguity, not sampling — the `openai-client.ts` reasoning
+      lever was not needed. Prompt `2026-08-16.1` (decisive starch-count
+      branches + sub-6.3 multi-starch worked example) re-measured at N=50:
+      **0.0% flip, 45/45 MODERATE** (127/127 cumulative across four runs);
+      all gates re-run green including `eval:pal:live`. §8 rollout is no
+      longer blocked by this item. Full rows + harness retry-accounting
+      note: `launch-controls.md` §12.
 
 ## 4. Build + package the TWA (Phase 8)
 
