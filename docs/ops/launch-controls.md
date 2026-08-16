@@ -517,15 +517,35 @@ never just "done". Target: **≥95% modal class** (flip rate ≤5%).
 | ---- | - | ------ | ------------ | ----- | --------- | ------- |
 | 2026-08-16 | 50 | local `next dev` @ `b9ff43c`, live OpenRouter `openai/gpt-5.4-mini`, limiter off | MODERATE 31/50 (62%), HIGH 19/50 (38%) | MODERATE 62% | **38.0%** | **FAIL** |
 | 2026-08-16 | 20 eff. (partial, run aborted by tooling) | same | HIGH 12/20 (60%), MODERATE 7/20 (35%), retry 1/20 | HIGH 60% | 40.0% | FAIL (corroborates) |
+| 2026-08-16 | 30+30 | same @ `037154d`, prompt `2026-07-16.2` — diagnosis controls | single starch a1c 6.1: MODERATE 28/28 results (2 retries); two starches a1c 6.4: HIGH 29/29 results (1 retry) | 100% each (risk-class) | 0% | diagnosis: decisive rule branches do not flip |
+| 2026-08-16 | 50 | same @ `037154d` + prompt `2026-08-16.1` (working tree, shipped in the consistency-fix PR) | MODERATE 45/45 results; 5 provider retries excluded (see harness note) | MODERATE 100% | **0.0%** | **PASS** |
 
-**Reading (2026-08-16):** the canonical checklist meal ("grilled chicken with
-white rice and a dinner roll", A1C 6.1) flips between MODERATE and HIGH ~4
-times in 10 on identical input — and the two runs disagree on which class is
-modal, so the boundary itself is unstable, not merely noisy. This is far
-worse than the ~15% instability the validation spike observed and far below
-the ≥95% ship target. ⛔ Treat as a launch blocker for §11.6 until the
-determinism remediation path (`lib/pal/openai-client.ts`, plan P7) is applied
-and a re-run passes.
+**Reading (2026-08-16, updated same day):** root cause found and fixed. The
+diagnosis controls proved the instability was **prompt-rule ambiguity, not
+sampling noise**: meals covered by a decisive branch of the starch-count
+anchor measured 0 risk-class flips (28/28 and 29/29), while the canonical
+meal sat exactly in the branch that read "below 6.3 it is at least MODERATE
+and leans HIGH" — an instruction to hover, which the model obeyed per-sample
+(62/38). Prompt `2026-08-16.1` makes every branch decisive (multi-starch at
+normal portions = MODERATE below 6.3, HIGH at 6.3+; explicitly oversized or
+pressure-for-reassurance = HIGH at any band — inside the panel-ratified
+range: the `stratum-multistarch-*` eval labels accept both classes) and adds
+a sub-6.3 multi-starch worked example (`pasta with garlic bread`,
+deliberately not the benchmark meal). Cumulative on the final prompt:
+**127/127 classifications MODERATE, zero flips** across four runs. Gates
+re-run green on the final wording: `test:pal` (958), `contract`, `eval:pal`,
+and `eval:pal:live` (159 live cases).
+
+**Harness note (2026-08-16):** `consistency-check.mjs` now counts
+`kind:retry` bodies as errors (reported per run) instead of a distribution
+class. A retry is the engine's fail-closed response to a provider error —
+HTTP 200 but no classification — and the harness already excluded HTTP-level
+errors; provider-error bursts (measured 0–17% by the minute on OpenRouter
+this session, under both prompt versions) were scoring as a pseudo-class and
+failing runs whose actual risk-class flip rate was 0. Genuine kind flips
+(result↔clarify etc.) still count against the distribution. Provider
+availability is real but is a different launch line item than engine
+consistency.
 
 Caveats of the 2026-08-16 runs: measured against a local dev server serving
 the same commit as production (`b9ff43c`), with the same documented provider

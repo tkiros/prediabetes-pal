@@ -51,6 +51,15 @@ for (let i = 0; i < n; i += 1) {
     }
 
     const body = await res.json();
+    if (body.kind === "retry") {
+      // Fail-closed availability event (provider error → calm-retry body,
+      // HTTP 200), not a classification. Same bucket as the HTTP errors
+      // above, which this loop already excludes from the distribution —
+      // 2026-08-16: provider-error bursts were scoring as a pseudo-class
+      // and failing runs whose actual risk-class flip rate was 0.
+      errors.push("kind:retry (provider fail-closed)");
+      continue;
+    }
     results.push(body.kind === "result" ? body.risk : `kind:${body.kind}`);
   } catch (error) {
     errors.push(String(error?.message ?? error));
