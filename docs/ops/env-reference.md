@@ -13,9 +13,9 @@ Every variable, per phase. Provision in Vercel for **preview + production**
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | existing | rate limit; prod instance |
 | `SENTRY_DSN` | existing/P7 | server-only capture |
 | `EDGE_CONFIG` | existing | launch-controls kill switch |
-| `DATABASE_URL` | 4A | **Restricted runtime-role** Railway Postgres URL (`docs/adr/hosting-hybrid.md`) — DML on app tables, no database/schema `CREATE`; the app connects via `pg`/`drizzle-orm/node-postgres` with a bounded per-instance pool (default `max: 3`) |
+| `DATABASE_URL` | 4A | **Restricted runtime-role** Postgres URL — since the 2026-08-10 outage migration this is **Neon** (project `dry-shadow-56131409`, Vercel integration resource `revora-db`; runtime role still named `revora_app` pending the Stage D rename, `docs/handoff/2026-08-11-…-session-handoff.md` §4), not the Railway instance `docs/adr/hosting-hybrid.md` describes — DML on app tables, no database/schema `CREATE`; the app connects via `pg`/`drizzle-orm/node-postgres` with a bounded per-instance pool (default `max: 3`). ⚠️ 2026-08-16: the **Preview**-scope value is a placeholder, not a URL — see the launch checklist §1 |
 | `DATABASE_POOL_MAX` | I-15 | Optional per-instance pool cap, integer `1..10`, default `3`. Do not raise it to hide provider connection pressure; follow `docs/runbooks/database-governance.md` |
-| `DATABASE_MIGRATION_URL` | I-15 / operator CLI only | Railway owner/migrator URL used by Drizzle. Never bind it to Vercel runtime. `PAL_DB_ENV=production` requires this URL, requires `DATABASE_URL`, and rejects identical usernames |
+| `DATABASE_MIGRATION_URL` | I-15 / operator CLI only | Owner/migrator URL used by Drizzle (Neon `neondb_owner` since 2026-08-10; was Railway). Never bind it to Vercel runtime. `PAL_DB_ENV=production` requires this URL, requires `DATABASE_URL`, and rejects identical usernames |
 | `PAL_DB_ENV` | I-15 / operator CLI only | Set to exact `production` only for the protected production migration command. Do not set in Vercel; it exists to make `npm run db:migrate:production` fail closed on missing/undivided roles |
 | ⚙ `AUTH_SECRET` | 4A | Auth.js session/token signing |
 | ⚙ `HEALTH_DATA_KEY` | 4A | **exactly 32 bytes base64** — AES-256-GCM key for A1C + food text. Losing it orphans all ciphertext; store it like a root credential. **Never replace it in isolation** — rotation has a procedure: `docs/runbooks/health-key-rotation.md` (PR-2) |
@@ -79,10 +79,13 @@ npx web-push generate-vapid-keys   # → VAPID_*
 Migrations: use `DATABASE_MIGRATION_URL` for schema ownership and keep
 `DATABASE_URL` on the restricted app role. For production run
 `PAL_DB_ENV=production DATABASE_URL=<runtime-url> DATABASE_MIGRATION_URL=<owner-url> npm run db:migrate:production`, then
-`npm run db:governance:check` (run per Railway Postgres environment: dev →
-preview → prod). The canonical production
-database is the Railway service named `Postgres` (the `Postgres-D2oG` /
-`Postgres-FOMu` services are empty orphans — never migrate those). The
+`npm run db:governance:check` (run per environment: dev → preview → prod).
+The canonical production database is **Neon** project
+`dry-shadow-56131409`, database `neondb` (since the 2026-08-10 outage
+migration — the Railway service `Postgres` and its `Postgres-D2oG` /
+`Postgres-FOMu` orphans this paragraph used to name are retired). Direct
+connections from non-allowlisted IPs are reset; use the Neon console or an
+allowlisted host. The
 production journal was baselined 2026-07-19 (`drizzle.__drizzle_migrations`
 seeded 0000–0012); if a database was ever schema-pushed by hand instead of
 migrated, re-baseline with

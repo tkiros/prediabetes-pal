@@ -507,3 +507,31 @@ Only after 11.1–11.5 are all green. Announce the URL. Watch Sentry (§9.1) and
 log drain (§9.2) for the first hour; keep the §10 incident runbook one click away.
 
 Evidence slot: timestamp of publication + link to the filled drill-log (11.5).
+
+## 12. Engine consistency measurements (P7 evidence slot)
+
+Record every `scripts/consistency-check.mjs` run here — the actual numbers,
+never just "done". Target: **≥95% modal class** (flip rate ≤5%).
+
+| Date | N | Target | Distribution | Modal | Flip rate | Verdict |
+| ---- | - | ------ | ------------ | ----- | --------- | ------- |
+| 2026-08-16 | 50 | local `next dev` @ `b9ff43c`, live OpenRouter `openai/gpt-5.4-mini`, limiter off | MODERATE 31/50 (62%), HIGH 19/50 (38%) | MODERATE 62% | **38.0%** | **FAIL** |
+| 2026-08-16 | 20 eff. (partial, run aborted by tooling) | same | HIGH 12/20 (60%), MODERATE 7/20 (35%), retry 1/20 | HIGH 60% | 40.0% | FAIL (corroborates) |
+
+**Reading (2026-08-16):** the canonical checklist meal ("grilled chicken with
+white rice and a dinner roll", A1C 6.1) flips between MODERATE and HIGH ~4
+times in 10 on identical input — and the two runs disagree on which class is
+modal, so the boundary itself is unstable, not merely noisy. This is far
+worse than the ~15% instability the validation spike observed and far below
+the ≥95% ship target. ⛔ Treat as a launch blocker for §11.6 until the
+determinism remediation path (`lib/pal/openai-client.ts`, plan P7) is applied
+and a re-run passes.
+
+Caveats of the 2026-08-16 runs: measured against a local dev server serving
+the same commit as production (`b9ff43c`), with the same documented provider
+architecture (OpenRouter base URL, provider-prefixed model, default reasoning
+effort). Byte-identical config could not be proven — Vercel sensitive values
+are write-only (`vercel env pull` returns the literal `[SENSITIVE]`), so
+production's exact `PAL_MODEL` string is unverifiable from outside the
+console. A confirmatory run against a real preview deploy needs deployment
+protection bypass (not provisioned) plus a rate-limit exemption.
