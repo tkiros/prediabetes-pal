@@ -153,7 +153,15 @@ until the live PWA is stable (`docs/ops/play-twa-runbook.md`'s blocking note).
 - [ ] `twa-manifest.json` human-fill fields completed (`host`,
       `webManifestUrl`/`iconUrl`/`maskableIconUrl`/`fullScopeUrl` pointed at
       the real domain, `signingKey.path`/`alias`) —
-      `docs/ops/play-twa-runbook.md` §9.3.
+      `docs/ops/play-twa-runbook.md` §9.3. **Partial 2026-08-16 — only
+      the keystore fields remain.** All domain fields are already filled
+      with `prediabetespal.com` values and all three referenced URLs
+      return 200 with correct content types (verified live). Outstanding:
+      `signingKey.path`/`alias`, which depend on the §4 keystore
+      (deliberately never committed). ⚠️ Note for `bubblewrap init`:
+      the TWA `startUrl` is `/check` but the live webmanifest's
+      `start_url` is `/home` — regeneration will flip it; keep `/check`
+      deliberate or reconcile first.
 - [ ] `bubblewrap build` produces a signed `.aab`.
 - [ ] Uploaded to the Play Console **internal testing track**.
 - [ ] Play App Signing SHA-256 copied from Play Console → Setup → App
