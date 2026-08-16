@@ -145,7 +145,7 @@ explicit written owner approval are all green at the submitted revision.
 
 ## Reviewer access
 
-- **Email:** `reviewer@revora.test`
+- **Email:** `reviewer@pal.test`
 - **Secret:** `<REVIEWER_TEST_SECRET>`
 - **Instructions:** “Open Sign in, choose Reviewer access, and enter the email
   and code. The reviewer account is fully onboarded and has test Premium access;
