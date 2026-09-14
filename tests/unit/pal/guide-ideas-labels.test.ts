@@ -11,6 +11,7 @@ import {
   LABEL_RUNS_PER_CELL,
   buildLabelsFile,
   classifyCell,
+  describeModelError,
   stripProviderPrefix,
   type GuideIdeaLabels,
   type RunOutcome
@@ -87,6 +88,17 @@ describe("guide idea label eval — cell classification", () => {
       expect(cell.label.reason).toMatch(/\S/);
     }
     expect(classifyCell(safeRuns(19)).verdict).toBe("inconclusive");
+  });
+
+  it("names the provider error behind a retry, so an inconclusive cell says why", () => {
+    class RateLimitError extends Error {
+      status = 429;
+    }
+    expect(describeModelError(new RateLimitError("slow down"))).toBe("RateLimitError 429");
+    expect(describeModelError(new TypeError("boom"))).toBe("TypeError");
+
+    const cell = classifyCell([...safeRuns(19), { ...RETRY, modelError: "RateLimitError 429" }]);
+    expect(cell.label.reason).toContain("retry (RateLimitError 429)");
   });
 
   it("maps 5.9 / 6.2 / 6.4 onto the engine's three prediabetes bands", () => {

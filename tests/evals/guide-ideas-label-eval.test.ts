@@ -15,6 +15,7 @@ import {
   LABEL_RUNS_PER_CELL,
   buildLabelsFile,
   classifyCell,
+  describeModelError,
   stripProviderPrefix,
   type CellLabel,
   type CellResult,
@@ -58,8 +59,13 @@ const IDEA_TIMEOUT_MS = 1_800_000;
 type CellRow = { id: string; band: LabelBand; attempts: number } & CellResult;
 
 async function runOnce(model: PalModelClient, food: string, a1c: number): Promise<RunOutcome> {
+  let modelError: string | undefined;
   try {
-    return { response: await checkFood({ food, a1c }, { model }) };
+    const response = await checkFood(
+      { food, a1c },
+      { model, onModelError: (error) => (modelError = describeModelError(error)) }
+    );
+    return modelError ? { response, modelError } : { response };
   } catch (error) {
     return { error };
   }

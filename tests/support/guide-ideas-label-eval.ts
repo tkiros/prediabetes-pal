@@ -35,8 +35,11 @@ export type GuideIdeaLabels = {
   labels: Record<string, { text: string } & Record<LabelBand, CellLabel>>;
 };
 
-/** One checkFood call: the response it returned, or what it threw. */
-export type RunOutcome = { response: PalUserResponse } | { error: unknown };
+/**
+ * One checkFood call: the response it returned (with the provider error that
+ * checkFood turned into `retry`, when there was one), or what it threw.
+ */
+export type RunOutcome = { response: PalUserResponse; modelError?: string } | { error: unknown };
 
 export type CellVerdict = "pass" | "fail" | "inconclusive";
 
@@ -65,13 +68,13 @@ export function classifyCell(
   for (const run of runs) {
     if (!("response" in run)) {
       tally.inconclusive += 1;
-      oddKinds.add("thrown error");
+      oddKinds.add(`thrown ${describeModelError(run.error)}`);
       continue;
     }
     const { response } = run;
     if (response.kind !== "result") {
       tally.inconclusive += 1;
-      oddKinds.add(response.kind);
+      oddKinds.add(run.modelError ? `${response.kind} (${run.modelError})` : response.kind);
       continue;
     }
     tally[response.risk] += 1;
@@ -100,6 +103,17 @@ export function classifyCell(
   }
 
   return { verdict: "pass", label: { risk: "SAFE", reason: firstReason }, tally };
+}
+
+/**
+ * The error's class and HTTP status ("RateLimitError 429"), never its message:
+ * enough to tell a rate limit from a timeout in the failure table, and a
+ * handful of distinct values rather than one per request.
+ */
+export function describeModelError(error: unknown): string {
+  const name = error instanceof Error ? error.constructor.name || error.name : typeof error;
+  const status = (error as { status?: unknown } | null)?.status;
+  return typeof status === "number" ? `${name} ${status}` : name;
 }
 
 /** "openai/gpt-5.4-mini" → "gpt-5.4-mini"; an unprefixed id is unchanged. */
