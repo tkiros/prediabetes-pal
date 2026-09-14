@@ -212,6 +212,35 @@ describe("production door guard — checkProductionDoor (Task 1.11)", () => {
       ]);
     });
 
+    it("also closes every surface that requires a dropped one, transitively, and names each (fix round 1)", () => {
+      // home and orient require ideas; intake requires orient. Labels go stale
+      // on every PROMPT_VERSION bump — a hotfix must not ship them half-open.
+      const probe = checkProductionDoor(
+        "ideas,ideas-full,home,orient,intake",
+        ledger,
+        freshLabels(),
+        "2099-01-01.1",
+        MODEL
+      );
+      expect(probe).toEqual({
+        effective: "",
+        errors: [],
+        warnings: [
+          `idea labels are stale (prompt 2099-01-01.1 ≠ ${PROMPT_VERSION}) — "ideas", "ideas-full", "home", "orient", "intake" dropped from this build; run npm run eval:pal:ideas`
+        ]
+      });
+
+      // Surfaces that need nothing from ideas survive, in input order.
+      const survivors = checkProductionDoor("source,ideas,orient,calm,intake", ledger, null, PROMPT_VERSION, MODEL);
+      expect(survivors).toEqual({
+        effective: "source,calm",
+        errors: [],
+        warnings: [
+          'idea labels are stale (no readable lib/pal/guide-ideas.labels.json) — "ideas", "ideas-full", "orient", "intake" dropped from this build; run npm run eval:pal:ideas'
+        ]
+      });
+    });
+
     it("reads the labels only when the list opens an ideas surface", () => {
       expect(checkProductionDoor("source", ledger, null, "2099-01-01.1", MODEL)).toEqual({
         effective: "source",

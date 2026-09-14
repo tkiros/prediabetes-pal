@@ -28,7 +28,9 @@ import {
  * Warning (the build continues — A-100, a prompt hotfix is never blocked by
  * the idea bank): when the list opens `ideas` or `ideas-full` and the idea
  * labels are stale, missing, or not all SAFE, both are dropped from
- * `effective`, so /api/health's guideDoor reads them "off".
+ * `effective` — and so, transitively, is every surface whose
+ * SURFACE_REQUIRES are no longer all open (home, orient, intake), each named
+ * in the warning — so /api/health's guideDoor reads them "off".
  *
  * `effective` is the value to inline: the listed surfaces in input order,
  * deduplicated, minus any dropped ones — or "" whenever there is an error
@@ -133,11 +135,29 @@ export function checkProductionDoor(
   if (surfaces.some((surface) => IDEAS_SURFACES.includes(surface))) {
     const reasons = ideaLabelStaleness(labels, promptVersion, modelId);
     if (reasons.length > 0) {
+      open = surfaces.filter((surface) => !IDEAS_SURFACES.includes(surface));
+      // Fix round 1: closing the ideas surfaces must not leave a surface open
+      // whose requirement is now closed (home's quick row, orient's step 4,
+      // and intake through orient). Drop dependents until the list is stable.
+      for (let changed = true; changed; ) {
+        const stillOpen = new Set<GuideSurface>(open);
+        const kept = open.filter((surface) =>
+          (SURFACE_REQUIRES[surface] ?? []).every((required) => stillOpen.has(required))
+        );
+        changed = kept.length !== open.length;
+        open = kept;
+      }
+      const dependents = surfaces.filter(
+        (surface) => !IDEAS_SURFACES.includes(surface) && !open.includes(surface)
+      );
+      const named =
+        dependents.length === 0
+          ? '"ideas" and "ideas-full"'
+          : [...IDEAS_SURFACES, ...dependents].map((surface) => `"${surface}"`).join(", ");
       warnings.push(
-        `idea labels are stale (${reasons.join(", or ")}) — "ideas" and "ideas-full" dropped from this build; ` +
+        `idea labels are stale (${reasons.join(", or ")}) — ${named} dropped from this build; ` +
           "run npm run eval:pal:ideas"
       );
-      open = surfaces.filter((surface) => !IDEAS_SURFACES.includes(surface));
     }
   }
 
