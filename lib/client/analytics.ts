@@ -199,7 +199,7 @@ export type AnalyticsEvent =
   | { name: "maintenance_selected"; props: { variant: "standard" } }
   // PRD v1.1 §9.1 — the guide door's kill-line instruments. Bounded props
   // only: the daypart bucket the device already computes, the chip slot, the
-  // risk class. Never the concept text, even though it is a closed bank.
+  // risk class. Never the idea text, even though it is a closed bank.
   // `surface` = where the block rendered (review A-41): the PR-1 prototype
   // sits on Home AND on /check's first-run empty state, because session-one
   // guests land on /check. Kill line 2 counts either surface.
@@ -207,7 +207,7 @@ export type AnalyticsEvent =
   // `more` = a tap inside the expanded block (Task 4.4 "See all"), so the enum
   // stays closed however large the bank grows (review A-08).
   | { name: "idea_tapped"; props: { daypart: Daypart; slot: "1" | "2" | "3" | "more"; surface: "home" | "check" } }
-  // The check that ran was the concept prefill (pal.recheck.source = "concept").
+  // The check that ran was the idea prefill (pal.recheck.source = "idea").
   | { name: "idea_check_completed"; props: { risk: PalRisk } }
   // PRD v1.1 §7.5 (amended 2026-09-14) — tour funnel. Which screen a tour
   // start reached, as a closed enum of screen ids. The number screen and the
