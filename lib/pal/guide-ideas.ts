@@ -60,7 +60,11 @@ export const GUIDE_IDEA_BANK: Record<Daypart, readonly string[]> = {
     "tuna and white-bean salad",
     "big salad with hard-boiled eggs, chickpeas, and vinaigrette",
     "chicken salad with olive oil dressing",
-    "hummus with carrot and cucumber sticks and a hard-boiled egg",
+    // prediabetes-snacks ("Hummus with carrots, cucumber, peppers, or
+    // celery") plus an egg. Task 1.8 fix round 1: was "hummus with carrot and
+    // cucumber sticks and a hard-boiled egg" (60 chars), which wrapped to a
+    // third row at 360px in WebKit and Firefox; same foods, 52 chars.
+    "hummus with carrots, cucumber, and a hard-boiled egg",
     "grilled chicken and avocado salad",
     // prediabetes-meal-plan Day 5 lunch: "whole-grain wrap with hummus,
     // chicken, and lots of vegetables" — wrap dropped.

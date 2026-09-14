@@ -37,7 +37,11 @@ describe("guide idea bank — precheck-clean, positive only", () => {
   it("names nothing to limit — the bank is positive only (§6 F-IDEAS acceptance)", () => {
     for (const idea of GUIDE_IDEAS) {
       expect(idea.text).not.toMatch(/\b(?:avoid|limit|skip|cut|without|instead of|no )\b/i);
-      expect(idea.text.length).toBeLessThanOrEqual(64); // review A-54: two lines in a 315px row at 375 (FOOD_MAX_LENGTH is 160)
+      // Review A-54, Task 1.8 fix round 1: every line fits two lines in the
+      // ~252px text column of a row at 360px, in every browser project (the
+      // smoke fold tests measure it); 59 is the longest line that does
+      // (FOOD_MAX_LENGTH is 160).
+      expect(idea.text.length).toBeLessThanOrEqual(59);
     }
   });
 

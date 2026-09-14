@@ -40,9 +40,12 @@ export type DashboardData = {
 };
 
 export function DashboardView({ data }: { data: DashboardData }) {
-  // Amendment A-106: flag on ⇒ the date collapses into one .status-eyebrow-
-  // styled line (there is no "day" yet — that arrives with the orientation
-  // step in a later PR). Flag off ⇒ today's markup, byte-for-byte.
+  // Amendment A-106: flag on ⇒ the whole greeting collapses into ONE
+  // .status-eyebrow-styled date line (there is no "day" yet — that arrives
+  // with the orientation step in a later PR). The week summary is not
+  // rendered: PRD v1.1 §7.6's wireframe shows one greeting line, /journey
+  // owns the week, and plan §3's fold budget already spent those ~28px on the
+  // ideas block (Task 1.8 fix round 1). Flag off ⇒ today's markup, byte-for-byte.
   const ideasOn = guideDoorEnabled("ideas");
 
   return (
@@ -65,9 +68,11 @@ export function DashboardView({ data }: { data: DashboardData }) {
         >
           {data.todayLabel}
         </h1>
-        <p className="dash-greet-sum" data-testid="dash-summary">
-          {data.weekSummary}
-        </p>
+        {ideasOn ? null : (
+          <p className="dash-greet-sum" data-testid="dash-summary">
+            {data.weekSummary}
+          </p>
+        )}
       </div>
 
       {/* PRD v1.1 §7.4/§7.6: ideas lead, the check hero drops to second and

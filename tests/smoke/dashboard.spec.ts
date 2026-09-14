@@ -98,12 +98,21 @@ test("guest dashboard fills in from on-device history", async ({ page }) => {
   await expect(page.getByTestId("result-card")).toBeVisible();
 
   await page.goto("/home?stay=1");
-  await expect(page.getByTestId("dash-summary")).toContainText(
-    "1 meal checked this week."
-  );
   await expect(page.getByTestId("today-list")).toContainText(
     "white rice with beans"
   );
+  // A-106 (Task 1.8 fix round 1): with the guide door's ideas surface on, the
+  // greeting is one date line — the week summary is not rendered (/journey
+  // owns the week). The branch follows the built app's effective state from
+  // /api/health (Task 1.12). Asserted after today-list, so the guest data has
+  // loaded before absence is checked.
+  if (await doorSurfaceOn("ideas")) {
+    await expect(page.getByTestId("dash-summary")).toHaveCount(0);
+  } else {
+    await expect(page.getByTestId("dash-summary")).toContainText(
+      "1 meal checked this week."
+    );
+  }
 
   // C7: Home is "help me decide now" — exactly one next-action line, and the
   // week strip / insight / progress surfaces live on /journey, not here.
@@ -166,13 +175,11 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
     test.skip(!(await doorSurfaceOn("ideas")), "ideas surface off in this build");
   });
 
-  test("ideas lead, the check CTA follows and stays above the fold; a tap prefills /check", async ({
-    page
-  }) => {
+  // Task 1.8 fix round 1: the fold lives only in the fold tests below, so a
+  // fold miss can never hide whether the door itself works.
+  test("ideas lead the check CTA; a tap prefills /check", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    // Review A-72: the daypart comes from the device clock, so the block's
-    // height differs by daypart. Pin the clock; the fold tests below repeat the
-    // measurement at 08:00, 13:00 and 19:00 and at 360/375/430.
+    // Review A-72: the daypart comes from the device clock. Pin it.
     await page.clock.install({ time: new Date("2026-09-14T19:00:00") });
     await page.goto("/home?stay=1");
 
@@ -187,11 +194,6 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
     expect(chipBox).not.toBeNull();
     expect(ctaBox).not.toBeNull();
     expect(chipBox!.y).toBeLessThan(ctaBox!.y); // order: ideas above the check
-    // Review A-72: the fold is the tab bar's top edge, not 667 — a CTA behind
-    // the fixed bar would otherwise pass.
-    const barBox = await page.locator(".app-tabbar").boundingBox();
-    expect(barBox).not.toBeNull();
-    expect(ctaBox!.y + ctaBox!.height).toBeLessThanOrEqual(barBox!.y); // DESIGN.md §8 still holds
 
     // RV-3 on Home: no percentages; the ideas block carries the anchor phrase.
     const text = await page.locator("main").innerText();
@@ -206,18 +208,20 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
 
   // Review A-72 / DESIGN.md §8: the rows wrap differently at each width and
   // each daypart's lines differ in length, so the fold is pinned for every
-  // width × clock, on three rotation pages each. `pal.ideas.rotation` is
+  // width × clock, on four rotation pages each. `pal.ideas.rotation` is
   // seeded before the load and the block advances it once on mount, so seed s
   // shows ideasFor(daypart, s + 1): seed 0 is a fresh guest's first page,
   // seed 1 the second load, seed 5 the page holding each daypart's longest
-  // lines (the likeliest three-line wraps at 360). Explicit viewport sizes
+  // lines, seed 7 the page that completes the set — together the four pages
+  // hold every line of an eight-line bank, so the two-line check below sees
+  // every idea wherever three rows show (375 and up). Explicit viewport sizes
   // keep this project-agnostic, like the rest of this file.
   const FOLD_CLOCKS: ReadonlyArray<{ time: string; daypart: Daypart }> = [
     { time: "2026-09-14T08:00:00", daypart: "breakfast" },
     { time: "2026-09-14T13:00:00", daypart: "lunch" },
     { time: "2026-09-14T19:00:00", daypart: "dinner" }
   ];
-  const ROTATION_SEEDS = [0, 1, 5] as const;
+  const ROTATION_SEEDS = [0, 1, 5, 7] as const;
 
   for (const width of [360, 375, 430]) {
     test(`fold at ${width}×667: the check CTA clears the tab bar at every daypart and rotation page`, async ({
@@ -248,6 +252,24 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
           await expect(page.getByTestId("idea-row-1"), cell).toHaveText(
             ideasFor(daypart, seed + 1)[0]!.text
           );
+
+          // Task 1.8 fix round 1: below 375px the block shows two rows (A-93's
+          // mechanism), three from 375 up; every visible idea fits the rows'
+          // shared two-line floor (a third line grows the block past the budget).
+          let visibleRows = 0;
+          for (const row of await page.getByTestId(/^idea-row-\d$/).all()) {
+            if (!(await row.isVisible())) continue;
+            visibleRows += 1;
+            const [height, floor, text] = await row.evaluate((el) => [
+              el.getBoundingClientRect().height,
+              Number.parseFloat(getComputedStyle(el).minHeight),
+              el.textContent ?? ""
+            ] as const);
+            expect.soft(height, `${cell}: "${text}" wraps past two lines`).toBeLessThanOrEqual(
+              floor + 0.5
+            );
+          }
+          expect.soft(visibleRows, `${cell}: visible idea rows`).toBe(width < 375 ? 2 : 3);
 
           const ctaBox = await page.getByTestId("dash-check-cta").boundingBox();
           const barBox = await page.locator(".app-tabbar").boundingBox();

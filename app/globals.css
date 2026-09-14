@@ -4501,6 +4501,19 @@ button.inline-link {
   animation: pal-skeleton 1.4s ease-in-out infinite; /* §6: the sanctioned loading shimmer */
 }
 
+/* Review A-93's mechanism, Task 1.8 fix round 1: below 375px Home's ideas
+   block shows TWO rows. With one greeting line, two-row-safe bank lines and
+   the §3 shrink steps, three rows still left the check CTA 3.3px under the tab
+   bar at 360×667 (the hero copy wraps there). The third row stays in the DOM —
+   rotation, ideas_shown and tap slots are unchanged — and the skeleton's third
+   row hides the same way, so hydration does not shift the hero. Scoped to
+   .ideas-block: the /check first-run IdeaRows keep all three. */
+@media (max-width: 374px) {
+  .ideas-block .ideas-list > li:nth-child(n + 3) {
+    display: none;
+  }
+}
+
 /* The one Committed color moment on the surface: the meal-check hero
    (approved direction 2026-07-19 — the check form IS Home's first task). */
 .meal-hero {
