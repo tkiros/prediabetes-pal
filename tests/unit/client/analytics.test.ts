@@ -27,6 +27,10 @@ const ALLOWED_NAMES = [
   "pantry_viewed",
   "pantry_checkout_started",
   "attribution",
+  "ideas_shown",
+  "idea_tapped",
+  "idea_check_completed",
+  "onboarding_step",
   "photo_draft",
   "result_feedback_submitted",
   "clarification_requested",
@@ -61,6 +65,10 @@ function assertExhaustive(name: AnalyticsEvent["name"]): void {
     case "pantry_viewed":
     case "pantry_checkout_started":
     case "attribution":
+    case "ideas_shown":
+    case "idea_tapped":
+    case "idea_check_completed":
+    case "onboarding_step":
     case "photo_draft":
     case "result_feedback_submitted":
     case "onboarding_started":
@@ -120,6 +128,10 @@ describe("AnalyticsEvent allowlist", () => {
       { name: "pantry_viewed", props: { source: "wall_decline" } },
       { name: "pantry_checkout_started" },
       { name: "attribution", props: { reported: "reddit", utm: "none" } },
+      { name: "ideas_shown", props: { daypart: "dinner", surface: "home" } },
+      { name: "idea_tapped", props: { daypart: "breakfast", slot: "2", surface: "home" } },
+      { name: "idea_check_completed", props: { risk: "SAFE" } },
+      { name: "onboarding_step", props: { step: "attribution" } },
       { name: "photo_draft", props: { items: 3, uncertain: 1 } },
       { name: "result_feedback_submitted", props: { helpful: true } },
       {
@@ -263,7 +275,16 @@ describe("analytics module source — no-PII static scan", () => {
     "never references the free-text/PII-carrying field %s",
     (identifier) => {
       const pattern = new RegExp(`\\b${identifier}\\b`, "i");
-      expect(pattern.test(SOURCE)).toBe(false);
+      const lines = SOURCE.split("\n");
+      const offendingLine = lines.findIndex((line) => pattern.test(line));
+
+      if (offendingLine !== -1) {
+        const lineNum = offendingLine + 1;
+        const lineContent = lines[offendingLine]?.trim();
+        throw new Error(
+          `Found forbidden identifier '${identifier}' at line ${lineNum}: ${lineContent}. Note: comments count — write 'idea' or 'meal' instead.`
+        );
+      }
     }
   );
 });
@@ -277,7 +298,7 @@ describe("AnalyticsEvent props stay closed unions (no free-text props)", () => {
     "utf8"
   );
 
-  it("declares no bare `: string` prop type in the AnalyticsEvent union", () => {
+  it("declares no bare `: string` prop type in the AnalyticsEvent union; insert new union members before the `photo_draft` variant", () => {
     const typeBlockStart = SOURCE.indexOf("export type AnalyticsEvent =");
     // The union's final variant/terminator — everything between the start
     // and this marker (inclusive) is the full AnalyticsEvent declaration,
@@ -300,6 +321,7 @@ describe("AnalyticsEvent props stay closed unions (no free-text props)", () => {
     // type argument like `Record<string, unknown>`) would mean a prop
     // accepts arbitrary free text.
     expect(typeBlock).not.toMatch(/:\s*string(?!\w)/);
+    // Insert new union members before the `photo_draft` variant
   });
 
   it("check_completed's props are exactly risk / kind / input_method / first_check, each a closed union", () => {
