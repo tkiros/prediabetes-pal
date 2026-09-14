@@ -129,11 +129,12 @@ export function describeModelError(error: unknown): string {
   return typeof status === "number" ? `${name} ${status}` : name;
 }
 
-/** "openai/gpt-5.4-mini" → "gpt-5.4-mini"; an unprefixed id is unchanged. */
-export function stripProviderPrefix(modelId: string): string {
-  const slash = modelId.indexOf("/");
-  return slash === -1 ? modelId : modelId.slice(slash + 1);
-}
+/**
+ * "openai/gpt-5.4-mini" → "gpt-5.4-mini". Lives in lib/pal/model-id.ts so the
+ * production door guard (lib/guide-door-guard.ts) strips exactly as this eval
+ * writes the labels file's `model` — next.config.ts cannot import tests/.
+ */
+export { stripProviderPrefix } from "../../lib/pal/model-id";
 
 /**
  * The labels file, in bank order. A band that never finished (a timed-out or

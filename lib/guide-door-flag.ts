@@ -38,6 +38,89 @@ export const GUIDE_SURFACES = [
 export type GuideSurface = (typeof GUIDE_SURFACES)[number];
 
 /**
+ * Every copy-ledger Copy ID each surface renders (A-101, A-119). The
+ * production door guard (lib/guide-door-guard.ts) refuses a surface unless
+ * every row listed here is `Status = Approved` in docs/safety/copy-ledger.md —
+ * a row missing from the ledger counts as not Approved. Concrete IDs only,
+ * never a wildcard: the guard cannot read a pattern's status.
+ *
+ * The zero-rows rule: `calm` renders no new copy, so it opens with an empty
+ * list. Every OTHER surface with an empty list (`numbers`, `refer`, `doctor`,
+ * `plan`, `guide` today) is refused in production — "no rows" means its rows
+ * are not filed yet, not that it has nothing to approve. The PR that files a
+ * surface's rows lists them here.
+ */
+export const SURFACE_ROWS: Record<GuideSurface, readonly string[]> = {
+  ideas: [
+    "guide-ideas-breakfast",
+    "guide-ideas-lunch",
+    "guide-ideas-dinner",
+    "guide-ideas-hero",
+    "check-empty-ideas",
+    "check-from-idea",
+    // A-119: the classics-hint variant is its own row — a guard cannot read a
+    // variant's status inside onboarding-first-check.
+    "check-classics-hint-guide"
+  ],
+  source: ["result-source-lead"],
+  calm: [],
+  // The plan's `orientation-*` rows as named so far; later PRs extend the list.
+  orient: [
+    "orientation-intro",
+    "orientation-step-01",
+    "orientation-step-02",
+    "orientation-step-03",
+    "orientation-step-04",
+    "orientation-step-05",
+    "orientation-step-06",
+    "orientation-step-07",
+    "orientation-day-eyebrow",
+    "orientation-controls",
+    "orientation-note-hint",
+    "orientation-signin-step",
+    "orientation-save-failed",
+    "learn-first-week-intro",
+    "journey-where-you-are",
+    "onboarding-final-button",
+    "onboarding-first-week-line"
+  ],
+  home: [
+    "home-quick-row",
+    "learn-tiles",
+    "guide-ideas-later",
+    "home-door-worried-line",
+    "home-check-hero-title"
+  ],
+  // The plan's `onboarding-ask-*` rows as named so far; later PRs extend the list.
+  intake: [
+    "onboarding-ask-pains",
+    "onboarding-ask-win",
+    "onboarding-ask-response",
+    "onboarding-expectations-ideas",
+    "onboarding-welcome-guide"
+  ],
+  "ideas-full": ["guide-ideas-see-all"],
+  numbers: [],
+  refer: [],
+  doctor: [],
+  plan: [],
+  guide: []
+};
+
+/**
+ * Surfaces that only make sense with others open (A-101). The production
+ * guard refuses a list that names a surface without everything it requires.
+ */
+export const SURFACE_REQUIRES: Partial<Record<GuideSurface, readonly GuideSurface[]>> = {
+  // The quick row's Ideas item is the See-all toggle.
+  home: ["ideas", "ideas-full"],
+  // Step 4 points at the ideas block.
+  orient: ["ideas"],
+  intake: ["orient"],
+  "ideas-full": ["ideas"]
+};
+
+/**
  * `1` opens every guide surface; a comma list opens only those named; any
  * other value (unset included) opens none. Fail-closed, exact tokens only.
  * Same build-time, no-server-twin posture as documented above — the list

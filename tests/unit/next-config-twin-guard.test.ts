@@ -20,6 +20,9 @@ const PAIRS = [
 function stubBase() {
   vi.stubEnv("VERCEL_ENV", "production");
   vi.stubEnv("PAL_ALLOW_NO_MEASUREMENT", "1");
+  // An ambient guide-door `1` would trip the production door guard (Task 1.11)
+  // before the twin guard under test could.
+  vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "");
   for (const [client, server] of PAIRS) {
     vi.stubEnv(client, "");
     vi.stubEnv(server, "");
