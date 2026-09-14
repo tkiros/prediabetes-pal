@@ -7,6 +7,7 @@ import {
   GUIDE_SURFACES,
   guideDoorEnabled,
 } from "../../../lib/guide-door-flag";
+import { SOURCE_LEAD } from "../../../components/result-card";
 
 const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), "utf8");
 
@@ -45,7 +46,26 @@ describe("guide-door render sites (source pins, node env has no DOM)", () => {
     expect(src).toContain('"pal.recheck.source"');
     expect(src).toContain('router.push("/check?stay=1")'); // A-102
     // The anchor phrase (PRD §7.3), never "your plan".
-    expect(src).toMatch(/Prediabetes Pal(?:'|&apos;|’)s rules/);
+    expect(src).toMatch(/Prediabetes Pal(?:'|&apos;|')s rules/);
     expect(src).not.toMatch(/your plan/i);
+  });
+});
+
+describe("F-SOURCE lead-in (PRD v1.1 §6 F-SOURCE)", () => {
+  it("has one sentence per label, each citing the product's own rules and no authority", () => {
+    for (const risk of ["SAFE", "MODERATE", "HIGH"] as const) {
+      const line = SOURCE_LEAD[risk];
+      expect(line).toMatch(/^Why this label: under Prediabetes Pal's rules this description reads as /);
+      expect(line).not.toMatch(/doctor|science|clinic|study|research/i);
+      expect(line).not.toMatch(/\d/); // no numeric claim
+      expect(line).not.toMatch(/same read every time|never changes/i); // the held /how-it-works claim
+    }
+  });
+
+  it("result-card renders the lead-in from the map, flag-gated, above the reason", () => {
+    const src = read("components/result-card.tsx");
+    expect(src).toMatch(/from\s+["'].*guide-door-flag["']/);
+    expect(src).toContain("SOURCE_LEAD[response.risk]");
+    expect(src.indexOf("SOURCE_LEAD[response.risk]")).toBeLessThan(src.indexOf("{response.reason}"));
   });
 });
