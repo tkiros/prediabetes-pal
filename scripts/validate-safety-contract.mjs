@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 
 const ROOT = process.cwd();
 const FIXTURE_PATH = path.join(ROOT, "tests/fixtures/safety-contract.json");
@@ -360,7 +361,7 @@ function getApprovedActiveCopyRows(copyLedger, failures) {
   );
 }
 
-function getCopyLedgerRows(copyLedger, failures) {
+export function getCopyLedgerRows(copyLedger, failures) {
   return getMarkdownTable(copyLedger, [
     "Copy ID",
     "Surface",
@@ -451,7 +452,7 @@ function parseMarkdownTables(text, failures, label) {
   return tables;
 }
 
-function splitTableRow(row) {
+export function splitTableRow(row) {
   const trimmed = row.replace(/^\|/, "").replace(/\|$/, "");
   // Backtick-aware: a `|` inside an inline code span (single backticks --
   // verified no double-backtick spans exist in any file this parses) is not
@@ -522,4 +523,11 @@ function normalize(value) {
   return (value || "").trim().toLowerCase();
 }
 
-main();
+// Guarded so a test can `import` the pure helpers above (splitTableRow,
+// getCopyLedgerRows) without also running the CLI's validation pass and
+// process.exit — only run when this file is the process entry point, not
+// when it is imported as a module.
+const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
+if (isMainModule) {
+  main();
+}
