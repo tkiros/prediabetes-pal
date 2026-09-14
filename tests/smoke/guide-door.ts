@@ -27,7 +27,7 @@
  * It uses Node's fetch rather than the `request` fixture so it works in a
  * test body, in `beforeAll` (which gets no test-scoped fixtures) and in
  * global setup alike. The health payload is fetched once per worker process
- * and cached. A flag-on run cannot pass by skipping: global setup calls
+ * (bounded by HEALTH_PROBE_TIMEOUT_MS) and cached. A flag-on run cannot pass by skipping: global setup calls
  * assertE2EDoorOpened() before any worker starts.
  */
 import { GUIDE_SURFACES, type GuideSurface } from "../../lib/guide-door-flag";
@@ -37,8 +37,19 @@ export const E2E_BASE_URL = "http://127.0.0.1:3100";
 
 export type GuideDoorStates = Record<GuideSurface, "on" | "off">;
 
+/**
+ * Upper bound on one `/api/health` probe, response body included — the same
+ * explicit-timeout convention as global setup's `warmRoutes` (120s per route).
+ * The health route answers from a warm production server in well under a
+ * second; 30s stays below Playwright's 90s test timeout, so a probe made
+ * inside a test fails with this diagnostic rather than a bare test timeout,
+ * and a hung server can never stall global setup until the CI job times out.
+ */
+export const HEALTH_PROBE_TIMEOUT_MS = 30_000;
+
 export type HealthFetch = (
-  url: string
+  url: string,
+  init: { signal: AbortSignal }
 ) => Promise<{ status: number; json(): Promise<unknown> }>;
 
 /**
@@ -72,22 +83,61 @@ export function parseGuideDoorStates(
 
 const cache = new Map<string, Promise<GuideDoorStates>>();
 
+/**
+ * One bounded probe. The deadline races the fetch AND the body read, and it
+ * rejects on its own even if the fetcher ignores the abort signal, so a
+ * server that accepts the connection and never answers still fails fast with
+ * a diagnostic naming the URL.
+ */
+async function probeGuideDoorStates(
+  baseURL: string,
+  fetcher: HealthFetch,
+  timeoutMs: number
+): Promise<GuideDoorStates> {
+  const url = new URL("/api/health", baseURL).href;
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(
+        new Error(
+          `GET ${url} did not answer within ${timeoutMs}ms (base URL ${baseURL}) — door smoke guards cannot tell whether the guide door is open. Is the e2e server up and responsive?`
+        )
+      );
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([
+      (async () => {
+        const response = await fetcher(url, { signal: controller.signal });
+        const body: unknown = await response.json().catch(() => null);
+        return parseGuideDoorStates(body, response.status);
+      })(),
+      deadline
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** The whole surface map, fetched once per worker (per base URL). */
 export function guideDoorStates(
   baseURL: string = E2E_BASE_URL,
-  fetcher: HealthFetch = fetch
+  fetcher: HealthFetch = fetch,
+  timeoutMs: number = HEALTH_PROBE_TIMEOUT_MS
 ): Promise<GuideDoorStates> {
-  let states = cache.get(baseURL);
-  if (!states) {
-    states = (async () => {
-      const response = await fetcher(new URL("/api/health", baseURL).href);
-      const body: unknown = await response.json().catch(() => null);
-      return parseGuideDoorStates(body, response.status);
-    })();
-    cache.set(baseURL, states);
-    // A failed probe is not cached; the caller still sees the rejection.
-    states.catch(() => cache.delete(baseURL));
-  }
+  const cached = cache.get(baseURL);
+  if (cached) return cached;
+
+  const states = probeGuideDoorStates(baseURL, fetcher, timeoutMs);
+  cache.set(baseURL, states);
+  // A failed (or timed-out) probe is not cached; the caller still sees the
+  // rejection. Only evict our own entry, never a newer probe's.
+  states.catch(() => {
+    if (cache.get(baseURL) === states) cache.delete(baseURL);
+  });
   return states;
 }
 

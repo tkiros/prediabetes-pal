@@ -88,6 +88,55 @@ describe("smoke guide-door probe", () => {
     ).resolves.toEqual(states(["ideas"]));
   });
 
+  it("bounds a probe whose server accepts the connection and never answers (fix round 1)", async () => {
+    const signals: AbortSignal[] = [];
+    // Ignores the abort signal on purpose: the deadline must not depend on the
+    // fetcher honouring it.
+    const hung: HealthFetch = (_url, init) => {
+      signals.push(init.signal);
+      return new Promise(() => {});
+    };
+
+    await expect(
+      guideDoorStates("http://127.0.0.1:3100", hung, 20)
+    ).rejects.toThrow(
+      "GET http://127.0.0.1:3100/api/health did not answer within 20ms (base URL http://127.0.0.1:3100)"
+    );
+    expect(signals).toHaveLength(1);
+    expect(signals[0]!.aborted).toBe(true);
+
+    // The timed-out probe is not cached: the next call probes again.
+    const good = healthFetch({ guideDoor: states(["ideas"]) });
+    await expect(
+      guideDoorStates("http://127.0.0.1:3100", good.fetcher, 20)
+    ).resolves.toEqual(states(["ideas"]));
+    expect(good.calls).toHaveLength(1);
+  });
+
+  it("bounds a response whose body never arrives", async () => {
+    const stalledBody: HealthFetch = async () => ({
+      status: 200,
+      json: () => new Promise(() => {})
+    });
+    await expect(
+      guideDoorStates("http://127.0.0.1:3101", stalledBody, 20)
+    ).rejects.toThrow(
+      "GET http://127.0.0.1:3101/api/health did not answer within 20ms"
+    );
+  });
+
+  it("a probe that answers in time disarms its deadline and stays cached", async () => {
+    const { calls, fetcher } = healthFetch({ guideDoor: states(["source"]) });
+    const first = guideDoorStates("http://127.0.0.1:3100", fetcher, 10);
+    await expect(first).resolves.toEqual(states(["source"]));
+
+    // Outlive the deadline: a still-armed timer would surface here as an
+    // unhandled rejection, and an evicted cache as a second fetch.
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(guideDoorStates("http://127.0.0.1:3100", fetcher, 10)).toBe(first);
+    expect(calls).toHaveLength(1);
+  });
+
   it("reads the e2e opt-in with the flag's own grammar", () => {
     for (const surface of GUIDE_SURFACES) {
       expect(e2eDoorValueOpens("1", surface)).toBe(true);
