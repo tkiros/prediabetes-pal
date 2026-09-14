@@ -1,6 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
+import { doorSurfaceOn } from "./guide-door";
+
 async function expectNoSeriousViolations(page: Page) {
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa"])
@@ -90,9 +92,9 @@ test("a new user walks welcome→segment→attribution→a1c→expectations into
   await expect(page).toHaveURL(/\/check$/);
   await expect(page.getByTestId("first-check-classics")).toBeVisible();
   // F-IDEAS (Task 1.14): the classics hint is reworded when the guide door's
-  // ideas surface is on (controller ruling, review fix round 1) — a later
-  // task (1.12) replaces every such flag branch with a health probe.
-  if (process.env.NEXT_PUBLIC_GUIDE_DOOR === "1") {
+  // ideas surface is on (controller ruling, review fix round 1). The branch
+  // follows the built app's effective state from /api/health (Task 1.12).
+  if (await doorSurfaceOn("ideas")) {
     await expect(
       page.getByText("Or try a classic — three everyday foods.")
     ).toBeVisible();

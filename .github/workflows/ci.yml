@@ -95,9 +95,31 @@ jobs:
       - run: npm run eval:model-bakeoff:mock
 
   e2e:
-    name: playwright (incl. axe a11y)
+    # Task 1.12 (review A-99): the suite runs once per guide-door build — flag
+    # off, `1` (every surface) and the production list (`ideas,source`). The
+    # flag-off leg keeps the original job name byte-for-byte: it is the
+    # required status check on main. Door specs read the built app's state
+    # from /api/health (tests/smoke/guide-door.ts), and a flag-on leg fails in
+    # global setup if a surface it names (ideas above all) did not open, so it
+    # cannot pass by skipping. PAL_E2E_GUIDE_DOOR reaches `next build` through
+    # scripts/e2e-runtime-env.ts; an ambient NEXT_PUBLIC_GUIDE_DOOR never does.
+    name: ${{ matrix.name }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    strategy:
+      # A red flag-on leg must not cancel the required flag-off check.
+      fail-fast: false
+      matrix:
+        include:
+          - name: playwright (incl. axe a11y)
+            guide_door: ""
+            report: playwright-report
+          - name: playwright (incl. axe a11y) · guide door 1
+            guide_door: "1"
+            report: playwright-report-guide-door-1
+          - name: playwright (incl. axe a11y) · guide door ideas,source
+            guide_door: "ideas,source"
+            report: playwright-report-guide-door-ideas-source
 
     # Both `next start` servers in playwright.config.ts inherit DATABASE_URL
     # from the environment, and auth.ts:21 only constructs the Auth.js adapter
@@ -119,6 +141,8 @@ jobs:
     env:
       DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/pal_e2e
       HEALTH_DATA_KEY: ${{ secrets.CI_HEALTH_DATA_KEY || 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=' }}
+      # Empty on the flag-off leg, which builds exactly as before.
+      PAL_E2E_GUIDE_DOOR: ${{ matrix.guide_door }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -148,7 +172,9 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: failure()
         with:
-          name: playwright-report
+          # One artifact name per matrix leg — upload-artifact refuses a
+          # duplicate name within a run.
+          name: ${{ matrix.report }}
           path: playwright-report/
           retention-days: 7
 

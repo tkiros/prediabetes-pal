@@ -1,5 +1,7 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 
+import { doorSurfaceOn } from "./guide-door";
+
 type StubScenario =
   | { kind: "result" }
   | { kind: "moderate" }
@@ -166,14 +168,15 @@ test("cta label and position", async ({ page }) => {
 });
 
 // F-IDEAS (Task 1.14 / plan Task 4.2, review A-42): the guide-door ideas row
-// on /check's first-run empty state. Skipped for now — a later task (1.12)
-// replaces every door guard here with a health probe.
+// on /check's first-run empty state. Runs whenever the built app reports the
+// ideas surface on (`1` or a list naming `ideas`), read from /api/health —
+// Task 1.12.
 test("F-IDEAS: first-run ideas row sits between the CTA and the classics; a tap fills the field", async ({
   page
 }) => {
   test.skip(
-    process.env.NEXT_PUBLIC_GUIDE_DOOR !== "1",
-    "door flag off in this build"
+    !(await doorSurfaceOn("ideas")),
+    "ideas surface off in this build"
   );
 
   await page.goto("/check?stay=1");

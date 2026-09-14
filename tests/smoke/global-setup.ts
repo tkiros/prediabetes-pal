@@ -5,6 +5,12 @@ import {
   type Page
 } from "@playwright/test";
 
+import {
+  E2E_BASE_URL,
+  assertE2EDoorOpened,
+  guideDoorStates
+} from "./guide-door";
+
 export const DEFAULT_WARMUP_ROUTES = [
   "/",
   "/check?stay=1",
@@ -89,13 +95,23 @@ export async function warmBrowserRoutes(
 
 export default async function globalSetup(): Promise<void> {
   const client = await request.newContext({
-    baseURL: "http://127.0.0.1:3100"
+    baseURL: E2E_BASE_URL
   });
   const browser = await chromium.launch();
   try {
     await warmRoutes(client);
+    // Task 1.12 (A-99, A-118): a flag-on run (PAL_E2E_GUIDE_DOOR=1 or a
+    // surface list) must prove the door is actually open before any worker
+    // starts — otherwise every door spec skips and the job goes green without
+    // testing the door. Playwright starts the webServer before global setup,
+    // so the :3100 server is already answering here (warmRoutes just proved
+    // it). Flag-off runs (unset or empty) are not probed.
+    const doorOptIn = process.env.PAL_E2E_GUIDE_DOOR ?? "";
+    if (doorOptIn !== "") {
+      assertE2EDoorOpened(doorOptIn, await guideDoorStates(E2E_BASE_URL));
+    }
     const page = await browser.newPage({
-      baseURL: "http://127.0.0.1:3100",
+      baseURL: E2E_BASE_URL,
       serviceWorkers: "block"
     });
     await warmBrowserRoutes(page);

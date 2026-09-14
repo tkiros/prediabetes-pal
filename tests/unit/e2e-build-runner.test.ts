@@ -125,6 +125,33 @@ describe("E2E production-build selection", () => {
     expect(env.PANTRY_BLOB_READ_WRITE_TOKEN).toBe("");
   });
 
+  it("blanks an ambient guide door flag unless the e2e opt-in names one (A-99)", () => {
+    expect(
+      isolatedE2ERuntimeEnv({ NEXT_PUBLIC_GUIDE_DOOR: "1" }).NEXT_PUBLIC_GUIDE_DOOR
+    ).toBe("");
+    expect(isolatedE2ERuntimeEnv({}).NEXT_PUBLIC_GUIDE_DOOR).toBe("");
+    // CI's flag-off matrix leg sets the opt-in to an empty string.
+    expect(
+      isolatedE2ERuntimeEnv({
+        NEXT_PUBLIC_GUIDE_DOOR: "calm",
+        PAL_E2E_GUIDE_DOOR: ""
+      }).NEXT_PUBLIC_GUIDE_DOOR
+    ).toBe("");
+  });
+
+  it("passes PAL_E2E_GUIDE_DOOR through verbatim, over any ambient value", () => {
+    expect(
+      isolatedE2ERuntimeEnv({ PAL_E2E_GUIDE_DOOR: "1" }).NEXT_PUBLIC_GUIDE_DOOR
+    ).toBe("1");
+    const listed = isolatedE2ERuntimeEnv({
+      NEXT_PUBLIC_GUIDE_DOOR: "1",
+      PAL_E2E_GUIDE_DOOR: "ideas,source"
+    });
+    expect(listed.NEXT_PUBLIC_GUIDE_DOOR).toBe("ideas,source");
+    // Smoke global setup reads the opt-in back from the Playwright process.
+    expect(listed.PAL_E2E_GUIDE_DOOR).toBe("ideas,source");
+  });
+
   it("refuses a remote database even when the caller provides it", () => {
     expect(() =>
       isolatedE2ERuntimeEnv({
