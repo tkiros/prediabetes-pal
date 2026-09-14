@@ -374,7 +374,7 @@ function getCopyLedgerRows(copyLedger, failures) {
 }
 
 function getMarkdownTable(text, requiredHeaders, failures, label) {
-  const tables = parseMarkdownTables(text);
+  const tables = parseMarkdownTables(text, failures, label);
   const table = tables.find((candidate) =>
     requiredHeaders.every((header) => candidate.headers.includes(header))
   );
@@ -387,7 +387,7 @@ function getMarkdownTable(text, requiredHeaders, failures, label) {
   return table.rows;
 }
 
-function parseMarkdownTables(text) {
+function parseMarkdownTables(text, failures, label) {
   const lines = text.split(/\r?\n/);
   const tables = [];
   let index = 0;
@@ -417,6 +417,27 @@ function parseMarkdownTables(text) {
         continue;
       }
 
+      // A-115: a stray `|` inside the ledger's Copy cell (used instead of
+      // ` · `) silently shifted every later column instead of failing loudly
+      // -- an implementer only ever saw that surface as an unrelated "unknown
+      // claim class" / "missing evidence row" failure pointing at the wrong
+      // column, or (for a Pending row not yet in checkCopyLedger's
+      // required-ID list) no failure at all -- verified empirically: a
+      // 9-cell Pending row parsed silently and `npm run contract` passed.
+      // Name the row and the fix directly. Scoped to the copy-ledger table
+      // only, and only after `splitTableRow` below is backtick-aware:
+      // `landing-hero-moment`'s Notes documents a regex alternation
+      // (`` `/\bdiagnos(?:e|es|ed|ing|is|tic|tics)\b/i` ``) whose pipes are
+      // inside a code span and are not column separators, the same as GFM
+      // itself would render this table.
+      if (label === "copy-ledger" && values.length !== headers.length) {
+        const idIndex = headers.indexOf("Copy ID");
+        const rowId = idIndex >= 0 ? values[idIndex] : undefined;
+        failures.push(
+          `copy ledger row ${rowId ? `\`${rowId}\`` : rowText.slice(0, 80)} has ${values.length} cells; a \`|\` inside the Copy cell? use \` · \``
+        );
+      }
+
       const row = {};
       for (let columnIndex = 0; columnIndex < headers.length; columnIndex += 1) {
         row[headers[columnIndex]] = values[columnIndex] ?? "";
@@ -431,11 +452,26 @@ function parseMarkdownTables(text) {
 }
 
 function splitTableRow(row) {
-  return row
-    .replace(/^\|/, "")
-    .replace(/\|$/, "")
-    .split("|")
-    .map((value) => value.trim().replace(/^`(.+)`$/, "$1"));
+  const trimmed = row.replace(/^\|/, "").replace(/\|$/, "");
+  // Backtick-aware: a `|` inside an inline code span (single backticks --
+  // verified no double-backtick spans exist in any file this parses) is not
+  // a column separator, matching how GFM itself renders these tables.
+  const cells = [];
+  let current = "";
+  let inCode = false;
+  for (const ch of trimmed) {
+    if (ch === "`") {
+      inCode = !inCode;
+      current += ch;
+    } else if (ch === "|" && !inCode) {
+      cells.push(current);
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  cells.push(current);
+  return cells.map((value) => value.trim().replace(/^`(.+)`$/, "$1"));
 }
 
 function isSeparatorRow(row) {
