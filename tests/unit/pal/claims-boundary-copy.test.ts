@@ -310,6 +310,8 @@ const EXTRA_SOURCES = [
   "lib/client/ui-state.ts",
   "lib/pal/fallback.ts",
   "lib/pal/coach-outputs.ts",
+  // PRD v1.1 §6 F-IDEAS: the idea bank is user-facing copy that lives in lib/.
+  "lib/pal/guide-ideas.ts",
   "lib/pal/labels.ts",
   "lib/coach/insights.ts",
   "lib/coach/bai.ts",
