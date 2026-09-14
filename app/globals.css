@@ -4440,7 +4440,7 @@ button.inline-link {
   background: var(--surface);
   border: 1px solid var(--border-soft);
   border-radius: 24px;
-  padding: 16px;
+  padding: 12px;
   margin-bottom: 12px;
 }
 .ideas-title {
@@ -4456,7 +4456,7 @@ button.inline-link {
 }
 .ideas-sub {
   margin: 0 0 10px;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--text-body);
 }
 .ideas-list {
@@ -4473,14 +4473,16 @@ button.inline-link {
   gap: 12px;
   width: 100%;
   /* Two-line floor, border-box (`* { box-sizing: border-box }` above):
-     16px font-size × 1.35 line-height × 2 lines = 43.2px content, + 20px
-     vertical padding (10px × 2) + 2px border (1px × 2) = 65.2px. This is the
+     16px font-size × 1.35 line-height × 2 lines = 43.2px content, + 16px
+     vertical padding (8px × 2) + 2px border (1px × 2) = 61.2px. This is the
      ONE height .idea-row and .idea-row--skeleton share — a wrapped real row
      and the pre-hydration skeleton both stop here, so the block never grows
      on hydration, for every rotation (44px would only hold a single line and
-     is well under the 44px tap-target floor anyway, since 65.2px > 44px). */
-  min-height: 65.2px;
-  padding: 10px 14px;
+     is well under the 44px tap-target floor anyway, since 61.2px > 44px).
+     Task 1.8 fold budget (§3 shrink order, step 3): padding 10px 14px →
+     8px 12px, min-height 65.2px → 61.2px. */
+  min-height: 61.2px;
+  padding: 8px 12px;
   border: 1px solid var(--border-strong);
   border-radius: 14px;
   background: var(--surface);

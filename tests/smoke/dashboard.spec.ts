@@ -1,6 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
+import type { Daypart } from "../../lib/coach/insights";
+import { ideasFor } from "../../lib/pal/guide-ideas";
+import { doorSurfaceOn } from "./guide-door";
+
 // Dashboard smoke (M1): FirstRunGate regression, guest day-0, guest with
 // data, and the >=1024px shell. Both configured projects are mobile devices,
 // so desktop assertions set the viewport explicitly.
@@ -148,5 +152,114 @@ test("dashboard has no critical or serious a11y violations at both shell widths"
       .filter((v) => v.impact === "critical" || v.impact === "serious")
       .map((v) => `${width}px: ${v.id} (${v.impact}): ${v.nodes.length} node(s)`);
     expect(serious).toEqual([]);
+  }
+});
+
+// PRD v1.1 §7.6, Task 1.8 — PR-1's real done check. With the guide door's
+// ideas surface on, Home shows meal ideas above the check hero; these prove the
+// ideas lead, the check CTA stays above the tab bar, and a tap prefills /check.
+// The guard reads the built app's effective door state from /api/health
+// (Task 1.12, A-99) — never the Playwright process env — so a list value such
+// as the production `ideas,source` runs these too.
+test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports the ideas surface on", () => {
+  test.beforeAll(async () => {
+    test.skip(!(await doorSurfaceOn("ideas")), "ideas surface off in this build");
+  });
+
+  test("ideas lead, the check CTA follows and stays above the fold; a tap prefills /check", async ({
+    page
+  }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    // Review A-72: the daypart comes from the device clock, so the block's
+    // height differs by daypart. Pin the clock; the fold tests below repeat the
+    // measurement at 08:00, 13:00 and 19:00 and at 360/375/430.
+    await page.clock.install({ time: new Date("2026-09-14T19:00:00") });
+    await page.goto("/home?stay=1");
+
+    const block = page.getByTestId("ideas-block");
+    await expect(block).toBeVisible();
+    const chip = page.getByTestId("idea-row-1");
+    await expect(chip).toBeVisible();
+
+    const cta = page.getByTestId("dash-check-cta");
+    const chipBox = await chip.boundingBox();
+    const ctaBox = await cta.boundingBox();
+    expect(chipBox).not.toBeNull();
+    expect(ctaBox).not.toBeNull();
+    expect(chipBox!.y).toBeLessThan(ctaBox!.y); // order: ideas above the check
+    // Review A-72: the fold is the tab bar's top edge, not 667 — a CTA behind
+    // the fixed bar would otherwise pass.
+    const barBox = await page.locator(".app-tabbar").boundingBox();
+    expect(barBox).not.toBeNull();
+    expect(ctaBox!.y + ctaBox!.height).toBeLessThanOrEqual(barBox!.y); // DESIGN.md §8 still holds
+
+    // RV-3 on Home: no percentages; the ideas block carries the anchor phrase.
+    const text = await page.locator("main").innerText();
+    expect(text).not.toMatch(/%/);
+    expect(text).toMatch(/Prediabetes Pal's rules/);
+
+    const ideaText = (await chip.innerText()).trim();
+    await chip.click();
+    await expect(page).toHaveURL(/\/check\?stay=1$/); // A-102
+    await expect(page.getByLabel(/eating/i)).toHaveValue(ideaText);
+  });
+
+  // Review A-72 / DESIGN.md §8: the rows wrap differently at each width and
+  // each daypart's lines differ in length, so the fold is pinned for every
+  // width × clock, on three rotation pages each. `pal.ideas.rotation` is
+  // seeded before the load and the block advances it once on mount, so seed s
+  // shows ideasFor(daypart, s + 1): seed 0 is a fresh guest's first page,
+  // seed 1 the second load, seed 5 the page holding each daypart's longest
+  // lines (the likeliest three-line wraps at 360). Explicit viewport sizes
+  // keep this project-agnostic, like the rest of this file.
+  const FOLD_CLOCKS: ReadonlyArray<{ time: string; daypart: Daypart }> = [
+    { time: "2026-09-14T08:00:00", daypart: "breakfast" },
+    { time: "2026-09-14T13:00:00", daypart: "lunch" },
+    { time: "2026-09-14T19:00:00", daypart: "dinner" }
+  ];
+  const ROTATION_SEEDS = [0, 1, 5] as const;
+
+  for (const width of [360, 375, 430]) {
+    test(`fold at ${width}×667: the check CTA clears the tab bar at every daypart and rotation page`, async ({
+      page
+    }) => {
+      await page.setViewportSize({ width, height: 667 });
+      await page.clock.install({ time: new Date(FOLD_CLOCKS[0]!.time) });
+      await page.goto("/home?stay=1");
+      // Let this first mount advance the counter before the loop seeds it —
+      // a late hydration would otherwise bump the seed by one.
+      await expect(page.getByTestId("idea-row-1")).toBeVisible();
+
+      for (const { time, daypart } of FOLD_CLOCKS) {
+        await page.clock.setSystemTime(new Date(time));
+
+        for (const seed of ROTATION_SEEDS) {
+          await page.evaluate((value) => {
+            window.localStorage.setItem("pal.ideas.rotation", String(value));
+          }, seed);
+          await page.goto("/home?stay=1");
+
+          const cell = `${width}px ${time.slice(11, 16)} seed ${seed}`;
+          // Proves the stubbed clock and the seeded page reached the block —
+          // a passing fold on the wrong daypart or page would prove nothing.
+          await expect(page.locator("#ideas-title"), cell).toHaveText(
+            `Ideas for ${daypart}`
+          );
+          await expect(page.getByTestId("idea-row-1"), cell).toHaveText(
+            ideasFor(daypart, seed + 1)[0]!.text
+          );
+
+          const ctaBox = await page.getByTestId("dash-check-cta").boundingBox();
+          const barBox = await page.locator(".app-tabbar").boundingBox();
+          expect(ctaBox, cell).not.toBeNull();
+          expect(barBox, cell).not.toBeNull();
+          const ctaBottom = ctaBox!.y + ctaBox!.height;
+          console.log(
+            `[fold] ${cell} (${daypart}): CTA bottom ${ctaBottom.toFixed(1)}, tab bar top ${barBox!.y.toFixed(1)}, slack ${(barBox!.y - ctaBottom).toFixed(1)}`
+          );
+          expect.soft(ctaBottom, cell).toBeLessThanOrEqual(barBox!.y);
+        }
+      }
+    });
   }
 });
