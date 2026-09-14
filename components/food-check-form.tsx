@@ -12,9 +12,12 @@ import {
 } from "../lib/pal/clarify";
 import { firstCheckChips } from "../lib/client/first-check-chips";
 import { historyStore } from "../lib/client/history-store";
+import { nextIdeasRotation } from "../lib/client/ideas-rotation";
 import { profileStore } from "../lib/client/profile-store";
 import { useHydrated } from "../lib/client/use-hydrated";
 import { tasterStore } from "../lib/client/taster-store";
+import { daypartOfHour, type Daypart } from "../lib/coach/insights";
+import { guideDoorEnabled } from "../lib/guide-door-flag";
 import { routeA1C } from "../lib/pal/a1c";
 import {
   type CheckUiState,
@@ -25,10 +28,11 @@ import {
   type CheckFormInput,
   validateCheckForm
 } from "../lib/client/validation";
+import { ideasFor, type GuideIdea } from "../lib/pal/guide-ideas";
 import type { MealDraftItem } from "../lib/meal/photo-extract";
 import { photoInputEnabled } from "../lib/photo-input-flag";
 import type { PhotoDraftResult } from "../lib/client/photo-draft";
-import { IconKeyboard } from "./icons";
+import { IconArrowRight, IconKeyboard } from "./icons";
 import { MealMemoryRecall } from "./meal-memory-recall";
 import { PhotoDraftReview } from "./photo-draft-review";
 import { PhotoInputButton } from "./photo-input-button";
@@ -77,6 +81,10 @@ export function shouldCountIdeaCheck(
 }
 
 export function FoodCheckForm() {
+  // F-IDEAS on /check's first-run empty state (Task 1.14 / plan Task 4.2,
+  // review A-42): session-one guests land on /check, not Home, so the guide
+  // door's ideas row also lives here, gated by the same surface flag.
+  const ideasOn = guideDoorEnabled("ideas");
   const [input, setInput] = useState<CheckFormInput>({ food: "", a1c: "" });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [uiState, setUiState] = useState<CheckUiState>({ kind: "idle" });
@@ -123,6 +131,18 @@ export function FoodCheckForm() {
     recheck: string | null;
     recheckSource: string | null;
   } | null>(null);
+  // The /check ideas row (F-IDEAS, controller ruling 3): rendered after
+  // hydration only, and only for the same first-run empty state the classics
+  // occupy — daypart + rotation are device state, same reasoning as
+  // GuideIdeas on Home. null until the shown-effect below computes it.
+  const [checkIdeas, setCheckIdeas] = useState<{
+    daypart: Daypart;
+    ideas: GuideIdea[];
+  } | null>(null);
+  // Same StrictMode guard as GuideIdeas (review A-108): advance the rotation
+  // counter and fire ideas_shown once per mount, not once per double-invoked
+  // effect.
+  const checkIdeasShownRef = useRef(false);
   // One-clarification cap + clarify metrics (P1.3 §8/§10.1). Holds the reason
   // and start time of an OUTSTANDING deterministic clarify — set when a clarify
   // card renders, cleared when the next submission answers it. A ref, not
@@ -194,6 +214,49 @@ export function FoodCheckForm() {
 
     return () => window.clearTimeout(update);
   }, []);
+
+  // The exact condition the classics render under (below) — shared so the
+  // ideas row's shown-effect and the classics gate never drift apart.
+  const emptyState =
+    isFirstRun && input.food === "" && uiState.kind === "idle";
+
+  useEffect(() => {
+    // Guarded on emptyState, not just isFirstRun: a Home idea tap lands here
+    // with pal.recheck already prefilling the field (input.food !== ""), so
+    // the classics never render either — without this guard the row would
+    // fire a phantom ideas_shown and burn a second rotation tick on every
+    // Home → check hop.
+    if (!isHydrated || !ideasOn || !emptyState || checkIdeasShownRef.current) {
+      return;
+    }
+    checkIdeasShownRef.current = true;
+    const daypart = daypartOfHour(new Date().getHours());
+    setCheckIdeas({ daypart, ideas: ideasFor(daypart, nextIdeasRotation()) });
+    track({ name: "ideas_shown", props: { daypart, surface: "check" } });
+  }, [isHydrated, ideasOn, emptyState]);
+
+  function pickCheckIdea(
+    idea: GuideIdea,
+    slot: "1" | "2" | "3" | "more",
+    daypart: Daypart
+  ) {
+    // Fills the field exactly like a classic tap (below) — same page, no
+    // pal.recheck hand-off needed.
+    handleChange("food", idea.text);
+    setInputMethod("text");
+    foodInputRef.current?.focus();
+    track({ name: "idea_tapped", props: { daypart, slot, surface: "check" } });
+    // Review A-69: without this, shouldCountIdeaCheck never sees the tap as
+    // an idea prefill, so every /check idea tap would be invisible to the
+    // idea → check completion count (PRD §9.1) — same shape as a Home tap's
+    // pal.recheck.source hand-off, just without the navigation.
+    initialPrefillRef.current = {
+      ...initialPrefillRef.current!,
+      recheck: idea.text,
+      recheckSource: "idea"
+    };
+    setIdeaPrefill({ recheck: idea.text, recheckSource: "idea" });
+  }
 
   const isSubmitting =
     uiState.kind === "submitting" || uiState.kind === "slow";
@@ -595,40 +658,72 @@ export function FoodCheckForm() {
         </p>
       ) : null}
 
-      {/* First-run only: the guided first-check foods (ledger row
-          `onboarding-first-check`; segment-aware via the tour's on-device
+      {/* First-run only: the guide-door ideas row (F-IDEAS, Task 1.14 / plan
+          Task 4.2, review A-42) above the guided first-check classics (ledger
+          row `onboarding-first-check`; segment-aware via the tour's on-device
           answer). One tap fills the field; the user still runs the check.
           BELOW the CTA on purpose — mobile-check.spec pins the submit
           button's top edge above the fold (A11Y-01), so nothing optional may
           add height above it. */}
-      {isFirstRun && input.food === "" && uiState.kind === "idle" ? (
-        <div data-testid="first-check-classics">
-          <p className="field-hint">
-            First time? Try one of the classics — three everyday breakfast
-            staples.
-          </p>
-          <div
-            className="chip-row"
-            role="group"
-            aria-label="Try one of the classics"
-          >
-            {classics.map((food) => (
-              <button
-                key={food}
-                type="button"
-                className="selectable-chip"
-                data-testid={`first-check-${food.replace(/\s+/g, "-")}`}
-                onClick={() => {
-                  handleChange("food", food);
-                  setInputMethod("text");
-                  foodInputRef.current?.focus();
-                }}
-              >
-                {food}
-              </button>
-            ))}
+      {emptyState ? (
+        <>
+          {ideasOn && checkIdeas ? (
+            <div data-testid="check-empty-ideas">
+              <p className="field-hint">
+                Or start from an idea for {checkIdeas.daypart}
+              </p>
+              <ul className="ideas-list" role="list" aria-label="Meal ideas">
+                {checkIdeas.ideas.map((idea, index) => (
+                  <li key={idea.id}>
+                    <button
+                      type="button"
+                      className="idea-row"
+                      data-testid={`check-idea-row-${index + 1}`}
+                      onClick={() =>
+                        pickCheckIdea(
+                          idea,
+                          index < 3 ? (String(index + 1) as "1" | "2" | "3") : "more",
+                          checkIdeas.daypart
+                        )
+                      }
+                    >
+                      <span>{idea.text}</span>
+                      <IconArrowRight size={16} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          <div data-testid="first-check-classics">
+            <p className="field-hint">
+              {ideasOn
+                ? "Or try a classic — foods whose read surprises people."
+                : "First time? Try one of the classics — three everyday breakfast staples."}
+            </p>
+            <div
+              className="chip-row"
+              role="group"
+              aria-label="Try one of the classics"
+            >
+              {classics.map((food) => (
+                <button
+                  key={food}
+                  type="button"
+                  className="selectable-chip"
+                  data-testid={`first-check-${food.replace(/\s+/g, "-")}`}
+                  onClick={() => {
+                    handleChange("food", food);
+                    setInputMethod("text");
+                    foodInputRef.current?.focus();
+                  }}
+                >
+                  {food}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        </>
       ) : null}
 
       {uiState.kind === "submitting" ||

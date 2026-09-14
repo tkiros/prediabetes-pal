@@ -165,6 +165,54 @@ test("cta label and position", async ({ page }) => {
   expect(box!.y).toBeLessThan(viewport!.height);
 });
 
+// F-IDEAS (Task 1.14 / plan Task 4.2, review A-42): the guide-door ideas row
+// on /check's first-run empty state. Skipped for now — a later task (1.12)
+// replaces every door guard here with a health probe.
+test("F-IDEAS: first-run ideas row sits between the CTA and the classics; a tap fills the field", async ({
+  page
+}) => {
+  test.skip(
+    process.env.NEXT_PUBLIC_GUIDE_DOOR !== "1",
+    "door flag off in this build"
+  );
+
+  await page.goto("/check?stay=1");
+
+  const button = page.getByRole("button", { name: "Check this meal" });
+  const ideasRow = page.getByTestId("check-empty-ideas");
+  const classics = page.getByTestId("first-check-classics");
+
+  await expect(button).toBeVisible();
+  await expect(ideasRow).toBeVisible();
+  await expect(classics).toBeVisible();
+
+  const ctaBox = await button.boundingBox();
+  const ideasBox = await ideasRow.boundingBox();
+  const classicsBox = await classics.boundingBox();
+  expect(ctaBox).not.toBeNull();
+  expect(ideasBox).not.toBeNull();
+  expect(classicsBox).not.toBeNull();
+
+  // Below the CTA (A11Y-01 keeps optional content off the space above it)...
+  expect(ideasBox!.y).toBeGreaterThanOrEqual(ctaBox!.y + ctaBox!.height);
+  // ...and above the classics block (review A-75: ideas first, classics
+  // second).
+  expect(ideasBox!.y).toBeLessThan(classicsBox!.y);
+
+  const firstRow = page.getByTestId("check-idea-row-1");
+  await expect(firstRow).toBeVisible();
+  const rowText = await firstRow.locator("span").innerText();
+
+  await firstRow.click();
+
+  await expect(
+    page.getByLabel(/what are you thinking about eating/i)
+  ).toHaveValue(rowText);
+  await expect(page.getByTestId("idea-hint")).toContainText(
+    "From today's ideas."
+  );
+});
+
 test("no autofocus mobile inputs", async ({ page }) => {
   await page.goto("/check?stay=1");
 

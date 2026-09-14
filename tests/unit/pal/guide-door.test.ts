@@ -89,3 +89,39 @@ describe("F-SOURCE lead-in (PRD v1.1 §6 F-SOURCE)", () => {
     expect(src.indexOf("SOURCE_LEAD[response.risk]")).toBeLessThan(src.indexOf("{response.reason}"));
   });
 });
+
+describe("check-empty-ideas: ideas on /check's first-run empty state (Task 1.14 / plan Task 4.2)", () => {
+  it("gates on guideDoorEnabled(\"ideas\") and emits ideas_shown/idea_tapped with surface: \"check\"", () => {
+    const src = read("components/food-check-form.tsx");
+    expect(src).toMatch(/from\s+["'].*guide-door-flag["']/);
+    expect(src).toMatch(/guideDoorEnabled\(\s*["']ideas["']\s*\)/);
+    expect(src).toMatch(/name:\s*["']ideas_shown["']/);
+    expect(src).toMatch(/name:\s*["']idea_tapped["']/);
+    expect(src.match(/surface:\s*["']check["']/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+  });
+
+  it("renders the reviewed row heading and the flag-gated classics hint (controller ruling 1)", () => {
+    const src = read("components/food-check-form.tsx");
+    expect(src).toContain("Or start from an idea for ");
+    expect(src).toContain("Or try a classic — foods whose read surprises people.");
+    // Flag off ⇒ byte-for-byte unchanged classics hint (controller ruling 3).
+    expect(src).toContain(
+      "First time? Try one of the classics — three everyday breakfast staples."
+    );
+  });
+
+  it('the tap sets recheckSource: "idea" — the same hand-off shape as a Home tap (review A-69)', () => {
+    const src = read("components/food-check-form.tsx");
+    expect(src).toMatch(/recheckSource:\s*["']idea["']/);
+  });
+
+  it("sits below the submit CTA and above the classics block in source order (controller ruling 3)", () => {
+    const src = read("components/food-check-form.tsx");
+    const submitIndex = src.indexOf('type="submit"');
+    const ideasIndex = src.indexOf('data-testid="check-empty-ideas"');
+    const classicsIndex = src.indexOf('data-testid="first-check-classics"');
+    expect(submitIndex).toBeGreaterThan(-1);
+    expect(ideasIndex).toBeGreaterThan(submitIndex);
+    expect(classicsIndex).toBeGreaterThan(ideasIndex);
+  });
+});
