@@ -103,7 +103,7 @@ describe("check-empty-ideas: ideas on /check's first-run empty state (Task 1.14 
   it("renders the reviewed row heading and the flag-gated classics hint (controller ruling 1)", () => {
     const src = read("components/food-check-form.tsx");
     expect(src).toContain("Or start from an idea for ");
-    expect(src).toContain("Or try a classic — foods whose read surprises people.");
+    expect(src).toContain("Or try a classic — three everyday foods.");
     // Flag off ⇒ byte-for-byte unchanged classics hint (controller ruling 3).
     expect(src).toContain(
       "First time? Try one of the classics — three everyday breakfast staples."

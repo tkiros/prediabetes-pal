@@ -32,7 +32,8 @@ import { ideasFor, type GuideIdea } from "../lib/pal/guide-ideas";
 import type { MealDraftItem } from "../lib/meal/photo-extract";
 import { photoInputEnabled } from "../lib/photo-input-flag";
 import type { PhotoDraftResult } from "../lib/client/photo-draft";
-import { IconArrowRight, IconKeyboard } from "./icons";
+import { IdeaRows } from "./guide-ideas";
+import { IconKeyboard } from "./icons";
 import { MealMemoryRecall } from "./meal-memory-recall";
 import { PhotoDraftReview } from "./photo-draft-review";
 import { PhotoInputButton } from "./photo-input-button";
@@ -672,33 +673,17 @@ export function FoodCheckForm() {
               <p className="field-hint">
                 Or start from an idea for {checkIdeas.daypart}
               </p>
-              <ul className="ideas-list" role="list" aria-label="Meal ideas">
-                {checkIdeas.ideas.map((idea, index) => (
-                  <li key={idea.id}>
-                    <button
-                      type="button"
-                      className="idea-row"
-                      data-testid={`check-idea-row-${index + 1}`}
-                      onClick={() =>
-                        pickCheckIdea(
-                          idea,
-                          index < 3 ? (String(index + 1) as "1" | "2" | "3") : "more",
-                          checkIdeas.daypart
-                        )
-                      }
-                    >
-                      <span>{idea.text}</span>
-                      <IconArrowRight size={16} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <IdeaRows
+                ideas={checkIdeas.ideas}
+                onPick={(idea, slot) => pickCheckIdea(idea, slot, checkIdeas.daypart)}
+                testIdPrefix="check-idea-row"
+              />
             </div>
           ) : null}
           <div data-testid="first-check-classics">
             <p className="field-hint">
               {ideasOn
-                ? "Or try a classic — foods whose read surprises people."
+                ? "Or try a classic — three everyday foods."
                 : "First time? Try one of the classics — three everyday breakfast staples."}
             </p>
             <div

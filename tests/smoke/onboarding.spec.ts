@@ -89,9 +89,18 @@ test("a new user walks welcome→segment→attribution→a1c→expectations into
 
   await expect(page).toHaveURL(/\/check$/);
   await expect(page.getByTestId("first-check-classics")).toBeVisible();
-  await expect(
-    page.getByText(/Try one of the classics/)
-  ).toBeVisible();
+  // F-IDEAS (Task 1.14): the classics hint is reworded when the guide door's
+  // ideas surface is on (controller ruling, review fix round 1) — a later
+  // task (1.12) replaces every such flag branch with a health probe.
+  if (process.env.NEXT_PUBLIC_GUIDE_DOOR === "1") {
+    await expect(
+      page.getByText("Or try a classic — three everyday foods.")
+    ).toBeVisible();
+  } else {
+    await expect(
+      page.getByText(/Try one of the classics/)
+    ).toBeVisible();
+  }
   await page.getByRole("button", { name: "oatmeal", exact: true }).click();
   await expect(page.getByLabel(/eating/i)).toHaveValue("oatmeal");
 

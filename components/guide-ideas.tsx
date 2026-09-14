@@ -30,6 +30,45 @@ const DAYPART_HEADING: Record<Daypart, string> = {
   dinner: "Ideas for dinner"
 };
 
+/**
+ * The idea-list markup, shared between the Home block below and the /check
+ * first-run row (Task 1.14 / plan Task 4.2, review fix round 1: this used to
+ * be duplicated near-verbatim in components/food-check-form.tsx). Owns the
+ * list wrapper, the row markup, and the slot ternary; the caller only
+ * supplies the ideas and what a tap should do. `testIdPrefix` defaults to
+ * "idea-row" (Home's existing pin); /check passes "check-idea-row" to keep
+ * its own pin.
+ */
+export function IdeaRows({
+  ideas,
+  onPick,
+  testIdPrefix = "idea-row"
+}: {
+  ideas: readonly GuideIdea[];
+  onPick: (idea: GuideIdea, slot: "1" | "2" | "3" | "more") => void;
+  testIdPrefix?: string;
+}) {
+  return (
+    <ul className="ideas-list" role="list" aria-label="Meal ideas">
+      {ideas.map((idea, index) => (
+        <li key={idea.id}>
+          <button
+            type="button"
+            className="idea-row"
+            data-testid={`${testIdPrefix}-${index + 1}`}
+            onClick={() =>
+              onPick(idea, index < 3 ? (String(index + 1) as "1" | "2" | "3") : "more")
+            }
+          >
+            <span>{idea.text}</span>
+            <IconArrowRight size={16} />
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function GuideIdeas() {
   const router = useRouter();
   const hydrated = useHydrated();
@@ -77,29 +116,22 @@ export function GuideIdeas() {
       <p className="ideas-sub">
         Meal ideas that sit within Prediabetes Pal&apos;s rules. Tap one to send it to the check.
       </p>
-      <ul className="ideas-list" role="list" aria-label="Meal ideas">
-        {view
-          ? view.ideas.map((idea, index) => (
-              <li key={idea.id}>
-                <button
-                  type="button"
-                  className="idea-row"
-                  data-testid={`idea-row-${index + 1}`}
-                  onClick={() =>
-                    pick(idea, index < 3 ? (String(index + 1) as "1" | "2" | "3") : "more", view.daypart)
-                  }
-                >
-                  <span>{idea.text}</span>
-                  <IconArrowRight size={16} />
-                </button>
-              </li>
-            ))
-          : // Review A-54: the pre-hydration placeholder is three rows of the
-            // real row height, so the block does not change size on hydration.
-            [1, 2, 3].map((n) => (
-              <li key={n} className="idea-row idea-row--skeleton" aria-hidden="true" />
-            ))}
-      </ul>
+      {view ? (
+        <IdeaRows
+          ideas={view.ideas}
+          onPick={(idea, slot) => pick(idea, slot, view.daypart)}
+        />
+      ) : (
+        // Review A-54: the pre-hydration placeholder is three rows of the
+        // real row height, so the block does not change size on hydration —
+        // same "ideas-list" wrapper IdeaRows uses, kept inline here (not
+        // moved into IdeaRows) since it has no ideas/onPick to give it.
+        <ul className="ideas-list" role="list" aria-label="Meal ideas">
+          {[1, 2, 3].map((n) => (
+            <li key={n} className="idea-row idea-row--skeleton" aria-hidden="true" />
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
