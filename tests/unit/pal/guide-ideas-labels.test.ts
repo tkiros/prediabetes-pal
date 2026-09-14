@@ -12,6 +12,7 @@ import {
   buildLabelsFile,
   classifyCell,
   describeModelError,
+  isIdeasLabelEvalEnabled,
   stripProviderPrefix,
   type GuideIdeaLabels,
   type RunOutcome
@@ -99,6 +100,16 @@ describe("guide idea label eval — cell classification", () => {
 
     const cell = classifyCell([...safeRuns(19), { ...RETRY, modelError: "RateLimitError 429" }]);
     expect(cell.label.reason).toContain("retry (RateLimitError 429)");
+  });
+
+  it("goes live only with both PAL_LIVE_EVAL=1 and its own PAL_EVAL_IDEAS=1 opt-in", () => {
+    // A broad `PAL_LIVE_EVAL=1 vitest run tests/evals` arms the other live
+    // evals; it must not also buy ~1,440 calls and overwrite a reviewed file.
+    expect(isIdeasLabelEvalEnabled({})).toBe(false);
+    expect(isIdeasLabelEvalEnabled({ PAL_LIVE_EVAL: "1" })).toBe(false);
+    expect(isIdeasLabelEvalEnabled({ PAL_EVAL_IDEAS: "1" })).toBe(false);
+    expect(isIdeasLabelEvalEnabled({ PAL_LIVE_EVAL: "1", PAL_EVAL_IDEAS: "true" })).toBe(false);
+    expect(isIdeasLabelEvalEnabled({ PAL_LIVE_EVAL: "1", PAL_EVAL_IDEAS: "1" })).toBe(true);
   });
 
   it("maps 5.9 / 6.2 / 6.4 onto the engine's three prediabetes bands", () => {

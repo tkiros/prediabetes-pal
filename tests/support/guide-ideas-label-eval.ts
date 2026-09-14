@@ -16,6 +16,19 @@ export const LABEL_RUNS_PER_CELL = 20;
 /** Review A-27: an inconclusive cell is re-run up to three more times before it is written as inconclusive. */
 export const LABEL_MAX_RERUNS = 3;
 
+/**
+ * The live eval's gate: the shared `PAL_LIVE_EVAL=1` (what
+ * createEvalModelClient keys the live client on) AND its own
+ * `PAL_EVAL_IDEAS=1` — the EVAL_MEAL_PHOTO_LIVE precedent. `PAL_LIVE_EVAL`
+ * alone also arms pal-safety-eval and pal-graded-eval, so a broad
+ * `PAL_LIVE_EVAL=1 vitest run tests/evals` must not also buy ~1,440 calls and
+ * overwrite a reviewed lib/pal/guide-ideas.labels.json. `npm run
+ * eval:pal:ideas` sets both.
+ */
+export function isIdeasLabelEvalEnabled(env: Readonly<Record<string, string | undefined>>): boolean {
+  return env.PAL_LIVE_EVAL === "1" && env.PAL_EVAL_IDEAS === "1";
+}
+
 /** The most conservative A1C in each prediabetes band. */
 export const LABEL_BANDS = [
   { band: "prediabetes_57_59", a1c: 5.9 },

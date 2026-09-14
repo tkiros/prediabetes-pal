@@ -16,13 +16,14 @@ import {
   buildLabelsFile,
   classifyCell,
   describeModelError,
+  isIdeasLabelEvalEnabled,
   stripProviderPrefix,
   type CellLabel,
   type CellResult,
   type LabelBand,
   type RunOutcome
 } from "../support/guide-ideas-label-eval";
-import { createEvalModelClient, isLivePalEvalEnabled } from "../support/pal-test-model";
+import { createEvalModelClient } from "../support/pal-test-model";
 
 /**
  * Task 4.1 — review-time labelling of the idea bank, keyed on PROMPT_VERSION
@@ -41,11 +42,13 @@ import { createEvalModelClient, isLivePalEvalEnabled } from "../support/pal-test
  * idea that fails is removed from GUIDE_IDEA_BANK by hand in the same PR, the
  * ledger row's Notes say which and why, and the eval is re-run.
  *
- * Gate: the explicit PAL_LIVE_EVAL=1 opt-in only (the pal-safety-eval
- * convention). Without it the suite skips and nothing is constructed; with it
- * but no OPENAI_API_KEY, the client construction in beforeAll throws — a run
- * the owner asked for fails loudly instead of skipping or writing a file of
- * fake inconclusives.
+ * Gate: PAL_LIVE_EVAL=1 AND this eval's own PAL_EVAL_IDEAS=1 (review fix:
+ * PAL_LIVE_EVAL alone also arms the other live evals, so a broad live run
+ * would otherwise buy these calls and overwrite a reviewed labels file).
+ * `npm run eval:pal:ideas` sets both. Without both the suite skips and nothing
+ * is constructed; with both but no OPENAI_API_KEY, the client construction in
+ * beforeAll throws — a run the owner asked for fails loudly instead of
+ * skipping or writing a file of fake inconclusives.
  */
 
 const LABELS_PATH = path.join(process.cwd(), "lib/pal/guide-ideas.labels.json");
@@ -95,8 +98,8 @@ async function runCell(
   return { ...cell, attempts };
 }
 
-describe.skipIf(!isLivePalEvalEnabled())(
-  "eval:pal:ideas (live) — every idea reads Clear at A1C 5.9 / 6.2 / 6.4, twenty of twenty runs",
+describe.skipIf(!isIdeasLabelEvalEnabled(process.env))(
+  "eval:pal:ideas (live; skips unless PAL_LIVE_EVAL=1 and PAL_EVAL_IDEAS=1 — run `npm run eval:pal:ideas`) — every idea reads Clear at A1C 5.9 / 6.2 / 6.4, twenty of twenty runs",
   () => {
     let model: PalModelClient | undefined;
     const cells: Record<string, Partial<Record<LabelBand, CellLabel>>> = {};
