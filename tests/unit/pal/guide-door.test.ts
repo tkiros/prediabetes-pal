@@ -38,6 +38,10 @@ describe("guide-door render sites (source pins, node env has no DOM)", () => {
     expect(src).toMatch(/from\s+["'].*guide-door-flag["']/);
     expect(src.indexOf("<GuideIdeas")).toBeGreaterThan(-1);
     expect(src.indexOf("<GuideIdeas")).toBeLessThan(src.indexOf("<HomeCheckHero"));
+    // Review fix round 1: the two assertions above pass even if <GuideIdeas />
+    // renders unconditionally — pin the actual gate, not just source order.
+    expect(src).toMatch(/ideasOn\s*=\s*guideDoorEnabled\(\s*["']ideas["']\s*\)/);
+    expect(src).toContain("ideasOn ? <GuideIdeas");
   });
 
   it("the chips hand off through pal.recheck and mark the source — /check stays the one place a check runs", () => {

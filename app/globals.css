@@ -4425,8 +4425,14 @@ button.inline-link {
    1–3 word label; idea lines run 25–60 characters and a pill holds ~38 at 375
    (content column 347px − block padding 32 − chip padding 36), so 12 of the 18
    seed lines would wrap inside the pill. A full-width row reads as a list of
-   meals, wraps to a second line cleanly, and its height is known before
-   hydration because the placeholder is three skeleton rows of the same size. */
+   meals and wraps to a second line cleanly. Review fix round 1: the row's
+   min-height (below, shared by .idea-row and .idea-row--skeleton — a skeleton
+   li always carries both classes) is sized for TWO lines, not one — at 375px
+   the text column is only ~259px (~30 chars at 16px), and more than half the
+   seed bank wraps there, so a one-line min-height let the block grow on
+   hydration and shift the check hero down, contradicting this comment. Sizing
+   both states off the same two-line floor is what actually keeps the block's
+   height constant before and after hydration, for every rotation. */
 .ideas-block {
   /* Review A-71 (default): a bordered --surface at the outer radius, no shadow —
      DESIGN.md §11: --surface-muted on --page-bg "stops reading as an object".
@@ -4466,7 +4472,14 @@ button.inline-link {
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  min-height: 44px;
+  /* Two-line floor, border-box (`* { box-sizing: border-box }` above):
+     16px font-size × 1.35 line-height × 2 lines = 43.2px content, + 20px
+     vertical padding (10px × 2) + 2px border (1px × 2) = 65.2px. This is the
+     ONE height .idea-row and .idea-row--skeleton share — a wrapped real row
+     and the pre-hydration skeleton both stop here, so the block never grows
+     on hydration, for every rotation (44px would only hold a single line and
+     is well under the 44px tap-target floor anyway, since 65.2px > 44px). */
+  min-height: 65.2px;
   padding: 10px 14px;
   border: 1px solid var(--border-strong);
   border-radius: 14px;
