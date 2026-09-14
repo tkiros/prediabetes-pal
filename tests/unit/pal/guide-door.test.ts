@@ -50,8 +50,24 @@ describe("guide-door render sites (source pins, node env has no DOM)", () => {
     expect(src).toContain('"pal.recheck.source"');
     expect(src).toContain('router.push("/check?stay=1")'); // A-102
     // The anchor phrase (PRD §7.3), never "your plan".
-    expect(src).toMatch(/Prediabetes Pal(?:'|&apos;|')s rules/);
+    expect(src).toMatch(/Prediabetes Pal(?:'|&apos;|’)s rules/);
     expect(src).not.toMatch(/your plan/i);
+  });
+
+  it("the check form reads pal.recheck.source alongside pal.recheck and emits idea_check_completed once", () => {
+    const src = read("components/food-check-form.tsx");
+    expect(src).toContain('"pal.recheck.source"');
+    expect(src.match(/name: "idea_check_completed"/g)).toHaveLength(1);
+  });
+
+  it("the other pal.recheck writers also clear pal.recheck.source (review A-102) — a hand-off that never reached the form cannot make a later typed check count as an idea", () => {
+    for (const rel of [
+      "app/(app)/meals/page.tsx",
+      "components/meal-memory-recall.tsx",
+      "components/home-check-hero.tsx",
+    ]) {
+      expect(read(rel)).toContain('"pal.recheck.source"');
+    }
   });
 });
 

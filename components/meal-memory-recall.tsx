@@ -148,6 +148,9 @@ export function MealMemoryRecall({ food }: { food?: string }) {
     }
     try {
       window.sessionStorage.setItem("pal.recheck", mealText);
+      // A-102: clear any stale idea source from a prior hand-off, or a later
+      // untouched typed check here would wrongly count as an idea check.
+      window.sessionStorage.removeItem("pal.recheck.source");
     } catch {
       // best-effort prefill only — /check still works without it
     }

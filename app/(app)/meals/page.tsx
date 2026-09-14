@@ -176,6 +176,9 @@ export default function HistoryPage() {
   function recheck(food: string) {
     try {
       window.sessionStorage.setItem("pal.recheck", food);
+      // A-102: clear any stale idea source from a prior hand-off, or a later
+      // untouched typed check here would wrongly count as an idea check.
+      window.sessionStorage.removeItem("pal.recheck.source");
     } catch {
       // best-effort prefill only
     }

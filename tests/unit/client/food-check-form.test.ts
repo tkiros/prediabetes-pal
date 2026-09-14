@@ -20,6 +20,7 @@ vi.stubGlobal("localStorage", storage);
 vi.stubGlobal("window", { localStorage: storage });
 
 import {
+  shouldCountIdeaCheck,
   shouldGateSubmit,
   shouldRecordTaster
 } from "../../../components/food-check-form";
@@ -110,6 +111,41 @@ describe("food-check-form taster gate helpers", () => {
         tasterStore.recordCheck();
       }
       expect(tasterStore.get()).toBeNull();
+    });
+  });
+
+  describe("shouldCountIdeaCheck — PRD §9.1: only the untouched idea prefill counts (review A-32)", () => {
+    it("counts an untouched idea prefill submitted as-is", () => {
+      expect(
+        shouldCountIdeaCheck(
+          { recheck: "greek yogurt with berries", recheckSource: "idea" },
+          "greek yogurt with berries"
+        )
+      ).toBe(true);
+    });
+
+    it("does not count once the user has edited the text", () => {
+      expect(
+        shouldCountIdeaCheck(
+          { recheck: "greek yogurt with berries", recheckSource: "idea" },
+          "greek yogurt with berries and honey"
+        )
+      ).toBe(false);
+    });
+
+    it("does not count when the source is not an idea (e.g. history re-check)", () => {
+      expect(
+        shouldCountIdeaCheck(
+          { recheck: "greek yogurt with berries", recheckSource: null },
+          "greek yogurt with berries"
+        )
+      ).toBe(false);
+    });
+
+    it("does not count when the source says idea but there is no recheck text", () => {
+      expect(
+        shouldCountIdeaCheck({ recheck: null, recheckSource: "idea" }, "anything")
+      ).toBe(false);
     });
   });
 });

@@ -65,6 +65,17 @@ export function shouldRecordTaster(mode: PaywallMode, hasStoreOrAnon: boolean): 
   return mode === "trial" && hasStoreOrAnon;
 }
 
+// PRD v1.1 §9.1: an idea → check completion counts only when the submitted
+// text is STILL exactly the untouched idea prefill — a user who edits the
+// text before submitting made a typed check, not an idea check. Pure so the
+// counting rule has a real test (review A-32), not only a source pin.
+export function shouldCountIdeaCheck(
+  prefill: { recheck: string | null; recheckSource: string | null } | null,
+  submittedFood: string
+): boolean {
+  return prefill?.recheckSource === "idea" && prefill.recheck !== null && submittedFood === prefill.recheck;
+}
+
 export function FoodCheckForm() {
   const [input, setInput] = useState<CheckFormInput>({ food: "", a1c: "" });
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -101,6 +112,16 @@ export function FoodCheckForm() {
   const initialPrefillRef = useRef<{
     profile: ReturnType<typeof profileStore.get>;
     recheck: string | null;
+    recheckSource: string | null;
+  } | null>(null);
+  // Render-facing mirror of the idea-prefill fields on initialPrefillRef.
+  // Refs must not be read during render (react-hooks/refs), so the "From
+  // today's ideas." hint (A-77) reads this state instead of the ref; the ref
+  // stays the source of truth read/written from the effect and the submit
+  // handler only.
+  const [ideaPrefill, setIdeaPrefill] = useState<{
+    recheck: string | null;
+    recheckSource: string | null;
   } | null>(null);
   // One-clarification cap + clarify metrics (P1.3 §8/§10.1). Holds the reason
   // and start time of an OUTSTANDING deterministic clarify — set when a clarify
@@ -143,15 +164,19 @@ export function FoodCheckForm() {
     if (initialPrefillRef.current === null) {
       const profile = profileStore.get();
       let recheck: string | null = null;
+      let recheckSource: string | null = null;
       try {
         recheck = window.sessionStorage.getItem("pal.recheck");
+        recheckSource = window.sessionStorage.getItem("pal.recheck.source");
         if (recheck) {
           window.sessionStorage.removeItem("pal.recheck");
         }
+        window.sessionStorage.removeItem("pal.recheck.source");
       } catch {
         // best-effort prefill only
       }
-      initialPrefillRef.current = { profile, recheck };
+      initialPrefillRef.current = { profile, recheck, recheckSource };
+      setIdeaPrefill({ recheck, recheckSource });
     }
 
     const { profile, recheck } = initialPrefillRef.current;
@@ -315,6 +340,16 @@ export function FoodCheckForm() {
           }
         });
 
+        // PRD v1.1 §9.1: idea → check completions. Only when THIS submission
+        // is still the untouched idea prefill; a user who edits the text is
+        // a typed check. The rule is a pure function (review A-32) so the
+        // counting logic has a real test, not only a source pin.
+        if (shouldCountIdeaCheck(initialPrefillRef.current, result.data.food)) {
+          initialPrefillRef.current = { ...initialPrefillRef.current!, recheckSource: null };
+          setIdeaPrefill((current) => (current ? { ...current, recheckSource: null } : current));
+          track({ name: "idea_check_completed", props: { risk: response.risk } });
+        }
+
         // Day-1 taster meter (trial mode): count this check against the free
         // allowance BEFORE the result renders, so a reload can't double-spend.
         // AUD-009: an entitled session's checks are unlimited server-side and
@@ -393,6 +428,12 @@ export function FoodCheckForm() {
   const tasterRemaining =
     mode === "trial" && !entitled ? tasterStore.remaining() : null;
 
+  // F-IDEAS follow-through (review A-77): say where the text came from while
+  // it is still exactly the tapped idea — gone the instant the user edits it.
+  // Same rule as the counting logic (shouldCountIdeaCheck), read live against
+  // the field's current value rather than only at submit time.
+  const showIdeaHint = shouldCountIdeaCheck(ideaPrefill, input.food);
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -464,13 +505,20 @@ export function FoodCheckForm() {
           }}
           enterKeyHint="go"
           placeholder="Example: grilled chicken with rice and salad"
-          aria-describedby={errors.food ? "food-error" : undefined}
+          aria-describedby={
+            errors.food ? "food-error" : showIdeaHint ? "food-idea-hint" : undefined
+          }
           aria-invalid={errors.food ? true : undefined}
           className="text-input"
         />
         {errors.food ? (
           <p id="food-error" className="field-error">
             {errors.food}
+          </p>
+        ) : null}
+        {showIdeaHint ? (
+          <p id="food-idea-hint" className="field-hint" data-testid="idea-hint">
+            From today&apos;s ideas.
           </p>
         ) : null}
         {photoNotice ? <p className="field-hint">{photoNotice}</p> : null}
