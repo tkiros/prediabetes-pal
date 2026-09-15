@@ -16,6 +16,7 @@ const STATE_KEY = "pal.orient.v1";
 // The "write down your questions" note (F-ORIENT "Free text"): device only,
 // never sent to the server or the model, never echoed inside app copy.
 const NOTE_KEY = "pal.orient.note.v1";
+const PROBE_KEY = "pal.orient.note.probe";
 
 function read(): OrientationState {
   try {
@@ -46,6 +47,10 @@ export const orientationStore = {
   dismiss(now: Date = new Date()): void {
     write({ ...read(), dismissedAt: now.toISOString() });
   },
+  /** Ruling F-37: "Show it again" clears the dismissal. */
+  restore(): void {
+    write({ ...read(), dismissedAt: null });
+  },
   /** Review A-05: stamps the week's start once; later calls are no-ops. */
   start(now: Date = new Date()): void {
     const state = read();
@@ -61,12 +66,24 @@ export const orientationNote = {
       return "";
     }
   },
-  set(text: string): void {
+  /** False when storage refused the write (A-57: the page says so). */
+  set(text: string): boolean {
     try {
       if (text.trim() === "") window.localStorage.removeItem(NOTE_KEY);
       else window.localStorage.setItem(NOTE_KEY, text);
+      return true;
     } catch {
-      // ignore
+      return false;
+    }
+  },
+  /** A-57's probe: can this browser keep a note at all? */
+  writable(): boolean {
+    try {
+      window.localStorage.setItem(PROBE_KEY, "1");
+      window.localStorage.removeItem(PROBE_KEY);
+      return true;
+    } catch {
+      return false;
     }
   }
 };

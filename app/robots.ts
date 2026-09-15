@@ -13,6 +13,7 @@ export const DISALLOWED_PATHS = [
   "/history",
   "/home",
   "/journey",
+  "/learn",
   "/meals",
   "/memory",
   "/onboarding",

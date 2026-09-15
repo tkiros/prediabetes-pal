@@ -65,6 +65,8 @@ describe("sitemap", () => {
       "/home",
       "/meals",
       "/journey",
+      "/learn",
+      "/learn/first-week",
       "/memory",
       "/onboarding",
       "/welcome",
@@ -87,6 +89,8 @@ describe("robots", () => {
     expect(rules[0]?.disallow).toContain("/api/");
     expect(rules[0]?.disallow).toContain("/account");
     expect(rules[0]?.disallow).toContain("/admin");
+    // Task 3.6: the Learn pages live in the app shell and are never indexed.
+    expect(rules[0]?.disallow).toContain("/learn");
   });
 
   it("advertises the sitemap", () => {

@@ -6,6 +6,7 @@ import { guideDoorEnabled } from "../lib/guide-door-flag";
 import type { PlanBoxData } from "../lib/server/plan-box";
 import { GuideIdeas } from "./guide-ideas";
 import { HomeCheckHero } from "./home-check-hero";
+import { LearnLink } from "./learn-link";
 import { PlanBox } from "./plan-box";
 import { TodayList } from "./today-list";
 
@@ -101,7 +102,16 @@ export function DashboardView({ data }: { data: DashboardData }) {
 
       {data.nextAction ? (
         <p className="dash-next-action" data-testid="next-action">
-          <Link href={data.nextAction.href}>{data.nextAction.text}</Link>
+          {/* Ruling F-38: a step into /learn/ reports learn_opened; that
+              client leaf keeps this view a server tree. Flag off ⇒ no step,
+              so the plain link, byte-for-byte. */}
+          {data.nextAction.href.startsWith("/learn/") ? (
+            <LearnLink href={data.nextAction.href} from="step">
+              {data.nextAction.text}
+            </LearnLink>
+          ) : (
+            <Link href={data.nextAction.href}>{data.nextAction.text}</Link>
+          )}
         </p>
       ) : null}
 

@@ -47,6 +47,18 @@ describe("orientationStore (pal.orient.v1)", () => {
     orientationStore.start(new Date("2026-09-20T09:00:00.000Z"));
     expect(orientationStore.get().startedAt).toBe("2026-09-14T09:00:00.000Z");
   });
+
+  it("restore clears the dismissal and keeps the rest (ruling F-37)", () => {
+    orientationStore.start(new Date("2026-09-14T09:00:00.000Z"));
+    orientationStore.markDone("3");
+    orientationStore.dismiss(new Date("2026-09-15T09:00:00.000Z"));
+    orientationStore.restore();
+    expect(orientationStore.get()).toEqual({
+      done: ["3"],
+      dismissedAt: null,
+      startedAt: "2026-09-14T09:00:00.000Z"
+    });
+  });
 });
 
 describe("orientationNote (pal.orient.note.v1) — device only", () => {
@@ -58,6 +70,23 @@ describe("orientationNote (pal.orient.note.v1) — device only", () => {
     expect(orientationNote.get()).toBe("ask which test was used");
     orientationNote.set("");
     expect(storage.getItem("pal.orient.note.v1")).toBeNull();
+  });
+
+  it("set and writable report whether storage took the write (A-57's hint variants)", () => {
+    expect(orientationNote.set("bring the lab sheet")).toBe(true);
+    expect(orientationNote.writable()).toBe(true);
+    const setItem = storage.setItem;
+    storage.setItem = () => {
+      throw new Error("QuotaExceededError");
+    };
+    try {
+      expect(orientationNote.set("bring the lab sheet, and the list")).toBe(false);
+      expect(orientationNote.writable()).toBe(false);
+    } finally {
+      storage.setItem = setItem;
+    }
+    // The probe leaves nothing behind.
+    expect(storage.getItem("pal.orient.note.probe")).toBeNull();
   });
 
   it("is never referenced by any server or API module (the note never leaves the device)", () => {

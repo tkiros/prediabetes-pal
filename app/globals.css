@@ -4023,6 +4023,41 @@ button.inline-link {
   cursor: pointer;
 }
 
+/* /learn/first-week (Task 3.6). A pressed Done reads by a tint and the check
+   glyph, never the accent fill: Check stays the one filled action (DESIGN.md
+   §1), and a progress surface stays calm (§9). */
+.orientation-steps {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.orientation-step {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.orientation-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.orientation-done[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+}
+
+.orientation-hide {
+  justify-self: start;
+  min-height: 44px;
+}
+
 /* ── App shell (M1 dashboard plan, design ref: Prediabetes Pal.dc.html) ─────────────
    The responsive frame for (app) routes. Below 1024px: top bar + single
    column. From 1024px: fixed sidebar (280px) + wide content. This replaces

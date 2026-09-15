@@ -474,6 +474,15 @@ describe("Home with the orient door open: the day eyebrow and the day's step (Ta
       }
     });
 
+    it(`${who}: a step-5 day points the line into /learn/first-week (the route Task 3.6 adds)`, async () => {
+      const html = await render("1", { week: { startedDaysAgo: 4, done: ["1", "2", "3", "4"] } });
+      expect(dayOf(html)).toBe("5");
+      expect(stepLine(html)).toEqual([
+        "/learn/first-week#note",
+        "Today's step: Write down the questions you have for your clinician."
+      ]);
+    });
+
     it(`${who}: a surface list without orient opens no week`, async () => {
       const html = await render("ideas,source", { week: { startedDaysAgo: 1 } });
       expect(html).not.toContain("orientation-day");
