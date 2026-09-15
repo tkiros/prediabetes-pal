@@ -93,7 +93,7 @@ still render everywhere the attribute is absent. `--danger` is untouched and sta
 (account delete); this amendment re-tokens `--high-*` only. `app/layout.tsx` sets `data-calm` on `<html>` only when
 `guideDoorEnabled("calm")` is true, so the override ships dormant until the safety owner's colour-blind review
 promotes `calm` into the production flag value — flag off stays byte-for-byte. Every `-text`-on-`-bg`/`-badge` pair
-clears AA: `#1e293b` on `#f1f5f9` ≈ 12.6:1, on `#e2e8f0` ≈ 11.2:1.
+clears AA: `#1e293b` on `#f1f5f9` ≈ 13.35:1, on `#e2e8f0` ≈ 11.87:1.
 
 ### 3.1 `--text-soft` is plane-restricted, and this is accessibility, not taste
 
