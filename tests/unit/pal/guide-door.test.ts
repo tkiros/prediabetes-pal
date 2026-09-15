@@ -92,6 +92,7 @@ import {
   guideDoorEnabled,
 } from "../../../lib/guide-door-flag";
 import { SOURCE_LEAD } from "../../../components/result-card";
+import type { DashboardData } from "../../../components/dashboard-view";
 
 const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), "utf8");
 
@@ -142,6 +143,27 @@ describe("guide-door render sites (source pins, node env has no DOM)", () => {
     const src = read("components/food-check-form.tsx");
     expect(src).toContain('"pal.recheck.source"');
     expect(src.match(/name: "idea_check_completed"/g)).toHaveLength(1);
+  });
+
+  it("the check form records the week's step events where a check completes (review A-84)", () => {
+    const src = read("components/food-check-form.tsx");
+    const at = (needle: string) => {
+      const index = src.indexOf(needle);
+      expect(index, needle).toBeGreaterThan(-1);
+      return index;
+    };
+    // Every result check: once, after check_completed, outside the idea block.
+    expect(src.match(/recordStepEvent\("check"\)/g)).toHaveLength(1);
+    expect(at('recordStepEvent("check")')).toBeGreaterThan(at('name: "check_completed"'));
+    expect(at('recordStepEvent("check")')).toBeLessThan(at("if (shouldCountIdeaCheck("));
+    // An idea check as well: once, inside the idea block, before the taster meter.
+    expect(src.match(/recordStepEvent\("idea_check"\)/g)).toHaveLength(1);
+    expect(at('recordStepEvent("idea_check")')).toBeGreaterThan(at("if (shouldCountIdeaCheck("));
+    expect(at('recordStepEvent("idea_check")')).toBeLessThan(at("if (shouldRecordTaster("));
+  });
+
+  it("a visit to /journey records no step event — step 7 completes from its own links (ruling F-54)", () => {
+    expect(read("app/(app)/journey/page.tsx")).not.toContain("recordStepEvent");
   });
 
   it("the other pal.recheck writers also clear pal.recheck.source (review A-102) — a hand-off that never reached the form cannot make a later typed check count as an idea", () => {
@@ -550,6 +572,25 @@ describe("Home with the orient door open: the day eyebrow and the day's step (Ta
     expect((await HomePage()).props.children[0]).toBeNull();
   });
 
+  it("signed-in: a day-7 week hands DashboardView a step-7 line carrying its id, which picks the step link (F-54); door shut, no id", async () => {
+    const lineOf = async (flag: string, seed: Seed) => {
+      vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", flag);
+      seedServer(seed);
+      const { default: HomePage } = await import("../../../app/(app)/home/page");
+      const [, view] = (await HomePage()).props.children as [unknown, { props: { data: DashboardData } }];
+      return view.props.data.nextAction;
+    };
+    expect(await lineOf("1", { onboardedDaysAgo: 40, week: { startedDaysAgo: 6 } })).toEqual({
+      text: "Today's step: Look back at the week on My journey.",
+      href: "/journey",
+      step: "7"
+    });
+    // Door shut, a check today: the classic line, with no step id at all.
+    const classic = await lineOf("", { onboardedDaysAgo: 40, week: { startedDaysAgo: 6 }, checkToday: true });
+    expect(classic).toEqual({ text: "Today's check suggested a step — did it happen?", href: "/meals" });
+    expect(Object.keys(classic ?? {})).toEqual(["text", "href"]);
+  });
+
   it("signed-in: no profiles row ⇒ no week, however the device looks (A-92)", async () => {
     storage.setItem("pal.orient.v1", JSON.stringify(orientationOf({ startedDaysAgo: 1 })));
     vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "1");
@@ -625,7 +666,7 @@ describe("A-83: an expired-taster guest's step line asks them to sign in (Task 3
     expect(heroEyebrow(html)).toBe("Meal check");
   });
 
-  it("door shut: the flag-off guest markup never reads the taster status (existing byte-for-byte snapshots cover this)", async () => {
+  it("door shut: an expired taster with a device week gets neither the sign-in line nor the day line (the flag-off snapshots pin the rest)", async () => {
     expireTaster();
     const html = await renderGuest("", { week: { startedDaysAgo: 3 } });
     expect(html).not.toContain("Sign in to keep your week going");

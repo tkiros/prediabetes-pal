@@ -1,4 +1,4 @@
-import type { OrientationStepId } from "../coach/orientation";
+import { stepCompletesFromLink, type LinkedStepId, type OrientationStepId } from "../coach/orientation";
 import { guideDoorEnabled } from "../guide-door-flag";
 import { orientationStore } from "./orientation-store";
 import { patchOrientation } from "./remote-orientation";
@@ -8,7 +8,7 @@ import { patchOrientation } from "./remote-orientation";
  * review A-84), not only through the Done toggle on /learn/first-week. These
  * are not analytics events and never reach lib/client/analytics.ts.
  */
-export type StepEvent = "check" | "idea_check" | "numbers_link" | "clinician_list" | "journey_visit";
+export type StepEvent = "check" | "idea_check" | "numbers_link" | "clinician_list" | "journey_link";
 
 // The steps each event can complete, earliest first: a check completes step 2,
 // and the next check step 3.
@@ -18,8 +18,23 @@ const STEPS: Record<StepEvent, OrientationStepId[]> = {
   idea_check: ["4"],
   numbers_link: ["1"],
   clinician_list: ["5"],
-  journey_visit: ["7"]
+  journey_link: ["7"]
 };
+
+/**
+ * Ruling F-54: the event a tap on step 1's or step 7's own link records — on
+ * Home's step line (components/step-link.tsx) and in the week list
+ * (components/orientation-list.tsx). A plain /journey visit records nothing.
+ */
+export const STEP_LINK_EVENTS = {
+  "1": "numbers_link",
+  "7": "journey_link"
+} as const satisfies Record<LinkedStepId, StepEvent>;
+
+/** The event a tap on this step's own link records, or null when it records none. */
+export function stepLinkEvent(id: OrientationStepId): StepEvent | null {
+  return stepCompletesFromLink(id) ? STEP_LINK_EVENTS[id] : null;
+}
 
 /**
  * Fire-and-forget (`void recordStepEvent(...)`); never throws. With the

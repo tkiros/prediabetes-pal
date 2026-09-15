@@ -14,8 +14,13 @@ function fakeStorage() {
 const storage = fakeStorage();
 vi.stubGlobal("window", { localStorage: storage });
 
-import type { OrientationState } from "../../../lib/coach/orientation";
-import { recordStepEvent, type StepEvent } from "../../../lib/client/orientation-progress";
+import { ORIENTATION_STEPS, type OrientationState } from "../../../lib/coach/orientation";
+import {
+  recordStepEvent,
+  STEP_LINK_EVENTS,
+  stepLinkEvent,
+  type StepEvent
+} from "../../../lib/client/orientation-progress";
 import { orientationStore } from "../../../lib/client/orientation-store";
 
 /**
@@ -67,7 +72,7 @@ describe("recordStepEvent (review A-84)", () => {
     ["idea_check", ["4"]],
     ["numbers_link", ["1"]],
     ["clinician_list", ["5"]],
-    ["journey_visit", ["7"]]
+    ["journey_link", ["7"]]
   ] as const)("%s sends exactly one PATCH whose body is { orientation: { op: markNext, steps: %j } }", async (kind, steps) => {
     await recordStepEvent(kind satisfies StepEvent);
 
@@ -109,5 +114,25 @@ describe("recordStepEvent (review A-84)", () => {
     fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
     await expect(recordStepEvent("numbers_link")).resolves.toBeUndefined();
     expect(orientationStore.get()).toEqual({ ...STARTED, done: ["1"] });
+  });
+});
+
+describe("the step links that complete their own step (ruling F-54)", () => {
+  it("only step 1's and step 7's links record, and each records its own step", async () => {
+    expect(STEP_LINK_EVENTS).toEqual({ "1": "numbers_link", "7": "journey_link" });
+    expect(ORIENTATION_STEPS.map((step) => stepLinkEvent(step.id))).toEqual([
+      "numbers_link",
+      null,
+      null,
+      null,
+      null,
+      null,
+      "journey_link"
+    ]);
+    // Step 7's link is the only way a /journey trip completes step 7.
+    await recordStepEvent(STEP_LINK_EVENTS["7"]);
+    expect(orientationStore.get().done).toEqual(["7"]);
+    await recordStepEvent(STEP_LINK_EVENTS["1"]);
+    expect(orientationStore.get().done).toEqual(["7", "1"]);
   });
 });

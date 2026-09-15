@@ -26,7 +26,11 @@ import type { DayKeyFn } from "./days";
 export type OrientationStepId = "1" | "2" | "3" | "4" | "5" | "6" | "7";
 export type OrientationStep = { id: OrientationStepId; text: string; href: string };
 
-// Flip to "/learn/numbers" in the F-NUMBERS PR (§2.4.1) — one edit, one place.
+// F-NUMBERS (§2.4.1) flips this to "/learn/numbers". In code that stays one
+// edit: step 1 completes from its links by step id, not by href, and Home's
+// step link reports learn_opened for any /learn/ href (ruling F-55). The week
+// list's links report no learn_opened, before or after the flip. Copy-ledger
+// row orientation-step-01 names this route too.
 // Review A-45: while this points at the public guide, that page must carry no
 // second-person sentence about the reader's own number (see Task 3.1 note).
 export const LEARN_NUMBERS_HREF = "/guides/a1c-5-7-to-6-4";
@@ -40,6 +44,19 @@ export const ORIENTATION_STEPS: readonly OrientationStep[] = [
   { id: "6", text: "Book, or ask about, a dietitian appointment.", href: "/learn/first-week" }, // A-78: "#dietitian" only once F-REFER ships (an external action; the page is the destination)
   { id: "7", text: "Look back at the week on My journey.", href: "/journey" }
 ];
+
+/**
+ * Review A-84, ruling F-54: the steps a tap on their own link completes, on
+ * Home's step line and in the week list — step 1 (reading the words) and
+ * step 7 (looking back on My journey). A plain visit to /journey does not
+ * count: it is a permanent tab. The other steps complete where they happen,
+ * or by Done.
+ */
+export type LinkedStepId = "1" | "7";
+
+export function stepCompletesFromLink(id: OrientationStepId | undefined): id is LinkedStepId {
+  return id === "1" || id === "7";
+}
 
 export const OrientationStateSchema = z
   .object({

@@ -17,7 +17,6 @@ import {
   type VerdictWeekDayWire
 } from "../../../lib/coach/progress-state";
 import { RECAP_POSTURE_LINE, recapSentences } from "../../../lib/coach/recap";
-import { recordStepEvent } from "../../../lib/client/orientation-progress";
 import { loadJourneyLine } from "../../../lib/client/remote-orientation";
 import { SUPPORT_EMAIL } from "../../../lib/pal/contact";
 
@@ -117,12 +116,7 @@ export default function JourneyPage() {
   useEffect(() => {
     let cancelled = false;
     void loadJourneyLine().then((line) => {
-      if (cancelled || !line) return;
-      setWeekLine(line);
-      // Review A-84: a line means the week has started, so this visit
-      // completes step 7. Once per mount: StrictMode's first run is
-      // cancelled before its line resolves.
-      void recordStepEvent("journey_visit");
+      if (!cancelled && line) setWeekLine(line);
     });
     return () => {
       cancelled = true;

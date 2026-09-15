@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import type { StoredCheck } from "../lib/client/history-store";
 import type { NextAction } from "../lib/coach/next-action";
-import { LEARN_NUMBERS_HREF } from "../lib/coach/orientation";
+import { stepCompletesFromLink } from "../lib/coach/orientation";
 import { guideDoorEnabled } from "../lib/guide-door-flag";
 import type { PlanBoxData } from "../lib/server/plan-box";
 import { GuideIdeas } from "./guide-ideas";
@@ -103,13 +103,13 @@ export function DashboardView({ data }: { data: DashboardData }) {
       {data.nextAction ? (
         <p className="dash-next-action" data-testid="next-action">
           {/* Ruling F-38: a step into /learn/ reports learn_opened; that
-              client leaf keeps this view a server tree. Review A-84: step
-              1's link completes step 1 through its own leaf, checked first.
-              When F-NUMBERS moves that link under /learn/, the two leaves
-              must merge, or one of the two reports is lost. Flag off ⇒ no
-              step, so the plain link, byte-for-byte. */}
-          {data.nextAction.href === LEARN_NUMBERS_HREF ? (
-            <StepLink href={data.nextAction.href} event="numbers_link">
+              client leaf keeps this view a server tree. Review A-84, rulings
+              F-54/F-55: steps 1 and 7, picked by the line's step id, go
+              through StepLink, which completes the step and reports
+              learn_opened for a /learn/ href as LearnLink does. Flag off ⇒
+              no step id, so the plain link, byte-for-byte. */}
+          {stepCompletesFromLink(data.nextAction.step) ? (
+            <StepLink href={data.nextAction.href} step={data.nextAction.step}>
               {data.nextAction.text}
             </StepLink>
           ) : data.nextAction.href.startsWith("/learn/") ? (
