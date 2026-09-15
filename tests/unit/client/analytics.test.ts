@@ -310,9 +310,12 @@ describe("AnalyticsEvent props stay closed unions (no free-text props)", () => {
   it("declares no bare `: string` prop type in the AnalyticsEvent union; insert new union members before the `photo_draft` variant", () => {
     const typeBlockStart = SOURCE.indexOf("export type AnalyticsEvent =");
     // Ruling F-17: the slice ends at the declaration that follows the union,
-    // not at a literal of whichever variant happens to be last — a variant
-    // appended after that literal used to escape this scan entirely. The
-    // union ends before this marker whatever order its members are in.
+    // not at a literal of whichever variant happens to be last. The old
+    // slice anchored on that trailing literal, so appending a variant after
+    // it did not escape the scan — it broke the anchor and failed the
+    // assertions below closed (indexOf returning -1), not open. This marker
+    // fixes the anchor itself: the test now fails on the bare string,
+    // whichever variant is last.
     const endMarker = "const ALLOWED_EVENT_NAMES";
     const typeBlockEndIndex = SOURCE.indexOf(endMarker, typeBlockStart);
     expect(typeBlockStart).toBeGreaterThanOrEqual(0);
