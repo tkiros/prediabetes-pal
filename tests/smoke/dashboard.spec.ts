@@ -222,11 +222,12 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
   // line is likeliest to wrap past two lines. Explicit viewport sizes keep
   // this project-agnostic, like the rest of this file.
   //
-  // Task 3.5: with the orient surface on, every cell also runs a first week
-  // on its day 2 — the tallest Home above the CTA: the "Day 2 of your first
-  // week" eyebrow over the date, and the hero's own step eyebrow (a check-step
-  // day before the first check). The guest here has no profile, so without
-  // the seed no week would render and the fold would not measure it.
+  // Task 3.5 / F-30 / F-35: with the orient surface on, every cell also runs
+  // a first week on its day 2 — the tallest Home above the CTA: the "Day 2 of
+  // your first week" line in the date's place, and the hero's own step
+  // eyebrow (a check-step day before the first check). The guest here has no
+  // profile, so without the seed no week would render and the fold would not
+  // measure it.
   const FOLD_CLOCKS: ReadonlyArray<{ time: string; daypart: Daypart }> = [
     { time: "2026-09-14T08:00:00", daypart: "breakfast" },
     { time: "2026-09-14T13:00:00", daypart: "lunch" },
@@ -275,6 +276,14 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
             ideasFor(daypart, seed + 1)[0]!.text
           );
           if (weekOn) {
+            // F-30/F-35: the day line now renders INSIDE Home's one <h1>, in
+            // the date's place, not as a second eyebrow above it. The
+            // heading-role match is strict (fails if a second <h1> exists)
+            // and full-text (fails if the date is still in it); the testid
+            // match pins the same node's test id.
+            await expect(page.getByRole("heading", { level: 1 }), cell).toHaveText(
+              "Day 2 of your first week"
+            );
             await expect(page.getByTestId("orientation-day"), cell).toHaveText(
               "Day 2 of your first week"
             );
@@ -314,4 +323,53 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
       }
     });
   }
+
+  // F-35: the guest's server render shows the date; only after hydration
+  // does the <h1> swap to the day line, in the same element and class — by
+  // construction there is nothing for content below to react to. This test
+  // tries to observe the SSR-only paint by slowing the JS chunks (not the
+  // CSS), then measures the check CTA's position before and after the swap.
+  // It only logs the measurement rather than asserting on it: earlier tests
+  // in this file already warmed the browser's disk cache with the same
+  // chunks, and a cached response never reaches page.route, so on most
+  // projects "before" here is already post-hydration — a real but
+  // unreliable-across-browsers capture (the brief's flakiness escape
+  // hatch). Read the console output for the numbers this run measured.
+  test("guest Home: measures whether the day line replacing the date after hydration shifts the check CTA (F-35)", async ({
+    page
+  }) => {
+    test.skip(!(await doorSurfaceOn("orient")), "orient surface off in this build");
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.addInitScript(() => {
+      const startedAt = new Date();
+      startedAt.setDate(startedAt.getDate() - 1);
+      window.localStorage.setItem(
+        "pal.orient.v1",
+        JSON.stringify({ done: [], dismissedAt: null, startedAt: startedAt.toISOString() })
+      );
+    });
+    await page.route("**/_next/static/chunks/**", async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await route.continue();
+    });
+
+    await page.goto("/home?stay=1", { waitUntil: "domcontentloaded" });
+    const cta = page.getByTestId("dash-check-cta");
+    await expect(cta).toBeVisible();
+    const capturedPreHydration = (await page.getByTestId("orientation-day").count()) === 0;
+    const before = await cta.boundingBox();
+    expect(before).not.toBeNull();
+
+    await expect(page.getByTestId("orientation-day")).toHaveText(
+      "Day 2 of your first week",
+      { timeout: 5_000 }
+    );
+    const after = await cta.boundingBox();
+    expect(after).not.toBeNull();
+
+    const shift = Math.abs(after!.y - before!.y);
+    console.log(
+      `[F-35] guest check CTA top ${capturedPreHydration ? "before" : "(hydration had already landed at capture)"} ${before!.y.toFixed(2)}, after ${after!.y.toFixed(2)}, shift ${shift.toFixed(2)}px`
+    );
+  });
 });

@@ -51,7 +51,9 @@ export function DashboardView({ data }: { data: DashboardData }) {
   // v1.1 §7.6's wireframe shows one greeting line, /journey owns the week, and
   // plan §3's fold budget already spent those ~28px on the ideas block (Task
   // 1.8 fix round 1). The "day" arrives with the orientation week (Task 3.5):
-  // while one runs, a "Day N of your first week" eyebrow sits above the date.
+  // while one runs, "Day N of your first week" takes the date's place in the
+  // same <h1> (F-30/F-35, option C) rather than stacking above it — the fold
+  // and the guest hydration reflow both depend on staying one line.
   // Flag off ⇒ today's markup, byte-for-byte.
   const ideasOn = guideDoorEnabled("ideas");
   // Review A-89: the day eyebrow carries day 1, so the first-win block (its
@@ -75,17 +77,13 @@ export function DashboardView({ data }: { data: DashboardData }) {
       ) : null}
 
       <div className="dash-greet">
-        {weekOn ? (
-          <p className="status-eyebrow" data-testid="orientation-day">
-            {`Day ${data.orientationDay} of your first week`}
-          </p>
-        ) : null}
         <h1
           className={
-            ideasOn ? "dash-greet-date dash-greet-date--eyebrow" : "dash-greet-date"
+            ideasOn || weekOn ? "dash-greet-date dash-greet-date--eyebrow" : "dash-greet-date"
           }
+          data-testid={weekOn ? "orientation-day" : undefined}
         >
-          {data.todayLabel}
+          {weekOn ? `Day ${data.orientationDay} of your first week` : data.todayLabel}
         </h1>
         {ideasOn ? null : (
           <p className="dash-greet-sum" data-testid="dash-summary">

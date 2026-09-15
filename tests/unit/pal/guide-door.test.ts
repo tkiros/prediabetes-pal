@@ -400,7 +400,10 @@ describe("Home with the orient door open: the day eyebrow and the day's step (Ta
     vi.unstubAllEnvs();
   });
 
-  const EYEBROW = /<div class="dash-greet"><p class="status-eyebrow" data-testid="orientation-day">Day (\d) of your first week<\/p><h1 /;
+  // F-30/F-35 (option C): the day line now renders INSIDE the one <h1> in
+  // place of the date, not as a separate eyebrow <p> above it.
+  const EYEBROW =
+    /<div class="dash-greet"><h1 class="dash-greet-date dash-greet-date--eyebrow" data-testid="orientation-day">Day (\d) of your first week<\/h1>/;
   const dayOf = (html: string) => EYEBROW.exec(html)?.[1] ?? null;
   const stepLine = (html: string) =>
     /data-testid="next-action"><a href="([^"]*)">([^<]*)</.exec(decode(html))?.slice(1) ?? null;
@@ -412,9 +415,12 @@ describe("Home with the orient door open: the day eyebrow and the day's step (Ta
   ] as const;
 
   for (const [who, render] of renders) {
-    it(`${who}: a started week reads "Day N of your first week" inside the greeting, above the date`, async () => {
+    it(`${who}: a started week reads "Day N of your first week" inside the greeting's one <h1>, in the date's place (F-30/F-35)`, async () => {
       const html = await render("1", { onboardedDaysAgo: 40, week: { startedDaysAgo: 3 } });
       expect(dayOf(html)).toBe("4");
+      // The date text is gone while the week runs — the day line replaced it,
+      // it did not stack above it.
+      expect(html).not.toContain("Tuesday, September 15");
       // Step 4 does not point at /check, so the line renders before any check.
       expect(stepLine(html)).toEqual(["/home#ideas-title", "Today's step: Try one of today's ideas and see how it reads."]);
       expect(heroEyebrow(html)).toBe("Meal check");
@@ -454,6 +460,10 @@ describe("Home with the orient door open: the day eyebrow and the day's step (Ta
         const html = await render("1", seed);
         expect(dayOf(html)).toBeNull();
         expect(html).not.toContain("orientation-day");
+        // No week ⇒ the <h1> falls back to the date, untagged (F-30/F-35).
+        expect(html).toContain(
+          '<h1 class="dash-greet-date dash-greet-date--eyebrow">Tuesday, September 15</h1>'
+        );
         // Door open, no week, no check yet: the hero is the action (owner rule 2026-08-11).
         expect(html).not.toContain('data-testid="next-action"');
         expect(heroEyebrow(html)).toBe("Meal check");
