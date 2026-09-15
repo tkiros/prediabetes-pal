@@ -7,11 +7,17 @@
  * to unset and the front door reverts to the check.
  *
  * Client build flag, fail-closed (only exact "1"). Deliberately NO server
- * twin: the door adds no server boundary — the bank is static data and a
- * tapped idea runs an ordinary, already IP-metered /api/check call — so the
- * twin guard's job (a runtime kill switch for a server surface) does not
- * apply. Same shape as NEXT_PUBLIC_REVIEWER_MODE. Consequence: turning the
- * door off is a reviewed rebuild + redeploy, not an env flip.
+ * twin for the flag itself. That used to mean no surface it gated added a
+ * server boundary either — the ideas bank is static data and a tapped idea
+ * runs an ordinary, already IP-metered /api/check call — but `orient` (PR-3)
+ * is not boundary-free: it adds a real `PATCH /api/profile` orientation op
+ * and a `profiles.orientation` column, and the server gates both directly on
+ * `guideDoorEnabled("orient")` (A-111). So the "no runtime kill switch"
+ * reasoning below only holds while a surface with a server boundary stays
+ * dark — same build-time posture as NEXT_PUBLIC_REVIEWER_MODE either way:
+ * turning `orient` off after it has shipped is still a reviewed rebuild +
+ * redeploy, never an env flip, because the server's own check reads this
+ * same build-time env.
  *
  * Amendment A-04 extends this to a surface-listed gate. `1` opens every
  * surface; a comma-separated list opens only the surfaces named; anything
@@ -77,6 +83,9 @@ export const SURFACE_ROWS: Record<GuideSurface, readonly string[]> = {
     "orientation-day-eyebrow",
     "orientation-controls",
     "orientation-note-hint",
+    // Stays listed until BOTH A-83 (the sign-in step line, which renders
+    // this row) and A-84 (recordStepEvent) ship — without A-84, Home
+    // re-asks for a check on days 2 and 3 after one (final review I2).
     "orientation-signin-step",
     "orientation-save-failed",
     "learn-first-week-intro",
