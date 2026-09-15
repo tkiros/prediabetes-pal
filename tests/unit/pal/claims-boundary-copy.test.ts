@@ -326,6 +326,7 @@ const EXTRA_SOURCES = [
   "lib/coach/bai.ts",
   "lib/coach/recap.ts",
   "lib/coach/next-action.ts",
+  "lib/coach/orientation.ts",
   "lib/server/pantry/emails.ts",
   "lib/server/billing/emails.ts",
   "docs/runbooks/marketing-assets.md",

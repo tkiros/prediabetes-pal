@@ -27,8 +27,8 @@ export default function A1cRangeGuide() {
           roughly the past three months. Clinicians typically read results
           below 5.7% as within the usual range, 5.7% to 6.4% as the
           prediabetes range, and 6.5% or above as the range they use when
-          evaluating Type 2 diabetes. If your number landed in the middle
-          band, here is how to think about it.
+          evaluating Type 2 diabetes. Here is how clinicians read the middle
+          band.
         </p>
       </section>
 
@@ -47,8 +47,8 @@ export default function A1cRangeGuide() {
       <section className="surface-card legal-card">
         <h2>Is 5.7% very different from 6.4%?</h2>
         <p>
-          The range has a floor and a ceiling, and where you sit in it is
-          worth knowing. A 5.7% sits just past the usual range; a 6.4% sits
+          The range has a floor and a ceiling, and where a result sits in it
+          matters to clinicians. A 5.7% sits just past the usual range; a 6.4% sits
           just under the ceiling. But the bands are conventions for reading a
           continuous number, not cliffs — and A1C results can vary a little
           between labs and between draws. That is one reason clinicians
