@@ -3,6 +3,7 @@ import type {
   ClarifyReason
 } from "../pal/clarify";
 import type { Daypart } from "../coach/insights";
+import type { OrientationStepId } from "../coach/orientation";
 import type { Channel } from "./attribution";
 import type {
   ClinicalRoute,
@@ -215,6 +216,17 @@ export type AnalyticsEvent =
   // about a person's result, and §9.1 promises nothing here measures it.
   // "ask_pains" / "ask_win" arrive with the F-ASK screens (PR-6).
   | { name: "onboarding_step"; props: { step: "segment" | "ask_pains" | "ask_win" | "attribution" | "expectations" } }
+  // PRD v1.1 §9.1 orientation and Learn instruments. Bounded: the step id,
+  // the page id, the origin surface — never the note, never the page body.
+  | { name: "orientation_step_done"; props: { step: OrientationStepId } }
+  | { name: "orientation_dismissed" }
+  | {
+      name: "learn_opened";
+      props: {
+        page: "index" | "numbers" | "first-week" | "doctor";
+        from: "home" | "result_footer" | "onboarding" | "step" | "journey";
+      };
+    }
   | { name: "photo_draft"; props: { items: number; uncertain: number } };
 
 // Runtime belt-over-type-belt guard: even if a caller bypasses the type
@@ -247,6 +259,9 @@ const ALLOWED_EVENT_NAMES: ReadonlySet<AnalyticsEvent["name"]> = new Set([
   "idea_tapped",
   "idea_check_completed",
   "onboarding_step",
+  "orientation_step_done",
+  "orientation_dismissed",
+  "learn_opened",
   "photo_draft",
   "result_feedback_submitted",
   "clarification_requested",
