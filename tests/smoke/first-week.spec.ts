@@ -98,8 +98,8 @@ test.describe("/learn/first-week with the orient surface on", () => {
 
     await page.getByLabel(DAY_5_STEP, { exact: true }).fill("Bring the lab sheet");
     await expect(page.getByText("Saved on this device")).toBeVisible();
-    // The mark lands once the PATCH answers (a guest's 401 hands it to the
-    // device), so wait for that write before reloading.
+    // The save marks the device week (ruling F-53) alongside a fire-and-forget
+    // PATCH; wait for that write before reloading so the reload cannot race it.
     await expect
       .poll(() => page.evaluate(() => JSON.parse(window.localStorage.getItem("pal.orient.v1") ?? "{}").done ?? []))
       .toContain("5");

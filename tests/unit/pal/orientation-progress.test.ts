@@ -19,10 +19,11 @@ import { recordStepEvent, type StepEvent } from "../../../lib/client/orientation
 import { orientationStore } from "../../../lib/client/orientation-store";
 
 /**
- * Review A-84: a step completes where it happens. A signed-in user's week is
- * marked by the server (PATCH markNext); a guest's (401), or a signed-in user
- * with no profiles row (404, ruling F-31), by the device store. Anything else
- * is dropped — the call is fire-and-forget.
+ * Review A-84: a step completes where it happens. Ruling F-53: every event
+ * marks the device week (under the store's own started-and-not-hidden guard)
+ * AND sends PATCH markNext, whatever the server answers — so a signed-in user
+ * whose server copy is still null keeps the mark for Home's migration. The
+ * call is fire-and-forget and never rejects.
  */
 const STARTED: OrientationState = {
   done: [],
@@ -51,14 +52,14 @@ afterEach(() => {
 });
 
 describe("recordStepEvent (review A-84)", () => {
-  it.each(["", "ideas,calm"])("door shut (%j): no request, and the device week is untouched", async (flag) => {
+  it.each(["", "ideas,calm"])("door shut (%j): no request and no device write", async (flag) => {
     vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", flag);
-    status = 401;
+    const before = storage.getItem("pal.orient.v1");
 
     await expect(recordStepEvent("check")).resolves.toBeUndefined();
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(orientationStore.get()).toEqual(STARTED);
+    expect(storage.getItem("pal.orient.v1")).toBe(before);
   });
 
   it.each([
@@ -77,14 +78,19 @@ describe("recordStepEvent (review A-84)", () => {
     expect(JSON.parse(String(init.body))).toEqual({ orientation: { op: "markNext", steps } });
   });
 
-  it("200: the server marked it, so the device week is untouched", async () => {
-    status = 200;
-    await recordStepEvent("check");
-    expect(orientationStore.get()).toEqual(STARTED);
+  it.each([
+    [200, "signed in, e.g. a server copy still null before Home's migration (F-53)"],
+    [401, "a guest"],
+    [404, "signed in with no profiles row"],
+    [500, "a server failure"]
+  ])("%i (%s): the device week is marked too", async (code) => {
+    status = code;
+    await recordStepEvent("idea_check");
+    expect(orientationStore.get()).toEqual({ ...STARTED, done: ["4"] });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("401 (a guest): the device marks step 2, and the next check marks step 3", async () => {
-    status = 401;
+  it("a started, shown device week gets step 2 on one check and step 3 on the next", async () => {
     await recordStepEvent("check");
     expect(orientationStore.get().done).toEqual(["2"]);
     await recordStepEvent("check");
@@ -92,28 +98,16 @@ describe("recordStepEvent (review A-84)", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it("404 (signed in, no profiles row): the device marks the step", async () => {
-    status = 404;
-    await recordStepEvent("journey_visit");
-    expect(orientationStore.get().done).toEqual(["7"]);
-  });
-
-  it("401 on a week that has not started: the device writes nothing (the store's guard)", async () => {
+  it("a device with no week stays empty (the store never starts one); the PATCH still goes", async () => {
     storage.clear();
-    status = 401;
     await recordStepEvent("clinician_list");
     expect(storage.getItem("pal.orient.v1")).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it.each([500, 400, 409])("%i: dropped, the device week is untouched", async (code) => {
-    status = code;
-    await recordStepEvent("idea_check");
-    expect(orientationStore.get()).toEqual(STARTED);
-  });
-
-  it("a request that never completes: dropped, and the call never throws", async () => {
+  it("a request that never completes: the device is still marked, and the call never rejects", async () => {
     fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
     await expect(recordStepEvent("numbers_link")).resolves.toBeUndefined();
-    expect(orientationStore.get()).toEqual(STARTED);
+    expect(orientationStore.get()).toEqual({ ...STARTED, done: ["1"] });
   });
 });

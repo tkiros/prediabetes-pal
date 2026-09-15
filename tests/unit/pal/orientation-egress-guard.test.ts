@@ -8,8 +8,9 @@ import { describe, expect, it } from "vitest";
  * code, not the server-side walk in orientation-store.test.ts. This pins
  * every client-side file that touches the note to never call `fetch(` or
  * `navigator.sendBeacon` — the two ways client code phones home — and never
- * to import the two modules that do (the PATCH helper and the analytics
- * forwarder, whose props reach a third party with no runtime check).
+ * to import the modules that do (the PATCH helper, the step-event sender
+ * built on it, and the analytics forwarder, whose props reach a third party
+ * with no runtime check).
  *
  * The reverse pin: the files that DO send requests never name the note.
  *
@@ -25,6 +26,8 @@ const BANNED: ReadonlyArray<[string, RegExp]> = [
   ["fetch(", /fetch\(/],
   ["navigator.sendBeacon", /navigator\.sendBeacon/],
   ["an import of remote-orientation", /from\s+["'][^"']*remote-orientation["']/],
+  // Review A-84: step 5's field gets a callback, never the sender itself.
+  ["an import of orientation-progress", /from\s+["'][^"']*orientation-progress["']/],
   ["an import of lib/client/analytics", /from\s+["'][^"']*analytics["']/]
 ];
 
@@ -59,7 +62,7 @@ const presence = (list: string) => (rel: string) => {
 describe("orientation device-only sources never call out (A-104)", () => {
   it.each(DEVICE_ONLY_SOURCES)("%s is present to scan", presence("DEVICE_ONLY_SOURCES"));
 
-  it.each(DEVICE_ONLY_SOURCES)("%s has no fetch(, no sendBeacon, and imports neither sender", (rel) => {
+  it.each(DEVICE_ONLY_SOURCES)("%s has no fetch(, no sendBeacon, and imports no sender", (rel) => {
     const source = read(rel);
     for (const [label, pattern] of BANNED) {
       expect(pattern.test(source), `${rel} contains ${label}`).toBe(false);

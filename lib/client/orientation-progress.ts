@@ -23,17 +23,21 @@ const STEPS: Record<StepEvent, OrientationStepId[]> = {
 
 /**
  * Fire-and-forget (`void recordStepEvent(...)`); never throws. With the
- * `orient` door shut it returns before any request. Otherwise the server
- * marks the step (PATCH markNext, merged in SQL). A 401 is a guest and a 404
- * is a signed-in user with no profiles row — a guest too (ruling F-31,
- * A-92) — so the device store marks it instead. Any other answer is dropped.
+ * `orient` door shut it returns before any request or device write.
+ * Otherwise it does both, whatever the server answers (ruling F-53):
+ * - the device week is marked (the store's own guard: started, not hidden,
+ *   and it never starts a week). A signed-in user whose server copy is still
+ *   null — /welcome sends a new account straight to /check, before Home has
+ *   migrated the device week — would otherwise lose the step at migration.
+ * - the server week is marked (PATCH markNext, merged in SQL). A guest's 401
+ *   or a missing profiles row's 404 simply leaves the device mark as the one.
  */
 export async function recordStepEvent(kind: StepEvent): Promise<void> {
   if (!guideDoorEnabled("orient")) return;
   try {
     const steps = STEPS[kind];
-    const status = await patchOrientation({ op: "markNext", steps });
-    if (status === 401 || status === 404) orientationStore.markNext(steps);
+    orientationStore.markNext(steps);
+    await patchOrientation({ op: "markNext", steps });
   } catch {
     // Nothing to undo: a missed mark leaves the Done toggle to do it.
   }
