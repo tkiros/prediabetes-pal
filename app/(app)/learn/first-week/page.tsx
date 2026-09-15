@@ -33,7 +33,9 @@ async function listProps(): Promise<OrientationListProps> {
   return {
     mode: "signed-in",
     initialState: stored.success ? stored.data : EMPTY_ORIENTATION,
-    timezone: profile.timezone
+    timezone: profile.timezone,
+    // Ruling F-42: same test as Home's `migrate` — the server copy is null.
+    migrate: profile.orientation == null
   };
 }
 
@@ -48,10 +50,13 @@ export default async function FirstWeekPage() {
   // query names profiles.orientation, which a database without migration
   // 0019 does not have.
   if (!guideDoorEnabled("orient")) notFound();
+  const list = await listProps();
 
   return (
     <div className="app-content--narrow">
-      <OrientationList {...await listProps()} />
+      {/* F-42: the key changes when a migration lands, so the refreshed page
+          remounts the list from the server's copy instead of its old state. */}
+      <OrientationList key={list.mode === "signed-in" && list.migrate ? "migrating" : "settled"} {...list} />
 
       <OrientationNote />
 

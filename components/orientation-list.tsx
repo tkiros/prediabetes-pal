@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 import { track } from "../lib/client/analytics";
 import { orientationStore } from "../lib/client/orientation-store";
-import { patchOrientation } from "../lib/client/remote-orientation";
+import { patchOrientation, syncOrientation } from "../lib/client/remote-orientation";
 import { useHydrated } from "../lib/client/use-hydrated";
 import { dayKeyInTimezone, dayKeyLocal, type DayKeyFn } from "../lib/coach/days";
 import {
@@ -24,10 +25,19 @@ import { IconCheck } from "./icons";
  * page decides the mode (review A-33, ruling F-31): a guest — or a signed-in
  * user with no profiles row — keeps the week on the device; a signed-in user
  * with a row writes it through PATCH /api/profile.
+ *
+ * Ruling F-41: "Hide this for now" takes the week off Home only; this page
+ * keeps the steps and offers "Show it again".
  */
 export type OrientationListProps =
   | { mode: "guest" }
-  | { mode: "signed-in"; initialState: OrientationState; timezone: string };
+  | {
+      mode: "signed-in";
+      initialState: OrientationState;
+      timezone: string;
+      /** The server copy is still null: move the device week over first (F-42). */
+      migrate: boolean;
+    };
 
 type Mode = OrientationListProps["mode"];
 
@@ -103,6 +113,26 @@ export async function tapHide(ctx: TapContext, hide: boolean): Promise<void> {
   ctx.update((state) => ({ ...state, dismissedAt: before }));
 }
 
+/**
+ * Ruling F-42: a signed-in page whose server copy is still null sends the
+ * device week over before any write of its own, or a Done tap here would
+ * make Home's later migration a 409 and lose the device's start. Once per
+ * mount (StrictMode runs mount effects twice), never a start (Home stamps
+ * it, F-24). The controls unlock when it settles; a landed write refreshes
+ * the page, which then renders the migrated copy and `migrate: false`.
+ */
+export async function migrateOnMount(
+  migrate: boolean,
+  sent: { current: boolean },
+  ui: { setSyncing: (syncing: boolean) => void; refresh: () => void }
+): Promise<void> {
+  if (!migrate || sent.current) return;
+  sent.current = true;
+  const migrated = await syncOrientation({ migrate: true, start: false }).catch(() => false);
+  ui.setSyncing(false);
+  if (migrated) ui.refresh();
+}
+
 /** Steps 5 and 6 point at this page: 5 becomes a jump to the note, 6 plain text. */
 function StepText({ step }: { step: OrientationStep }) {
   const href = step.href.replace(/^\/learn\/first-week/, "");
@@ -111,6 +141,13 @@ function StepText({ step }: { step: OrientationStep }) {
 
 export function OrientationList(props: OrientationListProps) {
   const hydrated = useHydrated();
+  const router = useRouter();
+  const migrate = props.mode === "signed-in" && props.migrate;
+  const [syncing, setSyncing] = useState(migrate);
+  const sent = useRef(false);
+  useEffect(() => {
+    void migrateOnMount(migrate, sent, { setSyncing, refresh: () => router.refresh() });
+  }, [migrate, router]);
   const [local, setLocal] = useState<OrientationState | null>(
     props.mode === "signed-in" ? props.initialState : null
   );
@@ -130,47 +167,51 @@ export function OrientationList(props: OrientationListProps) {
     { ...state, done: state.done.filter((id) => !tapped.includes(id)) },
     props.mode === "signed-in" ? dayKeyInTimezone(props.timezone) : dayKeyLocal
   );
-  const hidden = state.dismissedAt !== null;
+  const dismissed = state.dismissedAt !== null;
 
   return (
     <section className="surface-card hero-card">
       <h1 className="hero-eyebrow" data-testid="orientation-day">
         {view.eyebrow}
       </h1>
-      {hidden ? null : (
-        <ul className="orientation-steps" role="list">
-          {view.steps.map((step) => {
-            const done = state.done.includes(step.id);
-            return (
-              <li className="orientation-step" data-testid={`orientation-step-${step.id}`} key={step.id}>
-                <div>
-                  {step === view.today ? <p className="status-eyebrow">Today&apos;s step</p> : null}
-                  <StepText step={step} />
-                </div>
-                <button
-                  aria-label={`Done — ${step.text}`}
-                  aria-pressed={done}
-                  className="secondary-button orientation-done"
-                  onClick={() => {
-                    if (done) return;
-                    setTapped((ids) => [...ids, step.id]);
-                    void tapDone(ctx, step.id);
-                  }}
-                  type="button"
-                >
-                  {done ? <IconCheck size={16} /> : null}
-                  Done
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <ul className="orientation-steps" role="list">
+        {view.steps.map((step) => {
+          const done = state.done.includes(step.id);
+          return (
+            <li className="orientation-step" data-testid={`orientation-step-${step.id}`} key={step.id}>
+              <div>
+                {step === view.today ? <p className="status-eyebrow">Today&apos;s step</p> : null}
+                <StepText step={step} />
+              </div>
+              <button
+                aria-label={`Done — ${step.text}`}
+                aria-pressed={done}
+                className="secondary-button orientation-done"
+                disabled={syncing}
+                onClick={() => {
+                  if (done) return;
+                  setTapped((ids) => [...ids, step.id]);
+                  void tapDone(ctx, step.id);
+                }}
+                type="button"
+              >
+                {done ? <IconCheck size={16} /> : null}
+                Done
+              </button>
+            </li>
+          );
+        })}
+      </ul>
       <p className="field-hint" role="status">
         {failed ? SAVE_FAILED : ""}
       </p>
-      <button className="link-button-plain orientation-hide" onClick={() => void tapHide(ctx, !hidden)} type="button">
-        {hidden ? "Show it again" : "Hide this for now"}
+      <button
+        className="link-button-plain orientation-hide"
+        disabled={syncing}
+        onClick={() => void tapHide(ctx, !dismissed)}
+        type="button"
+      >
+        {dismissed ? "Show it again" : "Hide this for now"}
       </button>
     </section>
   );

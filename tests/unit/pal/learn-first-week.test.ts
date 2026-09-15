@@ -13,6 +13,12 @@ vi.mock("next/link", async () => {
   };
 });
 
+const router = vi.hoisted(() => ({ refresh: vi.fn() }));
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => router
+}));
+
 const t = vi.hoisted(() => ({
   hydrated: true,
   session: null as { userId: string; email: string } | null,
@@ -44,9 +50,11 @@ vi.mock("../../../lib/server/db", async (importOriginal) => ({
   getDb
 }));
 const patchOrientation = vi.hoisted(() => vi.fn(async (_op: unknown) => 200));
+const syncOrientation = vi.hoisted(() => vi.fn(async (_opts: unknown) => false));
 vi.mock("../../../lib/client/remote-orientation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../lib/client/remote-orientation")>()),
-  patchOrientation
+  patchOrientation,
+  syncOrientation
 }));
 const track = vi.hoisted(() => vi.fn());
 vi.mock("../../../lib/client/analytics", async (importOriginal) => ({
@@ -71,6 +79,7 @@ import { DashboardView, type DashboardData } from "../../../components/dashboard
 import { DisclaimerLine } from "../../../components/disclaimer-line";
 import { LearnLink, learnPage } from "../../../components/learn-link";
 import {
+  migrateOnMount,
   OrientationList,
   SAVE_FAILED,
   tapDone,
@@ -106,6 +115,9 @@ beforeEach(() => {
   getDb.mockClear();
   patchOrientation.mockReset();
   patchOrientation.mockResolvedValue(200);
+  syncOrientation.mockReset();
+  syncOrientation.mockResolvedValue(false);
+  router.refresh.mockClear();
   track.mockClear();
   vi.stubEnv("TZ", "America/New_York");
   vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "1");
@@ -128,11 +140,12 @@ describe("the page: door first, then the mode (rulings F-39, F-31)", () => {
     });
   }
 
-  const listProps = async () => {
+  const listElement = async () => {
     const lists = findAll(await FirstWeekPage(), OrientationList);
     expect(lists).toHaveLength(1);
-    return lists[0]!.props as OrientationListProps;
+    return lists[0]!;
   };
+  const listProps = async () => (await listElement()).props as OrientationListProps;
 
   it("not signed in ⇒ guest, and no query runs", async () => {
     expect(await listProps()).toEqual({ mode: "guest" });
@@ -143,20 +156,50 @@ describe("the page: door first, then the mode (rulings F-39, F-31)", () => {
     const stored = week({ done: ["1"], startedAt: daysAgo(2) });
     t.session = { userId: "user-1", email: "user@example.test" };
     t.profile = { timezone: "America/Chicago", orientation: stored };
-    expect(await listProps()).toEqual({ mode: "signed-in", initialState: stored, timezone: "America/Chicago" });
+    expect(await listProps()).toEqual({
+      mode: "signed-in",
+      initialState: stored,
+      timezone: "America/Chicago",
+      migrate: false
+    });
     expect(t.selects.map((shape) => Object.keys(shape))).toEqual([["timezone", "orientation"]]);
   });
 
-  it("signed in with an unreadable or null stored week ⇒ signed-in from the empty week (A-24)", async () => {
+  it("signed in with an unreadable stored week ⇒ signed-in from the empty week (A-24), no migration", async () => {
     t.session = { userId: "user-1", email: "user@example.test" };
-    for (const orientation of [{ done: ["9"], note: "x" }, "garbage", null]) {
+    for (const orientation of [{ done: ["9"], note: "x" }, "garbage"]) {
       t.profile = { timezone: "America/New_York", orientation };
       expect(await listProps()).toEqual({
         mode: "signed-in",
         initialState: EMPTY_ORIENTATION,
-        timezone: "America/New_York"
+        timezone: "America/New_York",
+        migrate: false
       });
     }
+  });
+
+  it("signed in with a null server copy ⇒ the list migrates the device week first (F-42)", async () => {
+    t.session = { userId: "user-1", email: "user@example.test" };
+    t.profile = { timezone: "America/New_York", orientation: null };
+    expect(await listProps()).toEqual({
+      mode: "signed-in",
+      initialState: EMPTY_ORIENTATION,
+      timezone: "America/New_York",
+      migrate: true
+    });
+  });
+
+  it("the list's key changes once the copy is no longer null, so the refreshed page remounts it from the server", async () => {
+    t.session = { userId: "user-1", email: "user@example.test" };
+    t.profile = { timezone: "America/New_York", orientation: null };
+    const before = (await listElement()).key;
+    t.profile = { timezone: "America/New_York", orientation: week({ done: ["1"] }) };
+    const after = (await listElement()).key;
+    expect(before).not.toBeNull();
+    expect(after).not.toBeNull();
+    expect(before).not.toBe(after);
+    t.session = null;
+    expect((await listElement()).key).toBe(after);
   });
 
   it("signed in with NO profiles row ⇒ guest (every PATCH would 404)", async () => {
@@ -200,8 +243,8 @@ describe("the page: door first, then the mode (rulings F-39, F-31)", () => {
 describe("the list: rendering", () => {
   const render = (props: OrientationListProps) =>
     decode(renderToStaticMarkup(createElement(OrientationList, props)));
-  const signedIn = (state: OrientationState) =>
-    render({ mode: "signed-in", initialState: state, timezone: "America/New_York" });
+  const signedIn = (state: OrientationState, migrate = false) =>
+    render({ mode: "signed-in", initialState: state, timezone: "America/New_York", migrate });
   const buttons = (html: string) => [...html.matchAll(/<button([^>]*)>(.*?)<\/button>/g)];
   const stepOrder = (html: string) => [...html.matchAll(/data-testid="orientation-step-(\d)"/g)].map((m) => m[1]);
 
@@ -252,12 +295,27 @@ describe("the list: rendering", () => {
     }
   });
 
-  it("dismissed: the steps are hidden, the eyebrow drops the day, and Show it again replaces Hide", () => {
-    const html = signedIn(week({ startedAt: daysAgo(1), dismissedAt: daysAgo(0) }));
+  it("dismissed (F-41): the steps still render, the eyebrow drops the day, and Show it again replaces Hide", () => {
+    const html = signedIn(week({ startedAt: daysAgo(1), dismissedAt: daysAgo(0), done: ["1"] }));
     expect(html).toContain(">Your first week</h1>");
-    expect(html).not.toContain('role="list"');
+    expect(html).toContain('role="list"');
+    expect(stepOrder(html)).toEqual(["1", "2", "3", "4", "5", "6", "7"]);
+    expect(html).not.toContain("Today's step");
+    expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
     expect(html).toContain(">Show it again</button>");
     expect(html).not.toContain("Hide this for now");
+  });
+
+  it("F-42: while a signed-in page migrates, every write control is disabled; otherwise none is", () => {
+    const syncing = buttons(signedIn(week(), true));
+    expect(syncing).toHaveLength(8);
+    for (const [, attrs] of syncing) expect(attrs).toContain('disabled=""');
+
+    for (const html of [signedIn(week()), render({ mode: "guest" })]) {
+      const controls = buttons(html);
+      expect(controls).toHaveLength(8);
+      for (const [, attrs] of controls) expect(attrs).not.toContain("disabled");
+    }
   });
 
   it("guest: the device week after hydration, the empty week before it (A-20)", () => {
@@ -394,6 +452,57 @@ describe("the list: Done is one way, and a failed save takes it back (rulings F-
     await tapHide(ui, false);
     expect(orientationStore.get().dismissedAt).toBeNull();
     expect(patchOrientation).not.toHaveBeenCalled();
+  });
+});
+
+describe("the list: a signed-in page migrates before it writes (ruling F-42)", () => {
+  const harness = () => {
+    const ui = {
+      syncing: true,
+      refreshes: 0,
+      setSyncing: (value: boolean) => void (ui.syncing = value),
+      refresh: () => void (ui.refreshes += 1)
+    };
+    return ui;
+  };
+
+  it("nothing runs without a null server copy (guest, or a signed-in copy that exists)", async () => {
+    const ui = harness();
+    await migrateOnMount(false, { current: false }, ui);
+    expect(syncOrientation).not.toHaveBeenCalled();
+    expect(ui.refreshes).toBe(0);
+  });
+
+  it("sends the migration once per mount, never a start, and unlocks when it settles", async () => {
+    let settle: (migrated: boolean) => void = () => {};
+    syncOrientation.mockReturnValueOnce(new Promise((resolve) => (settle = resolve)));
+    const ui = harness();
+    const sent = { current: false };
+    const first = migrateOnMount(true, sent, ui);
+    await migrateOnMount(true, sent, ui); // StrictMode's second mount effect
+    expect(syncOrientation).toHaveBeenCalledTimes(1);
+    expect(syncOrientation).toHaveBeenCalledWith({ migrate: true, start: false });
+    expect(ui.syncing).toBe(true); // still locked while the write is out
+    settle(false);
+    await first;
+    expect(ui.syncing).toBe(false);
+    expect(ui.refreshes).toBe(0); // nothing landed ⇒ no refresh
+  });
+
+  it("refreshes only when a migration write landed", async () => {
+    syncOrientation.mockResolvedValueOnce(true);
+    const ui = harness();
+    await migrateOnMount(true, { current: false }, ui);
+    expect(ui.syncing).toBe(false);
+    expect(ui.refreshes).toBe(1);
+  });
+
+  it("a sync that throws still unlocks the controls", async () => {
+    syncOrientation.mockRejectedValueOnce(new Error("boom"));
+    const ui = harness();
+    await migrateOnMount(true, { current: false }, ui);
+    expect(ui.syncing).toBe(false);
+    expect(ui.refreshes).toBe(0);
   });
 });
 
