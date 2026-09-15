@@ -177,8 +177,8 @@ product-as-subject banned verb, no fear-bank phrase.
 
 | Surface | Alarm colour | Imperative warnings | §8.5 verbs | Fear framing | Verdict |
 | --- | --- | --- | --- | --- | --- |
-| `app/page.tsx` (landing) | none | none | "Stay in control." (line 566) — user controls their own data, not the product acting on the body; "the control it describes" (dev comment) — n/a | none | pass |
-| `app/(app)/account/page.tsx` | `--danger` on `.danger-button`/`.pantry-row-delete`-style delete actions ("This can't be undone. Delete everything?") | imperative, but about account/data deletion, not a meal verdict | "Manage card & billing," "Manage or cancel in Google Play" — user manages billing, not product managing health | none | pass (destructive-action colour correctly scoped away from verdict tone) |
+| `app/page.tsx` (landing) | `--high-border` on `.landing-showpiece-dot`/`.landing-showpiece-answer[data-risk="HIGH"]` — the marketing-page example verdict dot, same category as the Signal row (a per-item risk indicator, not misapplied fear colour); `.danger-button`/`.pantry-row-delete` don't appear here | none | "Stay in control." (line 566) — user controls their own data, not the product acting on the body; "the control it describes" (dev comment) — n/a | none | pass |
+| `app/(app)/account/page.tsx` | `--danger` on `.danger-button` for account/health-data deletion ("This can't be undone. Delete everything?") — same destructive-action pattern as `.pantry-row-delete` in `pantry-confirm-list.tsx` | imperative, but about account/data deletion, not a meal verdict | "Manage card & billing," "Manage or cancel in Google Play" — user manages billing, not product managing health | none | pass (destructive-action colour correctly scoped away from verdict tone) |
 | `app/(app)/canceled/page.tsx` | none | none | none | none | pass — no risk-adjacent copy found |
 | `app/(app)/check/page.tsx` | none | none | none | none | pass |
 | `app/(app)/demo/page.tsx` | none | none | "lower impact" — adjectival qualitative descriptor, explicitly allowed under `result-qualitative-impact` | none | pass |
