@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { nextAction } from "../../../lib/coach/next-action";
+import { ORIENTATION_STEPS } from "../../../lib/coach/orientation";
 
 /**
  * Home's ONE next-action line (C7 plan §3): three deterministic branches,
@@ -43,6 +44,41 @@ describe("nextAction", () => {
     for (const action of all) {
       expect(action.text).not.toMatch(/miss|fail|streak|behind|should have/i);
       expect(action.text).not.toMatch(/%/);
+    }
+  });
+});
+
+describe("nextAction — the orientation week (PRD v1.1 §6 F-ORIENT, §7.4)", () => {
+  const note = ORIENTATION_STEPS[4]; // step 5, href /learn/first-week#note
+  const check = ORIENTATION_STEPS[1]; // step 2, href /check
+
+  it("the day's step becomes the one next-action line", () => {
+    expect(nextAction({ checkedToday: true, undoneActionToday: false, orientation: note })).toEqual({
+      text: `Today's step: ${note.text}`,
+      href: note.href
+    });
+    expect(nextAction({ checkedToday: false, undoneActionToday: false, orientation: note }).href).toBe(note.href);
+  });
+
+  it("a check-a-meal step before today's first check yields the classic branch — the PAGE then passes null so Home renders no line (Task 3.5), the hero IS the action (owner rule 2026-08-11)", () => {
+    expect(nextAction({ checkedToday: false, undoneActionToday: false, orientation: check })).toEqual({
+      text: "Check your next uncertain meal.",
+      href: "/check"
+    });
+    expect(nextAction({ checkedToday: true, undoneActionToday: false, orientation: check }).text).toBe(
+      `Today's step: ${check.text}`
+    );
+  });
+
+  it("null / absent orientation keeps the three classic branches", () => {
+    expect(nextAction({ checkedToday: true, undoneActionToday: false, orientation: null }).href).toBe("/journey");
+  });
+
+  it("never scolds: no step line mentions missing, failing, streaks, or a percentage", () => {
+    for (const step of ORIENTATION_STEPS) {
+      const line = nextAction({ checkedToday: true, undoneActionToday: false, orientation: step });
+      expect(line.text).not.toMatch(/miss|fail|streak|behind|should have/i);
+      expect(line.text).not.toMatch(/%/);
     }
   });
 });
