@@ -500,6 +500,34 @@ describe("Home with the orient door open: the day eyebrow and the day's step (Ta
     expect(dayOf(old)).toBeNull();
   });
 
+  it("signed-in: the sync is mounted only while there is something to send; a migrated row turns `migrate` off, so a refresh cannot loop (F-34)", async () => {
+    const { OrientationSync } = await import("../../../components/orientation-sync");
+    const syncProps = async (seed: Seed) => {
+      vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "1");
+      seedServer(seed);
+      const { default: HomePage } = await import("../../../app/(app)/home/page");
+      const [sync] = (await HomePage()).props.children as [
+        { type: unknown; props: Record<string, unknown> } | null,
+        unknown
+      ];
+      if (sync) expect(sync.type).toBe(OrientationSync);
+      return sync?.props ?? null;
+    };
+    // Before: the server copy is null.
+    expect(await syncProps({ onboardedDaysAgo: 2 })).toEqual({ migrate: true, start: true });
+    expect(await syncProps({ onboardedDaysAgo: 30 })).toEqual({ migrate: true, start: false });
+    // After a migration write the copy is non-null: the refreshed page drops `migrate`.
+    expect(await syncProps({ onboardedDaysAgo: 2, week: { startedDaysAgo: 3, done: ["1"] } })).toBeNull();
+    expect(await syncProps({ onboardedDaysAgo: 30, week: { done: ["1"] } })).toBeNull();
+    // A replayed row with no start yet only asks for the start — which can never refresh.
+    expect(await syncProps({ onboardedDaysAgo: 2, week: { done: ["1"] } })).toEqual({ migrate: false, start: true });
+    // Door shut: never mounted.
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "");
+    seedServer({ onboardedDaysAgo: 2 });
+    const { default: HomePage } = await import("../../../app/(app)/home/page");
+    expect((await HomePage()).props.children[0]).toBeNull();
+  });
+
   it("signed-in: no profiles row ⇒ no week, however the device looks (A-92)", async () => {
     storage.setItem("pal.orient.v1", JSON.stringify(orientationOf({ startedDaysAgo: 1 })));
     vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "1");
