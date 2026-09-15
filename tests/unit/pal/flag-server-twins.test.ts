@@ -164,8 +164,10 @@ describe("production door guard — checkProductionDoor (Task 1.11)", () => {
     ]);
     expect(SURFACE_ROWS.source).toEqual(["result-source-lead"]);
     expect(SURFACE_ROWS["ideas-full"]).toEqual(["guide-ideas-see-all"]);
-    // A-83 (the sign-in step line) shipped; A-84 (recordStepEvent) hasn't —
-    // this row is the A-84 flip blocker named in the final review (I2).
+    // A-83 (the sign-in step line) shipped and the guest dashboard renders
+    // this row; A-84 (recordStepEvent) shipped too, so it no longer blocks
+    // the flip (final review I2). The id stays listed because the surface
+    // renders it.
     expect(SURFACE_ROWS.orient).toContain("orientation-signin-step");
     expect(SURFACE_REQUIRES).toEqual({
       home: ["ideas", "ideas-full"],

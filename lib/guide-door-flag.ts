@@ -83,10 +83,10 @@ export const SURFACE_ROWS: Record<GuideSurface, readonly string[]> = {
     "orientation-day-eyebrow",
     "orientation-controls",
     "orientation-note-hint",
-    // A-83 shipped: the guest dashboard now renders this row (an
-    // expired-taster guest's sign-in line, owner default 2026-09-14). Stays
-    // listed until A-84 (recordStepEvent) also ships — without it, Home
-    // re-asks for a check on days 2 and 3 after one (final review I2).
+    // A-83 shipped: the guest dashboard renders this row (an expired-taster
+    // guest's sign-in line, owner default 2026-09-14). A-84 (recordStepEvent)
+    // has shipped too, so it no longer blocks the flip. The id stays listed
+    // because the surface renders it.
     "orientation-signin-step",
     "orientation-save-failed",
     "learn-first-week-intro",
