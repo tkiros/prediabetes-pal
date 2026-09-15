@@ -85,9 +85,24 @@ test("a new user walks welcome→segment→attribution→a1c→expectations into
     /not medical advice/i
   );
   await expectNoSeriousViolations(page);
-  // Expectations is the final step — completing the tour lands on the check
-  // page, where the guided first-check chips wait in the empty state.
-  await page.getByRole("button", { name: "Check my first meal" }).click();
+  // Expectations is the final step. Flag off, completing the tour lands on
+  // the check page, where the guided first-check chips wait in the empty
+  // state. With the orient surface on (Task 3.7) it starts the first week and
+  // lands on Home's escape hatch (A-05, A-28); the walk then goes on to the
+  // check page to keep its first-check assertions.
+  const firstWeekLine = page.getByText("Your first week starts on Home: seven small steps, one a day.");
+  if (await doorSurfaceOn("orient")) {
+    await expect(firstWeekLine).toBeVisible();
+    await page.getByRole("button", { name: "Start your first week" }).click();
+    await expect(page).toHaveURL(/\/home\?stay=1$/);
+    await expect(page.getByTestId("orientation-day")).toHaveText("Day 1 of your first week");
+    const week = await page.evaluate(() => window.localStorage.getItem("pal.orient.v1"));
+    expect(JSON.parse(week ?? "{}")).toMatchObject({ done: [], dismissedAt: null, startedAt: expect.any(String) });
+    await page.goto("/check");
+  } else {
+    await expect(firstWeekLine).toHaveCount(0);
+    await page.getByRole("button", { name: "Check my first meal" }).click();
+  }
 
   await expect(page).toHaveURL(/\/check$/);
   await expect(page.getByTestId("first-check-classics")).toBeVisible();
