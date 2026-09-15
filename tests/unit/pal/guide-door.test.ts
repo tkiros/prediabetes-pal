@@ -354,6 +354,9 @@ describe("Home with the orient door shut stays byte-for-byte (Task 3.5)", () => 
   beforeEach(() => {
     storage.clear();
     home.selects = [];
+    // The guest dates by the device clock's zone; pin it, or a far-east box
+    // renders another date and someone "fixes" the snapshot with -u.
+    vi.stubEnv("TZ", "America/New_York");
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(NOW);
   });
@@ -386,6 +389,9 @@ describe("Home with the orient door open: the day eyebrow and the day's step (Ta
   beforeEach(() => {
     storage.clear();
     home.selects = [];
+    // The guest dates by the device clock's zone; pin it, or a far-east box
+    // renders another date and someone "fixes" the snapshot with -u.
+    vi.stubEnv("TZ", "America/New_York");
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(NOW);
   });
