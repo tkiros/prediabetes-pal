@@ -58,7 +58,11 @@ function weekView(state: OrientationState, dayKey: DayKeyFn) {
 
 type SavedOp = { op: "markDone"; step: OrientationStepId } | { op: "dismiss" } | { op: "restore" };
 
-/** One write; true once it landed. The device never refuses a guest's write. */
+/**
+ * One write; true once it landed. A guest's write is always reported as
+ * landed: the store swallows a refused device write (its documented
+ * behaviour), so a guest with blocked storage gets no failure line.
+ */
 async function save(mode: Mode, op: SavedOp): Promise<boolean> {
   if (mode === "signed-in") {
     const status = await patchOrientation(op);
