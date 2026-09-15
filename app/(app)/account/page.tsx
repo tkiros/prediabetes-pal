@@ -34,6 +34,27 @@ function formatHour(hour: number): string {
   return hour < 12 ? `${hour}:00 am` : `${hour - 12}:00 pm`;
 }
 
+// Review A-104: none of these three has a server copy (pal.orient.v1 and
+// pal.orient.note.v1 are guest-only per lib/client/orientation-store.ts;
+// pal.ask.v1 is guest-only per the not-yet-built lib/client/ask-store.ts,
+// Task 5.3), so account delete and consent withdrawal must drop them here or
+// the clinician-questions note and orientation state outlive the account.
+export const DEVICE_ONLY_KEYS = [
+  "pal.orient.v1",
+  "pal.orient.note.v1",
+  "pal.ask.v1"
+] as const;
+
+export function clearDeviceOnlyKeys(): void {
+  for (const key of DEVICE_ONLY_KEYS) {
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // ignore
+    }
+  }
+}
+
 export default function AccountPage() {
   const [state, setState] = useState<
     "loading" | "signed_out" | "unavailable" | "ready"
@@ -366,6 +387,7 @@ export default function AccountPage() {
       // Local copies go too — deletion means deletion.
       historyStore.clear();
       profileStore.clear();
+      clearDeviceOnlyKeys();
       track({ name: "deletion_completed" });
       window.location.assign("/?deleted=1");
     } catch {
@@ -387,6 +409,7 @@ export default function AccountPage() {
       }
       historyStore.clear();
       profileStore.clear();
+      clearDeviceOnlyKeys();
       window.location.assign("/welcome?health-data-deleted=1");
     } catch {
       setError("Health-data deletion didn't complete — please try again.");
