@@ -82,7 +82,8 @@ export const SURFACE_ROWS: Record<GuideSurface, readonly string[]> = {
     "learn-first-week-intro",
     "journey-where-you-are",
     "onboarding-final-button",
-    "onboarding-first-week-line"
+    "onboarding-first-week-line",
+    "orientation-step-prefix"
   ],
   home: [
     "home-quick-row",
