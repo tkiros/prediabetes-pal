@@ -36,6 +36,18 @@
   --icon: 20px;
 }
 
+/* F-CALM (a), Task 2.3: `Hold off` must read as pause, not alarm — its
+   --high-* family is byte-identical to --danger today. Neutral-ink override,
+   dormant until app/layout.tsx sets data-calm (guideDoorEnabled("calm")).
+   --danger itself is untouched; it stays reserved for destructive actions.
+   DESIGN.md §3 records the values. */
+:root[data-calm] {
+  --high-border: #334155;
+  --high-bg: #f1f5f9;
+  --high-text: #1e293b;
+  --high-badge: #e2e8f0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

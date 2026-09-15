@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -123,5 +125,51 @@ describe("check-empty-ideas: ideas on /check's first-run empty state (Task 1.14 
     expect(submitIndex).toBeGreaterThan(-1);
     expect(ideasIndex).toBeGreaterThan(submitIndex);
     expect(classicsIndex).toBeGreaterThan(ideasIndex);
+  });
+});
+
+describe("F-CALM: `Hold off` never renders as danger red (Task 2.3)", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("globals.css declares --high-border exactly twice — the default and the [data-calm] override", () => {
+    const src = read("app/globals.css");
+    expect(src.match(/--high-border:/g)).toHaveLength(2);
+    // The override is the neutral-ink family, not another red.
+    expect(src).toMatch(/:root\[data-calm\]\s*\{[^}]*--high-border:\s*#334155/s);
+    expect(src).toMatch(/:root\[data-calm\]\s*\{[^}]*--high-bg:\s*#f1f5f9/s);
+    expect(src).toMatch(/:root\[data-calm\]\s*\{[^}]*--high-text:\s*#1e293b/s);
+    expect(src).toMatch(/:root\[data-calm\]\s*\{[^}]*--high-badge:\s*#e2e8f0/s);
+    // --danger stays reserved for destructive actions — untouched.
+    expect(src.match(/--danger:\s*#b91c1c/g)).toHaveLength(1);
+  });
+
+  async function renderHtmlTag(flag?: string): Promise<string> {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", flag ?? "");
+    const { default: RootLayout } = await import("../../../app/layout");
+    const props: Parameters<typeof RootLayout>[0] = {
+      children: createElement("div", null, "x"),
+    };
+    const html = renderToStaticMarkup(createElement(RootLayout, props));
+    return html.slice(0, html.indexOf(">") + 1);
+  }
+
+  it("flag off: <html> carries no data-calm attribute at all (not a literal \"false\")", async () => {
+    const openTag = await renderHtmlTag();
+    expect(openTag).not.toContain("data-calm");
+  });
+
+  it("flag on (calm surface named): <html data-calm=\"\"> opens the [data-calm] override", async () => {
+    const openTag = await renderHtmlTag("calm");
+    expect(openTag).toContain('data-calm=""');
+  });
+
+  it("`1` (every surface) also sets data-calm", async () => {
+    const openTag = await renderHtmlTag("1");
+    expect(openTag).toContain('data-calm=""');
+  });
+
+  it("a surface list that omits calm leaves data-calm absent", async () => {
+    const openTag = await renderHtmlTag("ideas,orient");
+    expect(openTag).not.toContain("data-calm");
   });
 });
