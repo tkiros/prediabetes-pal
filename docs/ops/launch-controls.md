@@ -640,7 +640,22 @@ computable — it is not waiting on a later PR.
 ### 13.6 The A-107 prune trigger
 
 A production trigger, not a dashboard read: any `idea_check_completed { risk ≠
-"SAFE" }` in Umami is a prune event. That idea line comes out of
-`GUIDE_IDEA_BANK` (`lib/pal/guide-ideas.ts`) in the next PR — the live
-labelling eval (Task 4.1) is the pre-launch gate for the same failure mode;
-this is the production-traffic backstop for whatever the eval's sample missed.
+"SAFE" }` in Umami says the bank still holds a line the pre-launch labelling
+eval (Task 4.1) missed. That eval is the gate for this exact failure mode;
+this trigger is the production-traffic backstop for whatever its sample did
+not catch.
+
+**The event names no line, and never will.** `idea_check_completed` carries
+only `{ risk }` — no idea id, no text, no daypart (`lib/client/analytics.ts`).
+That is deliberate: §9.1 promises nothing here links an analytics row to a
+meal, and the idea props that do exist (`ideas_shown`, `idea_tapped`) are
+closed enums of daypart and slot for the same reason. So a non-SAFE event
+proves a bad line exists and cannot say which one. Adding a prop that could
+say is an analytics-surface decision taken against that promise — not
+something to be read off the dashboard, and not a step in this runbook.
+
+**The response, therefore, is a re-run, not a lookup:** run
+`npm run eval:pal:ideas` over the whole bank and prune from `GUIDE_IDEA_BANK`
+(`lib/pal/guide-ideas.ts`) every line the eval does not label SAFE at all
+three bands, in the next PR. The eval is what can name the line; the
+production event is only what tells you to run it again.

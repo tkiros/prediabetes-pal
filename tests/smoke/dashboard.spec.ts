@@ -208,20 +208,25 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
 
   // Review A-72 / DESIGN.md §8: the rows wrap differently at each width and
   // each daypart's lines differ in length, so the fold is pinned for every
-  // width × clock, on four rotation pages each. `pal.ideas.rotation` is
+  // width × clock, on five rotation pages each. `pal.ideas.rotation` is
   // seeded before the load and the block advances it once on mount, so seed s
-  // shows ideasFor(daypart, s + 1): seed 0 is a fresh guest's first page,
-  // seed 1 the second load, seed 5 the page holding each daypart's longest
-  // lines, seed 7 the page that completes the set — together the four pages
-  // hold every line of an eight-line bank, so the two-line check below sees
-  // every idea wherever three rows show (375 and up). Explicit viewport sizes
-  // keep this project-agnostic, like the rest of this file.
+  // shows ideasFor(daypart, s + 1) — three consecutive lines of an eight-line
+  // bank starting at index 3(s + 1) mod 8. Seeds 0, 1, 3, 5, 7 therefore
+  // start at 3, 6, 4, 2, 0:
+  //   • where three rows render (375 and up) the five pages hold {3,4,5}
+  //     {6,7,0} {4,5,6} {2,3,4} {0,1,2} — every line of the bank;
+  //   • at 360, where only the first two rows render, they hold {3,4} {6,7}
+  //     {4,5} {2,3} {0,1} — also every line.
+  // Seed 3 earns its place on the second list alone: without it index 5 is
+  // never wrap-measured at the narrowest width, which is the width where a
+  // line is likeliest to wrap past two lines. Explicit viewport sizes keep
+  // this project-agnostic, like the rest of this file.
   const FOLD_CLOCKS: ReadonlyArray<{ time: string; daypart: Daypart }> = [
     { time: "2026-09-14T08:00:00", daypart: "breakfast" },
     { time: "2026-09-14T13:00:00", daypart: "lunch" },
     { time: "2026-09-14T19:00:00", daypart: "dinner" }
   ];
-  const ROTATION_SEEDS = [0, 1, 5, 7] as const;
+  const ROTATION_SEEDS = [0, 1, 3, 5, 7] as const;
 
   for (const width of [360, 375, 430]) {
     test(`fold at ${width}×667: the check CTA clears the tab bar at every daypart and rotation page`, async ({

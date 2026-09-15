@@ -20,6 +20,8 @@ Every code claim in v1.0 was checked against the repository at commit `76eab01` 
 | — | F-ASK stays (owner ruling 2026-09-13); a provisional tour-completion floor is named | §7.5 |
 | — | Build order after the test: the "ideas are chips" flagged prototype first, the rest of Tier 1 when its numbers earn it | §9 Step 1 |
 | — | **Amended 2026-09-14 (owner).** The F-ASK floor is read from a per-screen tour funnel event (`onboarding_step`, a closed enum of screen ids), not from completion over starts. The event ships with the prototype so the six-screen tour is measured first and the floor has a baseline. The fallback fires only when the drop sits on the two new screens. The earlier sentence "nothing new is instrumented for it" is withdrawn | §7.5, §9 Step 1, §9.1 |
+| — | **Amended 2026-09-14 (review A-95).** Kill line 2 is read as **tapped**, not opened: `idea_tapped` sessions ÷ sessions in which an ideas block rendered (`ideas_shown`), per `surface`, < 25% after four weeks. The impression form cannot discriminate once the block also renders on `/check` | §9.2 |
+| — | **Amended 2026-09-14 (review A-93).** The Home hero slot renders three ideas from 375px up and two below 375px; the §7.6 wireframe's "three ideas" is the 375-and-up case | §7.6 |
 
 ---
 
@@ -422,6 +424,8 @@ Hello, [name] · Day 3 of your first week
 ── Home · My meals · Check · My journey · Account ──
 ```
 
+**Amended 2026-09-14 (review A-93, applied in Task 1.8's fold fix).** The hero slot holds **three ideas from 375px up and two below 375px**: `app/globals.css`'s `@media (max-width: 374px)` hides the third row so the block plus the check CTA still clear the fold at 360×667. The diagram's "hero slot: three ideas" is the 375-and-up case; `tests/smoke/dashboard.spec.ts` pins the visible row count at each width. Nothing else in the diagram changes.
+
 **Why this is clearer than the tile grid for this audience.** The reference works for a bank because every tile is an equal, known errand. Here the research says the errands are not equal: ideas are asked for four times more often than a ruling, and the diagnosis-week need is orientation. A grid says "everything is here"; the wireframe says "start here".
 
 ---
@@ -495,7 +499,7 @@ Nothing here measures A1C, glucose, weight, or any health outcome, and nothing w
 ### 9.2 Kill criteria
 
 - Concierge: fewer than 3 of 5 second questions (the feasibility floor) → do not build Tier 1; return to the four-audience report's decision list. Passing the floor does not by itself greenlight anything; the number-versus-food count chooses the door (§9 Step 0).
-- After launch: if ideas are opened in fewer than a quarter of sessions after four weeks (**[A]**, a line chosen here without a baseline), the front door reverts to the check and this PRD is marked as tested and closed.
+- After launch: **Amended 2026-09-14 (review A-95).** Read as **tapped**, not opened — if `idea_tapped` sessions are fewer than a quarter of the sessions in which an ideas block rendered (`ideas_shown` is the denominator), computed per `surface`, after four weeks (**[A]**, a line chosen here without a baseline), the front door reverts to the check and this PRD is marked as tested and closed. The original impression form ("opened") is withdrawn: once the block also renders on `/check`, it reads ~100% of those sessions by construction and cannot tell a working door from a broken one. Measurement, sample floor and the owner's ruling step: `docs/ops/launch-controls.md` §13.1.
 
 ---
 

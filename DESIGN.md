@@ -235,7 +235,9 @@ name.** The old absolute contradicted §9, where the verdict icon inside a week-
   is no longer the *first* interactive element — it is still the one accent-filled action and it still sits above the
   fold at 375×667 (`tests/smoke/dashboard.spec.ts` pins the CTA's bottom edge above the tab bar at 360/375/430 and three
   clocks; the ideas list is measured, not reserved — `docs/superpowers/plans/2026-09-13-guide-redesign.md` §3's fold
-  budget). Flag off (`NEXT_PUBLIC_GUIDE_DOOR` unset)
+  budget). Below 375px the block renders **two** idea rows, three from 375 up (A-93's mechanism, applied in Task 1.8's
+  fold fix): `@media (max-width: 374px)` hides the third row so the block plus the CTA still clear the fold at 360, and
+  the smoke spec pins the visible row count at each width. Flag off (`NEXT_PUBLIC_GUIDE_DOOR` unset)
   restores the previous ordering byte-for-byte. **Day-0 empty state is the default design, not a fallback:** one CTA plus
   the Today card's warmth, no fake data, no guilt copy.
 
