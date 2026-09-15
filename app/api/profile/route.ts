@@ -56,7 +56,11 @@ export function createProfileRouteHandlers(deps: ProfileRouteDeps = {}) {
           nudgeCadence: schema.profiles.nudgeCadence,
           nudgeQuietStart: schema.profiles.nudgeQuietStart,
           nudgeQuietEnd: schema.profiles.nudgeQuietEnd,
-          orientation: schema.profiles.orientation
+          // Ruling F-18 (revised): flag off, the response carries no
+          // orientation key at all and the query never names the column.
+          ...(guideDoorEnabled("orient")
+            ? { orientation: schema.profiles.orientation }
+            : {})
         })
         .from(schema.profiles)
         .where(eq(schema.profiles.userId, session.userId));

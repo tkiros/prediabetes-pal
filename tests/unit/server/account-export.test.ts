@@ -1,5 +1,5 @@
 import { getTableColumns, getTableName } from "drizzle-orm";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { createAccountExportHandler } from "../../../app/api/account/export/route";
 import { encryptField } from "../../../lib/server/crypto";
@@ -126,6 +126,10 @@ afterAll(async () => {
   await testDb.close();
 });
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe("GET /api/account/export (PR-5)", () => {
   it("401s signed out", async () => {
     const GET = createAccountExportHandler({
@@ -136,6 +140,7 @@ describe("GET /api/account/export (PR-5)", () => {
   });
 
   it("bundles exact A1C, weekly reflections, and pantry data", async () => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "orient");
     const GET = createAccountExportHandler({
       db: () => testDb.db,
       getSession: async () => ({ userId, email: "export@test.dev" }),
@@ -163,6 +168,29 @@ describe("GET /api/account/export (PR-5)", () => {
     expect(body.pantryOrders[0].a1c).toBe("6.2");
     expect(body.pantryOrders[0].notes).toBe("mostly cooking at home");
     expect(body.pantryOrders[0].report).toBe("Report body");
+  });
+
+  it.each([
+    ["unset", ""],
+    ["a list without orient", "ideas,calm"]
+  ])("omits the orientation key entirely while the orient surface is off (%s)", async (_label, flag) => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", flag);
+    const GET = createAccountExportHandler({
+      db: () => testDb.db,
+      getSession: async () => ({ userId, email: "export@test.dev" }),
+      now: () => NOW
+    });
+
+    const body = (await (await GET()).json()) as { profile: Record<string, unknown> };
+
+    expect(body.profile).not.toHaveProperty("orientation");
+    expect(Object.keys(body.profile)).toEqual([
+      "a1c",
+      "a1cBand",
+      "timezone",
+      "nudgeOptIn",
+      "consentedAt"
+    ]);
   });
 
   it("includes support cases — user-authored personal data (P0.4)", async () => {

@@ -315,6 +315,32 @@ describe("orientation (F-ORIENT, signed-in state in profiles.orientation)", () =
   });
 
   it.each([
+    ["unset", ""],
+    ["a list without orient", "ideas,calm"]
+  ])("GET omits the orientation key entirely while the orient surface is off (%s)", async (_label, flag) => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", flag);
+    await seedProfile();
+    await testDb.db
+      .update(schema.profiles)
+      .set({ orientation: { done: ["1"], dismissedAt: null, startedAt: null } })
+      .where(eq(schema.profiles.userId, userId));
+
+    const body = await (await handlersAs(userId).GET()).json();
+
+    expect(body).not.toHaveProperty("orientation");
+    expect(Object.keys(body)).toEqual([
+      "hasProfile",
+      "a1cBand",
+      "timezone",
+      "nudgeOptIn",
+      "nudgeHour",
+      "nudgeCadence",
+      "nudgeQuietStart",
+      "nudgeQuietEnd"
+    ]);
+  });
+
+  it.each([
     ["an unknown step in a set", { op: "set", state: { done: ["9"], dismissedAt: null, startedAt: null } }],
     ["an unknown step in markDone", { op: "markDone", step: "9" }],
     ["a bare partial state (no op)", { done: ["9"] }],
