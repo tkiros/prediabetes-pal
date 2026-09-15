@@ -17,6 +17,8 @@ import {
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
+import type { OrientationState } from "../../coach/orientation";
+
 /**
  * Plan §3.3. Exact A1C and food text are stored ONLY as AES-256-GCM
  * ciphertext (lib/server/crypto.ts). Coarse, query-needed fields (risk,
@@ -105,7 +107,11 @@ export const profiles = pgTable("profiles", {
   nudgeQuietStart: smallint("nudge_quiet_start"),
   nudgeQuietEnd: smallint("nudge_quiet_end"),
   onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
-  consentedAt: timestamp("consented_at", { withTimezone: true }).notNull()
+  consentedAt: timestamp("consented_at", { withTimezone: true }).notNull(),
+  // F-ORIENT "Your first week" (PRD v1.1 §6): done step ids + dismiss/start
+  // stamps, the signed-in twin of the guest pal.orient.v1 key. Null until the
+  // first write. Written only through PATCH /api/profile ops, merged in SQL.
+  orientation: jsonb("orientation").$type<OrientationState>()
 }, (table) => [
   check(
     "profiles_nudge_cadence_check",

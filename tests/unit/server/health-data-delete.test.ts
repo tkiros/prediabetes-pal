@@ -37,7 +37,14 @@ describe("DELETE /api/account/health-data", () => {
       userId: user.id,
       a1cCiphertext: encryptField("6.1"),
       a1cBand: "prediabetes_60_62",
-      consentedAt: new Date()
+      consentedAt: new Date(),
+      // F-ORIENT: orientation lives on the profiles row, so the row delete
+      // below is its whole erase path — no separate erase code.
+      orientation: {
+        done: ["1", "2"],
+        dismissedAt: null,
+        startedAt: "2026-07-01T08:00:00.000Z"
+      }
     });
     const [check] = await testDb.db
       .insert(schema.checks)
@@ -108,6 +115,10 @@ describe("DELETE /api/account/health-data", () => {
       );
       expect((result.rows[0] as { n: number }).n).toBe(0);
     }
+    const orientationLeft = await testDb.raw.query(
+      `SELECT count(*)::int AS n FROM profiles WHERE user_id = '${user.id}' AND orientation IS NOT NULL`
+    );
+    expect((orientationLeft.rows[0] as { n: number }).n).toBe(0);
   });
 
   it("erases learning journeys and weekly reflections on withdrawal (E2/E5)", async () => {

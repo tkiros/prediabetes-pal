@@ -44,6 +44,17 @@ describe("database schema constraints", () => {
     }
   });
 
+  it("adds profiles.orientation as a nullable jsonb column (F-ORIENT)", async () => {
+    const result = await testDb.raw.query<{ data_type: string; is_nullable: string; column_default: string | null }>(
+      `SELECT data_type, is_nullable, column_default FROM information_schema.columns
+       WHERE table_schema='public' AND table_name='profiles' AND column_name='orientation'`
+    );
+
+    expect(result.rows).toEqual([
+      { data_type: "jsonb", is_nullable: "YES", column_default: null }
+    ]);
+  });
+
   it("rejects an invalid risk class (CHECK constraint)", async () => {
     const user = await insertUser("risk@test.dev");
 

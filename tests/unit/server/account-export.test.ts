@@ -32,7 +32,8 @@ beforeAll(async () => {
     a1cCiphertext: encryptField("6.1"),
     a1cBand: "prediabetes_60_62",
     timezone: "UTC",
-    consentedAt: NOW
+    consentedAt: NOW,
+    orientation: { done: ["1"], dismissedAt: null, startedAt: "2026-07-20T08:00:00.000Z" }
   });
   await testDb.db.insert(schema.weeklyReflections).values({
     userId,
@@ -146,12 +147,18 @@ describe("GET /api/account/export (PR-5)", () => {
     expect(res.headers.get("content-disposition")).toContain("attachment");
 
     const body = (await res.json()) as {
-      profile: { a1c: string; a1cBand: string };
+      profile: { a1c: string; a1cBand: string; orientation: unknown };
       weeklyReflections: Array<{ artifact: string }>;
       pantryOrders: Array<{ a1c: string | null; notes: string | null; report: string | null }>;
     };
     expect(body.profile.a1c).toBe("6.1");
     expect(body.profile.a1cBand).toBe("prediabetes_60_62");
+    // F-ORIENT: the signed-in orientation state is the user's own data.
+    expect(body.profile.orientation).toEqual({
+      done: ["1"],
+      dismissedAt: null,
+      startedAt: "2026-07-20T08:00:00.000Z"
+    });
     expect(body.weeklyReflections[0].artifact).toContain("steady week");
     expect(body.pantryOrders[0].a1c).toBe("6.2");
     expect(body.pantryOrders[0].notes).toBe("mostly cooking at home");

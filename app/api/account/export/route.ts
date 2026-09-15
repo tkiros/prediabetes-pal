@@ -125,7 +125,8 @@ export function createAccountExportHandler(deps: Deps = {}) {
             a1cBand: profile.a1cBand,
             timezone: profile.timezone,
             nudgeOptIn: profile.nudgeOptIn,
-            consentedAt: profile.consentedAt
+            consentedAt: profile.consentedAt,
+            orientation: profile.orientation
           }
         : null,
       weeklyReflections: reflections.map((row) => ({
