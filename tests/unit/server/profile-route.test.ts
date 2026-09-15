@@ -358,6 +358,44 @@ describe("orientation (F-ORIENT, signed-in state in profiles.orientation)", () =
     expect(await storedOrientation()).toBeNull();
   });
 
+  // Review fix round 1: z.iso.datetime() does not bound fractional digits, so
+  // a megabyte of zeros validated and landed in the column.
+  const PAST = "2026-09-01T08:00:00";
+  it.each([
+    ["startedAt", "31 characters", `${PAST}.1234567890Z`],
+    ["dismissedAt", "31 characters", `${PAST}.1234567890Z`],
+    ["startedAt", "a 1 MB fraction", `${PAST}.${"0".repeat(1_000_000)}Z`],
+    ["dismissedAt", "a 1 MB fraction", `${PAST}.${"0".repeat(1_000_000)}Z`]
+  ])("400s a set whose %s is %s and writes nothing", async (field, _label, stamp) => {
+    await seedProfile();
+
+    const response = await patchOrientation({
+      op: "set",
+      state: { done: [], dismissedAt: null, startedAt: null, [field]: stamp }
+    });
+
+    expect(response.status).toBe(400);
+    expect(await storedOrientation()).toBeNull();
+  });
+
+  it("accepts 30-character stamps (the length bound's edge)", async () => {
+    await seedProfile();
+    const stamp = `${PAST}.123456789Z`;
+    expect(stamp).toHaveLength(30);
+
+    const response = await patchOrientation({
+      op: "set",
+      state: { done: [], dismissedAt: stamp, startedAt: stamp }
+    });
+
+    expect(response.status).toBe(200);
+    expect(await storedOrientation()).toEqual({
+      done: [],
+      dismissedAt: stamp,
+      startedAt: stamp
+    });
+  });
+
   it("accepts a startedAt inside the 5-minute clock skew", async () => {
     await seedProfile();
     const startedAt = new Date(Date.now() + 60 * 1000).toISOString();
@@ -439,6 +477,8 @@ describe("orientation (F-ORIENT, signed-in state in profiles.orientation)", () =
 
     expect(response.status).toBe(200);
     const stored = OrientationStateSchema.parse(await storedOrientation());
+    // The toISOString() shape — well inside the 30-character `set` bound.
+    expect(stored.startedAt).toHaveLength(24);
     const stamp = Date.parse(stored.startedAt ?? "");
     expect(stamp).toBeGreaterThanOrEqual(before - 60 * 1000);
     expect(stamp).toBeLessThanOrEqual(Date.now() + 60 * 1000);

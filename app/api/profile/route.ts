@@ -145,11 +145,18 @@ export function createProfileRouteHandlers(deps: ProfileRouteDeps = {}) {
 }
 
 // Review A-103: a `set` crosses the trust boundary from an untrusted body into
-// the jsonb column, so it is held to more than the stored shape — unique ids
-// and a start no later than now plus five minutes of clock skew.
+// the jsonb column, so it is held to more than the stored shape — unique ids,
+// stamps of bounded length (z.iso.datetime() allows any number of fractional
+// digits; toISOString() and the server stamp are 24 characters) and a start no
+// later than now plus five minutes of clock skew.
 const START_SKEW_MS = 5 * 60 * 1000;
+const MAX_STAMP_LENGTH = 30;
 const OrientationSetStateSchema = OrientationStateSchema.refine(
   (state) => new Set(state.done).size === state.done.length
+).refine((state) =>
+  [state.startedAt, state.dismissedAt].every(
+    (stamp) => stamp === null || stamp.length <= MAX_STAMP_LENGTH
+  )
 ).refine(
   (state) =>
     state.startedAt === null ||
