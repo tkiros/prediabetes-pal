@@ -117,9 +117,10 @@ export async function tapHide(ctx: TapContext, hide: boolean): Promise<void> {
  * Ruling F-42: a signed-in page whose server copy is still null sends the
  * device week over before any write of its own, or a Done tap here would
  * make Home's later migration a 409 and lose the device's start. Once per
- * mount (StrictMode runs mount effects twice), never a start (Home stamps
- * it, F-24). The controls unlock when it settles; a landed write refreshes
- * the page, which then renders the migrated copy and `migrate: false`.
+ * mount (StrictMode runs mount effects twice); the call sends `start: false`
+ * — a stand-in, never a real start (Home stamps that, F-24). The controls
+ * unlock when it settles; a landed write refreshes the page, which then
+ * renders the migrated copy and `migrate: false`.
  */
 export async function migrateOnMount(
   migrate: boolean,
@@ -145,8 +146,25 @@ export function OrientationList(props: OrientationListProps) {
   const migrate = props.mode === "signed-in" && props.migrate;
   const [syncing, setSyncing] = useState(migrate);
   const sent = useRef(false);
+  // #23: cleared on unmount so a migration that resolves after the list is
+  // gone never touches state or calls router.refresh() on whatever page is
+  // open next. Reset to true at the top of the effect so StrictMode's
+  // simulated remount (cleanup then a second effect run, same instance)
+  // does not leave a still-mounted list permanently gated.
+  const active = useRef(true);
   useEffect(() => {
-    void migrateOnMount(migrate, sent, { setSyncing, refresh: () => router.refresh() });
+    active.current = true;
+    void migrateOnMount(migrate, sent, {
+      setSyncing: (syncing) => {
+        if (active.current) setSyncing(syncing);
+      },
+      refresh: () => {
+        if (active.current) router.refresh();
+      }
+    });
+    return () => {
+      active.current = false;
+    };
   }, [migrate, router]);
   const [local, setLocal] = useState<OrientationState | null>(
     props.mode === "signed-in" ? props.initialState : null

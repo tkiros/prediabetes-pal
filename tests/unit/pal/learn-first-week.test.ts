@@ -282,7 +282,7 @@ describe("the list: rendering", () => {
     expect(html).toContain('<a href="/check">Check the meal you are least sure about.</a>');
   });
 
-  it("after day 7, with no start, or with every step done: no day number and no today's step", () => {
+  it("after day 7, with no start, or with every step done: no today's step and the steps keep source order (day 7 and no-start also drop the day number, per F-40)", () => {
     for (const state of [
       week({ startedAt: daysAgo(7) }),
       week(),
@@ -517,8 +517,9 @@ describe("the note: on this device, never inside app copy (A-57)", () => {
     expect(html).toContain('<label class="field-label" for="note">Write down the questions you have for your clinician.</label>');
     expect(html.split(escaped)).toHaveLength(2);
     expect(html).toMatch(new RegExp(`<textarea id="note"[^>]*>${escaped}</textarea>`));
-    expect(html).toContain("Your notes stay on this device. Nothing here is sent anywhere.");
-    expect(html).not.toContain('role="status"');
+    expect(html).toContain(
+      '<p class="field-hint" id="note-hint" role="status">Your notes stay on this device. Nothing here is sent anywhere.</p>'
+    );
     expect(html).toContain('<p class="field-hint" aria-live="polite"></p>');
   });
 
@@ -553,7 +554,11 @@ describe("the note: on this device, never inside app copy (A-57)", () => {
       setFailed: (failed: boolean) => void (ui.failed = failed),
       setSaved: (saved: boolean) => void (ui.saved = saved)
     };
-    keepNote("bring the lab sheet", setters);
+    // One instance's timer handle, same object across both calls below — a
+    // fresh object per call would not exercise the second call clearing the
+    // first's still-pending timeout (#24).
+    const timer: { current: ReturnType<typeof setTimeout> | undefined } = { current: undefined };
+    keepNote("bring the lab sheet", setters, timer);
     expect(storage.getItem("pal.orient.note.v1")).toBe("bring the lab sheet");
     expect(ui).toEqual({ draft: "bring the lab sheet", failed: false, saved: true });
     vi.advanceTimersByTime(1999);
@@ -566,7 +571,7 @@ describe("the note: on this device, never inside app copy (A-57)", () => {
       throw new Error("QuotaExceededError");
     };
     try {
-      keepNote("bring the lab sheet, and the list", setters);
+      keepNote("bring the lab sheet, and the list", setters, timer);
       expect(ui).toEqual({ draft: "bring the lab sheet, and the list", failed: true, saved: false });
     } finally {
       storage.setItem = setItem;
