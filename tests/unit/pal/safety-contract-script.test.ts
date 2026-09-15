@@ -1,13 +1,15 @@
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
 // `scripts/validate-safety-contract.mjs` guards its module-level `main()`
-// call behind an entry-point check (`process.argv[1] === fileURLToPath(
-// import.meta.url)`), so importing these two exports here never runs the
-// CLI's validation pass or `process.exit` -- see the guard right above
-// `main()`'s only call site in that file.
+// call behind an entry-point check (this file's resolved real path vs the
+// resolved real `process.argv[1]`), so importing these two exports here never
+// runs the CLI's validation pass or `process.exit` -- see the guard right
+// above `main()`'s only call site in that file.
 import {
   getCopyLedgerRows,
   splitTableRow
@@ -90,5 +92,43 @@ describe("validate-safety-contract.mjs: copy-ledger cell-count check (review A-1
     expect(failures).toEqual([]);
     // Sanity: the parser actually found the real table, not an empty one.
     expect(rows.length).toBeGreaterThan(50);
+  });
+});
+
+/**
+ * Fix wave 1, F4. That same entry guard decides whether `npm run contract`
+ * validates anything at all. `process.argv[1]` is the path as invoked, so
+ * before the realpath fix a symlinked checkout, a symlinked
+ * `node_modules/.bin` shim, or a symlinked parent directory made the
+ * comparison false: `main()` never ran, the process exited 0, and the gate
+ * was green having validated nothing. These two spawns are the cheapest
+ * honest check -- they assert the validator's own output line, not just the
+ * exit code, so a guard that stops running fails loudly here.
+ */
+describe("validate-safety-contract.mjs: the CLI actually runs (fix wave 1)", () => {
+  const SCRIPT = "scripts/validate-safety-contract.mjs";
+  const PASSED = /Safety contract validation passed for:/;
+  const run = (entry: string) =>
+    spawnSync(process.execPath, [entry], { cwd: ROOT, encoding: "utf8" });
+
+  it("prints validator output when run the way `npm run contract` does", () => {
+    const result = run(SCRIPT);
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout, "exit 0 with no validator output = validated nothing").toMatch(PASSED);
+  });
+
+  it("still runs through a symlinked entry path (the guard's failure mode)", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "contract-entry-"));
+    const link = path.join(dir, "contract-link.mjs");
+    try {
+      fs.symlinkSync(path.join(ROOT, SCRIPT), link);
+      const result = run(link);
+
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stdout, "the entry guard skipped main() under a symlink").toMatch(PASSED);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

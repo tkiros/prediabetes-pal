@@ -52,8 +52,8 @@ const LEDGER_HEADER = [
   "| --- | --- | --- | --- | --- | --- | --- | --- |"
 ];
 
-function ledgerRow(id: string, status: string): string {
-  return `| \`${id}\` | Product | ${status} | Yes | \`product-role\` | Some copy. | FTC-HEALTH-COMPLIANCE | Fixture. |`;
+function ledgerRow(id: string, status: string, active = "Yes"): string {
+  return `| \`${id}\` | Product | ${status} | ${active} | \`product-role\` | Some copy. | FTC-HEALTH-COMPLIANCE | Fixture. |`;
 }
 
 /** A ledger in the real table shape, every listed row at `status`. */
@@ -136,12 +136,20 @@ describe("production door guard — checkProductionDoor (Task 1.11)", () => {
     const value = "ideas,ideas-full,home,source,calm,orient,intake";
     const result = checkProductionDoor(value, ledgerWith(ALL_ROWS), freshLabels(), PROMPT_VERSION, MODEL);
     expect(result).toEqual({ effective: value, errors: [], warnings: [] });
-    // Unset is the launch default: nothing opens, and it is not an error.
-    expect(checkProductionDoor(undefined, "", null, PROMPT_VERSION, MODEL)).toEqual({
-      effective: "",
-      errors: [],
-      warnings: []
-    });
+  });
+
+  it("the merge-day value — the flag unset — opens nothing, throws nothing, warns nothing", () => {
+    // What production actually carries the day this branch merges. Read with
+    // no labels file on purpose: even stale labels must not produce a warning
+    // when no ideas surface is listed, and nothing here may fail a build.
+    const ledger = ledgerWith(ALL_ROWS);
+    for (const value of [undefined, "", "   "]) {
+      expect(checkProductionDoor(value, ledger, null, PROMPT_VERSION, MODEL), String(value)).toEqual({
+        effective: "",
+        errors: [],
+        warnings: []
+      });
+    }
   });
 
   it("maps each surface to the rows A-101 / A-119 name, and the requirements between them", () => {
@@ -166,6 +174,61 @@ describe("production door guard — checkProductionDoor (Task 1.11)", () => {
       for (const row of SURFACE_ROWS[surface]) expect(row, `${surface} lists a wildcard`).toMatch(/^[a-z0-9-]+$/);
     // The guard checks the same bands the eval writes.
     expect(IDEA_LABEL_BANDS).toEqual(LABEL_BANDS.map(({ band }) => band));
+  });
+
+  describe("a ledger row must be Active as well as Approved (fix wave 1, F3)", () => {
+    // The ledger's `Active` column says "whether the row is part of the
+    // current MVP surface" (docs/safety/copy-ledger.md). `Approved | No` is a
+    // real, shipping state — keep-most-09, keep-most-10 and
+    // landing-audience-pains all carry it — so Status alone let a surface open
+    // in production while rendering copy the ledger says is on no surface.
+    const row = SURFACE_ROWS.source[0]!;
+    const check = (ledger: string) =>
+      checkProductionDoor("source", ledger, freshLabels(), PROMPT_VERSION, MODEL);
+    const open = { effective: "source", errors: [], warnings: [] };
+
+    it("`Approved | Yes` passes", () => {
+      expect(check(ledgerWith([row]))).toEqual(open);
+    });
+
+    it("`Approved | No` errors — a retired row opens nothing", () => {
+      const result = check(ledgerWith([], "Approved", [ledgerRow(row, "Approved", "No")]));
+
+      expect(result.errors).toEqual([
+        `surface "source" renders row "${row}" whose Active is No (retired) — ` +
+          'reactivate the row or remove "source"'
+      ]);
+      expect(result.effective).toBe("");
+    });
+
+    it("`Pending | Yes` still errors on Status, naming that half only", () => {
+      const result = check(ledgerWith([], "Approved", [ledgerRow(row, "Pending", "Yes")]));
+
+      expect(result.errors).toEqual([
+        `surface "source" renders row "${row}" whose Status is Pending — ` +
+          'get it Approved or remove "source"'
+      ]);
+    });
+
+    it("a table with no `Active` column reads Active — absence is not retirement", () => {
+      const ledger = [
+        "| Copy ID | Surface | Status | Copy |",
+        "| --- | --- | --- | --- |",
+        `| \`${row}\` | Result | Approved | Some copy. |`,
+        ""
+      ].join("\n");
+
+      expect(check(ledger)).toEqual(open);
+    });
+
+    it("an empty `Active` cell in a table that HAS the column does not pass", () => {
+      const result = check(ledgerWith([], "Approved", [ledgerRow(row, "Approved", "")]));
+
+      expect(result.errors).toEqual([
+        `surface "source" renders row "${row}" whose Active is empty (retired) — ` +
+          'reactivate the row or remove "source"'
+      ]);
+    });
   });
 
   describe("stale idea labels close the ideas surfaces with a warning, never an error (A-100)", () => {

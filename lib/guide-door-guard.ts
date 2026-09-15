@@ -24,7 +24,8 @@ import {
  *   2. an unknown surface token;
  *   3. a surface listed without a surface it requires (SURFACE_REQUIRES);
  *   4. a surface other than `calm` with no ledger rows yet, or any of its
- *      rows not `Status = Approved` (a missing row is not Approved).
+ *      rows not both `Status = Approved` and `Active = Yes` (a missing row is
+ *      neither; a retired one renders copy the ledger says is on no surface).
  * Warning (the build continues — A-100, a prompt hotfix is never blocked by
  * the idea bank): when the list opens `ideas` or `ideas-full` and the idea
  * labels are stale, missing, or not all SAFE, both are dropped from
@@ -121,11 +122,20 @@ export function checkProductionDoor(
         );
         continue;
       }
-      const notApproved = found.find((status) => status !== "Approved");
+      // Status first, Active second, so each row names one failed half.
+      const notApproved = found.find((state) => state.status !== "Approved");
       if (notApproved !== undefined) {
         errors.push(
-          `surface "${surface}" renders row "${row}" whose Status is ${notApproved || "empty"} — ` +
+          `surface "${surface}" renders row "${row}" whose Status is ${notApproved.status || "empty"} — ` +
             `get it Approved or remove "${surface}"`
+        );
+        continue;
+      }
+      const retired = found.find((state) => state.active !== "Yes");
+      if (retired !== undefined) {
+        errors.push(
+          `surface "${surface}" renders row "${row}" whose Active is ${retired.active || "empty"} (retired) — ` +
+            `reactivate the row or remove "${surface}"`
         );
       }
     }
@@ -209,16 +219,26 @@ export function ideaLabelStaleness(
   return reasons;
 }
 
+/** One ledger occurrence of a Copy ID: the two cells the door reads. */
+export type LedgerRowState = { status: string; active: string };
+
 /**
- * Copy ID → every Status recorded for it, across every markdown table whose
- * header names both `Copy ID` and `Status` (the ledger has more than one).
- * Same cell rules as scripts/validate-safety-contract.mjs: split on `|`, trim,
- * strip one pair of backticks. An ID listed twice is Approved only if every
- * row says so.
+ * Copy ID → every occurrence recorded for it, across every markdown table
+ * whose header names both `Copy ID` and `Status` (the ledger has more than
+ * one). Same cell rules as scripts/validate-safety-contract.mjs: split on `|`,
+ * trim, strip one pair of backticks. An ID listed twice opens a surface only
+ * if every row says Approved AND Yes.
+ *
+ * A table with `Copy ID` + `Status` but no `Active` column reads as
+ * `active: "Yes"`: the column was added after the first tables were written,
+ * and absence of the column is not retirement — failing closed on it would
+ * reject every table that predates it. A table that HAS the column and leaves
+ * the cell empty is a different thing and reads as not-Yes, exactly as a
+ * missing Status cell reads as not-Approved.
  */
-export function ledgerStatuses(ledgerText: string): Map<string, string[]> {
-  const statuses = new Map<string, string[]>();
-  let columns: { id: number; status: number } | null = null;
+export function ledgerStatuses(ledgerText: string): Map<string, LedgerRowState[]> {
+  const statuses = new Map<string, LedgerRowState[]>();
+  let columns: { id: number; status: number; active: number } | null = null;
   let expectSeparator = false;
 
   for (const line of ledgerText.split(/\r?\n/)) {
@@ -238,7 +258,7 @@ export function ledgerStatuses(ledgerText: string): Map<string, string[]> {
       const id = cells.indexOf("Copy ID");
       const status = cells.indexOf("Status");
       if (id !== -1 && status !== -1) {
-        columns = { id, status };
+        columns = { id, status, active: cells.indexOf("Active") };
         expectSeparator = true;
       }
       continue;
@@ -246,7 +266,10 @@ export function ledgerStatuses(ledgerText: string): Map<string, string[]> {
     const copyId = cells[columns.id];
     if (!copyId) continue;
     const list = statuses.get(copyId) ?? [];
-    list.push(cells[columns.status] ?? "");
+    list.push({
+      status: cells[columns.status] ?? "",
+      active: columns.active === -1 ? "Yes" : (cells[columns.active] ?? "")
+    });
     statuses.set(copyId, list);
   }
   return statuses;

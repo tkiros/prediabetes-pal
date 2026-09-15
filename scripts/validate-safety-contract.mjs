@@ -527,7 +527,24 @@ function normalize(value) {
 // getCopyLedgerRows) without also running the CLI's validation pass and
 // process.exit — only run when this file is the process entry point, not
 // when it is imported as a module.
-const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
+//
+// Compared on RESOLVED REAL paths, both sides. `process.argv[1]` is the path
+// as invoked: under a symlinked checkout, a symlinked `node_modules/.bin`
+// shim, or any symlinked parent directory it does not equal this file's own
+// resolved path, `main()` would never run, the process would exit 0, and
+// `npm run contract` would be green having validated nothing. A safety gate
+// that can pass by not running is worse than no gate.
+function realPath(target) {
+  try {
+    return fs.realpathSync(path.resolve(target));
+  } catch {
+    // A missing or odd argv[1] is "not this file", never a crash.
+    return null;
+  }
+}
+
+const entryPath = realPath(process.argv[1] ?? "");
+const isMainModule = entryPath !== null && entryPath === realPath(fileURLToPath(import.meta.url));
 if (isMainModule) {
   main();
 }
