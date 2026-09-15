@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { track } from "../lib/client/analytics";
+import { recordStepEvent } from "../lib/client/orientation-progress";
 import { orientationStore } from "../lib/client/orientation-store";
 import { patchOrientation, syncOrientation } from "../lib/client/remote-orientation";
 import { useHydrated } from "../lib/client/use-hydrated";
@@ -137,7 +138,9 @@ export async function migrateOnMount(
 /** Steps 5 and 6 point at this page: 5 becomes a jump to the note, 6 plain text. */
 function StepText({ step }: { step: OrientationStep }) {
   const href = step.href.replace(/^\/learn\/first-week/, "");
-  return <p className="page-copy">{href ? <Link href={href}>{step.text}</Link> : step.text}</p>;
+  // Review A-84: opening step 1's link completes step 1; no other link does.
+  const onClick = step.id === "1" ? () => void recordStepEvent("numbers_link") : undefined;
+  return <p className="page-copy">{href ? <Link href={href} onClick={onClick}>{step.text}</Link> : step.text}</p>;
 }
 
 export function OrientationList(props: OrientationListProps) {

@@ -36,8 +36,12 @@ const SENDING_SOURCES = [
   "components/orientation-list.tsx",
   // Task 3.7: /journey reads the week through GET /api/profile.
   "app/(app)/journey/page.tsx",
-  // Review A-84: steps complete where they happen (PATCH markNext).
-  "lib/client/orientation-progress.ts"
+  // Review A-84: steps complete where they happen (PATCH markNext), and the
+  // two client leaves that call it — Home's step link and the wrapper that
+  // hands step 5's field its completion callback.
+  "lib/client/orientation-progress.ts",
+  "components/step-link.tsx",
+  "components/orientation-note-slot.tsx"
 ] as const;
 
 const NOTE_MARKERS = ["orientationNote", "pal.orient.note"] as const;

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { DisclaimerLine } from "../../../../components/disclaimer-line";
 import { OrientationList, type OrientationListProps } from "../../../../components/orientation-list";
-import { OrientationNote } from "../../../../components/orientation-note";
+import { OrientationNoteSlot } from "../../../../components/orientation-note-slot";
 import { EMPTY_ORIENTATION, OrientationStateSchema } from "../../../../lib/coach/orientation";
 import { guideDoorEnabled } from "../../../../lib/guide-door-flag";
 import { getDb, schema } from "../../../../lib/server/db";
@@ -58,7 +58,7 @@ export default async function FirstWeekPage() {
           remounts the list from the server's copy instead of its old state. */}
       <OrientationList key={list.mode === "signed-in" && list.migrate ? "migrating" : "settled"} {...list} />
 
-      <OrientationNote />
+      <OrientationNoteSlot />
 
       <section className="surface-card hero-card">
         <p className="page-copy">
