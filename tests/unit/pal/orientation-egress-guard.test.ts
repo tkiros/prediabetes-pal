@@ -35,7 +35,9 @@ const SENDING_SOURCES = [
   "components/orientation-sync.tsx",
   "components/orientation-list.tsx",
   // Task 3.7: /journey reads the week through GET /api/profile.
-  "app/(app)/journey/page.tsx"
+  "app/(app)/journey/page.tsx",
+  // Review A-84: steps complete where they happen (PATCH markNext).
+  "lib/client/orientation-progress.ts"
 ] as const;
 
 const NOTE_MARKERS = ["orientationNote", "pal.orient.note"] as const;

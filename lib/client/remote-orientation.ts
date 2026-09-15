@@ -18,6 +18,7 @@ import { orientationStore } from "./orientation-store";
 
 export type OrientationOp =
   | { op: "markDone"; step: OrientationStepId }
+  | { op: "markNext"; steps: OrientationStepId[] }
   | { op: "start" }
   | { op: "dismiss" }
   | { op: "restore" }

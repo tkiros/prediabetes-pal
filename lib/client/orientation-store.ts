@@ -44,6 +44,16 @@ export const orientationStore = {
     const state = read();
     if (!state.done.includes(id)) write({ ...state, done: [...state.done, id] });
   },
+  /**
+   * Review A-84, the server's `markNext` rule: the first of `steps` not yet
+   * done, in a week that has started and is not hidden. Never starts a week.
+   */
+  markNext(steps: readonly OrientationStepId[]): void {
+    const state = read();
+    if (!state.startedAt || state.dismissedAt) return;
+    const next = steps.find((id) => !state.done.includes(id));
+    if (next) write({ ...state, done: [...state.done, next] });
+  },
   dismiss(now: Date = new Date()): void {
     write({ ...read(), dismissedAt: now.toISOString() });
   },

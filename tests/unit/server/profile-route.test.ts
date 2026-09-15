@@ -348,7 +348,10 @@ describe("orientation (F-ORIENT, signed-in state in profiles.orientation)", () =
     ["an unknown op", { op: "undo", step: "1" }],
     ["duplicate ids", { op: "set", state: { done: ["1", "1"], dismissedAt: null, startedAt: null } }],
     ["a startedAt beyond the 5-minute skew", { op: "set", state: { done: [], dismissedAt: null, startedAt: new Date(Date.now() + 10 * 60 * 1000).toISOString() } }],
-    ["an offset timestamp", { op: "set", state: { done: [], dismissedAt: null, startedAt: "2026-09-01T08:00:00+02:00" } }]
+    ["an offset timestamp", { op: "set", state: { done: [], dismissedAt: null, startedAt: "2026-09-01T08:00:00+02:00" } }],
+    ["duplicate ids in markNext", { op: "markNext", steps: ["2", "2"] }],
+    ["an unknown step in markNext", { op: "markNext", steps: ["2", "9"] }],
+    ["an empty markNext", { op: "markNext", steps: [] }]
   ])("400s %s and writes nothing", async (_label, orientation) => {
     await seedProfile();
 
@@ -518,6 +521,92 @@ describe("orientation (F-ORIENT, signed-in state in profiles.orientation)", () =
     });
   });
 
+  // Review A-84: recordStepEvent's op. The first listed step not yet done is
+  // appended in the same single UPDATE as the other ops, and only to a week
+  // that has started and is not hidden.
+  const startedWeek = (done: string[], dismissedAt: string | null = null) =>
+    patchOrientation({ op: "set", state: { done, dismissedAt, startedAt: PAST_START } });
+
+  it("two concurrent markNext ops on a started week mark both listed steps", async () => {
+    await seedProfile();
+    await startedWeek([]);
+
+    const responses = await Promise.all([
+      patchOrientation({ op: "markNext", steps: ["2", "3"] }),
+      patchOrientation({ op: "markNext", steps: ["2", "3"] })
+    ]);
+
+    expect(responses.map((response) => response.status)).toEqual([200, 200]);
+    const stored = await storedOrientation();
+    expect([...(stored?.done ?? [])].sort()).toEqual(["2", "3"]);
+  });
+
+  it("markNext skips a listed step that is done and appends the next one", async () => {
+    await seedProfile();
+    await startedWeek(["1", "2"]);
+
+    const response = await patchOrientation({ op: "markNext", steps: ["2", "3"] });
+
+    expect(response.status).toBe(200);
+    expect(await storedOrientation()).toEqual({
+      done: ["1", "2", "3"],
+      dismissedAt: null,
+      startedAt: PAST_START
+    });
+  });
+
+  it("markNext with every listed step done changes nothing and still answers 200", async () => {
+    await seedProfile();
+    await startedWeek(["3", "2"]);
+
+    const response = await patchOrientation({ op: "markNext", steps: ["2", "3"] });
+
+    expect(response.status).toBe(200);
+    expect(await storedOrientation()).toEqual({
+      done: ["3", "2"],
+      dismissedAt: null,
+      startedAt: PAST_START
+    });
+  });
+
+  it("markNext never creates state: a null column stays null, so the sign-in `set` still lands", async () => {
+    await seedProfile();
+
+    const response = await patchOrientation({ op: "markNext", steps: ["2", "3"] });
+
+    expect(response.status).toBe(200);
+    expect(await storedOrientation()).toBeNull();
+    const state = { done: ["1"], dismissedAt: null, startedAt: PAST_START };
+    expect((await patchOrientation({ op: "set", state })).status).toBe(200);
+    expect(await storedOrientation()).toEqual(state);
+  });
+
+  it("markNext leaves a week with no start unchanged", async () => {
+    await seedProfile();
+    const state = { done: ["1"], dismissedAt: null, startedAt: null };
+    await patchOrientation({ op: "set", state });
+
+    const response = await patchOrientation({ op: "markNext", steps: ["2", "3"] });
+
+    expect(response.status).toBe(200);
+    expect(await storedOrientation()).toEqual(state);
+  });
+
+  it("markNext leaves a hidden week unchanged", async () => {
+    await seedProfile();
+    const dismissedAt = "2026-09-02T08:00:00.000Z";
+    await startedWeek(["1"], dismissedAt);
+
+    const response = await patchOrientation({ op: "markNext", steps: ["2", "3"] });
+
+    expect(response.status).toBe(200);
+    expect(await storedOrientation()).toEqual({
+      done: ["1"],
+      dismissedAt,
+      startedAt: PAST_START
+    });
+  });
+
   it("an orientation-only PATCH leaves a pending nudge attempt untouched (A-07)", async () => {
     await seedProfile();
     await testDb.db.insert(schema.pushSubscriptions).values({
@@ -577,6 +666,7 @@ describe("orientation (F-ORIENT, signed-in state in profiles.orientation)", () =
   it.each([
     ["markDone", { op: "markDone", step: "1" }],
     ["start", { op: "start" }],
+    ["markNext", { op: "markNext", steps: ["2", "3"] }],
     ["set", { op: "set", state: { done: [], dismissedAt: null, startedAt: null } }]
   ])("404s a %s when the signed-in user has no profile row (A-92)", async (_label, orientation) => {
     const response = await patchOrientation(orientation);
@@ -613,11 +703,12 @@ describe("orientation (F-ORIENT, signed-in state in profiles.orientation)", () =
 
     const valid = await patchOrientation({ op: "markDone", step: "1" });
     const invalid = await patchOrientation({ op: "markDone", step: "9" });
+    const next = await patchOrientation({ op: "markNext", steps: ["2", "3"] });
     const mixed = await PATCH(
       patchRequest({ nudgeHour: 9, orientation: { op: "start" } })
     );
 
-    expect([valid.status, invalid.status, mixed.status]).toEqual([404, 404, 404]);
+    expect([valid.status, invalid.status, next.status, mixed.status]).toEqual([404, 404, 404, 404]);
     const [profile] = await testDb.db
       .select()
       .from(schema.profiles)
