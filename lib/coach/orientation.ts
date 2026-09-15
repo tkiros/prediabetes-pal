@@ -107,6 +107,16 @@ export function currentOrientationStep(
 export type HomeOrientation = { day: number; step: OrientationStep; needsStart: boolean };
 
 /**
+ * A-83 (plan Task 3.4, owner-approved default at the final gate 2026-09-14):
+ * while a week is showing, an expired-taster guest sees this in place of the
+ * day's step — whatever that step is, whatever the day, even before today's
+ * first check. Not one of the seven steps, so it carries no "Today's step:"
+ * prefix (ledger row `orientation-signin-step`, claim class `product-role`).
+ * Read by `components/guest-dashboard.tsx`'s `buildData` only.
+ */
+export const SIGNIN_STEP = { text: "Sign in to keep your week going", href: "/signin" } as const;
+
+/**
  * The week Home shows, or null for none (review A-66, ruling F-24). The start
  * is `state.startedAt` and nothing else. `onboardedAt` only answers "should an
  * unstarted week start now?" — yes for a profile younger than seven days (the

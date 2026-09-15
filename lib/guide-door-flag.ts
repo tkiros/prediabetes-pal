@@ -83,8 +83,9 @@ export const SURFACE_ROWS: Record<GuideSurface, readonly string[]> = {
     "orientation-day-eyebrow",
     "orientation-controls",
     "orientation-note-hint",
-    // Stays listed until BOTH A-83 (the sign-in step line, which renders
-    // this row) and A-84 (recordStepEvent) ship — without A-84, Home
+    // A-83 shipped: the guest dashboard now renders this row (an
+    // expired-taster guest's sign-in line, owner default 2026-09-14). Stays
+    // listed until A-84 (recordStepEvent) also ships — without it, Home
     // re-asks for a check on days 2 and 3 after one (final review I2).
     "orientation-signin-step",
     "orientation-save-failed",

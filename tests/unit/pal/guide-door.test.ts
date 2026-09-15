@@ -557,3 +557,79 @@ describe("Home with the orient door open: the day eyebrow and the day's step (Ta
     expect(html).not.toContain("orientation-day");
   });
 });
+
+// ---------------------------------------------------------------------------
+// A-83 (plan Task 3.4): an expired-taster guest's line is the sign-in line,
+// guest Home only — components/guest-dashboard.tsx, buildData.
+// ---------------------------------------------------------------------------
+
+describe("A-83: an expired-taster guest's step line asks them to sign in (Task 3.4)", () => {
+  beforeEach(() => {
+    storage.clear();
+    home.selects = [];
+    vi.stubEnv("TZ", "America/New_York");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(NOW);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
+  });
+
+  const stepLine = (html: string) =>
+    /data-testid="next-action"><a href="([^"]*)">([^<]*)</.exec(decode(html))?.slice(1) ?? null;
+  const heroEyebrow = (html: string) => /<p class="meal-hero-eyebrow">([^<]*)</.exec(decode(html))?.[1];
+
+  // NOW is noon 2026-09-15 in America/New_York; tasterStore keys off the
+  // device's LOCAL day, so a firstDay of the day before reads "expired".
+  const expireTaster = () =>
+    storage.setItem("pal.taster.v1", JSON.stringify({ firstDay: "2026-09-14", used: 3 }));
+  const availableTaster = () =>
+    storage.setItem("pal.taster.v1", JSON.stringify({ firstDay: "2026-09-15", used: 3 }));
+
+  it('a non-check step day: the sign-in line replaces "Today\'s step: …", no prefix', async () => {
+    expireTaster();
+    // day 4, step 4 -> /home#ideas-title; without the expired taster this is
+    // the ordinary "Today's step: Try one of today's ideas…" line (see the
+    // Task 3.5 block above).
+    const html = await renderGuest("1", { week: { startedDaysAgo: 3 } });
+    expect(stepLine(html)).toEqual(["/signin", "Sign in to keep your week going"]);
+  });
+
+  it("a check-step day before the first check: the sign-in line shows even though the owner-rule /check carve-out would otherwise suppress the line entirely (A-79)", async () => {
+    expireTaster();
+    // day 2, step 2 -> /check, no check yet: normally no next-action line at
+    // all (owner rule 2026-08-11) and the hero reads "Today's step · Meal
+    // check". The sign-in line is not one of the seven steps, so the
+    // carve-out does not apply to it and the hero falls back to plain
+    // "Meal check".
+    const html = await renderGuest("1", { week: { startedDaysAgo: 1 } });
+    expect(stepLine(html)).toEqual(["/signin", "Sign in to keep your week going"]);
+    expect(heroEyebrow(html)).toBe("Meal check");
+  });
+
+  it("taster available: the normal Today's step line is unchanged", async () => {
+    availableTaster();
+    const html = await renderGuest("1", { week: { startedDaysAgo: 3 } });
+    expect(stepLine(html)).toEqual([
+      "/home#ideas-title",
+      "Today's step: Try one of today's ideas and see how it reads."
+    ]);
+  });
+
+  it("no week (door open, old profile): the classic owner-rule branch runs even with an expired taster — no sign-in line", async () => {
+    expireTaster();
+    const html = await renderGuest("1", { onboardedDaysAgo: 30 });
+    expect(html).not.toContain("orientation-day");
+    expect(html).not.toContain('data-testid="next-action"');
+    expect(html).not.toContain("Sign in to keep your week going");
+    expect(heroEyebrow(html)).toBe("Meal check");
+  });
+
+  it("door shut: the flag-off guest markup never reads the taster status (existing byte-for-byte snapshots cover this)", async () => {
+    expireTaster();
+    const html = await renderGuest("", { week: { startedDaysAgo: 3 } });
+    expect(html).not.toContain("Sign in to keep your week going");
+    expect(html).not.toContain("orientation-day");
+  });
+});
