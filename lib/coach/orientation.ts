@@ -14,8 +14,9 @@ import type { DayKeyFn } from "./days";
  *
  * Content base: app/guides/prediabetes-now-what ("Calm First Steps").
  * Mechanism: lib/coach/next-action.ts, which grows from one action to this
- * seven-day sequence. Day math derives from `onboardedAt` (guest profile
- * store or profiles.onboarded_at) so no new timestamp is stored anywhere.
+ * seven-day sequence. Day math counts from the state's own `startedAt`;
+ * `onboardedAt` only decides whether an unstarted week should start
+ * (homeOrientation below, review A-66).
  *
  * Step 1 links Learn: numbers (F-NUMBERS) once it ships; until D7 resolves it
  * links the public guide, which "stays public and untouched either way".
@@ -46,9 +47,8 @@ export const OrientationStateSchema = z
     // zod 4: z.iso.datetime() (z.string().datetime() is the deprecated v3 spelling).
     dismissedAt: z.iso.datetime().nullable(),
     // Review A-05: when the week began. Null until the first flagged Home visit
-    // or the tour's final button stamps it; the server falls back to
-    // profiles.onboarded_at when null, guests have no fallback (a guest who
-    // skipped the A1C step has no profile at all).
+    // or the tour's final button stamps it. Review A-66: nothing falls back to
+    // onboardedAt for the start — see homeOrientation.
     startedAt: z.iso.datetime().nullable()
   })
   .strict();
@@ -102,4 +102,30 @@ export function currentOrientationStep(
   const today = ORIENTATION_STEPS[day - 1];
   if (today && !done.has(today.id)) return today;
   return ORIENTATION_STEPS.find((step) => !done.has(step.id)) ?? null;
+}
+
+export type HomeOrientation = { day: number; step: OrientationStep; needsStart: boolean };
+
+/**
+ * The week Home shows, or null for none (review A-66, ruling F-24). The start
+ * is `state.startedAt` and nothing else. `onboardedAt` only answers "should an
+ * unstarted week start now?" — yes for a profile younger than seven days (the
+ * diagnosis week, not someone who has been here for months). That render shows
+ * day 1 and `needsStart` asks the caller to stamp the start. No start and no
+ * young profile (or none at all) ⇒ null. A week with no step left to show
+ * (dismissed, done, over) is null too, so nothing gets stamped for it.
+ */
+export function homeOrientation(
+  state: OrientationState,
+  onboardedAt: string | Date | null | undefined,
+  dayKey: DayKeyFn,
+  now: Date = new Date()
+): HomeOrientation | null {
+  let day = 1;
+  if (state.startedAt) day = orientationDay(state.startedAt, dayKey, now);
+  // Young = the onboarding day counts as day 1 and today is at most day 7;
+  // an unparseable stamp reads as day 8, so it is never young.
+  else if (!onboardedAt || orientationDay(onboardedAt, dayKey, now) > 7) return null;
+  const step = currentOrientationStep(state, day);
+  return step ? { day, step, needsStart: !state.startedAt } : null;
 }

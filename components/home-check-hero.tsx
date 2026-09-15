@@ -14,8 +14,12 @@ import { IconArrowRight } from "./icons";
  * reads, so /check stays the ONE place a check runs (taster gate, A1C,
  * voice/photo, result rendering — none of it duplicated here). An empty
  * submit behaves exactly like the old CTA link.
+ *
+ * `stepToday` (review A-79): on an orientation check-step day before the
+ * first check, the eyebrow names the day's step — the step line under the
+ * hero stays off then (owner rule), so the hero carries it.
  */
-export function HomeCheckHero() {
+export function HomeCheckHero({ stepToday = false }: { stepToday?: boolean }) {
   const router = useRouter();
   const [meal, setMeal] = useState("");
 
@@ -37,7 +41,9 @@ export function HomeCheckHero() {
 
   return (
     <section className="meal-hero" aria-labelledby="meal-hero-title">
-      <p className="meal-hero-eyebrow">Meal check</p>
+      <p className="meal-hero-eyebrow">
+        {stepToday ? "Today's step · Meal check" : "Meal check"}
+      </p>
       <h2 id="meal-hero-title">What are you eating?</h2>
       <p className="meal-hero-copy">
         Type it or say it. Get one clear food signal.

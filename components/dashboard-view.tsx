@@ -37,20 +37,33 @@ export type DashboardData = {
   /** True when the plan box carries actionable billing truth (D2). */
   planBoxAttention: boolean;
   isDay0: boolean;
+  /**
+   * The orientation day while a week runs (PRD v1.1 §7.4, Task 3.5); null
+   * otherwise, and always null with the `orient` door shut.
+   */
+  orientationDay: number | null;
 };
 
 export function DashboardView({ data }: { data: DashboardData }) {
   // Amendment A-106: flag on ⇒ the whole greeting collapses into ONE
-  // .status-eyebrow-styled date line (there is no "day" yet — that arrives
-  // with the orientation step in a later PR). The week summary is not
-  // rendered: PRD v1.1 §7.6's wireframe shows one greeting line, /journey
-  // owns the week, and plan §3's fold budget already spent those ~28px on the
-  // ideas block (Task 1.8 fix round 1). Flag off ⇒ today's markup, byte-for-byte.
+  // .status-eyebrow-styled date line. The week summary is not rendered: PRD
+  // v1.1 §7.6's wireframe shows one greeting line, /journey owns the week, and
+  // plan §3's fold budget already spent those ~28px on the ideas block (Task
+  // 1.8 fix round 1). The "day" arrives with the orientation week (Task 3.5):
+  // while one runs, a "Day N of your first week" eyebrow sits above the date.
+  // Flag off ⇒ today's markup, byte-for-byte.
   const ideasOn = guideDoorEnabled("ideas");
+  // Review A-89: the day eyebrow carries day 1, so the first-win block (its
+  // own "Day 1" eyebrow) does not render while a week runs.
+  const weekOn = data.orientationDay !== null;
+  // Review A-79: on a check-step day before the first check the page keeps
+  // the step line off (owner rule), so the hero names the step instead. With a
+  // week running, a null next action means exactly that.
+  const heroIsStep = weekOn && data.nextAction === null;
 
   return (
     <div data-testid="dashboard">
-      {data.showFirstWin ? (
+      {data.showFirstWin && !weekOn ? (
         <div className="first-win" style={{ marginBottom: 16 }}>
           <p className="status-eyebrow">Day 1</p>
           <p className="page-copy">
@@ -61,6 +74,11 @@ export function DashboardView({ data }: { data: DashboardData }) {
       ) : null}
 
       <div className="dash-greet">
+        {weekOn ? (
+          <p className="status-eyebrow" data-testid="orientation-day">
+            {`Day ${data.orientationDay} of your first week`}
+          </p>
+        ) : null}
         <h1
           className={
             ideasOn ? "dash-greet-date dash-greet-date--eyebrow" : "dash-greet-date"
@@ -79,7 +97,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
           stays the one accent-filled action. Flag off ⇒ unchanged Home. */}
       {ideasOn ? <GuideIdeas /> : null}
 
-      <HomeCheckHero />
+      <HomeCheckHero stepToday={heroIsStep} />
 
       {data.nextAction ? (
         <p className="dash-next-action" data-testid="next-action">

@@ -5,6 +5,7 @@ import { dayKeyInTimezone, dayKeyLocal } from "../../../lib/coach/days";
 import {
   currentOrientationStep,
   EMPTY_ORIENTATION,
+  homeOrientation,
   ORIENTATION_STEPS,
   orientationDay,
   OrientationStateSchema,
@@ -64,5 +65,48 @@ describe("orientation week (PRD v1.1 §6 F-ORIENT)", () => {
     expect(OrientationStateSchema.safeParse({ done: ["8"], dismissedAt: null, startedAt: null }).success).toBe(false);
     expect(OrientationStateSchema.safeParse({ done: [], dismissedAt: null, startedAt: null, note: "x" }).success).toBe(false);
     expect(OrientationStateSchema.safeParse({ done: [], dismissedAt: null, startedAt: "not a date" }).success).toBe(false);
+  });
+});
+
+describe("homeOrientation — which week Home shows (review A-66, ruling F-24)", () => {
+  const now = new Date(2026, 8, 15, 12, 0); // Sep 15, noon local
+  const at = (d: number) => new Date(2026, 8, d, 9, 0).toISOString();
+  const week = (startedAt: string | null, extra: Partial<OrientationState> = {}): OrientationState => ({
+    ...EMPTY_ORIENTATION,
+    startedAt,
+    ...extra
+  });
+
+  it("a set start is the week's start, whatever onboardedAt says", () => {
+    expect(homeOrientation(week(at(12)), at(1), dayKeyLocal, now)).toEqual({
+      day: 4,
+      step: ORIENTATION_STEPS[3],
+      needsStart: false
+    });
+    expect(homeOrientation(week(at(12)), null, dayKeyLocal, now)?.day).toBe(4);
+  });
+
+  it("no start and a profile younger than seven days ⇒ day 1, and the caller stamps the start", () => {
+    for (const onboarded of [at(15), at(9), new Date(2026, 8, 9, 9, 0)]) {
+      expect(homeOrientation(EMPTY_ORIENTATION, onboarded, dayKeyLocal, now)).toEqual({
+        day: 1,
+        step: ORIENTATION_STEPS[0],
+        needsStart: true
+      });
+    }
+  });
+
+  it("no start and no young profile ⇒ no week (the start is never read from onboardedAt)", () => {
+    for (const onboarded of [at(8), "2026-01-01T00:00:00.000Z", "not a date", null, undefined]) {
+      expect(homeOrientation(EMPTY_ORIENTATION, onboarded, dayKeyLocal, now)).toBeNull();
+    }
+  });
+
+  it("no step ⇒ no week to show and nothing to stamp (dismissed, all done, or over)", () => {
+    expect(homeOrientation(week(null, { dismissedAt: at(14) }), at(14), dayKeyLocal, now)).toBeNull();
+    expect(homeOrientation(week(at(15), { dismissedAt: at(15) }), null, dayKeyLocal, now)).toBeNull();
+    expect(homeOrientation(week(at(5)), null, dayKeyLocal, now)).toBeNull();
+    const all = ORIENTATION_STEPS.map((step) => step.id);
+    expect(homeOrientation(week(at(14), { done: all }), null, dayKeyLocal, now)).toBeNull();
   });
 });
