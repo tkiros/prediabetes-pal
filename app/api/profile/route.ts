@@ -223,6 +223,13 @@ function orientationValue(op: OrientationOp) {
       return sql`jsonb_set(${current}, '{dismissedAt}', ${NOW_ISO})`;
     case "restore":
       return sql`jsonb_set(${current}, '{dismissedAt}', 'null'::jsonb)`;
+    default:
+      // #11: an op added to OrientationOpSchema but not handled here would
+      // otherwise fall through with noImplicitReturns off, returning
+      // undefined — a dropped column value, not a build error. `op` is
+      // `never` once every case above is exhaustive, so this only compiles
+      // while it stays that way.
+      return op satisfies never;
   }
 }
 

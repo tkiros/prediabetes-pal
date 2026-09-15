@@ -626,13 +626,31 @@ describe("orientation (F-ORIENT, signed-in state in profiles.orientation)", () =
     expect(profile.nudgeHour).toBe(11);
   });
 
-  it("nudge-only PATCHes still work with the orient surface off", async () => {
+  it("nudge-only PATCHes still work with the orient surface off, and still cancel a pending nudge attempt", async () => {
     vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "");
     await seedProfile();
+    await testDb.db.insert(schema.pushSubscriptions).values({
+      userId,
+      endpoint: "https://push.example/profile-flag-off",
+      p256dh: "key",
+      auth: "auth",
+      nudgeAttemptDate: "2026-07-03",
+      nudgeAttemptCount: 1
+    });
 
     const response = await PATCH(patchRequest({ nudgeHour: 8 }));
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true });
+    const [profile] = await testDb.db
+      .select()
+      .from(schema.profiles)
+      .where(eq(schema.profiles.userId, userId));
+    expect(profile.nudgeHour).toBe(8);
+    const [subscription] = await testDb.db
+      .select()
+      .from(schema.pushSubscriptions)
+      .where(eq(schema.pushSubscriptions.userId, userId));
+    expect(subscription.nudgeAttemptCount).toBe(0);
   });
 });
