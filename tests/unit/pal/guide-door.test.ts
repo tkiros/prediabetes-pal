@@ -347,6 +347,12 @@ async function renderSignedIn(flag: string, seed: Seed = {}): Promise<string> {
 /** Rendered text with React's attribute-safe apostrophe decoded. */
 const decode = (html: string) => html.replace(/&#x27;/g, "'");
 
+/** Home's next-action line: [href, text], or null when the line is absent. */
+const stepLine = (html: string) =>
+  /data-testid="next-action"><a href="([^"]*)">([^<]*)</.exec(decode(html))?.slice(1) ?? null;
+/** The meal-check hero's eyebrow text, e.g. "Meal check" or "Today's step · Meal check". */
+const heroEyebrow = (html: string) => /<p class="meal-hero-eyebrow">([^<]*)</.exec(decode(html))?.[1];
+
 // A week in progress and a check today — everything the orient door reads.
 const BUSY: Seed = { onboardedDaysAgo: 1, week: { startedDaysAgo: 1, done: ["1"] }, checkToday: true };
 
@@ -405,9 +411,6 @@ describe("Home with the orient door open: the day eyebrow and the day's step (Ta
   const EYEBROW =
     /<div class="dash-greet"><h1 class="dash-greet-date dash-greet-date--eyebrow" data-testid="orientation-day">Day (\d) of your first week<\/h1>/;
   const dayOf = (html: string) => EYEBROW.exec(html)?.[1] ?? null;
-  const stepLine = (html: string) =>
-    /data-testid="next-action"><a href="([^"]*)">([^<]*)</.exec(decode(html))?.slice(1) ?? null;
-  const heroEyebrow = (html: string) => /<p class="meal-hero-eyebrow">([^<]*)</.exec(decode(html))?.[1];
 
   const renders = [
     ["guest", renderGuest],
@@ -575,10 +578,6 @@ describe("A-83: an expired-taster guest's step line asks them to sign in (Task 3
     vi.useRealTimers();
     vi.unstubAllEnvs();
   });
-
-  const stepLine = (html: string) =>
-    /data-testid="next-action"><a href="([^"]*)">([^<]*)</.exec(decode(html))?.slice(1) ?? null;
-  const heroEyebrow = (html: string) => /<p class="meal-hero-eyebrow">([^<]*)</.exec(decode(html))?.[1];
 
   // NOW is noon 2026-09-15 in America/New_York; tasterStore keys off the
   // device's LOCAL day, so a firstDay of the day before reads "expired".
