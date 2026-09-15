@@ -169,9 +169,35 @@ a claim) — noted as a deliberate design decision, not a gap.
 
 ## Surface walk
 
-Every file named by Task 2.2 Step 1's glob list. "Clean" means: no `--danger`/
-`--high-*` outside a verdict-signal context, no imperative-near-verdict, no
-product-as-subject banned verb, no fear-bank phrase.
+Every file named by Task 2.2 Step 1's glob list — **77 files, enumerated by
+actually running the globs**, not estimated:
+
+```bash
+find "app/(app)" -name "page.tsx" | wc -l    # 18 — app/(app)/**/page.tsx is RECURSIVE
+ls app/page.tsx | wc -l                       # 1
+find app/guides -type f | wc -l               # 8  — app/guides/** (all files, not just page.tsx)
+ls components/*.tsx | wc -l                   # 45
+# + lib/pal/coach-outputs.ts, lib/pal/fallback.ts, lib/client/ui-state.ts,
+#   app/api/check/route.ts, proxy.ts — 5, named explicitly, no glob ambiguity
+```
+`18 + 1 + 8 + 45 + 5 = 77`. Round 1 of this report undercounted the first
+glob's recursion by one level (missed `app/(app)/account/delete/page.tsx`,
+`app/(app)/canceled/confirm/page.tsx`, `app/(app)/signin/check-email/page.tsx`,
+`app/(app)/trial/started/page.tsx` — 14 rows instead of 18) and dropped one
+`components/*.tsx` row in transcription (`request-status.tsx` — it was in the
+original directory listing, just never got a table row; 44 rows instead of
+45). Both are fixed below. The other three globs (`app/page.tsx`,
+`app/guides/**`, the five named lib/api files) were already complete —
+re-verified by running the same `find`/`ls` commands above against the
+existing table rows, not just recounting them.
+
+All 77 rows below are **pass**. "Clean" means: no `--danger`/`--high-*`
+outside a verdict-signal context, no imperative-near-verdict, no
+product-as-subject banned verb, no fear-bank phrase. One row
+(`request-status.tsx`) surfaces a genuinely new observation on the second
+pass — a raw hex colour outside the `--danger`/`--high-*` family entirely,
+which the round-1 mechanical grep could not have caught — flagged in its own
+row rather than folded quietly into "pass."
 
 ### `app/page.tsx` and `app/(app)/**/page.tsx`
 
@@ -179,7 +205,9 @@ product-as-subject banned verb, no fear-bank phrase.
 | --- | --- | --- | --- | --- | --- |
 | `app/page.tsx` (landing) | `--high-border` on `.landing-showpiece-dot`/`.landing-showpiece-answer[data-risk="HIGH"]` — the marketing-page example verdict dot, same category as the Signal row (a per-item risk indicator, not misapplied fear colour); `.danger-button`/`.pantry-row-delete` don't appear here | none | "Stay in control." (line 566) — user controls their own data, not the product acting on the body; "the control it describes" (dev comment) — n/a | none | pass |
 | `app/(app)/account/page.tsx` | `--danger` on `.danger-button` for account/health-data deletion ("This can't be undone. Delete everything?") — same destructive-action pattern as `.pantry-row-delete` in `pantry-confirm-list.tsx` | imperative, but about account/data deletion, not a meal verdict | "Manage card & billing," "Manage or cancel in Google Play" — user manages billing, not product managing health | none | pass (destructive-action colour correctly scoped away from verdict tone) |
+| `app/(app)/account/delete/page.tsx` | **none** — verified directly (grepped the file for `danger`/`high-`/every `className`): no `--danger`, no `--high-*`, no `.danger-button`, no `.field-error`. Corrects an assumption in this task's fix request that this page is "the one surface where `--danger` legitimately lives" — that token actually lives on the sibling `app/(app)/account/page.tsx` above (`.danger-button` + `.field-error`, both `var(--danger)`), which performs the confirm-and-execute delete. This page is a separate, informational-only route reachable **signed-out** (declared in Google Play's Data-deletion field, `AUD-013`) that only describes the process and links back to `/account`; no button here executes anything | "Deletion runs immediately and cannot be undone." — plain, calm, declarative statement of an irreversible action under a "Two honest boundaries" framing; no exclamation, no fear-bank word | none | none | pass |
 | `app/(app)/canceled/page.tsx` | none | none | none | none | pass — no risk-adjacent copy found |
+| `app/(app)/canceled/confirm/page.tsx` | none — the error fallback (`role="alert"`) uses `.field-hint`, `var(--text-muted)` (neutral grey), not `.field-error`/`--danger` | none — "Yes, cancel — no charge" is a routine confirm action, not alarm-adjacent | none | none | pass. `{error}` can also echo `app/api/billing/handlers.ts`'s JSON error strings (spot-checked: "This cancel link has expired.", "No Stripe subscription to cancel.", etc. — all plain billing status, no fear-bank word); that file is outside the brief's named globs, so not walked as its own surface |
 | `app/(app)/check/page.tsx` | none | none | none | none | pass |
 | `app/(app)/demo/page.tsx` | none | none | "lower impact" — adjectival qualitative descriptor, explicitly allowed under `result-qualitative-impact` | none | pass |
 | `app/(app)/get-the-app/page.tsx` | none | none | none | none | pass |
@@ -190,8 +218,10 @@ product-as-subject banned verb, no fear-bank phrase.
 | `app/(app)/onboarding/page.tsx` | none | none | none | "A quick heads-up" — calm framing for the out-of-range boundary step; body text is frozen `boundary-copy.ts` (out of scope, PRD §0) | pass |
 | `app/(app)/privacy/page.tsx` | none | none | "how to control it" (user controls own data); "What Prediabetes Pal never does" heading over a privacy-commitments list | none | pass |
 | `app/(app)/signin/page.tsx` | none | none | none | none | pass — no risk-adjacent copy found |
+| `app/(app)/signin/check-email/page.tsx` | none | none | none | none | pass — no risk-adjacent copy found |
 | `app/(app)/subscribe/page.tsx` | none | none | none | none | pass — no risk-adjacent copy found |
 | `app/(app)/terms/page.tsx` | none | none | none | "Availability, warranties, and liability" — standard legal-boilerplate heading, not health fear framing | pass |
+| `app/(app)/trial/started/page.tsx` | none | none | none | none | pass — no risk-adjacent copy found |
 
 ### `app/guides/**`
 
@@ -223,6 +253,7 @@ product-as-subject banned verb, no fear-bank phrase.
 | `photo-draft-review.tsx`, `photo-input-button.tsx`, `voice-input-button.tsx`, `print-button.tsx` | pass | No risk-adjacent copy found. |
 | `reviewer-signin-form.tsx` | pass | No risk-adjacent copy found. |
 | `food-check-form.tsx`, `home-check-hero.tsx` | pass | No risk-adjacent copy found. |
+| `request-status.tsx` | pass — flagged | Renders dynamic error-state copy (`state.message`) for the "error" `CheckUiState`, but the content is **bounded, not free-form**: it traces to `mapCheckFailure()` in `lib/client/ui-state.ts:97-115`, a closed 5-branch switch (timeout / rate_limited / paused / network / generic-retry), every branch a fixed calm string — confirmed by reading the function, not assumed. **New finding, not in round 1:** `.status-card[data-state="error"]` (`app/globals.css:666-669`) is styled `background: #fff7ed; border-color: #f97316;` — a raw hardcoded amber/orange hex pair, outside the `--danger`/`--high-*` token family entirely. Round 1's mechanical grep (`var(--danger)\|--high-`) could not have caught this, since it isn't a token reference. Scope-checked: `.status-card` and `data-state="error"` are used only here (`grep -rn "status-card\|data-state=\"error\""` across `components/*.tsx`), so this colour never touches a meal verdict or clinical route — it marks a transient request failure (network/timeout/rate-limit), a different category than the verdict-tone criteria this audit is scored against. Not reclassified as a tone violation, but flagged for the design/safety owner as a colour outside the audited token family, and as a methodology note: the grep pattern has a blind spot for hand-authored one-off colours anywhere else in the 4700-line stylesheet. |
 | `guide-ideas.tsx` | pass (container) | Container's own static strings ("Ideas for breakfast/lunch/dinner/today") are clean. The idea bank content itself lives in `lib/pal/guide-ideas.ts`, which is **not** one of the files this task's glob list names — not walked here; flag as a gap in the brief's own file list if a future audit needs the bank content covered. |
 | `dashboard-view.tsx`, `guest-dashboard.tsx`, `week-strip.tsx`, `today-list.tsx`, `streak-chip.tsx`, `daily-loop.tsx`, `insight-card.tsx`, `dashboard-insight.tsx`, `plan-box.tsx` | pass | No risk-adjacent copy found (composition/short-label components; `week-strip.tsx`'s `--high-*` usage on `.dash-daymark`/`.dash-legend-mark` is a per-day verdict indicator, same category as the Signal row). |
 | `landing-includes.tsx`, `landing-pause.tsx` | pass | No risk-adjacent copy found. |
@@ -268,3 +299,53 @@ landed, so this document folds Task 2.2's audit-walk deliverable and Task 2.4's
 clinical-route review into one report and one commit, per the controller's
 instruction — rather than splitting an audit across two files when every commit
 sha it needs to cite already exists.
+
+## Fix round 1
+
+A review pass caught that `app/(app)/**/page.tsx` is a **recursive** glob and
+round 1's walk had only gone one level deep, missing
+`app/(app)/account/delete/page.tsx`, `app/(app)/canceled/confirm/page.tsx`,
+`app/(app)/signin/check-email/page.tsx`, and `app/(app)/trial/started/page.tsx`
+— plus one `components/*.tsx` row, `request-status.tsx`, that was in the
+original directory listing but never made it into the table. All five are now
+walked with real, file-specific content (see their rows above) and none
+contains a tone violation, but two things surfaced worth recording plainly
+rather than quietly folding into "pass":
+
+- **`request-status.tsx`** — its error-state card is styled with a raw
+  `#f97316`/`#fff7ed` hex pair (`app/globals.css:666-669`), not a
+  `--danger`/`--high-*` token. Round 1's grep pattern couldn't have found this
+  — it only matched token references, not hand-authored hex values. Scoped
+  exclusively to this one component's transient-request-error state (never a
+  meal verdict), so not reclassified as a tone finding, but flagged as a
+  blind spot in the audit's own tooling.
+- **`app/(app)/account/delete/page.tsx`** — the fix request that prompted this
+  round described this page as "the one surface in the app where `--danger`
+  legitimately lives." Reading the file directly (every `className` on the
+  page, grepped for `danger`/`high-`) shows no such usage — the file is purely
+  informational (declared in Google Play's Data-deletion field, reachable
+  signed-out) and links back to `/account` rather than performing the delete
+  itself. The actual `--danger` usage for account deletion is on
+  `app/(app)/account/page.tsx` (`.danger-button` + `.field-error`), already
+  covered in round 1's table. Recorded here rather than silently adopting the
+  framing, since a report repeating an unverified claim about its own subject
+  matter would be the same category of defect this round exists to fix.
+
+Every other glob in the brief (`app/page.tsx`, `app/guides/**`, the five named
+lib/api files) was re-verified against the existing rows by running the same
+`find`/`ls` enumeration used above, not by assuming round 1 got them right —
+all three were already complete. The `guide-ideas.tsx` row's self-flagged gap
+(`lib/pal/guide-ideas.ts` outside the brief's glob) is the same kind of
+edge case checked for here and remains the only one of its kind: no other row
+depends on an unflagged assumption about what a glob does or does not include.
+
+Corrected surface count: **77** (18 + 1 + 8 + 45 + 5, see the Surface walk
+section's derivation), up from round 1's uncounted, incorrectly-implied total.
+All 77 rows are pass; one (`proxy.ts`) carries a tone-clean owner question
+(no ledger row); one (`request-status.tsx`) carries the tooling-blind-spot
+note above. Task 2.4's nine `clinical-*` rows are unaffected by this round —
+that glob was never a file-system glob and the earlier count there (7 pass, 2
+proposals) stands.
+
+Gates re-run after this round: `npm run test:pal` and `npm run contract`, both
+green, unchanged — no source file was touched.
