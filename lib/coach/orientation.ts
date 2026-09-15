@@ -129,3 +129,25 @@ export function homeOrientation(
   const step = currentOrientationStep(state, day);
   return step ? { day, step, needsStart: !state.startedAt } : null;
 }
+
+/**
+ * /journey's "Where you are" line (Task 3.7; rulings F-44, F-45; reviews A-30,
+ * A-86). No start ⇒ no line: /journey never stamps one, only Home and the
+ * tour do. While the week runs it names the day; after day 7, or once
+ * dismissed, it stays as a way back to the week. The count is additive, never
+ * "of 7" (DESIGN.md §9), and it is left out until a step is done.
+ */
+export function whereYouAreLine(
+  state: OrientationState,
+  dayKey: DayKeyFn,
+  now: Date = new Date()
+): string | null {
+  if (!state.startedAt) return null;
+  const day = orientationDay(state.startedAt, dayKey, now);
+  const active = day <= 7 && !state.dismissedAt;
+  const done = new Set(state.done).size;
+  const parts = [active ? `Day ${day} of your first week` : "Your first week"];
+  if (done > 0) parts.push(done === 1 ? "1 step done" : `${done} steps done`);
+  if (!active) parts.push("Review");
+  return parts.join(" · ");
+}

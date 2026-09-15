@@ -1,6 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
+import { doorSurfaceOn } from "./guide-door";
+
 /**
  * /journey smoke (C7 four-jobs restructure; was progress.spec.ts). `/api/coach`
  * is mocked directly with page.route — no real session/DB needed to exercise
@@ -245,6 +247,107 @@ test("a backend outage renders unavailable + retry, never the upsell", async ({
   await expect(page.getByTestId("journey-recap")).toBeVisible();
 
   await expectNoSeriousViolations(page);
+});
+
+// Task 3.7 (F-44, F-45, A-30, A-80): the "Where you are" line. The week is
+// seeded the way first-week.spec.ts seeds it, dated by an installed clock.
+// /api/profile is stubbed too: the e2e build has no database behind it.
+async function stubProfile(page: Page, status: number, body: unknown) {
+  await page.route("**/api/profile", async (route) => {
+    await route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
+  });
+}
+
+const whereYouAre = (page: Page) => page.getByTestId("journey-where-you-are");
+
+test.describe("Where you are, with the orient surface on", () => {
+  test.beforeAll(async () => {
+    test.skip(!(await doorSurfaceOn("orient")), "orient surface off in this build");
+  });
+
+  test.beforeEach(async ({ page }) => {
+    // Noon, so "three days ago" is three calendar days in any zone.
+    await page.clock.install({ time: new Date("2026-09-15T12:00:00") });
+  });
+
+  test("a guest's week renders above the sign-in card and links the first week", async ({ page }) => {
+    await stubCoach(page, 401, { error: "Sign in first." });
+    await stubProfile(page, 401, { error: "Sign in first." });
+    await page.goto("/journey");
+    await page.evaluate(() => {
+      const startedAt = new Date();
+      startedAt.setDate(startedAt.getDate() - 3);
+      window.localStorage.setItem(
+        "pal.orient.v1",
+        JSON.stringify({ done: ["1", "2", "3"], dismissedAt: null, startedAt: startedAt.toISOString() })
+      );
+    });
+    await page.reload();
+
+    await expect(whereYouAre(page)).toHaveText("Day 4 of your first week · 3 steps done");
+    await expect(page.getByTestId("progress-unauthenticated")).toBeVisible();
+    const lineFirst = await page.evaluate(() => {
+      const line = document.querySelector('[data-testid="journey-where-you-are"]');
+      const card = document.querySelector('[data-testid="progress-unauthenticated"]');
+      return Boolean(line && card && line.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    expect(lineFirst).toBe(true);
+
+    await expectRv3Clean(page);
+    await expectNoSeriousViolations(page);
+
+    await whereYouAre(page).getByRole("link").click();
+    await expect(page).toHaveURL(/\/learn\/first-week$/);
+    await expect(page.getByTestId("orientation-day")).toHaveText("Day 4 of your first week");
+  });
+
+  test("a free user's dismissed week stays as a review line", async ({ page }) => {
+    await stubCoach(page, 200, {
+      streak: 2,
+      weekView: [],
+      insight: null,
+      tier: "free",
+      verdictWeek,
+      latestBai: null
+    });
+    await stubProfile(page, 200, {
+      hasProfile: true,
+      timezone: "UTC",
+      orientation: {
+        done: ["2"],
+        dismissedAt: "2026-09-14T09:00:00.000Z",
+        startedAt: "2026-09-13T09:00:00.000Z"
+      }
+    });
+    await page.goto("/journey");
+
+    await expect(whereYouAre(page)).toHaveText("Your first week · 1 step done · Review");
+    await expect(whereYouAre(page).getByRole("link")).toHaveAttribute("href", "/learn/first-week");
+    // Outside the Premium recap: the free document still carries it (A-80).
+    await expect(page.getByTestId("progress-locked")).toHaveCount(1);
+
+    await expectRv3Clean(page);
+    await expectNoSeriousViolations(page);
+  });
+});
+
+test("orient surface off: /journey never asks for the profile and has no week line", async ({ page }) => {
+  test.skip(await doorSurfaceOn("orient"), "orient surface on in this build");
+  const asked: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/api/profile") asked.push(request.method());
+  });
+  await stubCoach(
+    page,
+    200,
+    premiumBody({ weekStart: "2026-06-29", score: 72, adherence: 71, consistency: 60, action: 100, prompted: 5 })
+  );
+  await page.goto("/journey");
+  await expect(page.getByTestId("journey-recap")).toBeVisible();
+  await page.waitForLoadState("networkidle");
+
+  expect(asked).toEqual([]);
+  await expect(whereYouAre(page)).toHaveCount(0);
 });
 
 test("legacy paths permanently redirect to the four-job routes", async ({

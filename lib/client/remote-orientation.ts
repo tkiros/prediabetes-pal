@@ -1,7 +1,12 @@
-import type {
-  OrientationState,
-  OrientationStepId
+import { dayKeyInTimezone, dayKeyLocal } from "../coach/days";
+import {
+  EMPTY_ORIENTATION,
+  OrientationStateSchema,
+  whereYouAreLine,
+  type OrientationState,
+  type OrientationStepId
 } from "../coach/orientation";
+import { guideDoorEnabled } from "../guide-door-flag";
 import { orientationStore } from "./orientation-store";
 
 /**
@@ -92,4 +97,33 @@ export async function syncOrientation({
     if (startIsMigration && status === 200) migrated = true;
   }
   return migrated;
+}
+
+/**
+ * /journey's "Where you are" line, read once per visit (Task 3.7, ruling
+ * F-44). The page is a client component, so this runs in an effect, after
+ * hydration (review A-80). With the orient surface off it returns before any
+ * request, so the page makes exactly the requests it made before.
+ * - 401 (a guest) or a signed-in user with no profiles row (A-92) ⇒ the
+ *   device week, on the device's calendar — as Home reads it.
+ * - A row ⇒ the account's own week, on the account's calendar (A-06). A null
+ *   or unreadable copy is no week; the device is not consulted.
+ * - Anything else (offline, 5xx, a body it cannot read, an unknown timezone)
+ *   ⇒ null, and the page leaves the line out.
+ */
+export async function loadJourneyLine(now: Date = new Date()): Promise<string | null> {
+  if (!guideDoorEnabled("orient")) return null;
+  try {
+    const response = await fetch("/api/profile", { cache: "no-store" });
+    const device = () => whereYouAreLine(orientationStore.get(), dayKeyLocal, now);
+    if (response.status === 401) return device();
+    if (!response.ok) return null;
+    const body = (await response.json()) as { hasProfile?: unknown; timezone?: unknown; orientation?: unknown } | null;
+    if (body?.hasProfile === false) return device();
+    if (body?.hasProfile !== true || typeof body.timezone !== "string") return null;
+    const stored = OrientationStateSchema.safeParse(body.orientation);
+    return whereYouAreLine(stored.success ? stored.data : EMPTY_ORIENTATION, dayKeyInTimezone(body.timezone), now);
+  } catch {
+    return null;
+  }
 }

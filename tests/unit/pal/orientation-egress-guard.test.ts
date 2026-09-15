@@ -33,7 +33,9 @@ const BANNED: ReadonlyArray<[string, RegExp]> = [
 const SENDING_SOURCES = [
   "lib/client/remote-orientation.ts",
   "components/orientation-sync.tsx",
-  "components/orientation-list.tsx"
+  "components/orientation-list.tsx",
+  // Task 3.7: /journey reads the week through GET /api/profile.
+  "app/(app)/journey/page.tsx"
 ] as const;
 
 const NOTE_MARKERS = ["orientationNote", "pal.orient.note"] as const;
