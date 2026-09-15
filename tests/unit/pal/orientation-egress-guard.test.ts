@@ -44,7 +44,9 @@ const SENDING_SOURCES = [
   // hands step 5's field its completion callback.
   "lib/client/orientation-progress.ts",
   "components/step-link.tsx",
-  "components/orientation-note-slot.tsx"
+  "components/orientation-note-slot.tsx",
+  // …and the check form, which records a check's step event.
+  "components/food-check-form.tsx"
 ] as const;
 
 const NOTE_MARKERS = ["orientationNote", "pal.orient.note"] as const;

@@ -527,10 +527,12 @@ describe("orientation (F-ORIENT, signed-in state in profiles.orientation)", () =
   const startedWeek = (done: string[], dismissedAt: string | null = null) =>
     patchOrientation({ op: "set", state: { done, dismissedAt, startedAt: PAST_START } });
 
-  it("two concurrent markNext ops on a started week mark both listed steps", async () => {
+  it("two overlapping markNext requests on a started week mark both listed steps (the merge is in SQL)", async () => {
     await seedProfile();
     await startedWeek([]);
 
+    // One PGlite connection runs these one after the other: this proves the
+    // handler has no JS read-then-write, not Postgres's row-lock re-check.
     const responses = await Promise.all([
       patchOrientation({ op: "markNext", steps: ["2", "3"] }),
       patchOrientation({ op: "markNext", steps: ["2", "3"] })
