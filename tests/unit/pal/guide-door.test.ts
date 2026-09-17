@@ -92,6 +92,7 @@ import {
   guideDoorEnabled,
 } from "../../../lib/guide-door-flag";
 import { SOURCE_LEAD } from "../../../components/result-card";
+import type { DashboardData } from "../../../components/dashboard-view";
 
 const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), "utf8");
 
@@ -142,6 +143,27 @@ describe("guide-door render sites (source pins, node env has no DOM)", () => {
     const src = read("components/food-check-form.tsx");
     expect(src).toContain('"pal.recheck.source"');
     expect(src.match(/name: "idea_check_completed"/g)).toHaveLength(1);
+  });
+
+  it("the check form records the week's step events where a check completes (review A-84)", () => {
+    const src = read("components/food-check-form.tsx");
+    const at = (needle: string) => {
+      const index = src.indexOf(needle);
+      expect(index, needle).toBeGreaterThan(-1);
+      return index;
+    };
+    // Every result check: once, after check_completed, outside the idea block.
+    expect(src.match(/recordStepEvent\("check"\)/g)).toHaveLength(1);
+    expect(at('recordStepEvent("check")')).toBeGreaterThan(at('name: "check_completed"'));
+    expect(at('recordStepEvent("check")')).toBeLessThan(at("if (shouldCountIdeaCheck("));
+    // An idea check as well: once, inside the idea block, before the taster meter.
+    expect(src.match(/recordStepEvent\("idea_check"\)/g)).toHaveLength(1);
+    expect(at('recordStepEvent("idea_check")')).toBeGreaterThan(at("if (shouldCountIdeaCheck("));
+    expect(at('recordStepEvent("idea_check")')).toBeLessThan(at("if (shouldRecordTaster("));
+  });
+
+  it("a visit to /journey records no step event — step 7 completes from its own links (ruling F-54)", () => {
+    expect(read("app/(app)/journey/page.tsx")).not.toContain("recordStepEvent");
   });
 
   it("the other pal.recheck writers also clear pal.recheck.source (review A-102) — a hand-off that never reached the form cannot make a later typed check count as an idea", () => {
@@ -347,6 +369,12 @@ async function renderSignedIn(flag: string, seed: Seed = {}): Promise<string> {
 /** Rendered text with React's attribute-safe apostrophe decoded. */
 const decode = (html: string) => html.replace(/&#x27;/g, "'");
 
+/** Home's next-action line: [href, text], or null when the line is absent. */
+const stepLine = (html: string) =>
+  /data-testid="next-action"><a href="([^"]*)">([^<]*)</.exec(decode(html))?.slice(1) ?? null;
+/** The meal-check hero's eyebrow text, e.g. "Meal check" or "Today's step · Meal check". */
+const heroEyebrow = (html: string) => /<p class="meal-hero-eyebrow">([^<]*)</.exec(decode(html))?.[1];
+
 // A week in progress and a check today — everything the orient door reads.
 const BUSY: Seed = { onboardedDaysAgo: 1, week: { startedDaysAgo: 1, done: ["1"] }, checkToday: true };
 
@@ -400,11 +428,11 @@ describe("Home with the orient door open: the day eyebrow and the day's step (Ta
     vi.unstubAllEnvs();
   });
 
-  const EYEBROW = /<div class="dash-greet"><p class="status-eyebrow" data-testid="orientation-day">Day (\d) of your first week<\/p><h1 /;
+  // F-30/F-35 (option C): the day line now renders INSIDE the one <h1> in
+  // place of the date, not as a separate eyebrow <p> above it.
+  const EYEBROW =
+    /<div class="dash-greet"><h1 class="dash-greet-date dash-greet-date--eyebrow" data-testid="orientation-day">Day (\d) of your first week<\/h1>/;
   const dayOf = (html: string) => EYEBROW.exec(html)?.[1] ?? null;
-  const stepLine = (html: string) =>
-    /data-testid="next-action"><a href="([^"]*)">([^<]*)</.exec(decode(html))?.slice(1) ?? null;
-  const heroEyebrow = (html: string) => /<p class="meal-hero-eyebrow">([^<]*)</.exec(decode(html))?.[1];
 
   const renders = [
     ["guest", renderGuest],
@@ -412,9 +440,12 @@ describe("Home with the orient door open: the day eyebrow and the day's step (Ta
   ] as const;
 
   for (const [who, render] of renders) {
-    it(`${who}: a started week reads "Day N of your first week" inside the greeting, above the date`, async () => {
+    it(`${who}: a started week reads "Day N of your first week" inside the greeting's one <h1>, in the date's place (F-30/F-35)`, async () => {
       const html = await render("1", { onboardedDaysAgo: 40, week: { startedDaysAgo: 3 } });
       expect(dayOf(html)).toBe("4");
+      // The date text is gone while the week runs — the day line replaced it,
+      // it did not stack above it.
+      expect(html).not.toContain("Tuesday, September 15");
       // Step 4 does not point at /check, so the line renders before any check.
       expect(stepLine(html)).toEqual(["/home#ideas-title", "Today's step: Try one of today's ideas and see how it reads."]);
       expect(heroEyebrow(html)).toBe("Meal check");
@@ -454,6 +485,10 @@ describe("Home with the orient door open: the day eyebrow and the day's step (Ta
         const html = await render("1", seed);
         expect(dayOf(html)).toBeNull();
         expect(html).not.toContain("orientation-day");
+        // No week ⇒ the <h1> falls back to the date, untagged (F-30/F-35).
+        expect(html).toContain(
+          '<h1 class="dash-greet-date dash-greet-date--eyebrow">Tuesday, September 15</h1>'
+        );
         // Door open, no week, no check yet: the hero is the action (owner rule 2026-08-11).
         expect(html).not.toContain('data-testid="next-action"');
         expect(heroEyebrow(html)).toBe("Meal check");
@@ -537,6 +572,25 @@ describe("Home with the orient door open: the day eyebrow and the day's step (Ta
     expect((await HomePage()).props.children[0]).toBeNull();
   });
 
+  it("signed-in: a day-7 week hands DashboardView a step-7 line carrying its id, which picks the step link (F-54); door shut, no id", async () => {
+    const lineOf = async (flag: string, seed: Seed) => {
+      vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", flag);
+      seedServer(seed);
+      const { default: HomePage } = await import("../../../app/(app)/home/page");
+      const [, view] = (await HomePage()).props.children as [unknown, { props: { data: DashboardData } }];
+      return view.props.data.nextAction;
+    };
+    expect(await lineOf("1", { onboardedDaysAgo: 40, week: { startedDaysAgo: 6 } })).toEqual({
+      text: "Today's step: Look back at the week on My journey.",
+      href: "/journey",
+      step: "7"
+    });
+    // Door shut, a check today: the classic line, with no step id at all.
+    const classic = await lineOf("", { onboardedDaysAgo: 40, week: { startedDaysAgo: 6 }, checkToday: true });
+    expect(classic).toEqual({ text: "Today's check suggested a step — did it happen?", href: "/meals" });
+    expect(Object.keys(classic ?? {})).toEqual(["text", "href"]);
+  });
+
   it("signed-in: no profiles row ⇒ no week, however the device looks (A-92)", async () => {
     storage.setItem("pal.orient.v1", JSON.stringify(orientationOf({ startedDaysAgo: 1 })));
     vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "1");
@@ -544,6 +598,78 @@ describe("Home with the orient door open: the day eyebrow and the day's step (Ta
     home.checks = [];
     const { default: HomePage } = await import("../../../app/(app)/home/page");
     const html = renderToStaticMarkup(await HomePage());
+    expect(html).not.toContain("orientation-day");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A-83 (plan Task 3.4): an expired-taster guest's line is the sign-in line,
+// guest Home only — components/guest-dashboard.tsx, buildData.
+// ---------------------------------------------------------------------------
+
+describe("A-83: an expired-taster guest's step line asks them to sign in (Task 3.4)", () => {
+  beforeEach(() => {
+    storage.clear();
+    home.selects = [];
+    vi.stubEnv("TZ", "America/New_York");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(NOW);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
+  });
+
+  // NOW is noon 2026-09-15 in America/New_York; tasterStore keys off the
+  // device's LOCAL day, so a firstDay of the day before reads "expired".
+  const expireTaster = () =>
+    storage.setItem("pal.taster.v1", JSON.stringify({ firstDay: "2026-09-14", used: 3 }));
+  const availableTaster = () =>
+    storage.setItem("pal.taster.v1", JSON.stringify({ firstDay: "2026-09-15", used: 3 }));
+
+  it('a non-check step day: the sign-in line replaces "Today\'s step: …", no prefix', async () => {
+    expireTaster();
+    // day 4, step 4 -> /home#ideas-title; without the expired taster this is
+    // the ordinary "Today's step: Try one of today's ideas…" line (see the
+    // Task 3.5 block above).
+    const html = await renderGuest("1", { week: { startedDaysAgo: 3 } });
+    expect(stepLine(html)).toEqual(["/signin", "Sign in to keep your week going"]);
+  });
+
+  it("a check-step day before the first check: the sign-in line shows even though the owner-rule /check carve-out would otherwise suppress the line entirely (A-79)", async () => {
+    expireTaster();
+    // day 2, step 2 -> /check, no check yet: normally no next-action line at
+    // all (owner rule 2026-08-11) and the hero reads "Today's step · Meal
+    // check". The sign-in line is not one of the seven steps, so the
+    // carve-out does not apply to it and the hero falls back to plain
+    // "Meal check".
+    const html = await renderGuest("1", { week: { startedDaysAgo: 1 } });
+    expect(stepLine(html)).toEqual(["/signin", "Sign in to keep your week going"]);
+    expect(heroEyebrow(html)).toBe("Meal check");
+  });
+
+  it("taster available: the normal Today's step line is unchanged", async () => {
+    availableTaster();
+    const html = await renderGuest("1", { week: { startedDaysAgo: 3 } });
+    expect(stepLine(html)).toEqual([
+      "/home#ideas-title",
+      "Today's step: Try one of today's ideas and see how it reads."
+    ]);
+  });
+
+  it("no week (door open, old profile): the classic owner-rule branch runs even with an expired taster — no sign-in line", async () => {
+    expireTaster();
+    const html = await renderGuest("1", { onboardedDaysAgo: 30 });
+    expect(html).not.toContain("orientation-day");
+    expect(html).not.toContain('data-testid="next-action"');
+    expect(html).not.toContain("Sign in to keep your week going");
+    expect(heroEyebrow(html)).toBe("Meal check");
+  });
+
+  it("door shut: an expired taster with a device week gets neither the sign-in line nor the day line (the flag-off snapshots pin the rest)", async () => {
+    expireTaster();
+    const html = await renderGuest("", { week: { startedDaysAgo: 3 } });
+    expect(html).not.toContain("Sign in to keep your week going");
     expect(html).not.toContain("orientation-day");
   });
 });

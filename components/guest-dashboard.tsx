@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { historyStore, type StoredCheck } from "../lib/client/history-store";
 import { orientationStore } from "../lib/client/orientation-store";
 import { profileStore } from "../lib/client/profile-store";
+import { tasterStore } from "../lib/client/taster-store";
 import { useHydrated } from "../lib/client/use-hydrated";
 import {
   computeStreak,
@@ -15,6 +16,7 @@ import {
 import { nextAction } from "../lib/coach/next-action";
 import {
   homeOrientation,
+  SIGNIN_STEP,
   type HomeOrientation
 } from "../lib/coach/orientation";
 import { guideDoorEnabled } from "../lib/guide-door-flag";
@@ -41,7 +43,8 @@ const GUEST_PLAN_BOX: PlanBoxData = {
 function buildData(
   checks: StoredCheck[],
   week: HomeOrientation | null,
-  now: Date
+  now: Date,
+  tasterStatus: ReturnType<typeof tasterStore.status> | null
 ): DashboardData {
   const todayKey = dayKeyLocal(now);
   const todayChecks = checks.filter(
@@ -63,6 +66,12 @@ function buildData(
     (check) => check.risk !== "SAFE" && !check.actionDoneAt
   );
   const step = week?.step ?? null;
+  // A-83 (default approved by the owner at the final gate 2026-09-14): a week
+  // showing plus an expired taster beats every other next-action branch below
+  // — whatever the day's step would have been, whatever the day, even before
+  // today's first check. `week` is non-null only when the door is open (see
+  // GuestDashboard), so this can never fire flag-off.
+  const signInExpired = week !== null && tasterStatus === "expired";
 
   return {
     todayLabel: now.toLocaleDateString("en-US", {
@@ -85,11 +94,13 @@ function buildData(
     // today (guests see the classic line before their first check). The owner
     // rule guard applies only when the door is open, so the flag-off guest Home
     // stays byte-for-byte.
-    nextAction: !guideDoorEnabled("orient")
-      ? nextAction({ checkedToday, undoneActionToday })
-      : checkedToday || (step && step.href !== "/check")
-        ? nextAction({ checkedToday, undoneActionToday, orientation: step })
-        : null,
+    nextAction: signInExpired
+      ? SIGNIN_STEP
+      : !guideDoorEnabled("orient")
+        ? nextAction({ checkedToday, undoneActionToday })
+        : checkedToday || (step && step.href !== "/check")
+          ? nextAction({ checkedToday, undoneActionToday, orientation: step })
+          : null,
     planBox: GUEST_PLAN_BOX,
     planBoxAttention: false,
     isDay0: checks.length === 0,
@@ -120,5 +131,10 @@ export function GuestDashboard() {
     if (needsStart) orientationStore.start();
   }, [needsStart]);
 
-  return <DashboardView data={buildData(checks, week, now)} />;
+  // A-83: the taster status is read behind the same hydration gate as the
+  // week itself (review A-20) — `week` is null before hydration, so this only
+  // ever reads a real value once there is a week to override.
+  const tasterStatus = week !== null ? tasterStore.status(now) : null;
+
+  return <DashboardView data={buildData(checks, week, now, tasterStatus)} />;
 }

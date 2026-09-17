@@ -59,6 +59,43 @@ describe("orientationStore (pal.orient.v1)", () => {
       startedAt: "2026-09-14T09:00:00.000Z"
     });
   });
+
+  it("markNext marks the first listed step not yet done, once the week has started (review A-84)", () => {
+    orientationStore.start(new Date("2026-09-14T09:00:00.000Z"));
+    orientationStore.markDone("1");
+    orientationStore.markNext(["2", "3"]);
+    expect(orientationStore.get().done).toEqual(["1", "2"]);
+    orientationStore.markNext(["2", "3"]);
+    expect(orientationStore.get().done).toEqual(["1", "2", "3"]);
+    // Every listed step done: nothing changes.
+    orientationStore.markNext(["2", "3"]);
+    expect(orientationStore.get()).toEqual({
+      done: ["1", "2", "3"],
+      dismissedAt: null,
+      startedAt: "2026-09-14T09:00:00.000Z"
+    });
+  });
+
+  it("markNext leaves a hidden week unchanged", () => {
+    orientationStore.start(new Date("2026-09-14T09:00:00.000Z"));
+    orientationStore.dismiss(new Date("2026-09-15T09:00:00.000Z"));
+    orientationStore.markNext(["4"]);
+    expect(orientationStore.get()).toEqual({
+      done: [],
+      dismissedAt: "2026-09-15T09:00:00.000Z",
+      startedAt: "2026-09-14T09:00:00.000Z"
+    });
+  });
+
+  it("markNext never starts a week: with no start it writes nothing", () => {
+    orientationStore.markNext(["1"]);
+    expect(storage.getItem("pal.orient.v1")).toBeNull();
+
+    const unstarted = JSON.stringify({ done: ["1"], dismissedAt: null, startedAt: null });
+    storage.setItem("pal.orient.v1", unstarted);
+    orientationStore.markNext(["2", "3"]);
+    expect(storage.getItem("pal.orient.v1")).toBe(unstarted);
+  });
 });
 
 describe("orientationNote (pal.orient.note.v1) — device only", () => {

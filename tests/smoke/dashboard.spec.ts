@@ -222,11 +222,12 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
   // line is likeliest to wrap past two lines. Explicit viewport sizes keep
   // this project-agnostic, like the rest of this file.
   //
-  // Task 3.5: with the orient surface on, every cell also runs a first week
-  // on its day 2 — the tallest Home above the CTA: the "Day 2 of your first
-  // week" eyebrow over the date, and the hero's own step eyebrow (a check-step
-  // day before the first check). The guest here has no profile, so without
-  // the seed no week would render and the fold would not measure it.
+  // Task 3.5 / F-30 / F-35: with the orient surface on, every cell also runs
+  // a first week on its day 2 — the tallest Home above the CTA: the "Day 2 of
+  // your first week" line in the date's place, and the hero's own step
+  // eyebrow (a check-step day before the first check). The guest here has no
+  // profile, so without the seed no week would render and the fold would not
+  // measure it.
   const FOLD_CLOCKS: ReadonlyArray<{ time: string; daypart: Daypart }> = [
     { time: "2026-09-14T08:00:00", daypart: "breakfast" },
     { time: "2026-09-14T13:00:00", daypart: "lunch" },
@@ -275,6 +276,14 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
             ideasFor(daypart, seed + 1)[0]!.text
           );
           if (weekOn) {
+            // F-30/F-35: the day line now renders INSIDE Home's one <h1>, in
+            // the date's place, not as a second eyebrow above it. The
+            // heading-role match is strict (fails if a second <h1> exists)
+            // and full-text (fails if the date is still in it); the testid
+            // match pins the same node's test id.
+            await expect(page.getByRole("heading", { level: 1 }), cell).toHaveText(
+              "Day 2 of your first week"
+            );
             await expect(page.getByTestId("orientation-day"), cell).toHaveText(
               "Day 2 of your first week"
             );

@@ -623,8 +623,18 @@ device for a guest, through `PATCH /api/profile` for a signed-in user. A save
 that fails sends nothing, a second tap on a done step sends nothing, and
 nothing is sent while the `orient` door is shut (the page 404s). Step N is day
 N's step, so completion beyond day 1 shows as counts on steps after `"1"`.
-Today the count covers Done taps on that page only; steps marked where they
-happen (review A-84) add to it only once that PR emits the same event.
+The count covers Done taps on that page only.
+
+Review A-84, shipped behind the same door, marks steps 1–5 and 7 where they
+happen: a check, an idea check, a tap on step 1's or step 7's own link, and
+the first kept save of the clinician-questions field. **A-84 emits no
+analytics event** for those marks. Once `orient` is on, `orientation_step_done`
+therefore undercounts steps 1–5 and 7 by construction: a step marked where it
+happened already shows as done, so there is no Done tap to count. Step 6 (the
+dietitian row) still completes by Done only.
+
+**Before any `orient` flip, the completion read must be redefined** (ruling
+F-56; an owner decision). Until then this view is not a completion read.
 
 **Umami view:** event `orientation_step_done`, broken down by the `step`
 property.

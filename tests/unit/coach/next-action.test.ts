@@ -52,12 +52,30 @@ describe("nextAction — the orientation week (PRD v1.1 §6 F-ORIENT, §7.4)", (
   const note = ORIENTATION_STEPS[4]; // step 5, href /learn/first-week#note
   const check = ORIENTATION_STEPS[1]; // step 2, href /check
 
-  it("the day's step becomes the one next-action line", () => {
+  it("the day's step becomes the one next-action line, carrying the step's id (ruling F-54)", () => {
     expect(nextAction({ checkedToday: true, undoneActionToday: false, orientation: note })).toEqual({
       text: `Today's step: ${note.text}`,
-      href: note.href
+      href: note.href,
+      step: "5"
     });
     expect(nextAction({ checkedToday: false, undoneActionToday: false, orientation: note }).href).toBe(note.href);
+    for (const step of ORIENTATION_STEPS) {
+      expect(nextAction({ checkedToday: true, undoneActionToday: false, orientation: step }).step).toBe(step.id);
+    }
+  });
+
+  it("the step id rides on the step branch only: every classic branch returns exactly text and href", () => {
+    const classic = [
+      nextAction({ checkedToday: false, undoneActionToday: false }),
+      nextAction({ checkedToday: true, undoneActionToday: true }),
+      nextAction({ checkedToday: true, undoneActionToday: false }),
+      nextAction({ checkedToday: true, undoneActionToday: false, orientation: null }),
+      // A check step before today's first check falls through to a classic branch.
+      nextAction({ checkedToday: false, undoneActionToday: false, orientation: check })
+    ];
+    for (const action of classic) {
+      expect(Object.keys(action)).toEqual(["text", "href"]);
+    }
   });
 
   it("a check-a-meal step before today's first check yields the classic branch — the PAGE then passes null so Home renders no line (Task 3.5), the hero IS the action (owner rule 2026-08-11)", () => {

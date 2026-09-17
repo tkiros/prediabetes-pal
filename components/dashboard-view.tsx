@@ -2,12 +2,14 @@ import Link from "next/link";
 
 import type { StoredCheck } from "../lib/client/history-store";
 import type { NextAction } from "../lib/coach/next-action";
+import { stepCompletesFromLink } from "../lib/coach/orientation";
 import { guideDoorEnabled } from "../lib/guide-door-flag";
 import type { PlanBoxData } from "../lib/server/plan-box";
 import { GuideIdeas } from "./guide-ideas";
 import { HomeCheckHero } from "./home-check-hero";
 import { LearnLink } from "./learn-link";
 import { PlanBox } from "./plan-box";
+import { StepLink } from "./step-link";
 import { TodayList } from "./today-list";
 
 /**
@@ -51,7 +53,9 @@ export function DashboardView({ data }: { data: DashboardData }) {
   // v1.1 §7.6's wireframe shows one greeting line, /journey owns the week, and
   // plan §3's fold budget already spent those ~28px on the ideas block (Task
   // 1.8 fix round 1). The "day" arrives with the orientation week (Task 3.5):
-  // while one runs, a "Day N of your first week" eyebrow sits above the date.
+  // while one runs, "Day N of your first week" takes the date's place in the
+  // same <h1> (F-30/F-35, option C) rather than stacking above it — the fold
+  // and the guest hydration reflow both depend on staying one line.
   // Flag off ⇒ today's markup, byte-for-byte.
   const ideasOn = guideDoorEnabled("ideas");
   // Review A-89: the day eyebrow carries day 1, so the first-win block (its
@@ -75,17 +79,13 @@ export function DashboardView({ data }: { data: DashboardData }) {
       ) : null}
 
       <div className="dash-greet">
-        {weekOn ? (
-          <p className="status-eyebrow" data-testid="orientation-day">
-            {`Day ${data.orientationDay} of your first week`}
-          </p>
-        ) : null}
         <h1
           className={
-            ideasOn ? "dash-greet-date dash-greet-date--eyebrow" : "dash-greet-date"
+            ideasOn || weekOn ? "dash-greet-date dash-greet-date--eyebrow" : "dash-greet-date"
           }
+          data-testid={weekOn ? "orientation-day" : undefined}
         >
-          {data.todayLabel}
+          {weekOn ? `Day ${data.orientationDay} of your first week` : data.todayLabel}
         </h1>
         {ideasOn ? null : (
           <p className="dash-greet-sum" data-testid="dash-summary">
@@ -103,9 +103,16 @@ export function DashboardView({ data }: { data: DashboardData }) {
       {data.nextAction ? (
         <p className="dash-next-action" data-testid="next-action">
           {/* Ruling F-38: a step into /learn/ reports learn_opened; that
-              client leaf keeps this view a server tree. Flag off ⇒ no step,
-              so the plain link, byte-for-byte. */}
-          {data.nextAction.href.startsWith("/learn/") ? (
+              client leaf keeps this view a server tree. Review A-84, rulings
+              F-54/F-55: steps 1 and 7, picked by the line's step id, go
+              through StepLink, which completes the step and reports
+              learn_opened for a /learn/ href as LearnLink does. Flag off ⇒
+              no step id, so the plain link, byte-for-byte. */}
+          {stepCompletesFromLink(data.nextAction.step) ? (
+            <StepLink href={data.nextAction.href} step={data.nextAction.step}>
+              {data.nextAction.text}
+            </StepLink>
+          ) : data.nextAction.href.startsWith("/learn/") ? (
             <LearnLink href={data.nextAction.href} from="step">
               {data.nextAction.text}
             </LearnLink>

@@ -5,7 +5,7 @@
  * is an invitation, none reads as a missed obligation.
  */
 
-import type { OrientationStep } from "./orientation";
+import type { OrientationStep, OrientationStepId } from "./orientation";
 
 export type NextActionInput = {
   /** True when the user has at least one check today. */
@@ -22,12 +22,16 @@ export type NextActionInput = {
   orientation?: OrientationStep | null;
 };
 
-export type NextAction = { text: string; href: string };
+/**
+ * `step` is set on the orientation-step branch only (ruling F-54): Home picks
+ * the link that completes a step by its id. The classic branches never carry it.
+ */
+export type NextAction = { text: string; href: string; step?: OrientationStepId };
 
 export function nextAction(input: NextActionInput): NextAction {
   const step = input.orientation;
   if (step && !(step.href === "/check" && !input.checkedToday)) {
-    return { text: `Today's step: ${step.text}`, href: step.href };
+    return { text: `Today's step: ${step.text}`, href: step.href, step: step.id };
   }
   if (!input.checkedToday) {
     return { text: "Check your next uncertain meal.", href: "/check" };

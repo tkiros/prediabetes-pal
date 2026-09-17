@@ -13,6 +13,7 @@ import {
 import { firstCheckChips } from "../lib/client/first-check-chips";
 import { historyStore } from "../lib/client/history-store";
 import { nextIdeasRotation } from "../lib/client/ideas-rotation";
+import { recordStepEvent } from "../lib/client/orientation-progress";
 import { profileStore } from "../lib/client/profile-store";
 import { useHydrated } from "../lib/client/use-hydrated";
 import { tasterStore } from "../lib/client/taster-store";
@@ -403,6 +404,8 @@ export function FoodCheckForm() {
             first_check: firstCheck
           }
         });
+        // Review A-84: a check completes the week's step 2, then step 3.
+        void recordStepEvent("check");
 
         // PRD v1.1 §9.1: idea → check completions. Only when THIS submission
         // is still the untouched idea prefill; a user who edits the text is
@@ -412,6 +415,8 @@ export function FoodCheckForm() {
           initialPrefillRef.current = { ...initialPrefillRef.current!, recheckSource: null };
           setIdeaPrefill((current) => (current ? { ...current, recheckSource: null } : current));
           track({ name: "idea_check_completed", props: { risk: response.risk } });
+          // Step 4 too; an idea check fires both events.
+          void recordStepEvent("idea_check");
         }
 
         // Day-1 taster meter (trial mode): count this check against the free

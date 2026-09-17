@@ -4,12 +4,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Task 3.6 — /learn/first-week. Node has no DOM, so the link, the hydration
 // signal, the session, the database, the PATCH helper and the analytics
-// forwarder are stand-ins; `notFound` is Next's own.
+// forwarder are stand-ins; `notFound` is Next's own. The link stand-in keeps
+// each rendered link's href and click handler, so a test can tap one.
+const links = vi.hoisted(() => [] as Array<{ href: unknown; onClick: unknown }>);
 vi.mock("next/link", async () => {
   const { createElement: h } = await import("react");
   return {
-    default: ({ href, children }: { href?: unknown; children?: ReactNode }) =>
-      h("a", { href: typeof href === "string" ? href : undefined }, children)
+    default: ({ href, onClick, children }: { href?: unknown; onClick?: unknown; children?: ReactNode }) => {
+      links.push({ href, onClick });
+      return h("a", { href: typeof href === "string" ? href : undefined }, children);
+    }
   };
 });
 
@@ -61,6 +65,11 @@ vi.mock("../../../lib/client/analytics", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../lib/client/analytics")>()),
   track
 }));
+const recordStepEvent = vi.hoisted(() => vi.fn(async (_kind: unknown) => {}));
+vi.mock("../../../lib/client/orientation-progress", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../lib/client/orientation-progress")>()),
+  recordStepEvent
+}));
 
 function fakeStorage() {
   const map = new Map<string, string>();
@@ -86,8 +95,16 @@ import {
   tapHide,
   type OrientationListProps
 } from "../../../components/orientation-list";
-import { keepNote, OrientationNote } from "../../../components/orientation-note";
-import { EMPTY_ORIENTATION, type OrientationState } from "../../../lib/coach/orientation";
+import { firstKeptSave, keepNote, OrientationNote } from "../../../components/orientation-note";
+import { OrientationNoteSlot } from "../../../components/orientation-note-slot";
+import { StepLink } from "../../../components/step-link";
+import { nextAction } from "../../../lib/coach/next-action";
+import {
+  EMPTY_ORIENTATION,
+  LEARN_NUMBERS_HREF,
+  ORIENTATION_STEPS,
+  type OrientationState
+} from "../../../lib/coach/orientation";
 import { orientationStore } from "../../../lib/client/orientation-store";
 
 const NOW = new Date("2026-09-15T16:00:00.000Z"); // noon in New York
@@ -119,6 +136,8 @@ beforeEach(() => {
   syncOrientation.mockResolvedValue(false);
   router.refresh.mockClear();
   track.mockClear();
+  recordStepEvent.mockClear();
+  links.length = 0;
   vi.stubEnv("TZ", "America/New_York");
   vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "1");
   vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
@@ -218,7 +237,8 @@ describe("the page: door first, then the mode (rulings F-39, F-31)", () => {
     t.profile = { timezone: "America/New_York", orientation: week({ startedAt: daysAgo(1) }) };
     const tree = await FirstWeekPage();
     expect(findAll(tree, DisclaimerLine)).toHaveLength(1);
-    expect(findAll(tree, OrientationNote)).toHaveLength(1);
+    // A-84: the server page renders the field through its client wrapper.
+    expect(findAll(tree, OrientationNoteSlot)).toHaveLength(1);
     const html = decode(renderToStaticMarkup(tree));
     const at = (needle: string) => {
       const index = html.indexOf(needle);
@@ -280,6 +300,20 @@ describe("the list: rendering", () => {
     expect(html).toContain('<a href="#note">Write down the questions you have for your clinician.</a>');
     expect(html).toContain("<p class=\"page-copy\">Book, or ask about, a dietitian appointment.</p>");
     expect(html).toContain('<a href="/check">Check the meal you are least sure about.</a>');
+  });
+
+  it("a tap on step 1's or step 7's link, and on no other, completes that step (A-84, F-54)", () => {
+    signedIn(week({ startedAt: daysAgo(0) }));
+    // Steps 1–5 and 7 link; step 6 is plain text.
+    expect(links).toHaveLength(6);
+    expect(recordStepEvent).not.toHaveBeenCalled();
+    const tappable = links.filter((link) => link.onClick !== undefined);
+    expect(tappable.map((link) => link.href)).toEqual([LEARN_NUMBERS_HREF, "/journey"]);
+    (tappable[0]!.onClick as () => void)();
+    expect(recordStepEvent).toHaveBeenLastCalledWith("numbers_link");
+    (tappable[1]!.onClick as () => void)();
+    expect(recordStepEvent).toHaveBeenLastCalledWith("journey_link");
+    expect(recordStepEvent).toHaveBeenCalledTimes(2);
   });
 
   it("after day 7, with no start, or with every step done: no today's step and the steps keep source order (day 7 and no-start also drop the day number, per F-40)", () => {
@@ -558,7 +592,7 @@ describe("the note: on this device, never inside app copy (A-57)", () => {
     // fresh object per call would not exercise the second call clearing the
     // first's still-pending timeout (#24).
     const timer: { current: ReturnType<typeof setTimeout> | undefined } = { current: undefined };
-    keepNote("bring the lab sheet", setters, timer);
+    expect(keepNote("bring the lab sheet", setters, timer)).toBe(true);
     expect(storage.getItem("pal.orient.note.v1")).toBe("bring the lab sheet");
     expect(ui).toEqual({ draft: "bring the lab sheet", failed: false, saved: true });
     vi.advanceTimersByTime(1999);
@@ -571,21 +605,47 @@ describe("the note: on this device, never inside app copy (A-57)", () => {
       throw new Error("QuotaExceededError");
     };
     try {
-      keepNote("bring the lab sheet, and the list", setters, timer);
+      expect(keepNote("bring the lab sheet, and the list", setters, timer)).toBe(false);
       expect(ui).toEqual({ draft: "bring the lab sheet, and the list", failed: true, saved: false });
     } finally {
       storage.setItem = setItem;
     }
   });
+
+  it("step 5 completes on the first kept save with text in it, once per mount (A-84)", () => {
+    const fired = { current: false };
+    expect(firstKeptSave("   ", true, fired)).toBe(false); // an all-space save clears the key
+    expect(firstKeptSave("ask which test", false, fired)).toBe(false); // storage refused it
+    expect(fired.current).toBe(false);
+    expect(firstKeptSave("ask which test", true, fired)).toBe(true);
+    expect(firstKeptSave("ask which test was used", true, fired)).toBe(false);
+    expect(fired.current).toBe(true);
+    // A new mount has a new ref, so it counts again (the write is idempotent).
+    expect(firstKeptSave("ask which test", true, { current: false })).toBe(true);
+  });
+
+  it("the page's wrapper hands the field a no-text callback that records clinician_list; rendering records nothing (A-84)", () => {
+    const element = OrientationNoteSlot();
+    expect(element.type).toBe(OrientationNote);
+    const { onSaved } = element.props as { onSaved: () => void };
+    expect(onSaved).toHaveLength(0);
+
+    expect(renderToStaticMarkup(createElement(OrientationNoteSlot))).toContain('<textarea id="note"');
+    expect(recordStepEvent).not.toHaveBeenCalled();
+
+    onSaved();
+    expect(recordStepEvent).toHaveBeenCalledTimes(1);
+    expect(recordStepEvent).toHaveBeenCalledWith("clinician_list");
+  });
 });
 
 describe("Home's step line into /learn/ reports learn_opened (ruling F-38)", () => {
-  const data = (href: string): DashboardData => ({
+  const data = (href: string, step?: NonNullable<DashboardData["nextAction"]>["step"]): DashboardData => ({
     todayLabel: "Tuesday, September 15",
     weekSummary: "No meals checked yet.",
     showFirstWin: false,
     todayChecks: [],
-    nextAction: { text: "Today's step: x", href },
+    nextAction: { text: "Today's step: x", href, ...(step ? { step } : {}) },
     planBox: { planName: "Free plan", meta: "", isFree: true, signedIn: true, attention: false },
     planBoxAttention: false,
     isDay0: true,
@@ -612,9 +672,60 @@ describe("Home's step line into /learn/ reports learn_opened (ruling F-38)", () 
     expect(track).toHaveBeenCalledWith({ name: "learn_opened", props: { page: "first-week", from: "step" } });
   });
 
-  it("any other href keeps the plain link", () => {
-    for (const href of ["/check", "/journey", "/home#ideas-title", "/guides/a1c-5-7-to-6-4", "/meals"]) {
-      expect(findAll(DashboardView({ data: data(href) }), LearnLink)).toHaveLength(0);
+  /** Home's data with the real next-action line for a step (as the pages build it). */
+  const stepData = (index: number): DashboardData => ({
+    ...data("unused"),
+    nextAction: nextAction({ checkedToday: true, undoneActionToday: false, orientation: ORIENTATION_STEPS[index] })
+  });
+
+  /** Taps the one StepLink in a Home tree; returns its props. */
+  const tapStepLink = (tree: ReactNode) => {
+    const steps = findAll(tree, StepLink);
+    expect(steps).toHaveLength(1);
+    const rendered = StepLink(steps[0]!.props as Parameters<typeof StepLink>[0]);
+    expect(recordStepEvent).not.toHaveBeenCalled();
+    (rendered.props.onClick as () => void)();
+    return { props: steps[0]!.props, href: rendered.props.href as unknown };
+  };
+
+  it.each([
+    [0, "1", LEARN_NUMBERS_HREF, "numbers_link"],
+    [6, "7", "/journey", "journey_link"]
+  ] as const)("step %i's line (id %s) renders StepLink, not LearnLink, and its tap completes the step (A-84, F-54)", (index, id, href, event) => {
+    const tree = DashboardView({ data: stepData(index) });
+    expect(findAll(tree, LearnLink)).toHaveLength(0);
+    const tapped = tapStepLink(tree);
+    expect(tapped.props).toMatchObject({ href, step: id });
+    expect(tapped.href).toBe(href);
+    expect(recordStepEvent).toHaveBeenCalledTimes(1);
+    expect(recordStepEvent).toHaveBeenCalledWith(event);
+    // Neither href is under /learn/, so no learn_opened.
+    expect(track).not.toHaveBeenCalled();
+  });
+
+  it("F-55: once step 1's link is under /learn/ (F-NUMBERS), its tap completes step 1 AND reports learn_opened", () => {
+    const tapped = tapStepLink(DashboardView({ data: data("/learn/numbers", "1") }));
+    expect(tapped.props).toMatchObject({ href: "/learn/numbers", step: "1" });
+    expect(recordStepEvent).toHaveBeenCalledWith("numbers_link");
+    expect(track).toHaveBeenCalledTimes(1);
+    expect(track).toHaveBeenCalledWith({ name: "learn_opened", props: { page: "numbers", from: "step" } });
+  });
+
+  it("steps 2–6 keep today's leaves: /learn/ → LearnLink, anything else → the plain link", () => {
+    for (const index of [1, 2, 3, 4, 5]) {
+      const tree = DashboardView({ data: stepData(index) });
+      expect(findAll(tree, StepLink), `step ${index + 1}`).toHaveLength(0);
+      const href = ORIENTATION_STEPS[index]!.href;
+      expect(findAll(tree, LearnLink), `step ${index + 1}`).toHaveLength(href.startsWith("/learn/") ? 1 : 0);
     }
+  });
+
+  it("a line with no step id (every classic branch, and the door shut) never renders StepLink — even at step 1's or step 7's href", () => {
+    for (const href of ["/check", "/journey", "/home#ideas-title", "/meals", "/signin", LEARN_NUMBERS_HREF]) {
+      const tree = DashboardView({ data: data(href) });
+      expect(findAll(tree, LearnLink)).toHaveLength(0);
+      expect(findAll(tree, StepLink)).toHaveLength(0);
+    }
+    expect(findAll(DashboardView({ data: data("/learn/first-week#note") }), StepLink)).toHaveLength(0);
   });
 });

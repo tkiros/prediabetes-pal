@@ -173,6 +173,16 @@ const OrientationOpSchema = z.discriminatedUnion("op", [
       step: OrientationStateSchema.shape.done.element
     })
     .strict(),
+  // Review A-84 (recordStepEvent): the steps an event can complete, earliest
+  // first. Non-empty, known ids, each once.
+  z
+    .object({
+      op: z.literal("markNext"),
+      steps: OrientationStateSchema.shape.done
+        .min(1)
+        .refine((steps) => new Set(steps).size === steps.length)
+    })
+    .strict(),
   z.object({ op: z.literal("start") }).strict(),
   z.object({ op: z.literal("dismiss") }).strict(),
   z.object({ op: z.literal("restore") }).strict(),
@@ -216,6 +226,22 @@ function orientationValue(op: OrientationOp) {
       const done = sql`(${current} -> 'done')`;
       const step = sql`jsonb_build_array(${op.step}::text)`;
       return sql`jsonb_set(${current}, '{done}', CASE WHEN ${done} @> ${step} THEN ${done} ELSE ${done} || ${step} END)`;
+    }
+    case "markNext": {
+      // Review A-84: append the first listed step not yet done, and only to a
+      // week that has started and is not hidden. Otherwise the column is
+      // written back as it was — the raw column, never `current`, so a null
+      // copy stays null and the sign-in `set` can still land.
+      const column = schema.profiles.orientation;
+      const done = sql`(${column} -> 'done')`;
+      const firstUndone = sql.join(
+        op.steps.map((id) => {
+          const step = sql`jsonb_build_array(${id}::text)`;
+          return sql`WHEN NOT (${done} @> ${step}) THEN ${step}`;
+        }),
+        sql` `
+      );
+      return sql`CASE WHEN NULLIF(${column} -> 'startedAt', 'null'::jsonb) IS NOT NULL AND NULLIF(${column} -> 'dismissedAt', 'null'::jsonb) IS NULL THEN jsonb_set(${column}, '{done}', ${done} || CASE ${firstUndone} ELSE '[]'::jsonb END) ELSE ${column} END`;
     }
     case "start":
       return sql`jsonb_set(${current}, '{startedAt}', COALESCE(NULLIF(${current} -> 'startedAt', 'null'::jsonb), ${NOW_ISO}))`;

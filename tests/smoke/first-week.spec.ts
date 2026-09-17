@@ -89,6 +89,24 @@ test.describe("/learn/first-week with the orient surface on", () => {
     await expect(page.getByLabel(DAY_5_STEP, { exact: true })).toHaveValue(text);
     expect(carried).toEqual([]);
   });
+
+  test("a kept note completes step 5 (A-84)", async ({ page }) => {
+    await page.reload();
+    await expect(page.getByTestId("orientation-day")).toHaveText("Day 4 of your first week");
+    const done = page.getByRole("button", { name: `Done — ${DAY_5_STEP}` });
+    await expect(done).toHaveAttribute("aria-pressed", "false");
+
+    await page.getByLabel(DAY_5_STEP, { exact: true }).fill("Bring the lab sheet");
+    await expect(page.getByText("Saved on this device")).toBeVisible();
+    // The save marks the device week (ruling F-53) alongside a fire-and-forget
+    // PATCH; wait for that write before reloading so the reload cannot race it.
+    await expect
+      .poll(() => page.evaluate(() => JSON.parse(window.localStorage.getItem("pal.orient.v1") ?? "{}").done ?? []))
+      .toContain("5");
+
+    await page.reload();
+    await expect(page.getByRole("button", { name: `Done — ${DAY_5_STEP}` })).toHaveAttribute("aria-pressed", "true");
+  });
 });
 
 test("/learn/first-week is a 404 with the orient surface off", async ({ page }) => {

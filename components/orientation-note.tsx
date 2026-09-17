@@ -28,17 +28,33 @@ type NoteSetters = {
 /** The "Saved on this device" timer handle, one per component instance. */
 export type SavedTimerRef = { current: ReturnType<typeof setTimeout> | undefined };
 
-/** Keeps the note on the device; "Saved on this device" for two seconds. */
-export function keepNote(text: string, ui: NoteSetters, timer: SavedTimerRef): void {
+/** Keeps the note on the device; "Saved on this device" for two seconds. True once kept. */
+export function keepNote(text: string, ui: NoteSetters, timer: SavedTimerRef): boolean {
   ui.setDraft(text);
   const kept = orientationNote.set(text);
   ui.setFailed(!kept);
   ui.setSaved(kept);
   clearTimeout(timer.current);
   if (kept) timer.current = setTimeout(() => ui.setSaved(false), 2000);
+  return kept;
 }
 
-export function OrientationNote() {
+/**
+ * Review A-84: step 5 completes on this mount's first kept save with text in
+ * it — once, never on every keystroke. An all-space save clears the key, so
+ * it does not count.
+ */
+export function firstKeptSave(text: string, kept: boolean, fired: { current: boolean }): boolean {
+  if (fired.current || !kept || text.trim() === "") return false;
+  fired.current = true;
+  return true;
+}
+
+/**
+ * `onSaved` runs once, after that first kept save. It carries no text, and it
+ * is the caller's: this file still never calls out.
+ */
+export function OrientationNote({ onSaved }: { onSaved?: () => void }) {
   const hydrated = useHydrated();
   const [draft, setDraft] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -47,6 +63,7 @@ export function OrientationNote() {
   // device" reset never lands after the field is gone.
   const savedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(savedTimer.current), []);
+  const savedOnce = useRef(false);
   // Read and probe only once hydrated, like every other device read (A-20).
   // ponytail: the probe re-runs each render (a set + remove of one key); cheap,
   // and it notices storage that stops working mid-visit.
@@ -69,7 +86,11 @@ export function OrientationNote() {
         id="note"
         aria-describedby="note-hint"
         className="text-input"
-        onChange={(event) => keepNote(event.target.value, { setDraft, setFailed, setSaved }, savedTimer)}
+        onChange={(event) => {
+          const text = event.target.value;
+          const kept = keepNote(text, { setDraft, setFailed, setSaved }, savedTimer);
+          if (firstKeptSave(text, kept, savedOnce)) onSaved?.();
+        }}
         value={value}
       />
       <p className="field-hint" id="note-hint" role="status">
