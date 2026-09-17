@@ -1,5 +1,23 @@
 # TODOS
 
+## "One of today's ideas" note on the result card after a tapped idea (guide door)
+- **What:** When a check completes from an idea chip (`pal.recheck.source === "idea"`, the same rule `shouldCountIdeaCheck` uses for `idea_check_completed`), the result card shows one quiet line — e.g. "This was one of today's ideas." — above the Meal row. One component branch, one `product-role` ledger row.
+- **Why:** Closes the loop the guide door opens: the person tapped an idea, and the card should say so instead of reading like a typed check. Also makes the idea → label pairing visible on the surface where trust is built.
+- **Pros:** Small (one branch in `components/result-card.tsx` + a prop from `food-check-form.tsx`); the source is already known at that moment; no new data.
+- **Cons:** A new user-facing sentence costs a safety-owner review slot before the ideas-viewed : checks-run ratio has been read (PRD §9 Step 1); adds a fourth copy state to the card header.
+- **Context:** Deferred by the 2026-09-14 `/autoplan` review of `docs/superpowers/plans/2026-09-13-guide-redesign.md` (decision A-13, delight candidate E11). Do it after PR-4's ratio read, with ledger batch 2 or later. The prefill ref already carries `recheckSource`; the card needs one boolean prop.
+- **Effort estimate:** S (human ~half a day → CC ~15 min). **Priority:** P3.
+- **Depends on / blocked by:** PR-1 merged; the §9 Step 1 ratio read; a ledger row.
+
+## "Hide this for now" on Home's step line, not only on /learn/first-week (guide door)
+- **What:** A dismiss control beside the orientation step line on Home (`dash-next-action`), writing the same `dismissedAt` the `/learn/first-week` list writes — guest store or `PATCH /api/profile`.
+- **Why:** Today the only place to hide the week is the Learn page; a person who does not want the line has to leave Home to remove it. And the review found the dismiss is permanent while its copy says "for now" — decide the semantics (snooze vs. hide) here in the same change.
+- **Pros:** Removes a two-page trip for a one-tap intent; reuses the store and the PATCH.
+- **Cons:** Home's rule is ONE next-action line with no chrome (C7 four-jobs, `DESIGN.md` §8); a control next to the line is a design decision, not a mechanical add. Needs a `/design-review` pass of the Today card.
+- **Context:** Deferred by the 2026-09-14 `/autoplan` review (decision A-14, delight candidate E12; the permanence finding is A-26, carried into the design phase). Pair with the "post-hoc I did it affordance" entry below — both add a control to the same line/card.
+- **Effort estimate:** S (human ~1 day → CC ~20 min). **Priority:** P3.
+- **Depends on / blocked by:** PR-3 (orientation state) merged; a design decision on snooze vs. hide; `/design-review` of Home.
+
 ## Delete the zombie Vercel project `revora-irj3` (owner, 1 min)
 - **What:** a second Vercel project on the same repo, no custom domain (only `*.vercel.app` aliases; `revora.plus` lives on the `revora` project). Its production build has failed on EVERY merge to main since ~Jul 17 — it has no measurement env vars, so `next.config.ts`'s deliberate dark-launch gate kills the build in ~7s ("Production build without measurement…") and Vercel emails the owner an error each time. It also double-builds every PR preview.
 - **Fix:** `vercel project rm revora-irj3` (or dashboard → project → Settings → Delete). Destructive, so owner's call; the alternative (`PAL_ALLOW_NO_MEASUREMENT=1` on irj3) silences the emails but keeps paying the double-build tax for a project nothing uses.

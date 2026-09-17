@@ -32,14 +32,14 @@
 
 ## 1. Gate / decision status table
 
-Status as of 2026-09-13 (commit `76eab01`); §8 recommendations recorded and the F-ASK floor ruling amended 2026-09-14. "Blocks" names what may not start; "Opens when" is the unblock condition the plan waits on.
+Status as of 2026-09-17 (commit `a4b76ed`); §8 recommendations recorded and the F-ASK floor ruling amended 2026-09-14. "Blocks" names what may not start; "Opens when" is the unblock condition the plan waits on. Built and merged dormant 2026-09-17: PR-1 (#144), migration 0019 (#145, applied to production first), PR-2 + PR-3 (#146), the first-week finish (#147); every surface is off in production.
 
 | # | Decision / gate | Decider | Status | Blocks | Opens when |
 |---|---|---|---|---|---|
 | D5 | Run the concierge test: read r/prediabetes rules in a browser, send the §5.3 draft, recruit 5, add the neutral opener and the three counts | Owner | **Not started** — rules page unread (403 to fetches), draft unsent | Flipping `NEXT_PUBLIC_GUIDE_DOOR=1` anywhere public; every Tier-1 PR's *release* (not its merge) | Floor ≥ 3 of 5 second questions **and** the number-vs-food count is read. Branch: food ≥ number → food order (§2.1); number > 2:1 → number order (§2.2); ≤ 2:1 or tie → food order, D7 in parallel. < 3 of 5 ⇒ stop |
 | D7 | Which claim class does a general A1C-education page file under; if none, does counsel add one | Safety owner / counsel | **To ask now**, in parallel with D5 | F-NUMBERS (§2.4.1) | A class is named (row class = that class). **Escalation:** no class by branch-read day ⇒ F-NUMBERS deferred, prototype ships regardless of branch |
-| Ledger batch 1 | eight rows (PR-1, all filed in Task 1.7 — A-119): `guide-ideas-breakfast`/`-lunch`/`-dinner`, `guide-ideas-hero`, `result-source-lead`, `check-empty-ideas`, `check-from-idea`, `check-classics-hint-guide` | Safety owner | Not filed | Production flag flip | Rows `Approved` **and** `tests/unit/pal/guide-ideas-labels.test.ts` green on the current `PROMPT_VERSION` (Task 4.1, pulled into PR-1 by review A-03) |
-| Ledger batch 2 | Orientation, Learn, Home, onboarding, F-ASK rows (PR-3…PR-6) | Safety owner | Not filed | Production flag flip for those surfaces | Rows `Approved` |
+| Ledger batch 1 | eight rows (PR-1, all filed in Task 1.7 — A-119): `guide-ideas-breakfast`/`-lunch`/`-dinner`, `guide-ideas-hero`, `result-source-lead`, `check-empty-ideas`, `check-from-idea`, `check-classics-hint-guide` | Safety owner | **Filed, Pending** (all eight, 2026-09-15; safety-owner submission drafted 2026-09-17, not yet sent) | Production flag flip | Rows `Approved` **and** `tests/unit/pal/guide-ideas-labels.test.ts` green on the current `PROMPT_VERSION` (Task 4.1, pulled into PR-1 by review A-03) |
+| Ledger batch 2 | Orientation, Learn, Home, onboarding, F-ASK rows (PR-3…PR-6) | Safety owner | **Filed, Pending — 18 rows** (orientation half, PR-3 + #147; the Home/onboarding/F-ASK rows of PR-5/PR-6 are not filed) | Production flag flip for those surfaces | Rows `Approved` |
 | D3 | Later out-of-range A1C entry: **refuse** / **store without anchoring** / **anchor and route** | Owner | **Open, no recommendation** | F-TREND (§2.4.2) | One of the three is chosen |
 | RV-3 | `/journey` no-`%` rail: **(a)** amend `DESIGN.md` §9 + scope `expectRv3Clean`'s `%` assertion to the recap, or **(b)** render "A1C 5.9" with the unit in the heading (if a bare value still counts as a percentage under §9, (b) is unavailable) | Safety owner | **Open** | F-TREND (§2.4.2) | (a) or (b) chosen |
 | Consistency eval | "Same read every time" evidence on the panel | Engineering | **Single meal green** — 127/127, 0 flips on prompt `2026-08-16.1` (`docs/ops/launch-controls.md` §12); **panel not run** | F-SOURCE `/how-it-works` paragraph (§2.4.3) | A panel run (every `stratum-*` meal × 3 bands, N ≥ 20 each) logged in §12 at ≥ 95% modal class, **and** the paragraph is an `Approved` ledger row |
@@ -127,7 +127,7 @@ If D7's escalation has fired (no class by branch-read day), the number branch co
 
 **Task card:** Copy: none. Flag: `NEXT_PUBLIC_GUIDE_DOOR` (this task creates it; amendment A-04 below makes it surface-listed, and every later task names its surface). Analytics: none. Done check: `npx vitest run tests/unit/pal/guide-door.test.ts tests/unit/env-contract.test.ts` green.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 // tests/unit/pal/guide-door.test.ts
@@ -149,12 +149,12 @@ describe("guideDoorEnabled — the one door flag (PRD §9 Step 1, §9.2 revert l
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `npx vitest run tests/unit/pal/guide-door.test.ts`
 Expected: FAIL — cannot find module `lib/guide-door-flag`.
 
-- [ ] **Step 3: Write the flag module**
+- [x] **Step 3: Write the flag module**
 
 ```ts
 // lib/guide-door-flag.ts
@@ -178,7 +178,7 @@ export function guideDoorEnabled(): boolean {
 }
 ```
 
-- [ ] **Step 4: Document the env var** (the env-contract test fails otherwise)
+- [x] **Step 4: Document the env var** (the env-contract test fails otherwise)
 
 Add to the flag table in `docs/ops/env-reference.md`, next to `NEXT_PUBLIC_REVIEWER_MODE`:
 
@@ -186,12 +186,12 @@ Add to the flag table in `docs/ops/env-reference.md`, next to `NEXT_PUBLIC_REVIE
 | `NEXT_PUBLIC_GUIDE_DOOR` | guide redesign (PRD v1.1 §9) | **Guide-door build flag** (`lib/guide-door-flag.ts` `guideDoorEnabled`): only exact `1` renders the ideas block above the Home hero, the result-card source lead-in, the orientation line, the Learn pages and the intake changes. Unset ⇒ the judge front door, byte-for-byte as before. **No server twin on purpose** (no new server boundary — see the module docstring); turning it off is a reviewed rebuild. Set to `1` in production only after the concierge branch is read (D5) and every ledger row the door renders is `Approved`. §9.2 kill line: ideas opened in < 25% of sessions after four weeks ⇒ unset. |
 ```
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `npx vitest run tests/unit/pal/guide-door.test.ts tests/unit/env-contract.test.ts`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lib/guide-door-flag.ts docs/ops/env-reference.md tests/unit/pal/guide-door.test.ts
@@ -277,7 +277,7 @@ The env-reference row (Step 4) says the same in one sentence: "`1` opens every s
 
 Why the bank is precheck-clean by construction: the engine floors any carb-forward token (`bread`, `toast`, `rice`, `pasta`, `potato`, `wrap`, `tortilla`, `noodles`, … — `CARB_FORWARD_TOKENS` in `lib/pal/input-precheck.ts`) to `MODERATE` in the top band, so no idea containing one can be `Clear` at every band, and `oatmeal` / `yogurt` / `smoothie` trigger the plain-or-sweetened clarify unless resolved by a named fruit, nut or protein. Ideas are drawn from the three public guides with those tokens dropped. The live model check at every band is PR-4 (Task 4.1); this task pins the deterministic half.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 // tests/unit/pal/guide-ideas.test.ts
@@ -351,12 +351,12 @@ describe("guide idea bank — precheck-clean, positive only", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `npx vitest run tests/unit/pal/guide-ideas.test.ts`
 Expected: FAIL — cannot find module `lib/pal/guide-ideas`.
 
-- [ ] **Step 3: Write the bank**
+- [x] **Step 3: Write the bank**
 
 ```ts
 // lib/pal/guide-ideas.ts
@@ -465,7 +465,7 @@ export function ideasFor(daypart: Daypart, rotation: number, count = 3): GuideId
 }
 ```
 
-- [ ] **Step 4: Put the bank under the claims audit**
+- [x] **Step 4: Put the bank under the claims audit**
 
 In `tests/unit/pal/claims-boundary-copy.test.ts`, `EXTRA_SOURCES`, after `"lib/pal/coach-outputs.ts",`:
 
@@ -474,12 +474,12 @@ In `tests/unit/pal/claims-boundary-copy.test.ts`, `EXTRA_SOURCES`, after `"lib/p
   "lib/pal/guide-ideas.ts",
 ```
 
-- [ ] **Step 5: Run the tests; prune any line that fails the precheck**
+- [x] **Step 5: Run the tests; prune any line that fails the precheck**
 
 Run: `npx vitest run tests/unit/pal/guide-ideas.test.ts tests/unit/pal/claims-boundary-copy.test.ts`
 Expected: PASS. If a seed line trips a clarify or a flag, delete that line (do not weaken the test — the PRD says a failing idea is removed from the bank) and record the removal in the ledger row's Notes.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lib/pal/guide-ideas.ts tests/unit/pal/guide-ideas.test.ts tests/unit/pal/claims-boundary-copy.test.ts
@@ -497,7 +497,7 @@ git commit -m "feat(guide): reviewed idea bank, precheck-clean and positive only
 
 **Task card:** Copy: none. Flag: none. Analytics: the three events above — never the idea text (a closed bank, but the rule is the rule). Done check: `npx vitest run tests/unit/client/analytics.test.ts` green.
 
-- [ ] **Step 1: Extend the test allowlist (fails until the module follows)**
+- [x] **Step 1: Extend the test allowlist (fails until the module follows)**
 
 In `tests/unit/client/analytics.test.ts`:
 1. Add `"ideas_shown", "idea_tapped", "idea_check_completed"` to `ALLOWED_NAMES` (before `"photo_draft"`).
@@ -510,12 +510,12 @@ In `tests/unit/client/analytics.test.ts`:
       { name: "idea_check_completed", props: { risk: "SAFE" } },
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `npx vitest run tests/unit/client/analytics.test.ts`
 Expected: FAIL — type errors / allowlist mismatch.
 
-- [ ] **Step 3: Add the events**
+- [x] **Step 3: Add the events**
 
 In `lib/client/analytics.ts`, add `import type { Daypart } from "../coach/insights";` and insert **before** the `photo_draft` variant of `AnalyticsEvent` (the no-bare-string test slices the union at that marker; comments must avoid the forbidden identifiers — write "idea" and "meal", never the words the no-PII scan bans):
 
@@ -536,12 +536,12 @@ In `lib/client/analytics.ts`, add `import type { Daypart } from "../coach/insigh
 
 and add `"ideas_shown", "idea_tapped", "idea_check_completed"` to `ALLOWED_EVENT_NAMES`.
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `npx vitest run tests/unit/client/analytics.test.ts`
 Expected: PASS, including the no-PII scan and the "no bare string" test.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/client/analytics.ts tests/unit/client/analytics.test.ts
@@ -563,7 +563,7 @@ git commit -m "feat(analytics): ideas_shown / idea_tapped / idea_check_completed
 
 **Task card:** Copy: `guide-ideas-hero` row — "Ideas for breakfast · Ideas for lunch · Ideas for dinner · Meal ideas that sit within Prediabetes Pal's rules. Tap one to send it to the check." class `product-role`. Flag: `guideDoorEnabled("ideas")` gates the render. Analytics: `ideas_shown` once per mount, `idea_tapped` per tap. Done check: pins green; `NEXT_PUBLIC_GUIDE_DOOR=1 npm run dev` shows three chips above the hero on `/home` (signed-in and `/home?stay=1` guest), tapping lands on `/check` with the idea in the field.
 
-- [ ] **Step 1: Write the failing render-site pins** — add the two imports and the `read` helper at the **top** of `tests/unit/pal/guide-door.test.ts` (imports must precede other statements for the lint config), then append the describe block:
+- [x] **Step 1: Write the failing render-site pins** — add the two imports and the `read` helper at the **top** of `tests/unit/pal/guide-door.test.ts` (imports must precede other statements for the lint config), then append the describe block:
 
 ```ts
 import fs from "node:fs";
@@ -591,12 +591,12 @@ describe("guide-door render sites (source pins, node env has no DOM)", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `npx vitest run tests/unit/pal/guide-door.test.ts`
 Expected: FAIL — `components/guide-ideas.tsx` does not exist.
 
-- [ ] **Step 3: The rotation counter**
+- [x] **Step 3: The rotation counter**
 
 ```ts
 // lib/client/ideas-rotation.ts
@@ -627,7 +627,7 @@ export function nextIdeasRotation(): number {
 }
 ```
 
-- [ ] **Step 4: The chips component**
+- [x] **Step 4: The chips component**
 
 ```tsx
 // components/guide-ideas.tsx
@@ -807,7 +807,7 @@ CSS (`app/globals.css`, next to `.meal-hero`; light surface, nested-card radius 
 }
 ```
 
-- [ ] **Step 5: Mount it above the hero**
+- [x] **Step 5: Mount it above the hero**
 
 In `components/dashboard-view.tsx`: import `guideDoorEnabled` and `GuideIdeas`; replace `<HomeCheckHero />` with
 
@@ -821,12 +821,12 @@ In `components/dashboard-view.tsx`: import `guideDoorEnabled` and `GuideIdeas`; 
 
 `GuestDashboard` renders the same tree, so guests get the block for free (PRD §7.4 requires it).
 
-- [ ] **Step 6: Run the pins + the claims audit**
+- [x] **Step 6: Run the pins + the claims audit**
 
 Run: `npx vitest run tests/unit/pal/guide-door.test.ts tests/unit/pal/claims-boundary-copy.test.ts`
 Expected: PASS (the new component is globbed into the audit automatically).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add lib/client/ideas-rotation.ts components/guide-ideas.tsx components/dashboard-view.tsx app/globals.css tests/unit/pal/guide-door.test.ts
@@ -844,7 +844,7 @@ git commit -m "feat(guide): ideas chips above the Home hero, pal.recheck hand-of
 
 **Task card:** Copy: `result-source-lead` row, class `result-qualitative-impact` — three variants: "Why this label: under Prediabetes Pal's rules this description reads as generally balanced." · "…reads as leaning toward a concentrated or less-balanced pattern." · "…reads as unusually concentrated or too incomplete to read closely." (the three Verdict Semantics meanings in `claims-boundary.md`; the HIGH variant names both prongs because the engine does not say which fired — Open questions). It cites the product's own rules and nothing else; no "doctors agree", no external authority, no numeric claim. Flag: `guideDoorEnabled("source")`. Analytics: none. Done check: pins green; with the flag on, a `/check` result shows the lead-in above the reason and the `/demo` fixtures page shows it too (it renders the real component — acceptable; the landing uses `ExampleResultCard`, which is untouched, so D6's "stale landing" holds).
 
-- [ ] **Step 1: Write the failing pins** — the `SOURCE_LEAD` import goes at the top of `tests/unit/pal/guide-door.test.ts`; append the describe block:
+- [x] **Step 1: Write the failing pins** — the `SOURCE_LEAD` import goes at the top of `tests/unit/pal/guide-door.test.ts`; append the describe block:
 
 ```ts
 import { SOURCE_LEAD } from "../../../components/result-card";
@@ -869,12 +869,12 @@ describe("F-SOURCE lead-in (PRD v1.1 §6 F-SOURCE)", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `npx vitest run tests/unit/pal/guide-door.test.ts`
 Expected: FAIL — `SOURCE_LEAD` is not exported.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `components/result-card.tsx`, import `guideDoorEnabled` and add near `RISK_ICONS`:
 
@@ -909,12 +909,12 @@ and replace the Why row's paragraph:
         </div>
 ```
 
-- [ ] **Step 4: Run the pins, the copy pins and the audit**
+- [x] **Step 4: Run the pins, the copy pins and the audit**
 
 Run: `npx vitest run tests/unit/pal/guide-door.test.ts tests/unit/pal/copy-pins.test.ts tests/unit/pal/claims-boundary-copy.test.ts tests/unit/pal/result-card-upsell.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add components/result-card.tsx tests/unit/pal/guide-door.test.ts
@@ -929,7 +929,7 @@ git commit -m "feat(guide): source lead-in on the result card (F-SOURCE)"
 
 **Stale source (review A-102):** every other writer of `pal.recheck` — the Home hero, `/meals`' re-check, meal recall — also removes `pal.recheck.source`, so a hand-off that never reached the form cannot make a later typed check count as an idea. **Task card:** Copy: `check-from-idea` row — the field hint "From today's ideas." while the prefill is untouched (review A-77: the tap fills the field, it does not run the check, and the surface should say where the text came from), `product-role`, batch 1. Flag: none needed (the key is only ever written when the flag is on). Analytics: `idea_check_completed { risk }`. Done check: pin green; tapping an idea then completing the check emits `idea_check_completed` (verify in the Umami debug view or by stubbing `window.umami.track` in the console).
 
-- [ ] **Step 1: Failing pin** (append)
+- [x] **Step 1: Failing pin** (append)
 
 ```ts
   it("the check form reads pal.recheck.source alongside pal.recheck and emits idea_check_completed once", () => {
@@ -939,9 +939,9 @@ git commit -m "feat(guide): source lead-in on the result card (F-SOURCE)"
   });
 ```
 
-- [ ] **Step 2: Run to verify it fails** — `npx vitest run tests/unit/pal/guide-door.test.ts` → FAIL.
+- [x] **Step 2: Run to verify it fails** — `npx vitest run tests/unit/pal/guide-door.test.ts` → FAIL.
 
-- [ ] **Step 3: Implement.** In the prefill effect (where `pal.recheck` is read and removed), also read and remove `pal.recheck.source` into the same ref:
+- [x] **Step 3: Implement.** In the prefill effect (where `pal.recheck` is read and removed), also read and remove `pal.recheck.source` into the same ref:
 
 ```ts
       let recheck: string | null = null;
@@ -984,9 +984,9 @@ and in `tests/unit/client/food-check-form.test.ts` (the file already imports pur
         }
 ```
 
-- [ ] **Step 4: Run** `npx vitest run tests/unit/pal/guide-door.test.ts tests/unit/client/food-check-form.test.ts` → PASS.
+- [x] **Step 4: Run** `npx vitest run tests/unit/pal/guide-door.test.ts tests/unit/client/food-check-form.test.ts` → PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add components/food-check-form.tsx tests/unit/pal/guide-door.test.ts
@@ -1001,7 +1001,7 @@ git commit -m "feat(guide): count idea → check completions (PRD §9.1)"
 
 **Task card:** Copy: the rows below. Done check: `npm run contract` passes; `npx vitest run tests/unit/pal/boundary-copy-drift.test.ts tests/unit/pal/claims-boundary-copy.test.ts` green (the parser must still find every existing approved row).
 
-- [ ] **Step 1: Add the rows** (one line each in the Ledger table; keep the `|` count exact; copy the bank lines from `GUIDE_IDEA_BANK` joined with ` · `):
+- [x] **Step 1: Add the rows** (one line each in the Ledger table; keep the `|` count exact; copy the bank lines from `GUIDE_IDEA_BANK` joined with ` · `):
 
 ```
 | `guide-ideas-breakfast` | Home | Pending | Yes | `result-qualitative-impact` | greek yogurt with berries and walnuts · veggie omelet with peppers and spinach · cottage cheese with sliced peach and almonds · scrambled eggs with mushrooms and cheese · hard-boiled eggs with cucumber and tomato · tofu scramble with peppers and onions | CDC-MEAL-PLANNING, CDC-HEALTHY-CARBS | PRD v1.1 §6 F-IDEAS, §9 Step 1 prototype. The reviewed breakfast bank (`lib/pal/guide-ideas.ts`), promoted from the public guides with every refined-starch side dropped so each line reads Clear at every band. Positive only — never a food to limit. The surface says "within Prediabetes Pal's rules", never that an idea is safe for the user, never a reading, never "your plan". Deterministic gate: tests/unit/pal/guide-ideas.test.ts; model gate: the live labelling eval (PR-4), keyed on PROMPT_VERSION. Ships behind `NEXT_PUBLIC_GUIDE_DOOR`; production flip needs Approved. No diagnosis, treatment, reversal, future-A1C prediction, or exact glycemic numbers. |
@@ -1011,16 +1011,16 @@ git commit -m "feat(guide): count idea → check completions (PRD §9.1)"
 | `result-source-lead` | Result | Pending | Yes | `result-qualitative-impact` | Why this label: under Prediabetes Pal's rules this description reads as generally balanced. · Why this label: under Prediabetes Pal's rules this description reads as leaning toward a concentrated or less-balanced pattern. · Why this label: under Prediabetes Pal's rules this description reads as unusually concentrated or too incomplete to read closely. | CDC-MEAL-PLANNING, FTC-HEALTH-COMPLIANCE | PRD v1.1 §6 F-SOURCE lead-in (`components/result-card.tsx` `SOURCE_LEAD`), one variant per label, mirroring the Verdict Semantics meanings in claims-boundary.md. Cites the product's own documented rules and nothing else — no "doctors agree", no "the science says", no number. Deliberately does NOT say the read never changes: that claim waits for the consistency eval on the panel (`how-it-works-same-read`, not yet filed). The engine reason renders verbatim after it. No diagnosis, treatment, reversal, future-A1C prediction, or exact glycemic numbers. |
 ```
 
-- [ ] **Step 2: Amend `DESIGN.md` §8** — replace the third bullet's first sentence:
+- [x] **Step 2: Amend `DESIGN.md` §8** — replace the third bullet's first sentence:
 
 ```
 - **The check CTA is the one Committed colour moment.** ⚖️ 2026-09 (guide redesign, PRD v1.1 §7.4): at <768px the **ideas block** renders above it as a quiet bordered `--surface` list (no accent, no shadow; review A-71), so the check is no longer the *first* interactive element — it is still the one accent-filled action and it still sits above the fold at 375×667 (`tests/smoke/dashboard.spec.ts` pins the CTA's bottom edge above the tab bar at 360/375/430 and three clocks; the ideas list is measured, not reserved — §3's fold budget). Flag off (`NEXT_PUBLIC_GUIDE_DOOR` unset) restores the previous ordering byte-for-byte. **Day-0 empty state is the default design, not a fallback:** one CTA plus the Today card's warmth, no fake data, no guilt copy.
 ```
 
-- [ ] **Step 2b (review A-115):** `scripts/validate-safety-contract.mjs`'s cell-count error prints the Copy ID and the offending line ("row `guide-ideas-lunch` has 9 cells; a `|` inside the Copy cell? use ` · `"), and `tests/unit/client/analytics.test.ts`'s no-bare-string assertion message adds "insert new union members before the `photo_draft` variant" — the two failures an implementer meets first, both now naming the fix.
-- [ ] **Step 3: Run** `npm run contract && npx vitest run tests/unit/pal/boundary-copy-drift.test.ts tests/unit/pal/claims-boundary-copy.test.ts tests/unit/pal/landing-design-guards.test.ts` → PASS.
+- [x] **Step 2b (review A-115):** `scripts/validate-safety-contract.mjs`'s cell-count error prints the Copy ID and the offending line ("row `guide-ideas-lunch` has 9 cells; a `|` inside the Copy cell? use ` · `"), and `tests/unit/client/analytics.test.ts`'s no-bare-string assertion message adds "insert new union members before the `photo_draft` variant" — the two failures an implementer meets first, both now naming the fix.
+- [x] **Step 3: Run** `npm run contract && npx vitest run tests/unit/pal/boundary-copy-drift.test.ts tests/unit/pal/claims-boundary-copy.test.ts tests/unit/pal/landing-design-guards.test.ts` → PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/safety/copy-ledger.md DESIGN.md
@@ -1034,7 +1034,7 @@ git commit -m "docs(guide): ledger batch 1 (idea bank, hero line, source lead-in
 
 **Task card:** Copy: none. Flag: the e2e build must carry `NEXT_PUBLIC_GUIDE_DOOR=1` (`scripts/e2e-runtime-env.ts` spreads the caller's env, so the shell value reaches the build). Done check: **both** runs green — `npm run e2e -- tests/smoke/dashboard.spec.ts` (flag unset; door specs skip) and `NEXT_PUBLIC_GUIDE_DOOR=1 npm run e2e -- tests/smoke/dashboard.spec.ts tests/smoke/onboarding.spec.ts tests/smoke/mobile-check.spec.ts`. This is PR-1's real done check.
 
-- [ ] **Step 1: Add the door spec** (append to `tests/smoke/dashboard.spec.ts`)
+- [x] **Step 1: Add the door spec** (append to `tests/smoke/dashboard.spec.ts`)
 
 ```ts
 test.describe("guide door (PRD v1.1 §7.6) — only in a build with NEXT_PUBLIC_GUIDE_DOOR=1", () => {
@@ -1075,9 +1075,9 @@ test.describe("guide door (PRD v1.1 §7.6) — only in a build with NEXT_PUBLIC_
 });
 ```
 
-- [ ] **Step 2: Run both configurations** (commands above). Expected: PASS. If the CTA's bottom edge exceeds 667 with the flag on, the shrink order is in §3's fold budget (review A-54) — never the assertion. Add a second test in the same describe that repeats the fold measurement for every (width ∈ {360, 375, 430}) × (clock ∈ {08:00, 13:00, 19:00}) pair against the tab bar's top edge (review A-72) — the rows wrap differently at each width and the three dayparts have different line lengths.
+- [x] **Step 2: Run both configurations** (commands above). Expected: PASS. If the CTA's bottom edge exceeds 667 with the flag on, the shrink order is in §3's fold budget (review A-54) — never the assertion. Add a second test in the same describe that repeats the fold measurement for every (width ∈ {360, 375, 430}) × (clock ∈ {08:00, 13:00, 19:00}) pair against the tab bar's top edge (review A-72) — the rows wrap differently at each width and the three dayparts have different line lengths.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/smoke/dashboard.spec.ts
@@ -1100,7 +1100,7 @@ git commit -m "test(smoke): guide door — ideas lead, CTA above the fold, tap p
 
 **Task card:** Copy: none. Flag: none. Analytics: `onboarding_step` with a closed enum of screen ids — **never** the A1C screen or the out-of-range exit (reaching them says something about a person's result; §9.1 promises nothing measures it). The module comment must not use the identifiers the no-PII scan bans. Done check: both test files green; a mid-tour refresh re-fires nothing until the next screen change (a refresh lands on `welcome`, which is not tracked).
 
-- [ ] **Step 1: Extend the analytics test (fails until the module follows)**
+- [x] **Step 1: Extend the analytics test (fails until the module follows)**
 
 In `tests/unit/client/analytics.test.ts`: add `"onboarding_step"` to `ALLOWED_NAMES` before `"photo_draft"`; add its `case` line to `assertExhaustive`; add to `oneOfEach`, **before** the `photo_draft` entry:
 
@@ -1108,7 +1108,7 @@ In `tests/unit/client/analytics.test.ts`: add `"onboarding_step"` to `ALLOWED_NA
       { name: "onboarding_step", props: { step: "attribution" } },
 ```
 
-- [ ] **Step 2: Write the failing guard test**
+- [x] **Step 2: Write the failing guard test**
 
 Append to `tests/unit/client/onboarding-flow.test.ts` (add `trackedStep` to the existing import from the page):
 
@@ -1125,12 +1125,12 @@ describe("trackedStep — the tour funnel never names a result", () => {
 });
 ```
 
-- [ ] **Step 3: Run both to verify they fail**
+- [x] **Step 3: Run both to verify they fail**
 
 Run: `npx vitest run tests/unit/client/analytics.test.ts tests/unit/client/onboarding-flow.test.ts`
 Expected: FAIL — allowlist mismatch; `trackedStep` is not exported.
 
-- [ ] **Step 4: Add the event and the guard**
+- [x] **Step 4: Add the event and the guard**
 
 In `lib/client/analytics.ts`, insert **before** the `photo_draft` variant (the no-bare-string test slices the union at that marker):
 
@@ -1166,12 +1166,12 @@ and inside the component, after the existing mount effect:
   }, [step]);
 ```
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `npx vitest run tests/unit/client/analytics.test.ts tests/unit/client/onboarding-flow.test.ts`
 Expected: PASS, including the no-PII scan and the "no bare string" test.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lib/client/analytics.ts tests/unit/client/analytics.test.ts "app/(app)/onboarding/page.tsx" tests/unit/client/onboarding-flow.test.ts
@@ -1203,7 +1203,7 @@ An audit, not a build (PRD §6 F-CALM). Output: one report plus the fixes it fin
 
 **Task card:** Copy: any hit is fixed in the copy, never by exempting the family. Done check: `npx vitest run tests/unit/pal/claims-boundary-copy.test.ts` green with the new family and its `KNOWN_BAD` controls.
 
-- [ ] **Step 1: Add the family** to `BANNED` (after `future-test-outcome`):
+- [x] **Step 1: Add the family** to `BANNED` (after `future-test-outcome`):
 
 ```ts
   {
@@ -1227,7 +1227,7 @@ and its controls to `KNOWN_BAD`:
     ]
 ```
 
-- [ ] **Step 2: Pre-check, then run.** First turn any surprise into a known hit:
+- [x] **Step 2: Pre-check, then run.** First turn any surprise into a known hit:
 
 ```bash
 grep -rniE "\b(it|we)\s+(will\s+|can\s+)?(lower|manage|control)" lib/pal/coach-outputs.ts lib/pal/fallback.ts app components
@@ -1235,7 +1235,7 @@ grep -rniE "\b(it|we)\s+(will\s+|can\s+)?(lower|manage|control)" lib/pal/coach-o
 
   then `npx vitest run tests/unit/pal/claims-boundary-copy.test.ts`. Expected: the controls pass; any surface that trips the family is a real finding — rewrite that copy (ledger amendment if the string is a row) and re-run. Never exempt the family.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/unit/pal/claims-boundary-copy.test.ts
@@ -1249,16 +1249,16 @@ git commit -m "test(claims): product-agent-verb family (control/lower/manage wit
 
 **Task card:** Copy: fixes are ledger amendments. Done check: the report exists with every surface listed, each row marked pass / fixed (commit sha) / owner question.
 
-- [ ] **Step 1: Walk every surface** — for each file under `app/(app)/**/page.tsx`, `app/page.tsx`, `app/guides/**`, `components/*.tsx`, `lib/pal/coach-outputs.ts`, `lib/pal/fallback.ts`, `lib/client/ui-state.ts`, `app/api/check/route.ts`, `proxy.ts` copy constants — record in a table: surface · alarm colour (any `--danger` / `--high-*` use outside the Signal row and the verdict border) · imperative warnings ("never", "must", "stop", "!" near a verdict) · §8.5 verbs with the product as subject · fear framing ("dangerous", "disaster", "terrible" — the tone policy's banned phrase bank).
-- [ ] **Step 2: Grep assist** (record hits, then judge each by hand):
+- [x] **Step 1: Walk every surface** — for each file under `app/(app)/**/page.tsx`, `app/page.tsx`, `app/guides/**`, `components/*.tsx`, `lib/pal/coach-outputs.ts`, `lib/pal/fallback.ts`, `lib/client/ui-state.ts`, `app/api/check/route.ts`, `proxy.ts` copy constants — record in a table: surface · alarm colour (any `--danger` / `--high-*` use outside the Signal row and the verdict border) · imperative warnings ("never", "must", "stop", "!" near a verdict) · §8.5 verbs with the product as subject · fear framing ("dangerous", "disaster", "terrible" — the tone policy's banned phrase bank).
+- [x] **Step 2: Grep assist** (record hits, then judge each by hand):
 
 ```bash
 grep -rnE "\b(dangerous|disaster|terrible|warning|alarm|urgent|panic)\b" app components lib/pal/coach-outputs.ts lib/pal/fallback.ts lib/client/ui-state.ts | grep -v "^\s*//"
 grep -rn "var(--danger)\|--high-" app/globals.css | head -40
 ```
 
-- [ ] **Step 3: Write the report** with three sections: findings fixed in this PR, findings that are owner/safety-owner questions, and the two PRD-mandated checks below (Tasks 2.3, 2.4).
-- [ ] **Step 4: Commit** `git add docs/audit/ && git commit -m "docs(audit): calm-tone audit walk (F-CALM)"`.
+- [x] **Step 3: Write the report** with three sections: findings fixed in this PR, findings that are owner/safety-owner questions, and the two PRD-mandated checks below (Tasks 2.3, 2.4).
+- [x] **Step 4: Commit** `git add docs/audit/ && git commit -m "docs(audit): calm-tone audit walk (F-CALM)"`.
 
 ##### Task 2.3: `Hold off` never renders in a colour that reads as danger
 
@@ -1267,17 +1267,17 @@ grep -rn "var(--danger)\|--high-" app/globals.css | head -40
 
 **Finding, stated now so it is not discovered mid-task:** `--high-border` is `#b91c1c`, byte-identical to `--danger`; `--high-text` is `#991b1b`. The verdict icon (`IconPause`) is calm; the colour is not. PRD F-CALM (a) requires a change. **Proposed, pending the safety owner's colour-blind + "does this look like a warning" review (Open questions; protocol per review A-61: Chrome DevTools "Emulate vision deficiencies" — protanopia, deuteranopia, tritanopia, achromatopsia — on the three result cards and the week strip at 375, screenshots attached to the ledger note; plus two readers outside the team shown the three cards for five seconds and asked "which of these is a warning?" — the answer must be "none"):** a neutral-ink family so `Hold off` reads as *pause*, not *alarm* — `--high-border: #334155`, `--high-bg: #f1f5f9`, `--high-text: #1e293b`, `--high-badge: #e2e8f0` — and `--danger` stays reserved for destructive actions (account delete). Every `-text`-on-`-bg`/`-badge` pair must clear AA (`#1e293b` on `#f1f5f9` ≈ 12.6:1; on `#e2e8f0` ≈ 11.2:1).
 
-- [ ] **Step 1:** Redefine the four tokens **under `:root[data-calm]`** (review A-40) — the root layout `app/layout.tsx` renders `<html data-calm="">` only when `guideDoorEnabled("calm")`, so the judge door keeps today's red until the `calm` surface is added to the production flag, and the change reverts with the door like every other surface; record the new values in `DESIGN.md` §3 with a ⚖️ dated note and the attribute that scopes them; the week strip and landing verdict cards read tokens, so they follow when the attribute is present. A source pin in `tests/unit/pal/guide-door.test.ts`: `globals.css` declares `--high-border` exactly twice (the default and the `[data-calm]` override).
-- [ ] **Step 2:** Run `npm run e2e -- tests/smoke/landing-a11y.spec.ts tests/smoke/a11y.spec.ts tests/smoke/journey.spec.ts` (axe contrast) → PASS.
-- [ ] **Step 3:** The landing's three verdict illustrations recolour with the token (`landing-three-answers` treatment note in the ledger records that colours are tokens, so no copy row changes). Commit: `git commit -am "style(calm): Hold off renders in neutral ink, never danger red (F-CALM a)"`.
+- [x] **Step 1:** Redefine the four tokens **under `:root[data-calm]`** (review A-40) — the root layout `app/layout.tsx` renders `<html data-calm="">` only when `guideDoorEnabled("calm")`, so the judge door keeps today's red until the `calm` surface is added to the production flag, and the change reverts with the door like every other surface; record the new values in `DESIGN.md` §3 with a ⚖️ dated note and the attribute that scopes them; the week strip and landing verdict cards read tokens, so they follow when the attribute is present. A source pin in `tests/unit/pal/guide-door.test.ts`: `globals.css` declares `--high-border` exactly twice (the default and the `[data-calm]` override).
+- [x] **Step 2:** Run `npm run e2e -- tests/smoke/landing-a11y.spec.ts tests/smoke/a11y.spec.ts tests/smoke/journey.spec.ts` (axe contrast) → PASS.
+- [x] **Step 3:** The landing's three verdict illustrations recolour with the token (`landing-three-answers` treatment note in the ledger records that colours are tokens, so no copy row changes). Commit: `git commit -am "style(calm): Hold off renders in neutral ink, never danger red (F-CALM a)"`.
 
 ##### Task 2.4: The clinical route reads as one calm sentence to a clinician
 
 **Files:**
 - Review only: `docs/safety/copy-ledger.md` rows `clinical-*`, `components/result-card.tsx` `CLINICAL_EYEBROWS`
 
-- [ ] **Step 1:** For each of the nine `clinical-*` rows, note in the report whether a very worried user is pointed to a clinician in one calm sentence (PRD F-CALM (b)). Where a row is not, draft the amendment in the report as a **proposal** — these rows are `PENDING dietitian/CDCES sign-off (W-05)` and must not be edited without the safety owner.
-- [ ] **Step 2:** Commit the report update. **PR-2 done check:** report complete; `npm run test:pal && npm run contract` green; smoke a11y green.
+- [x] **Step 1:** For each of the nine `clinical-*` rows, note in the report whether a very worried user is pointed to a clinician in one calm sentence (PRD F-CALM (b)). Where a row is not, draft the amendment in the report as a **proposal** — these rows are `PENDING dietitian/CDCES sign-off (W-05)` and must not be edited without the safety owner.
+- [x] **Step 2:** Commit the report update. **PR-2 done check:** report complete; `npm run test:pal && npm run contract` green; smoke a11y green.
 
 ---
 
@@ -1313,7 +1313,7 @@ grep -rn "var(--danger)\|--high-" app/globals.css | head -40
 
 **Task card:** Copy: rows `orientation-step-01`…`-07` (class `product-role`), `orientation-intro` (`launch-informational`), `orientation-day-eyebrow` (`product-role`). Every step resolves to an existing route or a phone call; no step is a diet, a target or a food ban; never "your plan", "follow this to…", or any outcome. Flag: none (data). Analytics: none. Done check: `npx vitest run tests/unit/pal/orientation.test.ts tests/unit/pal/claims-boundary-copy.test.ts` green.
 
-- [ ] **Step 1: Failing test**
+- [x] **Step 1: Failing test**
 
 ```ts
 // tests/unit/pal/orientation.test.ts
@@ -1386,9 +1386,9 @@ describe("orientation week (PRD v1.1 §6 F-ORIENT)", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails** — `npx vitest run tests/unit/pal/orientation.test.ts` → FAIL (module missing).
+- [x] **Step 2: Run to verify it fails** — `npx vitest run tests/unit/pal/orientation.test.ts` → FAIL (module missing).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```ts
 // lib/coach/orientation.ts
@@ -1498,10 +1498,10 @@ export function currentOrientationStep(
 }
 ```
 
-- [ ] **Step 3b (review A-45): generalise the public guide before linking it.** Step 1 links `app/guides/a1c-5-7-to-6-4/page.tsx` in-app while D7 is open, and that page addresses the reader's own number twice. Apply the rewrite §2.4.1 already specifies, on the public page, now: "If your number landed in the middle band, here is how to think about it" → "Here is how clinicians read the middle band"; "where you sit in it is worth knowing" → "where a result sits in it matters to clinicians". The title, H1 and first sentence (the SEO targets) are untouched; the claims audit already scans the page; the safety owner sees the two-line diff with batch 2. An in-app link must not point at a second-person clinical sentence.
-- [ ] **Step 4: Add `"lib/coach/orientation.ts"` to `EXTRA_SOURCES`; run** `npx vitest run tests/unit/pal/orientation.test.ts tests/unit/pal/claims-boundary-copy.test.ts` → PASS.
+- [x] **Step 3b (review A-45): generalise the public guide before linking it.** Step 1 links `app/guides/a1c-5-7-to-6-4/page.tsx` in-app while D7 is open, and that page addresses the reader's own number twice. Apply the rewrite §2.4.1 already specifies, on the public page, now: "If your number landed in the middle band, here is how to think about it" → "Here is how clinicians read the middle band"; "where you sit in it is worth knowing" → "where a result sits in it matters to clinicians". The title, H1 and first sentence (the SEO targets) are untouched; the claims audit already scans the page; the safety owner sees the two-line diff with batch 2. An in-app link must not point at a second-person clinical sentence.
+- [x] **Step 4: Add `"lib/coach/orientation.ts"` to `EXTRA_SOURCES`; run** `npx vitest run tests/unit/pal/orientation.test.ts tests/unit/pal/claims-boundary-copy.test.ts` → PASS.
 
-- [ ] **Step 5: Commit** `git add lib/coach/orientation.ts tests/unit/pal/orientation.test.ts tests/unit/pal/claims-boundary-copy.test.ts && git commit -m "feat(orient): seven-step orientation week module (F-ORIENT)"`.
+- [x] **Step 5: Commit** `git add lib/coach/orientation.ts tests/unit/pal/orientation.test.ts tests/unit/pal/claims-boundary-copy.test.ts && git commit -m "feat(orient): seven-step orientation week module (F-ORIENT)"`.
 
 ##### Task 3.2: Guest store + on-device note
 
@@ -1512,7 +1512,7 @@ export function currentOrientationStep(
 
 **Task card:** Copy: none. Storage: `pal.orient.v1` (state), `pal.orient.note.v1` (free text, device only — PRD F-ORIENT "Free text"). Done check: test green; a source pin that no file under `app/api/` or `lib/server/` mentions `pal.orient.note` (the note never leaves the device).
 
-- [ ] **Step 1: Failing test**
+- [x] **Step 1: Failing test**
 
 ```ts
 // tests/unit/pal/orientation-store.test.ts
@@ -1594,9 +1594,9 @@ describe("orientationNote (pal.orient.note.v1) — device only", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails** — `npx vitest run tests/unit/pal/orientation-store.test.ts` → FAIL (module missing).
+- [x] **Step 2: Run to verify it fails** — `npx vitest run tests/unit/pal/orientation-store.test.ts` → FAIL (module missing).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```ts
 // lib/client/orientation-store.ts
@@ -1673,7 +1673,7 @@ export const orientationNote = {
 };
 ```
 
-- [ ] **Step 4: Run → PASS; commit** `git add lib/client/orientation-store.ts tests/unit/pal/orientation-store.test.ts && git commit -m "feat(orient): on-device orientation state and clinician-questions note"`.
+- [x] **Step 4: Run → PASS; commit** `git add lib/client/orientation-store.ts tests/unit/pal/orientation-store.test.ts && git commit -m "feat(orient): on-device orientation state and clinician-questions note"`.
 
 ##### Task 3.3: Signed-in state — one profile column
 
@@ -1686,7 +1686,7 @@ export const orientationNote = {
 
 The health-data erase path deletes the whole `profiles` row, so the column needs no new erase code — assert that in `tests/unit/server/health-data-delete.test.ts` by seeding `orientation` and checking the row is gone.
 
-- [ ] **Step 1: Failing tests** (the three assertions above). **Step 2:** schema + migration + route. **Step 3:** `npx vitest run tests/unit/server/profile-route.test.ts tests/unit/server/db-schema.test.ts tests/unit/server/health-data-delete.test.ts tests/unit/server/account-export.test.ts` → PASS. **Step 4:** commit `git commit -m "feat(orient): profiles.orientation column + PATCH (signed-in orientation state)"`.
+- [x] **Step 1: Failing tests** (the three assertions above). **Step 2:** schema + migration + route. **Step 3:** `npx vitest run tests/unit/server/profile-route.test.ts tests/unit/server/db-schema.test.ts tests/unit/server/health-data-delete.test.ts tests/unit/server/account-export.test.ts` → PASS. **Step 4:** commit `git commit -m "feat(orient): profiles.orientation column + PATCH (signed-in orientation state)"`.
 
 ##### Task 3.4: The next-action line becomes the day's step
 
@@ -1698,7 +1698,7 @@ The health-data erase path deletes the whole `profiles` row, so the column needs
 **Interfaces:**
 - `NextActionInput` gains `orientation?: OrientationStep | null`. Rule: if `orientation` is present **and** not (`href === "/check"` && `!checkedToday`) → `{ text: \`Today's step: ${orientation.text}\`, href }`. The carve-out keeps the 2026-08-11 owner rule: before the first check of the day the hero *is* the action, so a "check a meal" step would be a second way to do the same thing. Otherwise the three existing branches, unchanged.
 
-- [ ] **Step 1: Failing tests** — append to `tests/unit/coach/next-action.test.ts` (import `ORIENTATION_STEPS` from `../../../lib/coach/orientation` at the top):
+- [x] **Step 1: Failing tests** — append to `tests/unit/coach/next-action.test.ts` (import `ORIENTATION_STEPS` from `../../../lib/coach/orientation` at the top):
 
 ```ts
 describe("nextAction — the orientation week (PRD v1.1 §6 F-ORIENT, §7.4)", () => {
@@ -1737,9 +1737,9 @@ describe("nextAction — the orientation week (PRD v1.1 §6 F-ORIENT, §7.4)", (
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails** — `npx vitest run tests/unit/coach/next-action.test.ts` → FAIL (`orientation` is not a known input).
+- [x] **Step 2: Run to verify it fails** — `npx vitest run tests/unit/coach/next-action.test.ts` → FAIL (`orientation` is not a known input).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```ts
 // lib/coach/next-action.ts — additions
@@ -1766,7 +1766,7 @@ export function nextAction(input: NextActionInput): NextAction {
   // …the existing three branches, unchanged…
 ```
 
-- [ ] **Step 4:** `npx vitest run tests/unit/coach/next-action.test.ts tests/unit/pal/claims-boundary-copy.test.ts` → PASS (`next-action.ts` is already in `EXTRA_SOURCES`). **Step 5:** commit `git add lib/coach/next-action.ts tests/unit/coach/next-action.test.ts && git commit -m "feat(orient): next-action line carries the day's orientation step"`.
+- [x] **Step 4:** `npx vitest run tests/unit/coach/next-action.test.ts tests/unit/pal/claims-boundary-copy.test.ts` → PASS (`next-action.ts` is already in `EXTRA_SOURCES`). **Step 5:** commit `git add lib/coach/next-action.ts tests/unit/coach/next-action.test.ts && git commit -m "feat(orient): next-action line carries the day's orientation step"`.
 
 ##### Task 3.5: Home feeds the step and the "Day N" eyebrow
 
@@ -1794,7 +1794,7 @@ export function nextAction(input: NextActionInput): NextAction {
 
 **Task card:** Copy: `orientation-day-eyebrow` row — "Day {n} of your first week" (`product-role`). **Greeting, one definition (review A-89):** `.dash-greet` = that eyebrow (13px tracked caps, `.status-eyebrow`) above today's date `h1` and the summary line, unchanged otherwise; while a week is active the first-win block does not render (the eyebrow carries day 1). **Check-step days before the first check (review A-79):** the step line stays off (owner rule), the eyebrow still reads "Day 2 of your first week", and the hero's own eyebrow reads "Today's step · Meal check" so the day is not a promise with nothing under it (`home-check-hero-title` row gains the eyebrow variant, batch 2). Flag: `guideDoorEnabled("orient")` gates the eyebrow and the step (flag off ⇒ `orientation: null`). Analytics: none here. Done check: pins green; with the flag on, a freshly onboarded guest sees "Day 1 of your first week" and, after a check, the step line.
 
-- [ ] Steps: failing pins → implement → `npx vitest run tests/unit/pal/guide-door.test.ts` → commit `git commit -m "feat(orient): Home shows the orientation day and the day's step"`.
+- [x] Steps: failing pins → implement → `npx vitest run tests/unit/pal/guide-door.test.ts` → commit `git commit -m "feat(orient): Home shows the orientation day and the day's step"`.
 
 ##### Task 3.6: `/learn/first-week` — the page that hosts the week
 
@@ -1823,7 +1823,7 @@ export function nextAction(input: NextActionInput): NextAction {
 
 **Task card:** Copy: `learn-first-week-intro` (`launch-informational`; sentences promoted verbatim from `app/guides/prediabetes-now-what` — "An A1C between 5.7% and 6.4% is a signal, not a sentence…" — reviewed for the signed-in context), `orientation-intro` ("Seven small steps, one a day. None of them is a diet. Skip any, come back to any."), `orientation-controls` ("Done · Not yet · Hide this for now"), `orientation-note-hint` (three variants, A-57: "Your notes stay on this device. Nothing here is sent anywhere." · "Saved on this device" · "This browser isn't letting the page keep notes — copy your questions somewhere safe."). Flag: page 404s (`notFound()`) when the flag is off. Analytics: the two events. Done check: `npx vitest run tests/unit/pal/seo-meta.test.ts tests/unit/client/analytics.test.ts tests/unit/pal/claims-boundary-copy.test.ts` green; manual: mark step 2 done on `/learn/first-week`, reload `/home`, the step line moves to step 3 (guest and signed-in).
 
-- [ ] Steps: failing (analytics allowlist + seo private list + a source pin that `orientation-note.tsx` never interpolates the note into a string) → implement → run → commit `git commit -m "feat(orient): /learn/first-week hosts the orientation week and the on-device note"`.
+- [x] Steps: failing (analytics allowlist + seo private list + a source pin that `orientation-note.tsx` never interpolates the note into a string) → implement → run → commit `git commit -m "feat(orient): /learn/first-week hosts the orientation week and the on-device note"`.
 
 ##### Task 3.7: `/journey` "Where you are" + the onboarding hand-off
 
@@ -1834,12 +1834,12 @@ export function nextAction(input: NextActionInput): NextAction {
 
 **Task card:** Copy: `onboarding-final-button` ("Start your first week", `product-role`), `onboarding-first-week-line` (`product-role`), `journey-where-you-are` (`product-role`). Done check: both smoke runs (flag on/off) green.
 
-- [ ] Steps: failing smoke assertions → implement → `NEXT_PUBLIC_GUIDE_DOOR=1 npm run e2e -- tests/smoke/onboarding.spec.ts tests/smoke/journey.spec.ts tests/smoke/trial-wall.spec.ts` and the flag-off run → commit.
+- [x] Steps: failing smoke assertions → implement → `NEXT_PUBLIC_GUIDE_DOOR=1 npm run e2e -- tests/smoke/onboarding.spec.ts tests/smoke/journey.spec.ts tests/smoke/trial-wall.spec.ts` and the flag-off run → commit.
 
 ##### Task 3.8: Ledger batch 2 (orientation half)
 
-- [ ] Add rows `orientation-intro`, `orientation-step-01`…`-07` (Copy = the step text; class `product-role`; Notes cite F-ORIENT acceptance: resolves to an existing route or an external action, no food to avoid, no outcome), `orientation-day-eyebrow`, `orientation-controls`, `orientation-note-hint`, `learn-first-week-intro`, `journey-where-you-are`, `onboarding-final-button`, `onboarding-first-week-line`. If F-REFER's copy is cleared in the same pass, its rows (§5.1) join this batch.
-- [ ] `npm run contract` → PASS; commit `git commit -m "docs(orient): ledger batch 2 — orientation week rows"`.
+- [x] Add rows `orientation-intro`, `orientation-step-01`…`-07` (Copy = the step text; class `product-role`; Notes cite F-ORIENT acceptance: resolves to an existing route or an external action, no food to avoid, no outcome), `orientation-day-eyebrow`, `orientation-controls`, `orientation-note-hint`, `learn-first-week-intro`, `journey-where-you-are`, `onboarding-final-button`, `onboarding-first-week-line`. If F-REFER's copy is cleared in the same pass, its rows (§5.1) join this batch.
+- [x] `npm run contract` → PASS; commit `git commit -m "docs(orient): ledger batch 2 — orientation week rows"`.
 
 **PR-3 done check:** all gates green; both smoke runs green; the PR lists the batch-2 rows for the safety owner and states whether F-REFER rode along.
 
@@ -1848,6 +1848,8 @@ export function nextAction(input: NextActionInput): NextAction {
 #### PR-4 — Full F-IDEAS: the label cache, `/check` empty state, segment steering
 
 ##### Task 4.1: Review-time labelling, keyed on `PROMPT_VERSION`
+
+**Status 2026-09-17: built (in PR-1), not run** — the owner runs `npm run eval:pal:ideas`; `lib/pal/guide-ideas.labels.json` does not exist yet.
 
 **Pulled into PR-1 by review A-03.** The prototype ships a bank whose model labels are otherwise unverified until PR-4, while §7.3 step 3 flips the flag to production after PR-1 — so a tapped idea could come back `Be careful` on the product's most trust-critical surface. This task therefore runs at the end of PR-1 (after Task 1.9), the labels file is committed with PR-1, and the production flip waits on `guide-ideas-labels.test.ts` green. PR-4 re-runs it only when the bank or `PROMPT_VERSION` changes (which the unit gate enforces).
 
