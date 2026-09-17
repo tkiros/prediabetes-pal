@@ -6,6 +6,7 @@ import {
 } from "../../../components/dashboard-view";
 import { FirstRunGate } from "../../../components/first-run-gate";
 import { GuestDashboard } from "../../../components/guest-dashboard";
+import { OrientationSync } from "../../../components/orientation-sync";
 import {
   normalizeInputMethod,
   type StoredCheck
@@ -17,6 +18,12 @@ import {
   verdictWeekView
 } from "../../../lib/coach/days";
 import { nextAction } from "../../../lib/coach/next-action";
+import {
+  EMPTY_ORIENTATION,
+  homeOrientation,
+  OrientationStateSchema
+} from "../../../lib/coach/orientation";
+import { guideDoorEnabled } from "../../../lib/guide-door-flag";
 import { safeDecrypt } from "../../../lib/server/crypto";
 import { getDb, schema } from "../../../lib/server/db";
 import { getPlanBox } from "../../../lib/server/plan-box";
@@ -53,13 +60,42 @@ export default async function HomePage() {
 
   const db = getDb();
   const now = new Date();
+  const orientOn = guideDoorEnabled("orient");
 
   const [profile] = await db
-    .select({ timezone: schema.profiles.timezone })
+    .select({
+      timezone: schema.profiles.timezone,
+      // Ruling F-25: one query (A-21), and the orientation column is named
+      // only with the door open — a query that names it fails on a database
+      // where migration 0019 has not run. Door shut ⇒ today's query.
+      ...(orientOn
+        ? {
+            onboardedAt: schema.profiles.onboardedAt,
+            orientation: schema.profiles.orientation
+          }
+        : {})
+    })
     .from(schema.profiles)
     .where(eq(schema.profiles.userId, session.userId));
   const timezone = profile?.timezone ?? "America/New_York";
   const dayKey = dayKeyInTimezone(timezone);
+
+  // Review A-24: an unreadable stored value is the empty state. No profiles
+  // row (A-92) ⇒ no week here; the device keeps a guest's week.
+  const stored = OrientationStateSchema.safeParse(profile?.orientation);
+  const firstWeek =
+    orientOn && profile
+      ? homeOrientation(
+          stored.success ? stored.data : EMPTY_ORIENTATION,
+          profile.onboardedAt,
+          dayKey,
+          now
+        )
+      : null;
+  const step = firstWeek?.step ?? null;
+  // Review A-66: the server copy is still null, so a guest week begun on this
+  // device moves over once (OrientationSync).
+  const migrate = orientOn && profile !== undefined && profile.orientation == null;
 
   const since = new Date(now.getTime() - 35 * 24 * 60 * 60 * 1000);
   const rows = await db
@@ -123,20 +159,31 @@ export default async function HomePage() {
     // Before the first check of the day the hero right above IS the next
     // action — a "Check your next uncertain meal" line under it pointed at a
     // second way to do the same thing (owner testing 2026-08-11). The line
-    // only renders once today has a check to follow up on.
+    // only renders once today has a check to follow up on, or when the day's
+    // orientation step points somewhere other than /check (Task 3.5). With
+    // the door shut `step` is null and this is the rule as it was.
     nextAction:
-      todayRows.length > 0
+      todayRows.length > 0 || (step && step.href !== "/check")
         ? nextAction({
-            checkedToday: true,
+            checkedToday: todayRows.length > 0,
             undoneActionToday: todayRows.some(
               (row) => row.risk !== "SAFE" && !row.actionDoneAt
-            )
+            ),
+            orientation: step
           })
         : null,
     planBox,
     planBoxAttention: planBox.attention,
-    isDay0: rows.length === 0
+    isDay0: rows.length === 0,
+    orientationDay: firstWeek?.day ?? null
   };
 
-  return <DashboardView data={data} />;
+  return (
+    <>
+      {migrate || firstWeek?.needsStart ? (
+        <OrientationSync migrate={migrate} start={firstWeek?.needsStart ?? false} />
+      ) : null}
+      <DashboardView data={data} />
+    </>
+  );
 }

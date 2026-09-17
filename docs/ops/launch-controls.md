@@ -613,14 +613,21 @@ locate where sessions drop — Task 6.7 is the follow-up that reads them.
 **Umami view:** `onboarding_step` count by `step`, and `onboarding_started`
 count.
 
-### 13.4 Orientation completion — `orientation_step_done` by step (arrives with PR-3)
+### 13.4 Orientation completion — `orientation_step_done` by step (PR-3)
 
-Completion beyond day 1, read by step once orientation ships. `orientation_step_done`
-does not exist in `lib/client/analytics.ts` as of this PR — this row is a
-placeholder until PR-3 (F-ORIENT) defines and emits it; do not read counts
-from an event this build cannot produce.
+Completion beyond day 1, read by step. `orientation_step_done` is defined in
+`lib/client/analytics.ts`; its one prop is `step`, the closed step id
+`"1"`–`"7"`. It is emitted from `/learn/first-week`
+(`components/orientation-list.tsx`) when a Done tap has been saved: on the
+device for a guest, through `PATCH /api/profile` for a signed-in user. A save
+that fails sends nothing, a second tap on a done step sends nothing, and
+nothing is sent while the `orient` door is shut (the page 404s). Step N is day
+N's step, so completion beyond day 1 shows as counts on steps after `"1"`.
+Today the count covers Done taps on that page only; steps marked where they
+happen (review A-84) add to it only once that PR emits the same event.
 
-**Umami view:** not yet available — arrives with PR-3.
+**Umami view:** event `orientation_step_done`, broken down by the `step`
+property.
 
 ### 13.5 Beside kill line 2 — return, not just exposure (review A-15, A-65)
 

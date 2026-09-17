@@ -5,16 +5,30 @@
  * is an invitation, none reads as a missed obligation.
  */
 
+import type { OrientationStep } from "./orientation";
+
 export type NextActionInput = {
   /** True when the user has at least one check today. */
   checkedToday: boolean;
   /** True when a non-SAFE check today still has no "I did it" mark. */
   undoneActionToday: boolean;
+  /**
+   * PRD v1.1 §7.4: the orientation day's step, when a week is active (null or
+   * absent otherwise). The line becomes the step; the three classic branches
+   * are the fallback. Exception, keeping the 2026-08-11 owner rule: before
+   * today's first check the hero IS the action, so a step that points at
+   * /check would be a second way to do the same thing — it falls through.
+   */
+  orientation?: OrientationStep | null;
 };
 
 export type NextAction = { text: string; href: string };
 
 export function nextAction(input: NextActionInput): NextAction {
+  const step = input.orientation;
+  if (step && !(step.href === "/check" && !input.checkedToday)) {
+    return { text: `Today's step: ${step.text}`, href: step.href };
+  }
   if (!input.checkedToday) {
     return { text: "Check your next uncertain meal.", href: "/check" };
   }

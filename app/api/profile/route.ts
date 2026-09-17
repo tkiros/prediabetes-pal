@@ -1,7 +1,12 @@
-import { and, eq, isNull, lte, or } from "drizzle-orm";
+import { and, eq, isNull, lte, or, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import {
+  EMPTY_ORIENTATION,
+  OrientationStateSchema
+} from "../../../lib/coach/orientation";
+import { guideDoorEnabled } from "../../../lib/guide-door-flag";
 import { routeA1C } from "../../../lib/pal/a1c";
 // Approved boundary copy — single-sourced (SAFETY-OWNED). Out-of-range A1C gets
 // guidance, never a verdict, at profile creation exactly as at check time.
@@ -50,7 +55,12 @@ export function createProfileRouteHandlers(deps: ProfileRouteDeps = {}) {
           nudgeHour: schema.profiles.nudgeHour,
           nudgeCadence: schema.profiles.nudgeCadence,
           nudgeQuietStart: schema.profiles.nudgeQuietStart,
-          nudgeQuietEnd: schema.profiles.nudgeQuietEnd
+          nudgeQuietEnd: schema.profiles.nudgeQuietEnd,
+          // Ruling F-18 (revised): flag off, the response carries no
+          // orientation key at all and the query never names the column.
+          ...(guideDoorEnabled("orient")
+            ? { orientation: schema.profiles.orientation }
+            : {})
         })
         .from(schema.profiles)
         .where(eq(schema.profiles.userId, session.userId));
@@ -134,7 +144,46 @@ export function createProfileRouteHandlers(deps: ProfileRouteDeps = {}) {
   };
 }
 
-const NudgePrefsSchema = z
+// Review A-103: a `set` crosses the trust boundary from an untrusted body into
+// the jsonb column, so it is held to more than the stored shape — unique ids,
+// stamps of bounded length (z.iso.datetime() allows any number of fractional
+// digits; toISOString() and the server stamp are 24 characters) and a start no
+// later than now plus five minutes of clock skew.
+const START_SKEW_MS = 5 * 60 * 1000;
+const MAX_STAMP_LENGTH = 30;
+const OrientationSetStateSchema = OrientationStateSchema.refine(
+  (state) => new Set(state.done).size === state.done.length
+).refine((state) =>
+  [state.startedAt, state.dismissedAt].every(
+    (stamp) => stamp === null || stamp.length <= MAX_STAMP_LENGTH
+  )
+).refine(
+  (state) =>
+    state.startedAt === null ||
+    Date.parse(state.startedAt) <= Date.now() + START_SKEW_MS
+);
+
+// Op-based so the four writers (the Done toggle, the start stamp,
+// recordStepEvent, the sign-in migration) never overwrite each other: every op
+// but `set` is merged in SQL against the row's current value.
+const OrientationOpSchema = z.discriminatedUnion("op", [
+  z
+    .object({
+      op: z.literal("markDone"),
+      step: OrientationStateSchema.shape.done.element
+    })
+    .strict(),
+  z.object({ op: z.literal("start") }).strict(),
+  z.object({ op: z.literal("dismiss") }).strict(),
+  z.object({ op: z.literal("restore") }).strict(),
+  z
+    .object({ op: z.literal("set"), state: OrientationSetStateSchema })
+    .strict()
+]);
+
+type OrientationOp = z.infer<typeof OrientationOpSchema>;
+
+const ProfilePatchSchema = z
   .object({
     nudgeHour: z.number().int().min(0).max(23).optional(),
     nudgeOptIn: z.boolean().optional(),
@@ -142,9 +191,51 @@ const NudgePrefsSchema = z
     // window. Quiet hours are nullable (send null to clear the window).
     nudgeCadence: z.enum(["daily", "few_per_week", "weekly"]).optional(),
     nudgeQuietStart: z.number().int().min(0).max(23).nullable().optional(),
-    nudgeQuietEnd: z.number().int().min(0).max(23).nullable().optional()
+    nudgeQuietEnd: z.number().int().min(0).max(23).nullable().optional(),
+    orientation: OrientationOpSchema.optional()
   })
   .strict();
+
+// The server clock as a jsonb string in the exact form z.iso.datetime()
+// accepts (UTC, "Z", milliseconds). to_jsonb(now()) would carry "+00:00" and
+// the stored state would then fail the schema on every read.
+const NOW_ISO = sql`to_jsonb(to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'))`;
+
+/**
+ * The new column value for one op, evaluated inside the UPDATE against the
+ * row's current jsonb, so the read and the write are one statement. Under
+ * Postgres READ COMMITTED a concurrent UPDATE of the same row waits for the
+ * first to commit, then re-evaluates this expression on the committed value.
+ * JSON null is not SQL NULL, hence NULLIF before COALESCE on startedAt.
+ */
+function orientationValue(op: OrientationOp) {
+  if (op.op === "set") return op.state;
+  const current = sql`COALESCE(${schema.profiles.orientation}, ${JSON.stringify(EMPTY_ORIENTATION)}::jsonb)`;
+  switch (op.op) {
+    case "markDone": {
+      const done = sql`(${current} -> 'done')`;
+      const step = sql`jsonb_build_array(${op.step}::text)`;
+      return sql`jsonb_set(${current}, '{done}', CASE WHEN ${done} @> ${step} THEN ${done} ELSE ${done} || ${step} END)`;
+    }
+    case "start":
+      return sql`jsonb_set(${current}, '{startedAt}', COALESCE(NULLIF(${current} -> 'startedAt', 'null'::jsonb), ${NOW_ISO}))`;
+    case "dismiss":
+      return sql`jsonb_set(${current}, '{dismissedAt}', ${NOW_ISO})`;
+    case "restore":
+      return sql`jsonb_set(${current}, '{dismissedAt}', 'null'::jsonb)`;
+    default:
+      // #11: an op added to OrientationOpSchema but not handled here would
+      // otherwise fall through with noImplicitReturns off, returning
+      // undefined — a dropped column value, not a build error. `op` is
+      // `never` once every case above is exhaustive, so this only compiles
+      // while it stays that way.
+      return op satisfies never;
+  }
+}
+
+function notFound() {
+  return NextResponse.json({ error: "Not found." }, { status: 404 });
+}
 
 export function createProfilePatchHandler(deps: ProfileRouteDeps = {}) {
   const db = deps.db ?? getDb;
@@ -163,15 +254,65 @@ export function createProfilePatchHandler(deps: ProfileRouteDeps = {}) {
       body = null;
     }
 
-    const parsed = NudgePrefsSchema.safeParse(body);
+    // Ruling F-4: orientation is the `orient` guide surface. While it is off
+    // the key does not exist on this route — 404 before any validation.
+    if (
+      typeof body === "object" &&
+      body !== null &&
+      "orientation" in body &&
+      !guideDoorEnabled("orient")
+    ) {
+      return notFound();
+    }
+
+    const parsed = ProfilePatchSchema.safeParse(body);
     if (!parsed.success || Object.keys(parsed.data).length === 0) {
       return NextResponse.json({ error: "Invalid request." }, { status: 400 });
     }
 
-    await db()
+    const { orientation, ...nudgePrefs } = parsed.data;
+    // `set` is only the one-time sign-in migration: refused once the row
+    // already has state. The guard sits in the WHERE clause, so two racing
+    // migrations cannot both land.
+    const isSet = orientation?.op === "set";
+    const updated = await db()
       .update(schema.profiles)
-      .set(parsed.data)
-      .where(eq(schema.profiles.userId, session.userId));
+      .set(
+        orientation
+          ? { ...nudgePrefs, orientation: orientationValue(orientation) }
+          : nudgePrefs
+      )
+      .where(
+        and(
+          eq(schema.profiles.userId, session.userId),
+          isSet ? isNull(schema.profiles.orientation) : undefined
+        )
+      )
+      .returning({ userId: schema.profiles.userId });
+
+    // Review A-92: zero rows is not success. For a refused `set` the lookup
+    // only picks the status code; nothing was written either way.
+    if (updated.length === 0) {
+      if (isSet) {
+        const [row] = await db()
+          .select({ userId: schema.profiles.userId })
+          .from(schema.profiles)
+          .where(eq(schema.profiles.userId, session.userId));
+        if (row) {
+          return NextResponse.json(
+            { error: "Invalid request." },
+            { status: 409 }
+          );
+        }
+      }
+      return notFound();
+    }
+
+    // Review A-07: only a reminder-preference change cancels a pending attempt.
+    // An orientation-only PATCH (a "Done" tap) must never wipe one.
+    if (Object.keys(nudgePrefs).length === 0) {
+      return NextResponse.json({ ok: true });
+    }
 
     // A preference mutation (including opt-out, cadence, hour, or quiet hours)
     // cancels a pending attempt. A future send must be newly eligible under the

@@ -1,5 +1,5 @@
 import { getTableColumns, getTableName } from "drizzle-orm";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { createAccountExportHandler } from "../../../app/api/account/export/route";
 import { encryptField } from "../../../lib/server/crypto";
@@ -32,7 +32,8 @@ beforeAll(async () => {
     a1cCiphertext: encryptField("6.1"),
     a1cBand: "prediabetes_60_62",
     timezone: "UTC",
-    consentedAt: NOW
+    consentedAt: NOW,
+    orientation: { done: ["1"], dismissedAt: null, startedAt: "2026-07-20T08:00:00.000Z" }
   });
   await testDb.db.insert(schema.weeklyReflections).values({
     userId,
@@ -125,6 +126,10 @@ afterAll(async () => {
   await testDb.close();
 });
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe("GET /api/account/export (PR-5)", () => {
   it("401s signed out", async () => {
     const GET = createAccountExportHandler({
@@ -135,6 +140,7 @@ describe("GET /api/account/export (PR-5)", () => {
   });
 
   it("bundles exact A1C, weekly reflections, and pantry data", async () => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "orient");
     const GET = createAccountExportHandler({
       db: () => testDb.db,
       getSession: async () => ({ userId, email: "export@test.dev" }),
@@ -146,16 +152,45 @@ describe("GET /api/account/export (PR-5)", () => {
     expect(res.headers.get("content-disposition")).toContain("attachment");
 
     const body = (await res.json()) as {
-      profile: { a1c: string; a1cBand: string };
+      profile: { a1c: string; a1cBand: string; orientation: unknown };
       weeklyReflections: Array<{ artifact: string }>;
       pantryOrders: Array<{ a1c: string | null; notes: string | null; report: string | null }>;
     };
     expect(body.profile.a1c).toBe("6.1");
     expect(body.profile.a1cBand).toBe("prediabetes_60_62");
+    // F-ORIENT: the signed-in orientation state is the user's own data.
+    expect(body.profile.orientation).toEqual({
+      done: ["1"],
+      dismissedAt: null,
+      startedAt: "2026-07-20T08:00:00.000Z"
+    });
     expect(body.weeklyReflections[0].artifact).toContain("steady week");
     expect(body.pantryOrders[0].a1c).toBe("6.2");
     expect(body.pantryOrders[0].notes).toBe("mostly cooking at home");
     expect(body.pantryOrders[0].report).toBe("Report body");
+  });
+
+  it.each([
+    ["unset", ""],
+    ["a list without orient", "ideas,calm"]
+  ])("omits the orientation key entirely while the orient surface is off (%s)", async (_label, flag) => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", flag);
+    const GET = createAccountExportHandler({
+      db: () => testDb.db,
+      getSession: async () => ({ userId, email: "export@test.dev" }),
+      now: () => NOW
+    });
+
+    const body = (await (await GET()).json()) as { profile: Record<string, unknown> };
+
+    expect(body.profile).not.toHaveProperty("orientation");
+    expect(Object.keys(body.profile)).toEqual([
+      "a1c",
+      "a1cBand",
+      "timezone",
+      "nudgeOptIn",
+      "consentedAt"
+    ]);
   });
 
   it("includes support cases — user-authored personal data (P0.4)", async () => {

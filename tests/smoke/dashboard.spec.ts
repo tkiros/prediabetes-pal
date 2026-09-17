@@ -221,6 +221,12 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
   // never wrap-measured at the narrowest width, which is the width where a
   // line is likeliest to wrap past two lines. Explicit viewport sizes keep
   // this project-agnostic, like the rest of this file.
+  //
+  // Task 3.5: with the orient surface on, every cell also runs a first week
+  // on its day 2 — the tallest Home above the CTA: the "Day 2 of your first
+  // week" eyebrow over the date, and the hero's own step eyebrow (a check-step
+  // day before the first check). The guest here has no profile, so without
+  // the seed no week would render and the fold would not measure it.
   const FOLD_CLOCKS: ReadonlyArray<{ time: string; daypart: Daypart }> = [
     { time: "2026-09-14T08:00:00", daypart: "breakfast" },
     { time: "2026-09-14T13:00:00", daypart: "lunch" },
@@ -232,6 +238,7 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
     test(`fold at ${width}×667: the check CTA clears the tab bar at every daypart and rotation page`, async ({
       page
     }) => {
+      const weekOn = await doorSurfaceOn("orient");
       await page.setViewportSize({ width, height: 667 });
       await page.clock.install({ time: new Date(FOLD_CLOCKS[0]!.time) });
       await page.goto("/home?stay=1");
@@ -243,9 +250,19 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
         await page.clock.setSystemTime(new Date(time));
 
         for (const seed of ROTATION_SEEDS) {
-          await page.evaluate((value) => {
-            window.localStorage.setItem("pal.ideas.rotation", String(value));
-          }, seed);
+          await page.evaluate(
+            ([value, week]) => {
+              window.localStorage.setItem("pal.ideas.rotation", String(value));
+              if (!week) return;
+              const startedAt = new Date(); // the installed clock
+              startedAt.setDate(startedAt.getDate() - 1);
+              window.localStorage.setItem(
+                "pal.orient.v1",
+                JSON.stringify({ done: [], dismissedAt: null, startedAt: startedAt.toISOString() })
+              );
+            },
+            [seed, weekOn] as const
+          );
           await page.goto("/home?stay=1");
 
           const cell = `${width}px ${time.slice(11, 16)} seed ${seed}`;
@@ -257,6 +274,14 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
           await expect(page.getByTestId("idea-row-1"), cell).toHaveText(
             ideasFor(daypart, seed + 1)[0]!.text
           );
+          if (weekOn) {
+            await expect(page.getByTestId("orientation-day"), cell).toHaveText(
+              "Day 2 of your first week"
+            );
+            await expect(page.locator(".meal-hero-eyebrow"), cell).toHaveText(
+              "Today's step · Meal check"
+            );
+          }
 
           // Task 1.8 fix round 1: below 375px the block shows two rows (A-93's
           // mechanism), three from 375 up; every visible idea fits the rows'

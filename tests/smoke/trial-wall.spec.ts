@@ -1,4 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Response } from "@playwright/test";
+
+import { doorSurfaceOn } from "./guide-door";
 
 /**
  * Definition-of-Ready walkthrough for the taster → trial-wall → trial paywall
@@ -87,15 +89,26 @@ test("taster: first-run walk lands a guided oatmeal check and meters used===1", 
 
   // Walk welcome → segment → attribution → a1c → expectations (mirrors
   // onboarding.spec); completing the tour lands on /check, where the guided
-  // chips wait in the empty state.
+  // chips wait in the empty state. With the orient surface on (Task 3.7,
+  // A-16) it lands on Home first, so the walk goes on to /check from there.
   await page.getByRole("button", { name: "Get started" }).click();
   await page.getByRole("button", { name: "New A1C result" }).click();
   await page.getByRole("button", { name: "Reddit", exact: true }).click();
   await page.getByLabel("Latest A1C").fill("6.1");
   await page.getByRole("button", { name: "Continue" }).click();
 
-  const paywall = page.waitForResponse((r) => r.url().includes("/api/paywall"));
-  await page.getByRole("button", { name: "Check my first meal" }).click();
+  const paywallFetch = () => page.waitForResponse((r) => r.url().includes("/api/paywall"));
+  let paywall: Promise<Response>;
+  if (await doorSurfaceOn("orient", TRIAL)) {
+    await page.getByRole("button", { name: "Start your first week" }).click();
+    await expect(page).toHaveURL(/\/home\?stay=1$/);
+    // Home never asks for the paywall; the check page's own fetch is the one to wait on.
+    paywall = paywallFetch();
+    await page.goto(`${TRIAL}/check`);
+  } else {
+    paywall = paywallFetch();
+    await page.getByRole("button", { name: "Check my first meal" }).click();
+  }
 
   // The check page, with the guided chip filling the food and the remembered
   // A1C shown as the saved-A1C row.

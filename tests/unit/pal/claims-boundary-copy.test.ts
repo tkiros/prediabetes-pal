@@ -245,6 +245,15 @@ const BANNED: Family[] = [
   {
     label: "future-test-outcome",
     pattern: /normal\s+at\s+every\s+test/i
+  },
+  {
+    // PRD v1.1 §8.5: the banned verbs with the PRODUCT as subject — control,
+    // lower, manage (prevent / reverse / treat / cure / diagnose are already
+    // families above). Subject-bound so approved qualitative language
+    // ("lower impact", "a lower-impact option") never trips it.
+    label: "product-agent-verb",
+    pattern:
+      /\b(?:Prediabetes Pal|we|it)\s+(?:will\s+|can\s+|helps?\s+(?:you\s+)?)?(?:control|lower|manage)s?\b/i
   }
 ];
 
@@ -317,6 +326,7 @@ const EXTRA_SOURCES = [
   "lib/coach/bai.ts",
   "lib/coach/recap.ts",
   "lib/coach/next-action.ts",
+  "lib/coach/orientation.ts",
   "lib/server/pantry/emails.ts",
   "lib/server/billing/emails.ts",
   "docs/runbooks/marketing-assets.md",
@@ -540,7 +550,12 @@ describe("claims-boundary copy audit", () => {
     ],
     "eat-decision": ["Should I eat this?"],
     "personal-safety": ["safe for your blood sugar"],
-    "future-test-outcome": ["Normal at every test"]
+    "future-test-outcome": ["Normal at every test"],
+    "product-agent-verb": [
+      "Prediabetes Pal helps you lower your A1C",
+      "it manages your blood sugar",
+      "we can control the spikes"
+    ]
   };
 
   it("has a control sample for every family", () => {

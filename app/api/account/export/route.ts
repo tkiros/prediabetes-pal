@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { toResponseCheck } from "../../history/handlers";
 import { mapMemoryRow, memorySelectColumns } from "../../memory/handlers";
+import { guideDoorEnabled } from "../../../../lib/guide-door-flag";
 import { safeDecrypt } from "../../../../lib/server/crypto";
 import { getDb, schema, type Db } from "../../../../lib/server/db";
 import {
@@ -125,7 +126,12 @@ export function createAccountExportHandler(deps: Deps = {}) {
             a1cBand: profile.a1cBand,
             timezone: profile.timezone,
             nudgeOptIn: profile.nudgeOptIn,
-            consentedAt: profile.consentedAt
+            consentedAt: profile.consentedAt,
+            // F-ORIENT: exported only while the orient surface is on, so the
+            // flag-off export stays byte-for-byte.
+            ...(guideDoorEnabled("orient")
+              ? { orientation: profile.orientation }
+              : {})
           }
         : null,
       weeklyReflections: reflections.map((row) => ({

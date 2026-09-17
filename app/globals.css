@@ -36,6 +36,18 @@
   --icon: 20px;
 }
 
+/* F-CALM (a), Task 2.3: `Hold off` must read as pause, not alarm — its
+   --high-* family is byte-identical to --danger today. Neutral-ink override,
+   dormant until app/layout.tsx sets data-calm (guideDoorEnabled("calm")).
+   --danger itself is untouched; it stays reserved for destructive actions.
+   DESIGN.md §3 records the values. */
+:root[data-calm] {
+  --high-border: #334155;
+  --high-bg: #f1f5f9;
+  --high-text: #1e293b;
+  --high-badge: #e2e8f0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -4009,6 +4021,41 @@ button.inline-link {
   font-size: 15px;
   text-decoration: underline;
   cursor: pointer;
+}
+
+/* /learn/first-week (Task 3.6). A pressed Done reads by a tint and the check
+   glyph, never the accent fill: Check stays the one filled action (DESIGN.md
+   §1), and a progress surface stays calm (§9). */
+.orientation-steps {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.orientation-step {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.orientation-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.orientation-done[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+}
+
+.orientation-hide {
+  justify-self: start;
+  min-height: 44px;
 }
 
 /* ── App shell (M1 dashboard plan, design ref: Prediabetes Pal.dc.html) ─────────────

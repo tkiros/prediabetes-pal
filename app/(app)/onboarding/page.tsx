@@ -14,11 +14,13 @@ import {
   HIGH_RANGE_MESSAGE
 } from "../../../lib/pal/boundary-copy";
 import { RISK_LABELS } from "../../../lib/pal/labels";
+import { guideDoorEnabled } from "../../../lib/guide-door-flag";
 import { track } from "../../../lib/client/analytics";
 import {
   storedUtmChannel,
   type Channel
 } from "../../../lib/client/attribution";
+import { orientationStore } from "../../../lib/client/orientation-store";
 import { profileStore } from "../../../lib/client/profile-store";
 import { IconAlert, IconCheck, IconPause } from "../../../components/icons";
 
@@ -97,8 +99,24 @@ export function trackedStep(step: Step): TrackedStep | null {
   return TRACKED_STEPS.has(step) ? (step as TrackedStep) : null;
 }
 
+/**
+ * Where the finished tour goes (Task 3.7). Flag off: /check, as before. With
+ * the orient surface on, the week starts here whether or not an A1C was
+ * entered (review A-05), then Home — with ?stay=1, or a device whose profile
+ * write failed would be sent straight back into the tour (review A-28).
+ */
+export function leaveTour(push: (href: string) => void): void {
+  if (guideDoorEnabled("orient")) {
+    orientationStore.start();
+    push("/home?stay=1");
+  } else {
+    push("/check");
+  }
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
+  const orientOn = guideDoorEnabled("orient");
   const [step, setStep] = useState<Step>("welcome");
   const [a1cText, setA1cText] = useState("");
   const [a1cError, setA1cError] = useState<string | null>(null);
@@ -195,7 +213,7 @@ export default function OnboardingPage() {
     // the check page's empty state (lib/client/first-check-chips.ts).
     persistA1c();
     track({ name: "onboarding_completed" });
-    router.push("/check");
+    leaveTour((href) => router.push(href));
   }
 
   return (
@@ -405,13 +423,18 @@ export default function OnboardingPage() {
                 </li>
                 <li>It is information to decide with, not medical advice.</li>
               </ul>
+              {orientOn ? (
+                <p className="page-copy">
+                  Your first week starts on Home: seven small steps, one a day.
+                </p>
+              ) : null}
               <p className="result-disclaimer">{BOUNDARY_DISCLAIMER}</p>
               <button
                 type="button"
                 className="primary-button"
                 onClick={completeTour}
               >
-                Check my first meal
+                {orientOn ? "Start your first week" : "Check my first meal"}
               </button>
             </>
           ) : null}

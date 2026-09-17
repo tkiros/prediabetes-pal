@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { DisclaimerLine } from "../../../components/disclaimer-line";
 import { JourneyCard } from "../../../components/journey-card";
+import { LearnLink } from "../../../components/learn-link";
 import { LearningSummary } from "../../../components/learning-summary";
 import { WeekStrip } from "../../../components/week-strip";
 import { learningJourneyUiEnabled } from "../../../lib/learning-journey-flag";
@@ -16,6 +17,7 @@ import {
   type VerdictWeekDayWire
 } from "../../../lib/coach/progress-state";
 import { RECAP_POSTURE_LINE, recapSentences } from "../../../lib/coach/recap";
+import { loadJourneyLine } from "../../../lib/client/remote-orientation";
 import { SUPPORT_EMAIL } from "../../../lib/pal/contact";
 
 /**
@@ -108,6 +110,26 @@ export default function JourneyPage() {
     };
   }, [reloadNonce]);
 
+  // "Where you are" (Task 3.7). Flag off, the loader returns before any
+  // request and this never sets state, so the page is unchanged.
+  const [weekLine, setWeekLine] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void loadJourneyLine().then((line) => {
+      if (!cancelled && line) setWeekLine(line);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const whereYouAre = weekLine ? (
+    <p className="page-copy" data-testid="journey-where-you-are">
+      <LearnLink href="/learn/first-week" from="journey">
+        {weekLine}
+      </LearnLink>
+    </p>
+  ) : null;
+
   // The recap is the honest fallback whenever the learning summary isn't
   // actually rendering — flag off, OR flag on but the summary self-nulled
   // (guest / not-premium / server flag off). Never leave section 2 blank.
@@ -132,6 +154,11 @@ export default function JourneyPage() {
         <section className="surface-card hero-card">
           <p className="page-copy">Loading your week…</p>
         </section>
+      ) : null}
+
+      {/* A guest's week sits above the sign-in card (review A-80). */}
+      {state === "unauthenticated" && whereYouAre ? (
+        <section className="surface-card hero-card">{whereYouAre}</section>
       ) : null}
 
       {state === "unauthenticated" ? (
@@ -189,6 +216,9 @@ export default function JourneyPage() {
               renders nothing pre-rollout, so the document simply starts at
               section 2 today. */}
           <JourneyCard />
+          {/* The first week's line, for every tier: it sits outside the
+              Premium recap (review A-80). */}
+          {whereYouAre}
 
           {/* 2 — What you learned this week. */}
           <section aria-label="What you learned this week">

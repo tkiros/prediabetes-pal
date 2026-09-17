@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { AttributionCapture } from "../components/attribution-capture";
 import { SwRegister } from "../components/sw-register";
+import { guideDoorEnabled } from "../lib/guide-door-flag";
 import { sans } from "./fonts";
 
 import "./globals.css";
@@ -55,8 +56,14 @@ export default function RootLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
+  // F-CALM (a), Task 2.3: the neutral-ink --high-* override in globals.css
+  // lives under :root[data-calm]. Must be genuinely absent when the calm
+  // surface isn't open — `undefined` drops the attribute; a literal "false"
+  // would still match the [data-calm] selector and open the surface always.
+  const calmOn = guideDoorEnabled("calm") ? "" : undefined;
+
   return (
-    <html lang="en" className={sans.variable}>
+    <html lang="en" className={sans.variable} data-calm={calmOn}>
       <body className={sans.className}>
         {children}
         <SwRegister />

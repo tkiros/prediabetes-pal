@@ -31,6 +31,9 @@ const ALLOWED_NAMES = [
   "idea_tapped",
   "idea_check_completed",
   "onboarding_step",
+  "orientation_step_done",
+  "orientation_dismissed",
+  "learn_opened",
   "photo_draft",
   "result_feedback_submitted",
   "clarification_requested",
@@ -69,6 +72,9 @@ function assertExhaustive(name: AnalyticsEvent["name"]): void {
     case "idea_tapped":
     case "idea_check_completed":
     case "onboarding_step":
+    case "orientation_step_done":
+    case "orientation_dismissed":
+    case "learn_opened":
     case "photo_draft":
     case "result_feedback_submitted":
     case "onboarding_started":
@@ -132,6 +138,9 @@ describe("AnalyticsEvent allowlist", () => {
       { name: "idea_tapped", props: { daypart: "breakfast", slot: "2", surface: "home" } },
       { name: "idea_check_completed", props: { risk: "SAFE" } },
       { name: "onboarding_step", props: { step: "attribution" } },
+      { name: "orientation_step_done", props: { step: "5" } },
+      { name: "orientation_dismissed" },
+      { name: "learn_opened", props: { page: "first-week", from: "step" } },
       { name: "photo_draft", props: { items: 3, uncertain: 1 } },
       { name: "result_feedback_submitted", props: { helpful: true } },
       {
@@ -300,22 +309,25 @@ describe("AnalyticsEvent props stay closed unions (no free-text props)", () => {
 
   it("declares no bare `: string` prop type in the AnalyticsEvent union; insert new union members before the `photo_draft` variant", () => {
     const typeBlockStart = SOURCE.indexOf("export type AnalyticsEvent =");
-    // The union's final variant/terminator — everything between the start
-    // and this marker (inclusive) is the full AnalyticsEvent declaration,
-    // spanning the nested check_completed props object.
-    const endMarker = '"photo_draft"; props: { items: number; uncertain: number } };';
+    // Ruling F-17: the slice ends at the declaration that follows the union,
+    // not at a literal of whichever variant happens to be last. The old
+    // slice anchored on that trailing literal, so appending a variant after
+    // it did not escape the scan — it broke the anchor and failed the
+    // assertions below closed (indexOf returning -1), not open. This marker
+    // fixes the anchor itself: the test now fails on the bare string,
+    // whichever variant is last.
+    const endMarker = "const ALLOWED_EVENT_NAMES";
     const typeBlockEndIndex = SOURCE.indexOf(endMarker, typeBlockStart);
     expect(typeBlockStart).toBeGreaterThanOrEqual(0);
     expect(typeBlockEndIndex).toBeGreaterThan(typeBlockStart);
 
-    const typeBlock = SOURCE.slice(
-      typeBlockStart,
-      typeBlockEndIndex + endMarker.length
-    );
+    const typeBlock = SOURCE.slice(typeBlockStart, typeBlockEndIndex);
 
-    // Sanity check the slice actually captured the nested props object
-    // (guards against the slice logic silently truncating early).
+    // Sanity checks: the slice captured the nested check_completed props
+    // object, and it reaches the union's last variant (photo_draft), so it
+    // cannot have been truncated at a nested `};`.
     expect(typeBlock).toContain("input_method");
+    expect(typeBlock).toContain('"photo_draft"');
 
     // A bare `: string` (not part of a longer identifier, not a generic
     // type argument like `Record<string, unknown>`) would mean a prop
@@ -333,6 +345,18 @@ describe("AnalyticsEvent props stay closed unions (no free-text props)", () => {
     expect(Object.keys(sample.props).sort()).toEqual(
       ["first_check", "input_method", "kind", "risk"].sort()
     );
+  });
+});
+
+describe("orientation and Learn events (Task 3.6)", () => {
+  it.each([
+    [{ name: "orientation_step_done", props: { step: "2" } }],
+    [{ name: "orientation_dismissed" }],
+    [{ name: "learn_opened", props: { page: "first-week", from: "step" } }]
+  ] as const)("forwards %j to umami", (event) => {
+    const umami = { track: vi.fn() };
+    track(event as never, { umami });
+    expect(umami.track).toHaveBeenCalledWith(event.name, "props" in event ? event.props : undefined);
   });
 });
 

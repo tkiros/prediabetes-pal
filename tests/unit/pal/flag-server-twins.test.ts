@@ -164,6 +164,9 @@ describe("production door guard — checkProductionDoor (Task 1.11)", () => {
     ]);
     expect(SURFACE_ROWS.source).toEqual(["result-source-lead"]);
     expect(SURFACE_ROWS["ideas-full"]).toEqual(["guide-ideas-see-all"]);
+    // A-83 (the sign-in step line) and A-84 (recordStepEvent) haven't shipped;
+    // this row is the A-84 flip blocker named in the final review (I2).
+    expect(SURFACE_ROWS.orient).toContain("orientation-signin-step");
     expect(SURFACE_REQUIRES).toEqual({
       home: ["ideas", "ideas-full"],
       orient: ["ideas"],
