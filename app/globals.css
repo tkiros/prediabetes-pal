@@ -4556,9 +4556,52 @@ button.inline-link {
    row hides the same way, so hydration does not shift the hero. Scoped to
    .ideas-block: the /check first-run IdeaRows keep all three. */
 @media (max-width: 374px) {
-  .ideas-block .ideas-list > li:nth-child(n + 3) {
+  /* Task 4.4: expanding "See all" must show every row even below 375px —
+     the fold-saving hide only applies while the block is collapsed. */
+  .ideas-block:not([data-expanded="true"]) .ideas-list > li:nth-child(n + 3) {
     display: none;
   }
+}
+
+/* Task 4.4: the block's own bottom padding shrinks a little whenever the "See
+   all" row renders (ideas-full only — `.ideas-block` otherwise keeps its
+   normal 12px) — the row below reclaims most of what it adds, so the Task
+   1.8 fold budget (the check CTA clearing the tab bar) is untouched by a
+   surface that stays dormant behind `ideas-full` in production. */
+.ideas-block[data-full="true"] {
+  padding-bottom: 2px;
+}
+
+/* Task 4.4 "See all" / "Show fewer" — a quiet text link below the list, not a
+   second accent-filled action (DESIGN.md §8 keeps that to the check hero).
+   Visually compact (it must not blow the fold budget above), but `::before`
+   pads its tap target out to the 44px floor without adding layout height. */
+.ideas-see-all {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  /* The global `button { min-height: 44px }` rule (line ~119) would otherwise
+     win here (this class declares nothing to beat it on specificity, so the
+     element rule is the only source for the property) — override it down to
+     content size; `::before` below restores the 44px tap target. */
+  min-height: 20px;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+}
+.ideas-see-all::before {
+  content: "";
+  position: absolute;
+  inset: -13px 0; /* ~18px text + 2×13px = 44px tall tap target */
+}
+.ideas-see-all:hover {
+  text-decoration: underline;
 }
 
 /* The one Committed color moment on the surface: the meal-check hero

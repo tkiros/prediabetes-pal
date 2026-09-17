@@ -7,7 +7,8 @@ import { track } from "../lib/client/analytics";
 import { nextIdeasRotation } from "../lib/client/ideas-rotation";
 import { useHydrated } from "../lib/client/use-hydrated";
 import { daypartOfHour, type Daypart } from "../lib/coach/insights";
-import { ideasFor, type GuideIdea } from "../lib/pal/guide-ideas";
+import { guideDoorEnabled } from "../lib/guide-door-flag";
+import { GUIDE_IDEAS, ideasFor, type GuideIdea } from "../lib/pal/guide-ideas";
 import { IconArrowRight } from "./icons";
 
 /**
@@ -42,14 +43,17 @@ const DAYPART_HEADING: Record<Daypart, string> = {
 export function IdeaRows({
   ideas,
   onPick,
-  testIdPrefix = "idea-row"
+  testIdPrefix = "idea-row",
+  id
 }: {
   ideas: readonly GuideIdea[];
   onPick: (idea: GuideIdea, slot: "1" | "2" | "3" | "more") => void;
   testIdPrefix?: string;
+  /** Task 4.4: lets Home's "See all" button point `aria-controls` at this list. Unused by /check. */
+  id?: string;
 }) {
   return (
-    <ul className="ideas-list" role="list" aria-label="Meal ideas">
+    <ul className="ideas-list" role="list" aria-label="Meal ideas" id={id}>
       {ideas.map((idea, index) => (
         <li key={idea.id}>
           <button
@@ -69,10 +73,30 @@ export function IdeaRows({
   );
 }
 
+/**
+ * Task 4.4: rotates the daypart's full ten-idea bank so it starts at `first`
+ * — the collapsed three-row view's own first idea — so expanding "See all"
+ * never reshuffles the rows already on screen. `first` always comes from
+ * GUIDE_IDEAS (it is `ideasFor`'s own output), so the lookup cannot miss.
+ */
+function expandFrom(daypart: Daypart, first: GuideIdea): GuideIdea[] {
+  const bank = GUIDE_IDEAS.filter((idea) => idea.daypart === daypart);
+  const start = Math.max(bank.findIndex((idea) => idea.id === first.id), 0);
+  return Array.from({ length: bank.length }, (_, offset) => bank[(start + offset) % bank.length]);
+}
+
 export function GuideIdeas() {
   const router = useRouter();
   const hydrated = useHydrated();
-  const [view, setView] = useState<{ daypart: Daypart; ideas: GuideIdea[] } | null>(null);
+  const full = guideDoorEnabled("ideas-full");
+  const [view, setView] = useState<{
+    daypart: Daypart;
+    ideas: GuideIdea[];
+    allIdeas: GuideIdea[];
+  } | null>(null);
+  // Task 4.4: collapsed (three rows) unless the ideas-full surface is on and
+  // the reader taps "See all".
+  const [expanded, setExpanded] = useState(false);
 
   // Review A-108: StrictMode runs mount effects twice in dev, which moved the
   // counter by two per mount and (with six lines, three per page) showed the
@@ -83,9 +107,25 @@ export function GuideIdeas() {
     if (!hydrated || shownRef.current) return;
     shownRef.current = true;
     const daypart = daypartOfHour(new Date().getHours());
-    setView({ daypart, ideas: ideasFor(daypart, nextIdeasRotation()) });
+    const rotation = nextIdeasRotation();
+    // Task 4.3 segment steering: only meaningful (and only read) under
+    // ideas-full — `!full` keeps today's call and nothing else exactly as it was.
+    let segment: string | null = null;
+    if (full) {
+      try {
+        segment = window.localStorage.getItem("pal.segment.v1");
+      } catch {
+        segment = null;
+      }
+    }
+    const ideas = ideasFor(daypart, rotation, { count: 3, full, segment });
+    setView({
+      daypart,
+      ideas,
+      allIdeas: full && ideas[0] ? expandFrom(daypart, ideas[0]) : ideas
+    });
     track({ name: "ideas_shown", props: { daypart, surface: "home" } });
-  }, [hydrated]);
+  }, [hydrated, full]);
 
   // Review A-25: a double-tap must not push /check twice (duplicate history
   // entry, Back lands on /check). First tap wins; the ref never resets because
@@ -109,7 +149,13 @@ export function GuideIdeas() {
   }
 
   return (
-    <section className="ideas-block" aria-labelledby="ideas-title" data-testid="ideas-block">
+    <section
+      className="ideas-block"
+      aria-labelledby="ideas-title"
+      data-testid="ideas-block"
+      data-expanded={expanded || undefined}
+      data-full={full || undefined}
+    >
       <h2 className="ideas-title" id="ideas-title">
         {view ? DAYPART_HEADING[view.daypart] : "Ideas for today"}
       </h2>
@@ -118,7 +164,8 @@ export function GuideIdeas() {
       </p>
       {view ? (
         <IdeaRows
-          ideas={view.ideas}
+          id="ideas-list"
+          ideas={expanded ? view.allIdeas : view.ideas}
           onPick={(idea, slot) => pick(idea, slot, view.daypart)}
         />
       ) : (
@@ -132,6 +179,20 @@ export function GuideIdeas() {
           ))}
         </ul>
       )}
+      {/* Task 4.4 "See all": ideas-full only, and only once there is a real
+          list to expand — a quiet text button, not a second accent-filled
+          action (DESIGN.md §8 stays the check hero's alone). */}
+      {full && view ? (
+        <button
+          type="button"
+          className="ideas-see-all"
+          aria-expanded={expanded}
+          aria-controls="ideas-list"
+          onClick={() => setExpanded((current) => !current)}
+        >
+          {expanded ? "Show fewer" : "See all"}
+        </button>
+      ) : null}
     </section>
   );
 }
