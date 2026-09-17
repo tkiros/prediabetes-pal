@@ -90,6 +90,12 @@ export function isolatedE2ERuntimeEnv(
     NEXT_PUBLIC_LEARNING_JOURNEY: "",
     NEXT_PUBLIC_LONGITUDINAL_INSIGHTS: "",
     NEXT_PUBLIC_MEAL_MEMORY: "",
+    // Task 1.12 (A-99): the guide door is blanked like every other client
+    // flag, so a stray value in the caller's shell or `.env.local` never
+    // reaches the flag-off build. PAL_E2E_GUIDE_DOOR is the explicit e2e
+    // opt-in and passes through verbatim (`1` or a surface list); CI runs the
+    // suite once per value (the e2e matrix in .github/workflows/ci.yml).
+    NEXT_PUBLIC_GUIDE_DOOR: base.PAL_E2E_GUIDE_DOOR ?? "",
     NEXT_PUBLIC_PHOTO_INPUT: "",
     NEXT_PUBLIC_PLAY_BILLING: "",
     NEXT_PUBLIC_REVIEWER_MODE: "",

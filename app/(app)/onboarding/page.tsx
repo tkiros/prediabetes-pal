@@ -89,6 +89,14 @@ export function nextStepAfterAttribution(hasProfile: boolean): Step {
   return hasProfile ? "expectations" : "a1c";
 }
 
+// The tour funnel (PRD §7.5). Only these screens are reported; the number
+// screen and the exit never are. Task 6.1 adds the two F-ASK screens.
+export type TrackedStep = Extract<Step, "segment" | "attribution" | "expectations">;
+const TRACKED_STEPS: ReadonlySet<Step> = new Set<Step>(["segment", "attribution", "expectations"]);
+export function trackedStep(step: Step): TrackedStep | null {
+  return TRACKED_STEPS.has(step) ? (step as TrackedStep) : null;
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("welcome");
@@ -108,6 +116,13 @@ export default function OnboardingPage() {
     track({ name: "onboarding_started" });
     return () => window.clearTimeout(update);
   }, []);
+
+  // Fires on each screen change, never on mount — a refresh lands on
+  // "welcome", which is not tracked, so it re-fires nothing.
+  useEffect(() => {
+    const tracked = trackedStep(step);
+    if (tracked) track({ name: "onboarding_step", props: { step: tracked } });
+  }, [step]);
 
   function advanceFromSegment(choice?: Segment) {
     if (choice) {

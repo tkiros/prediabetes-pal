@@ -25,6 +25,9 @@ export function HomeCheckHero() {
     if (trimmed) {
       try {
         window.sessionStorage.setItem("pal.recheck", trimmed);
+        // A-102: clear any stale idea source from a prior hand-off, or a later
+        // untouched typed check here would wrongly count as an idea check.
+        window.sessionStorage.removeItem("pal.recheck.source");
       } catch {
         // best-effort prefill only — /check works without it
       }

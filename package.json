@@ -17,6 +17,7 @@
     "test:pal": "vitest run tests/unit/pal",
     "eval:pal": "vitest run tests/evals/pal-safety-eval.test.ts",
     "eval:pal:live": "node scripts/run-graded-evals.mjs",
+    "eval:pal:ideas": "PAL_LIVE_EVAL=1 PAL_EVAL_IDEAS=1 vitest run tests/evals/guide-ideas-label-eval.test.ts",
     "eval:pantry-extract": "vitest run tests/evals/pantry-extract-eval.test.ts",
     "eval:meal-photo": "EVAL_MEAL_PHOTO_LIVE=1 vitest run tests/evals/meal-photo-eval.test.ts",
     "eval:model-bakeoff": "tsx scripts/model-bakeoff.ts --dry-run",

@@ -1,5 +1,16 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import type { NextConfig } from "next";
 
+import {
+  COPY_LEDGER_PATH,
+  IDEA_LABELS_PATH,
+  checkProductionDoor,
+  type IdeaLabelsFile
+} from "./lib/guide-door-guard";
+import { activeModelId } from "./lib/pal/model-id";
+import { PROMPT_VERSION } from "./lib/pal/prompt";
 import { resolveSentryRelease } from "./lib/pal/sentry-release";
 
 // P0.3: a production deploy without measurement is a silent analytics outage —
@@ -61,6 +72,54 @@ if (process.env.VERCEL_ENV === "production") {
   }
 }
 
+// Production door guard (Task 1.11; A-94, A-100, A-101). NEXT_PUBLIC_GUIDE_DOOR
+// has no server twin, so the production value is checked against the copy
+// ledger instead: never `1`, known surfaces only, requirements met, every row
+// a surface renders Approved — or the build throws. Stale idea labels do NOT
+// throw (a prompt hotfix must never be blocked by the idea bank): `ideas` and
+// `ideas-full` are dropped from the EFFECTIVE value with a build-log warning.
+// That value is inlined through `env` below, which Next applies after the
+// ambient NEXT_PUBLIC_* values, so every bundle — /api/health's guideDoor
+// included — reads the dropped surfaces as off. Outside production (dev,
+// previews, the e2e build, which carry `1`) the value passes through untouched.
+// Same waiver posture as the twin guard: PAL_ALLOW_NO_MEASUREMENT never
+// waives it.
+const guideDoorEnv: { NEXT_PUBLIC_GUIDE_DOOR?: string } = {};
+if (process.env.VERCEL_ENV === "production") {
+  const readIfPresent = (relative: string): string | null => {
+    const file = path.join(__dirname, relative);
+    return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null;
+  };
+  let labels: IdeaLabelsFile | null = null;
+  try {
+    const text = readIfPresent(IDEA_LABELS_PATH);
+    labels = text === null ? null : (JSON.parse(text) as IdeaLabelsFile);
+  } catch {
+    // An unparseable labels file vouches for nothing: the guard reads it as
+    // missing and closes the ideas surfaces.
+    labels = null;
+  }
+  const door = checkProductionDoor(
+    process.env.NEXT_PUBLIC_GUIDE_DOOR,
+    // A missing ledger fails closed: every row of every listed surface is
+    // then "not in the copy ledger".
+    readIfPresent(COPY_LEDGER_PATH) ?? "",
+    labels,
+    PROMPT_VERSION,
+    activeModelId()
+  );
+  if (door.errors.length > 0) {
+    throw new Error(
+      "NEXT_PUBLIC_GUIDE_DOOR refused by the production door guard:\n- " +
+        door.errors.join("\n- ")
+    );
+  }
+  for (const warning of door.warnings) {
+    console.warn(`⚠ NEXT_PUBLIC_GUIDE_DOOR: ${warning}`);
+  }
+  guideDoorEnv.NEXT_PUBLIC_GUIDE_DOOR = door.effective;
+}
+
 const nextConfig: NextConfig = {
   // E2E builds the legacy and trial deployments into isolated ignored
   // directories, then starts both optimized servers together. Normal builds
@@ -75,7 +134,9 @@ const nextConfig: NextConfig = {
         process.env.VERCEL_GIT_COMMIT_SHA,
         process.env.SENTRY_RELEASE,
         process.env.NEXT_PUBLIC_SENTRY_RELEASE
-      ) ?? ""
+      ) ?? "",
+    // Production only: the door guard's effective surface list (see above).
+    ...guideDoorEnv
   },
   // C7 four-jobs restructure (2026-07-21): old bookmarks and deep links keep
   // working. /memory folded into /meals as its "Saved meals" section.

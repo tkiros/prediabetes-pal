@@ -116,6 +116,11 @@ disclaimer; axe tests AA and would not report a drop.
 - **Tracking is size-specific; one `letter-spacing` across a clamp is wrong at one end of it.** Tighten as size grows
   (`-0.02em` at display, `0` near body), and move line-height inversely.
 - **Measure caps at 62ch on prose.** `text-wrap: balance` on `h1`–`h3`, `pretty` on prose.
+- ⚖️ **2026-09 (guide redesign, review A-106) — the app scale gains a "section title" size: 22px/700.** Used by the
+  ideas block's title (`.ideas-title`, `components/guide-ideas.tsx`), the page's first heading when the door's `ideas`
+  surface is on. With that surface on, Home's date `h1` collapses into one `.status-eyebrow`-styled line
+  (`.dash-greet-date--eyebrow`, `components/dashboard-view.tsx`) instead of the large date title — the greeting collapse
+  that keeps the check CTA above the tab bar at 375×667. Flag off restores today's markup byte-for-byte.
 
 ## 5. Shape and space
 
@@ -225,9 +230,16 @@ name.** The old absolute contradicted §9, where the verdict icon inside a week-
 - **The plan box shows the plan name AND the billing date.** Hiding the renewal date from an active subscriber is banned,
   and that ban binds every rendered plan box. Home renders it only when it carries actionable billing truth; the sidebar
   and `/account` always render it in full.
-- **The check CTA is the one Committed colour moment**, and at <768px the first interactive element above the fold: the
-  dashboard never adds friction before the core action. **Day-0 empty state is the default design, not a fallback:** one
-  CTA plus the Today card's warmth, no fake data, no guilt copy.
+- **The check CTA is the one Committed colour moment.** ⚖️ 2026-09 (guide redesign, PRD v1.1 §7.4): at <768px the
+  **ideas block** renders above it as a quiet bordered `--surface` list (no accent, no shadow; review A-71), so the check
+  is no longer the *first* interactive element — it is still the one accent-filled action and it still sits above the
+  fold at 375×667 (`tests/smoke/dashboard.spec.ts` pins the CTA's bottom edge above the tab bar at 360/375/430 and three
+  clocks; the ideas list is measured, not reserved — `docs/superpowers/plans/2026-09-13-guide-redesign.md` §3's fold
+  budget). Below 375px the block renders **two** idea rows, three from 375 up (A-93's mechanism, applied in Task 1.8's
+  fold fix): `@media (max-width: 374px)` hides the third row so the block plus the CTA still clear the fold at 360, and
+  the smoke spec pins the visible row count at each width. Flag off (`NEXT_PUBLIC_GUIDE_DOOR` unset)
+  restores the previous ordering byte-for-byte. **Day-0 empty state is the default design, not a fallback:** one CTA plus
+  the Today card's warmth, no fake data, no guilt copy.
 
 ## 9. Progress surfaces: reassurance, not gamification
 

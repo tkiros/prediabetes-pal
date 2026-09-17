@@ -20,7 +20,8 @@ vi.stubGlobal("window", { localStorage: storage });
 import {
   nextStepAfterAttribution,
   STEP_PROGRESS,
-  stepCounter
+  stepCounter,
+  trackedStep
 } from "../../../app/(app)/onboarding/page";
 
 describe("nextStepAfterAttribution (single-source A1C rule)", () => {
@@ -96,5 +97,16 @@ describe("STEP_PROGRESS (goal-gradient bar)", () => {
         expect(STEP_PROGRESS[path[i]]).toBeGreaterThan(STEP_PROGRESS[path[i - 1]]);
       }
     }
+  });
+});
+
+describe("trackedStep — the tour funnel never names a result", () => {
+  it("maps the screens the floor reads and nothing else", () => {
+    expect(trackedStep("welcome")).toBeNull();
+    expect(trackedStep("segment")).toBe("segment");
+    expect(trackedStep("attribution")).toBe("attribution");
+    expect(trackedStep("expectations")).toBe("expectations");
+    expect(trackedStep("a1c")).toBeNull();
+    expect(trackedStep("boundary")).toBeNull();
   });
 });
