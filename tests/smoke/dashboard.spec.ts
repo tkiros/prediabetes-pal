@@ -214,6 +214,13 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
       test.skip(!(await doorSurfaceOn("ideas-full")), "ideas-full surface off in this build");
     });
 
+    // Both tests below pin the clock to dinner — compute the expected
+    // expanded-row count from the bank itself (final review controller
+    // ruling) rather than a literal, so a pruned/grown line never breaks this
+    // assertion on its own. `count: 99` is a safe upper bound; ideasFrom caps
+    // the return at the bank's real length.
+    const dinnerFullCount = ideasFor("dinner", 0, { full: true, count: 99 }).length;
+
     test("See all shows all ten rows and stays reachable; a row past the third still reaches /check; Show fewer collapses back", async ({
       page
     }) => {
@@ -229,13 +236,22 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
       await seeAll.click();
       const showFewer = page.getByRole("button", { name: "Show fewer" });
       await expect(showFewer).toHaveAttribute("aria-expanded", "true");
-      await expect(page.getByTestId(/^idea-row-\d+$/)).toHaveCount(10);
+      await expect(page.getByTestId(/^idea-row-\d+$/)).toHaveCount(dinnerFullCount);
 
       // No fold assertion once expanded (A-08/A-94) — only that the check CTA
       // stays in the DOM and reachable.
       const cta = page.getByTestId("dash-check-cta");
       await cta.scrollIntoViewIfNeeded();
       await expect(cta).toBeVisible();
+
+      // Final review minor #4: the collapse direction gets its own exercise,
+      // not just the post-navigation remount below.
+      await showFewer.click();
+      await expect(seeAll).toHaveAttribute("aria-expanded", "false");
+      await expect(page.getByTestId(/^idea-row-\d+$/)).toHaveCount(3);
+      await seeAll.click();
+      await expect(showFewer).toHaveAttribute("aria-expanded", "true");
+      await expect(page.getByTestId(/^idea-row-\d+$/)).toHaveCount(dinnerFullCount);
 
       // A row past the third emits slot "more" and still hands off to /check.
       const row4 = page.getByTestId("idea-row-4");
@@ -260,8 +276,8 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
       await page.goto("/home?stay=1");
 
       await page.getByRole("button", { name: "See all" }).click();
-      await expect(page.getByTestId(/^idea-row-\d+$/)).toHaveCount(10);
-      for (let n = 1; n <= 10; n += 1) {
+      await expect(page.getByTestId(/^idea-row-\d+$/)).toHaveCount(dinnerFullCount);
+      for (let n = 1; n <= dinnerFullCount; n += 1) {
         await expect(page.getByTestId(`idea-row-${n}`)).toBeVisible();
       }
     });
@@ -282,6 +298,14 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
   // never wrap-measured at the narrowest width, which is the width where a
   // line is likeliest to wrap past two lines. Explicit viewport sizes keep
   // this project-agnostic, like the rest of this file.
+  //
+  // Final review minor #5: this "every line of the bank" accounting is for
+  // the eight-line seed. On the `1` leg (`ideas-full` on too, `fullOn` true
+  // above) the same five seeds draw from all ten lines and start at indices
+  // 3, 6, 2, 8, 4 instead — every seed line still gets a page, and the two
+  // grown lines (8, 9) get one each, but index 0 and 1 do not on that leg.
+  // The seed lines' own wrap is still fully covered on the `ideas,source`
+  // leg, where `fullOn` is false and the indices above apply unchanged.
   //
   // Task 3.5 / F-30 / F-35: with the orient surface on, every cell also runs
   // a first week on its day 2 — the tallest Home above the CTA: the "Day 2 of

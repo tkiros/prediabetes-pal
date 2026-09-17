@@ -31,8 +31,9 @@ import {
  * labels are stale, missing, or not all SAFE, PR-4 Task C scopes the drop to
  * where the staleness actually is — a stale SEED line (`more === false`)
  * closes both `ideas` and `ideas-full` exactly as before; a stale line that
- * is only among the `more` lines (Task 4.3 growth) closes `ideas-full` alone
- * and leaves `ideas` open. Either way every surface whose SURFACE_REQUIRES
+ * is only among the `more` lines (PR-4 bank growth, plan §2.1) closes
+ * `ideas-full` alone, and only when `ideas-full` is actually listed — and
+ * leaves `ideas` open. Either way every surface whose SURFACE_REQUIRES
  * are no longer all open (home, orient, intake) drops too, transitively,
  * each named in the warning — so /api/health's guideDoor reads them "off".
  *
@@ -148,10 +149,14 @@ export function checkProductionDoor(
   if (surfaces.some((surface) => IDEAS_SURFACES.includes(surface))) {
     // PR-4 Task C: a stale SEED line (a line every build has always shipped)
     // closes both ideas surfaces, exactly as before; a stale line that is
-    // only among the `more` lines (Task 4.3 growth, `ideas-full` only)
-    // closes `ideas-full` alone. `allReasons` names every reason either way —
-    // it is a superset of `seedReasons` (the prompt/model checks run
-    // regardless of which ideas the caller passes).
+    // only among the `more` lines (PR-4 bank growth, plan §2.1, `ideas-full`
+    // only) closes `ideas-full` alone — and only when the list actually
+    // names `ideas-full` (final review Important #1: a stale `more` line
+    // must never warn "ideas-full dropped" when `ideas-full` was never
+    // listed, e.g. the planned production value `ideas,source`).
+    // `allReasons` names every reason either way — it is a superset of
+    // `seedReasons` (the prompt/model checks run regardless of which ideas
+    // the caller passes).
     const seedReasons = ideaLabelStaleness(
       labels,
       promptVersion,
@@ -160,8 +165,9 @@ export function checkProductionDoor(
     );
     const allReasons = ideaLabelStaleness(labels, promptVersion, modelId, GUIDE_IDEAS);
 
-    const dropped: readonly GuideSurface[] = seedReasons.length > 0 ? IDEAS_SURFACES : ["ideas-full"];
-    if (allReasons.length > 0) {
+    const dropped: readonly GuideSurface[] =
+      seedReasons.length > 0 ? IDEAS_SURFACES : surfaces.includes("ideas-full") ? ["ideas-full"] : [];
+    if (dropped.length > 0 && allReasons.length > 0) {
       open = closeSurfaces(surfaces, dropped);
       const dependents = surfaces.filter(
         (surface) => !dropped.includes(surface) && !open.includes(surface)

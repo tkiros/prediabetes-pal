@@ -82,10 +82,16 @@ describe("guide idea bank — precheck-clean, positive only", () => {
  * (no options) must stay byte-for-byte what it returned before this bank grew.
  */
 describe("guide idea bank growth — full bank, options, segment steering (PR-4 Task 4.3)", () => {
-  it("GUIDE_IDEA_BANK_MORE adds exactly two lines per daypart — ten total with the seed", () => {
+  // Final review controller ruling: no exact counts pinned here (A-100
+  // precedent — the seed tests use ≥ 6) so pruning a line after the owner's
+  // label eval never turns test:pal red on its own; only the behaviour is
+  // pinned.
+  it("GUIDE_IDEA_BANK_MORE adds at least one line per daypart, growing the full bank past the seed", () => {
     for (const daypart of ["breakfast", "lunch", "dinner"] as const) {
-      expect(GUIDE_IDEA_BANK_MORE[daypart]).toHaveLength(2);
-      expect(GUIDE_IDEA_BANK[daypart].length + GUIDE_IDEA_BANK_MORE[daypart].length).toBe(10);
+      expect(GUIDE_IDEA_BANK_MORE[daypart].length).toBeGreaterThanOrEqual(1);
+      expect(GUIDE_IDEA_BANK[daypart].length + GUIDE_IDEA_BANK_MORE[daypart].length).toBeGreaterThan(
+        GUIDE_IDEA_BANK[daypart].length
+      );
     }
   });
 
@@ -110,11 +116,12 @@ describe("guide idea bank growth — full bank, options, segment steering (PR-4 
     }
   });
 
-  it("`full: true` draws from all ten, and two consecutive loads of three stay disjoint", () => {
+  it("`full: true` draws from the whole grown bank, and two consecutive loads of three stay disjoint", () => {
     for (const daypart of ["breakfast", "lunch", "dinner"] as const) {
-      const fullBank = ideasFor(daypart, 0, { full: true, count: 10 });
-      expect(fullBank).toHaveLength(10);
-      expect(fullBank.filter((idea) => idea.more)).toHaveLength(2); // the two GUIDE_IDEA_BANK_MORE lines
+      const fullLength = GUIDE_IDEA_BANK[daypart].length + GUIDE_IDEA_BANK_MORE[daypart].length;
+      const fullBank = ideasFor(daypart, 0, { full: true, count: fullLength });
+      expect(fullBank).toHaveLength(fullLength);
+      expect(fullBank.filter((idea) => idea.more)).toHaveLength(GUIDE_IDEA_BANK_MORE[daypart].length);
 
       const a = ideasFor(daypart, 0, { full: true });
       const b = ideasFor(daypart, 1, { full: true });
@@ -123,13 +130,14 @@ describe("guide idea bank growth — full bank, options, segment steering (PR-4 
     }
   });
 
-  it("steering: 'Doctor's advice' and 'Family history' start at the floor(10/2) offset", () => {
+  it("steering: 'Doctor's advice' and 'Family history' start at the floor(bank.length/2) offset", () => {
     for (const daypart of ["breakfast", "lunch", "dinner"] as const) {
-      const fullBank = ideasFor(daypart, 0, { full: true, count: 10 });
+      const fullLength = GUIDE_IDEA_BANK[daypart].length + GUIDE_IDEA_BANK_MORE[daypart].length;
+      const fullBank = ideasFor(daypart, 0, { full: true, count: fullLength });
       const unsteered = ideasFor(daypart, 0, { full: true });
       for (const segment of ["Doctor's advice", "Family history"]) {
         const steered = ideasFor(daypart, 0, { full: true, segment });
-        expect(steered[0].id).toBe(fullBank[5].id); // floor(10/2) = 5
+        expect(steered[0].id).toBe(fullBank[Math.floor(fullLength / 2)].id);
         expect(steered).not.toEqual(unsteered);
       }
     }

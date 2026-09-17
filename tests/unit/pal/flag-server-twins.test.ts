@@ -323,13 +323,25 @@ describe("production door guard — checkProductionDoor (Task 1.11)", () => {
     });
 
     describe("PR-4 Task C: a stale `more` line scopes the drop to `ideas-full` alone", () => {
-      // Fresh for all 24 seed ideas; breakfast-9 (a `more` line, Task 4.3
-      // growth) has no label. `ideas` renders only the seed, so it stays open.
+      // Fresh for all 24 seed ideas; breakfast-9 (a `more` line, PR-4 bank
+      // growth, plan §2.1) has no label. `ideas` renders only the seed, so it
+      // stays open.
       function labelsMissingBreakfast9(): GuideIdeaLabels {
         const labels = freshLabels();
         delete labels.labels["breakfast-9"];
         return labels;
       }
+
+      it("final review Important #1: never warns \"ideas-full\" dropped when ideas-full isn't even listed", () => {
+        const result = checkProductionDoor(
+          "ideas,source",
+          ledger,
+          labelsMissingBreakfast9(),
+          PROMPT_VERSION,
+          MODEL
+        );
+        expect(result).toEqual({ effective: "ideas,source", errors: [], warnings: [] });
+      });
 
       it("drops only `ideas-full`, keeping `ideas` open", () => {
         const result = checkProductionDoor(

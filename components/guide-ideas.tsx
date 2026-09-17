@@ -31,6 +31,11 @@ const DAYPART_HEADING: Record<Daypart, string> = {
   dinner: "Ideas for dinner"
 };
 
+/** Final review Minor #3: one literal shared by the toggle's `aria-controls`
+ *  and the list's `id` — and only passed to the list under `full`, so the
+ *  `ideas`-only render carries no `id` at all, as before PR-4. */
+const IDEAS_LIST_ID = "ideas-list";
+
 /**
  * The idea-list markup, shared between the Home block below and the /check
  * first-run row (Task 1.14 / plan Task 4.2, review fix round 1: this used to
@@ -179,7 +184,7 @@ export function GuideIdeas() {
               type="button"
               className="ideas-see-all"
               aria-expanded={expanded}
-              aria-controls="ideas-list"
+              aria-controls={IDEAS_LIST_ID}
               onClick={() => setExpanded((current) => !current)}
             >
               {expanded ? "Show fewer" : "See all"}
@@ -194,7 +199,7 @@ export function GuideIdeas() {
       </p>
       {view ? (
         <IdeaRows
-          id="ideas-list"
+          id={full ? IDEAS_LIST_ID : undefined}
           ideas={expanded ? view.allIdeas : view.ideas}
           onPick={(idea, slot) => pick(idea, slot, view.daypart)}
         />

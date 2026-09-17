@@ -4490,14 +4490,20 @@ button.inline-link {
   padding: 12px;
   margin-bottom: 12px;
 }
-/* Review fix round 1 (F1): the heading and the Task 4.4 toggle share one row
-   — a single flex item (no toggle) lays out exactly as a bare heading would,
-   so the `ideas`-only render is untouched. */
+/* Review fix round 1 (F1) / final review Important #2: the heading and the
+   Task 4.4 toggle share one row, rendered only under `full` — the `ideas`-
+   only render keeps its bare `<h2>` and is untouched. `min-height: 44px`
+   matches the toggle's own floor up front, so the row is 44px on the very
+   first paint (server-rendered and pre-hydration alike) and does not grow
+   once the mount effect adds the button — A-54's "no size change on
+   hydration" promise, which the first cut of this row (26.4px, then 44px
+   once the button appeared) broke. */
 .ideas-heading-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  min-height: 44px;
 }
 .ideas-title {
   /* Review A-106: the page's first heading (22px/700 — recorded in DESIGN.md §4

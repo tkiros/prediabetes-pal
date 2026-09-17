@@ -28,8 +28,8 @@ import type { Daypart } from "../coach/insights";
  *
  * Copy ledger: guide-ideas-breakfast / -lunch / -dinner (the seed) and
  * guide-ideas-more-breakfast / -lunch / -dinner (GUIDE_IDEA_BANK_MORE, PR-4
- * Task 4.3 — two more lines per daypart, ten total). The MORE lines render
- * only when the `ideas-full` guide surface is on (SURFACE_ROWS["ideas-full"],
+ * bank growth, plan §2.1 — two more lines per daypart, ten total). The MORE
+ * lines render only when the `ideas-full` guide surface is on (SURFACE_ROWS["ideas-full"],
  * lib/guide-door-flag.ts); `ideas` alone still shows only the eight seed
  * lines, byte-for-byte what it showed before this bank grew. Scanned by the
  * claims audit via EXTRA_SOURCES.
@@ -98,7 +98,7 @@ export const GUIDE_IDEA_BANK: Record<Daypart, readonly string[]> = {
 } as const;
 
 /**
- * PR-4 Task 4.3 growth: two more lines per daypart (ten total), gated
+ * PR-4 bank growth (plan §2.1): two more lines per daypart (ten total), gated
  * entirely on `full` below — they never render, rotate, or reach the model
  * path unless a caller opts in with `{ full: true }` (the `ideas-full` guide
  * surface). Same rules as the seed (positive only, no CARB_FORWARD_TOKENS
@@ -174,8 +174,8 @@ const STEERED_SEGMENTS = new Set(["Doctor's advice", "Family history"]);
  * (PRD §6 F-IDEAS acceptance). Negative / NaN counters fall back to 0, as in
  * coach-outputs.ts pick(). `full` (default false) draws from the seed lines
  * only (`more === false`) — the default call is therefore byte-for-byte what
- * it returned before Task 4.3 grew the bank; `true` draws from all ten.
- * `segment` (Task 4.3), when it is one of STEERED_SEGMENTS, adds
+ * it returned before PR-4 (plan §2.1) grew the bank; `true` draws from all ten.
+ * `segment` (Task 4.3, segment steering), when it is one of STEERED_SEGMENTS, adds
  * `Math.floor(bank.length / 2)` to the start before wrapping.
  */
 export function ideasFrom(
