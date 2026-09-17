@@ -26,10 +26,15 @@ import type { Daypart } from "../coach/insights";
  * guide-ideas.labels.json keyed on PROMPT_VERSION; a line that is not Clear
  * at any band is removed here.
  *
- * Copy ledger: guide-ideas-breakfast / -lunch / -dinner. Scanned by the claims
- * audit via EXTRA_SOURCES.
+ * Copy ledger: guide-ideas-breakfast / -lunch / -dinner (the seed) and
+ * guide-ideas-more-breakfast / -lunch / -dinner (GUIDE_IDEA_BANK_MORE, PR-4
+ * Task 4.3 — two more lines per daypart, ten total). The MORE lines render
+ * only when the `ideas-full` guide surface is on (SURFACE_ROWS["ideas-full"],
+ * lib/guide-door-flag.ts); `ideas` alone still shows only the eight seed
+ * lines, byte-for-byte what it showed before this bank grew. Scanned by the
+ * claims audit via EXTRA_SOURCES.
  */
-export type GuideIdea = { id: string; text: string; daypart: Daypart };
+export type GuideIdea = { id: string; text: string; daypart: Daypart; more: boolean };
 
 // Seed list: eight per daypart (review A-43; A-100 grows the seed from six to
 // eight so pruning one line after the live eval never breaks the "≥ 6 per
@@ -92,36 +97,104 @@ export const GUIDE_IDEA_BANK: Record<Daypart, readonly string[]> = {
   ]
 } as const;
 
+/**
+ * PR-4 Task 4.3 growth: two more lines per daypart (ten total), gated
+ * entirely on `full` below — they never render, rotate, or reach the model
+ * path unless a caller opts in with `{ full: true }` (the `ideas-full` guide
+ * surface). Same rules as the seed (positive only, no CARB_FORWARD_TOKENS
+ * side, no AMBIGUOUS_UNDERSPECIFIED trigger term, ≤ 59 chars, no duplicate of
+ * a seed line); source comment per line, in the seed's style. The
+ * what-to-eat-with-prediabetes / prediabetes-meal-plan lunch and dinner days
+ * are already fully mined by the seed (every remaining day either duplicates
+ * a seed line once its carb side is dropped, or — Day 7's dinner — cannot be
+ * trimmed without losing the dish), so the lunch and dinner additions here
+ * are composed the same way seed lines 7–8 of `dinner` were: guide-named
+ * foods from what-to-eat-with-prediabetes's "What can I eat freely?" list,
+ * combined into new meal-shaped lines rather than lifted from one sentence.
+ */
+export const GUIDE_IDEA_BANK_MORE: Record<Daypart, readonly string[]> = {
+  breakfast: [
+    // prediabetes-meal-plan Day 2 breakfast: "two eggs with spinach and
+    // whole-grain toast" — toast dropped.
+    "two eggs with spinach",
+    // prediabetes-meal-plan Day 6 breakfast: "Greek yogurt smoothie with
+    // frozen berries and chia seeds" — unmodified, no carb-forward token.
+    "greek yogurt smoothie with frozen berries and chia seeds"
+  ],
+  lunch: [
+    // Composed (see header comment above): turkey and beans/lentils as
+    // protein, tomatoes and cucumber as nonstarchy vegetables — all named in
+    // what-to-eat-with-prediabetes's "What can I eat freely?" list.
+    "turkey and lentil salad with tomatoes and cucumber",
+    // Composed: fish as protein, green beans and salad greens as nonstarchy
+    // vegetables — same freely list.
+    "fish with green beans and salad greens"
+  ],
+  dinner: [
+    // Composed, same as seed lines 7–8: tempeh as protein, peppers and
+    // mushrooms as nonstarchy vegetables — same freely list.
+    "tempeh stir-fry with peppers and mushrooms",
+    // prediabetes-snacks: "Cottage cheese with tomato and pepper, or with a
+    // little fruit." — pluralized, otherwise unmodified.
+    "cottage cheese with tomatoes and peppers"
+  ]
+} as const;
+
 export const GUIDE_IDEAS: readonly GuideIdea[] = (
   Object.keys(GUIDE_IDEA_BANK) as Daypart[]
-).flatMap((daypart) =>
-  GUIDE_IDEA_BANK[daypart].map((text, index) => ({
+).flatMap((daypart) => {
+  const seed = GUIDE_IDEA_BANK[daypart].map((text, index) => ({
     id: `${daypart}-${index + 1}`,
     text,
-    daypart
-  }))
-);
+    daypart,
+    more: false
+  }));
+  const more = GUIDE_IDEA_BANK_MORE[daypart].map((text, index) => ({
+    id: `${daypart}-${seed.length + index + 1}`,
+    text,
+    daypart,
+    more: true
+  }));
+  return [...seed, ...more];
+});
+
+export type IdeasOptions = { count?: number; full?: boolean; segment?: string | null };
+
+// PRD §7.4's steering: the on-device "What brought you here?" answer nudges
+// the first idea toward the second half of the bank so a returning segment
+// sees variety, the same two values that steer the first-check chips
+// (lib/client/first-check-chips.ts). Any other answer, null, or unset draws
+// from the top, unsteered.
+const STEERED_SEGMENTS = new Set(["Doctor's advice", "Family history"]);
 
 /**
  * `count` ideas for a daypart, starting at `(rotation × count) % bank.length`
  * and wrapping (review A-43: a full page per tick) — a monotonic on-device counter (lib/client/ideas-rotation.ts)
  * therefore never shows the same first idea on two consecutive loads
  * (PRD §6 F-IDEAS acceptance). Negative / NaN counters fall back to 0, as in
- * coach-outputs.ts pick().
+ * coach-outputs.ts pick(). `full` (default false) draws from the seed lines
+ * only (`more === false`) — the default call is therefore byte-for-byte what
+ * it returned before Task 4.3 grew the bank; `true` draws from all ten.
+ * `segment` (Task 4.3), when it is one of STEERED_SEGMENTS, adds
+ * `Math.floor(bank.length / 2)` to the start before wrapping.
  */
 export function ideasFrom(
   ideas: readonly GuideIdea[],
   daypart: Daypart,
   rotation: number,
-  count = 3
+  options: IdeasOptions = {}
 ): GuideIdea[] {
-  const bank = ideas.filter((idea) => idea.daypart === daypart);
+  const { count = 3, full = false, segment = null } = options;
+  const bank = ideas.filter((idea) => idea.daypart === daypart && (full || !idea.more));
   // An empty bank needs no guard (review A-70, spec review): `Math.min(count, 0)`
   // makes `Array.from` return [] and the NaN start is never used as an index.
   // Review A-43: step by `count`, not by one — two consecutive loads are then
-  // disjoint while the bank holds at least 2×count lines (the seed bank has
-  // eight per daypart), instead of overlapping on two of three ideas.
-  const start = ((Math.abs(Math.trunc(rotation) || 0) * count) % bank.length);
+  // disjoint while the bank holds at least 2×count lines (eight per daypart
+  // seed, ten with `full`), instead of overlapping on two of three ideas.
+  let start = (Math.abs(Math.trunc(rotation) || 0) * count) % bank.length;
+  if (segment && STEERED_SEGMENTS.has(segment)) {
+    start = (start + Math.floor(bank.length / 2)) % bank.length;
+  }
   return Array.from(
     { length: Math.min(count, bank.length) },
     (_, offset) => bank[(start + offset) % bank.length]
@@ -129,6 +202,6 @@ export function ideasFrom(
 }
 
 /** The bound form every surface calls (review A-31: `ideasFrom` exists so the empty case is testable). */
-export function ideasFor(daypart: Daypart, rotation: number, count = 3): GuideIdea[] {
-  return ideasFrom(GUIDE_IDEAS, daypart, rotation, count);
+export function ideasFor(daypart: Daypart, rotation: number, options?: IdeasOptions): GuideIdea[] {
+  return ideasFrom(GUIDE_IDEAS, daypart, rotation, options);
 }
