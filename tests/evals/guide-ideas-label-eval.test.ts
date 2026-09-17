@@ -53,7 +53,7 @@ import { createEvalModelClient } from "../support/pal-test-model";
 
 const LABELS_PATH = path.join(process.cwd(), "lib/pal/guide-ideas.labels.json");
 
-// Runs inside one cell go out a few at a time: sequential is ~1,440 × ~5s.
+// Runs inside one cell go out a few at a time: sequential is ~1,800 × ~5s.
 const CELL_CONCURRENCY = 4;
 // Per idea: 3 bands × up to 4 attempts × 20 runs, each call bounded by the
 // transport's 10s timeout (plus its connection retry).
@@ -108,7 +108,7 @@ describe.skipIf(!isIdeasLabelEvalEnabled(process.env))(
     beforeAll(() => {
       // The instance, not a lazy factory: a factory that throws inside
       // checkFood is swallowed into `retry`, which would turn a missing key
-      // into 1,440 inconclusive cells instead of one clear error.
+      // into 1,800 inconclusive cells instead of one clear error.
       model = createEvalModelClient([]);
     });
 

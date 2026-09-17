@@ -104,7 +104,7 @@ describe("guide idea label eval — cell classification", () => {
 
   it("goes live only with both PAL_LIVE_EVAL=1 and its own PAL_EVAL_IDEAS=1 opt-in", () => {
     // A broad `PAL_LIVE_EVAL=1 vitest run tests/evals` arms the other live
-    // evals; it must not also buy ~1,440 calls and overwrite a reviewed file.
+    // evals; it must not also buy ~1,800 calls and overwrite a reviewed file.
     expect(isIdeasLabelEvalEnabled({})).toBe(false);
     expect(isIdeasLabelEvalEnabled({ PAL_LIVE_EVAL: "1" })).toBe(false);
     expect(isIdeasLabelEvalEnabled({ PAL_EVAL_IDEAS: "1" })).toBe(false);
@@ -159,7 +159,7 @@ describe("guide idea label eval — cell classification", () => {
  * an `inconclusive` cell fails its SAFE assertion.
  */
 describe.skipIf(!hasLabels)(
-  "guide idea labels — Clear at every band (skips without the labels file: run `npm run eval:pal:ideas` — OPENAI_API_KEY, ~1,440 calls at twenty per cell, about $15 — and commit lib/pal/guide-ideas.labels.json)",
+  "guide idea labels — Clear at every band (skips without the labels file: run `npm run eval:pal:ideas` — OPENAI_API_KEY, ~1,800 calls at twenty per cell, about $19 — and commit lib/pal/guide-ideas.labels.json)",
   () => {
     it.each(GUIDE_IDEAS.map((idea) => [idea.id, idea.text] as const))(
       "%s (%s) reads Clear at every band",

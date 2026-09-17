@@ -21,7 +21,7 @@ export const LABEL_MAX_RERUNS = 3;
  * createEvalModelClient keys the live client on) AND its own
  * `PAL_EVAL_IDEAS=1` — the EVAL_MEAL_PHOTO_LIVE precedent. `PAL_LIVE_EVAL`
  * alone also arms pal-safety-eval and pal-graded-eval, so a broad
- * `PAL_LIVE_EVAL=1 vitest run tests/evals` must not also buy ~1,440 calls and
+ * `PAL_LIVE_EVAL=1 vitest run tests/evals` must not also buy ~1,800 calls and
  * overwrite a reviewed lib/pal/guide-ideas.labels.json. `npm run
  * eval:pal:ideas` sets both.
  */

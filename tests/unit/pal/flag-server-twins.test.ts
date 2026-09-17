@@ -163,7 +163,12 @@ describe("production door guard — checkProductionDoor (Task 1.11)", () => {
       "check-classics-hint-guide"
     ]);
     expect(SURFACE_ROWS.source).toEqual(["result-source-lead"]);
-    expect(SURFACE_ROWS["ideas-full"]).toEqual(["guide-ideas-see-all"]);
+    expect(SURFACE_ROWS["ideas-full"]).toEqual([
+      "guide-ideas-see-all",
+      "guide-ideas-more-breakfast",
+      "guide-ideas-more-lunch",
+      "guide-ideas-more-dinner"
+    ]);
     // A-83 (the sign-in step line) shipped and the guest dashboard renders
     // this row; A-84 (recordStepEvent) shipped too, so it no longer blocks
     // the flip (final review I2). The id stays listed because the surface
@@ -314,6 +319,66 @@ describe("production door guard — checkProductionDoor (Task 1.11)", () => {
         effective: "source",
         errors: [],
         warnings: []
+      });
+    });
+
+    describe("PR-4 Task C: a stale `more` line scopes the drop to `ideas-full` alone", () => {
+      // Fresh for all 24 seed ideas; breakfast-9 (a `more` line, Task 4.3
+      // growth) has no label. `ideas` renders only the seed, so it stays open.
+      function labelsMissingBreakfast9(): GuideIdeaLabels {
+        const labels = freshLabels();
+        delete labels.labels["breakfast-9"];
+        return labels;
+      }
+
+      it("drops only `ideas-full`, keeping `ideas` open", () => {
+        const result = checkProductionDoor(
+          "ideas,ideas-full,source",
+          ledger,
+          labelsMissingBreakfast9(),
+          PROMPT_VERSION,
+          MODEL
+        );
+        expect(result).toEqual({
+          effective: "ideas,source",
+          errors: [],
+          warnings: [
+            'idea labels are stale (idea "breakfast-9" has no label) — "ideas-full" dropped from this build; ' +
+              "run npm run eval:pal:ideas"
+          ]
+        });
+      });
+
+      it("also drops `home` (it requires `ideas-full`), naming both, `ideas` still stays open", () => {
+        const result = checkProductionDoor(
+          "ideas,ideas-full,home,source",
+          ledger,
+          labelsMissingBreakfast9(),
+          PROMPT_VERSION,
+          MODEL
+        );
+        expect(result).toEqual({
+          effective: "ideas,source",
+          errors: [],
+          warnings: [
+            'idea labels are stale (idea "breakfast-9" has no label) — "ideas-full", "home" dropped from this build; ' +
+              "run npm run eval:pal:ideas"
+          ]
+        });
+      });
+
+      it("a stale SEED idea still drops both ideas surfaces (today's message, unchanged)", () => {
+        const labels = freshLabels();
+        delete labels.labels["breakfast-1"];
+        const result = checkProductionDoor("ideas,ideas-full,source", ledger, labels, PROMPT_VERSION, MODEL);
+        expect(result).toEqual({
+          effective: "source",
+          errors: [],
+          warnings: [
+            'idea labels are stale (idea "breakfast-1" has no label) — "ideas" and "ideas-full" dropped from this build; ' +
+              "run npm run eval:pal:ideas"
+          ]
+        });
       });
     });
   });

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { classifyClinicalRisk } from "../../../lib/pal/clinical-risk";
 import {
   GUIDE_IDEA_BANK,
+  GUIDE_IDEA_BANK_MORE,
   GUIDE_IDEAS,
   ideasFor,
   ideasFrom
@@ -49,7 +50,10 @@ describe("guide idea bank — precheck-clean, positive only", () => {
     const ids = GUIDE_IDEAS.map((idea) => idea.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const idea of GUIDE_IDEAS) {
-      expect(GUIDE_IDEA_BANK[idea.daypart]).toContain(idea.text);
+      // PR-4: a seed idea (more === false) lives in GUIDE_IDEA_BANK, a growth
+      // idea (more === true) in GUIDE_IDEA_BANK_MORE — never both, never neither.
+      const pool = idea.more ? GUIDE_IDEA_BANK_MORE[idea.daypart] : GUIDE_IDEA_BANK[idea.daypart];
+      expect(pool).toContain(idea.text);
     }
   });
 
@@ -67,6 +71,77 @@ describe("guide idea bank — precheck-clean, positive only", () => {
       expect(ideasFor(daypart, 0)).toEqual(a); // same counter, same list
       expect(new Set(a.map((i) => i.id)).size).toBe(3); // no repeats in one load
       expect(a.filter((i) => b.some((j) => j.id === i.id))).toHaveLength(0); // review A-43: consecutive loads are disjoint
+    }
+  });
+});
+
+/**
+ * PR-4 Task 4.3: bank growth to ten per daypart, the `IdeasOptions` object
+ * (`count`/`full`/`segment`), and segment steering — all dormant behind
+ * `ideas-full` (SURFACE_REQUIRES["ideas-full"] = ["ideas"]). The default call
+ * (no options) must stay byte-for-byte what it returned before this bank grew.
+ */
+describe("guide idea bank growth — full bank, options, segment steering (PR-4 Task 4.3)", () => {
+  it("GUIDE_IDEA_BANK_MORE adds exactly two lines per daypart — ten total with the seed", () => {
+    for (const daypart of ["breakfast", "lunch", "dinner"] as const) {
+      expect(GUIDE_IDEA_BANK_MORE[daypart]).toHaveLength(2);
+      expect(GUIDE_IDEA_BANK[daypart].length + GUIDE_IDEA_BANK_MORE[daypart].length).toBe(10);
+    }
+  });
+
+  it("seed ids are unchanged; the more lines pick up right after them", () => {
+    expect(GUIDE_IDEAS.find((idea) => idea.id === "breakfast-1")).toMatchObject({
+      text: GUIDE_IDEA_BANK.breakfast[0],
+      more: false
+    });
+    expect(GUIDE_IDEAS.find((idea) => idea.id === "breakfast-9")).toMatchObject({
+      text: GUIDE_IDEA_BANK_MORE.breakfast[0],
+      more: true
+    });
+  });
+
+  it("the default call is byte-for-byte the seed-only result, and never returns a `more` idea", () => {
+    for (const daypart of ["breakfast", "lunch", "dinner"] as const) {
+      for (const rotation of [0, 1, 4]) {
+        const plain = ideasFor(daypart, rotation);
+        expect(plain).toEqual(ideasFor(daypart, rotation, { full: false }));
+        expect(plain.some((idea) => idea.more)).toBe(false);
+      }
+    }
+  });
+
+  it("`full: true` draws from all ten, and two consecutive loads of three stay disjoint", () => {
+    for (const daypart of ["breakfast", "lunch", "dinner"] as const) {
+      const fullBank = ideasFor(daypart, 0, { full: true, count: 10 });
+      expect(fullBank).toHaveLength(10);
+      expect(fullBank.filter((idea) => idea.more)).toHaveLength(2); // the two GUIDE_IDEA_BANK_MORE lines
+
+      const a = ideasFor(daypart, 0, { full: true });
+      const b = ideasFor(daypart, 1, { full: true });
+      expect(a).toHaveLength(3);
+      expect(a.filter((idea) => b.some((other) => other.id === idea.id))).toHaveLength(0);
+    }
+  });
+
+  it("steering: 'Doctor's advice' and 'Family history' start at the floor(10/2) offset", () => {
+    for (const daypart of ["breakfast", "lunch", "dinner"] as const) {
+      const fullBank = ideasFor(daypart, 0, { full: true, count: 10 });
+      const unsteered = ideasFor(daypart, 0, { full: true });
+      for (const segment of ["Doctor's advice", "Family history"]) {
+        const steered = ideasFor(daypart, 0, { full: true, segment });
+        expect(steered[0].id).toBe(fullBank[5].id); // floor(10/2) = 5
+        expect(steered).not.toEqual(unsteered);
+      }
+    }
+  });
+
+  it("every other segment value — and null/unset — draws unsteered", () => {
+    for (const daypart of ["breakfast", "lunch", "dinner"] as const) {
+      const unsteered = ideasFor(daypart, 0, { full: true });
+      for (const segment of ["New A1C result", "Just checking", null, "unknown"] as const) {
+        expect(ideasFor(daypart, 0, { full: true, segment })).toEqual(unsteered);
+      }
+      expect(ideasFor(daypart, 0, { full: true })).toEqual(unsteered);
     }
   });
 });

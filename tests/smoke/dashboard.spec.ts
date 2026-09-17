@@ -206,6 +206,67 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
     await expect(page.getByLabel(/eating/i)).toHaveValue(ideaText);
   });
 
+  // PR-4 Task 4.4 — "See all" expands the block to the whole daypart bank in
+  // place; only meaningful with the growth bank behind it, so this whole
+  // block skips unless ideas-full is on too.
+  test.describe("ideas-full — 'See all' expands the block", () => {
+    test.beforeAll(async () => {
+      test.skip(!(await doorSurfaceOn("ideas-full")), "ideas-full surface off in this build");
+    });
+
+    test("See all shows all ten rows and stays reachable; a row past the third still reaches /check; Show fewer collapses back", async ({
+      page
+    }) => {
+      await page.setViewportSize({ width: 375, height: 667 });
+      await page.clock.install({ time: new Date("2026-09-14T19:00:00") });
+      await page.goto("/home?stay=1");
+
+      const seeAll = page.getByRole("button", { name: "See all" });
+      await expect(seeAll).toBeVisible();
+      await expect(seeAll).toHaveAttribute("aria-expanded", "false");
+      await expect(page.getByTestId(/^idea-row-\d+$/)).toHaveCount(3);
+
+      await seeAll.click();
+      const showFewer = page.getByRole("button", { name: "Show fewer" });
+      await expect(showFewer).toHaveAttribute("aria-expanded", "true");
+      await expect(page.getByTestId(/^idea-row-\d+$/)).toHaveCount(10);
+
+      // No fold assertion once expanded (A-08/A-94) — only that the check CTA
+      // stays in the DOM and reachable.
+      const cta = page.getByTestId("dash-check-cta");
+      await cta.scrollIntoViewIfNeeded();
+      await expect(cta).toBeVisible();
+
+      // A row past the third emits slot "more" and still hands off to /check.
+      const row4 = page.getByTestId("idea-row-4");
+      const row4Text = (await row4.innerText()).trim();
+      await row4.click();
+      await expect(page).toHaveURL(/\/check\?stay=1$/);
+      await expect(page.getByLabel(/eating/i)).toHaveValue(row4Text);
+
+      // Home remounts fresh on the way back (same per-mount reset as the
+      // rotation counter and ideas_shown) — collapsed again, three rows.
+      await page.goBack();
+      await expect(page).toHaveURL(/\/home\?stay=1$/);
+      await expect(page.getByRole("button", { name: "See all" })).toBeVisible();
+      await expect(page.getByTestId(/^idea-row-\d+$/)).toHaveCount(3);
+    });
+
+    test("360×667: expanded shows all ten rows (the fold-hide override does not apply once expanded)", async ({
+      page
+    }) => {
+      await page.setViewportSize({ width: 360, height: 667 });
+      await page.clock.install({ time: new Date("2026-09-14T19:00:00") });
+      await page.goto("/home?stay=1");
+
+      await page.getByRole("button", { name: "See all" }).click();
+      await expect(page.getByTestId(/^idea-row-\d+$/)).toHaveCount(10);
+      for (let n = 1; n <= 10; n += 1) {
+        await expect(page.getByTestId(`idea-row-${n}`)).toBeVisible();
+      }
+    });
+  });
+
   // Review A-72 / DESIGN.md §8: the rows wrap differently at each width and
   // each daypart's lines differ in length, so the fold is pinned for every
   // width × clock, on five rotation pages each. `pal.ideas.rotation` is
@@ -240,6 +301,11 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
       page
     }) => {
       const weekOn = await doorSurfaceOn("orient");
+      // PR-4 Task 4.3: with ideas-full on, the row this test pins is drawn
+      // from the full ten-idea bank, not just the eight-line seed — resolved
+      // once, outside the loop (the built app's door state never changes
+      // mid-test).
+      const fullOn = await doorSurfaceOn("ideas-full");
       await page.setViewportSize({ width, height: 667 });
       await page.clock.install({ time: new Date(FOLD_CLOCKS[0]!.time) });
       await page.goto("/home?stay=1");
@@ -254,6 +320,9 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
           await page.evaluate(
             ([value, week]) => {
               window.localStorage.setItem("pal.ideas.rotation", String(value));
+              // PR-4 Task 4.3: a leftover segment answer from an earlier test
+              // must not steer this page's first idea.
+              window.localStorage.removeItem("pal.segment.v1");
               if (!week) return;
               const startedAt = new Date(); // the installed clock
               startedAt.setDate(startedAt.getDate() - 1);
@@ -273,7 +342,7 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
             `Ideas for ${daypart}`
           );
           await expect(page.getByTestId("idea-row-1"), cell).toHaveText(
-            ideasFor(daypart, seed + 1)[0]!.text
+            ideasFor(daypart, seed + 1, { full: fullOn })[0]!.text
           );
           if (weekOn) {
             // F-30/F-35: the day line now renders INSIDE Home's one <h1>, in
