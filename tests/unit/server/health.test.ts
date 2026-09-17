@@ -166,6 +166,64 @@ describe("createHealthHandler — db + cron probes (P7)", () => {
     }
   });
 
+  // A-11: guideDoor is the ONLY runtime probe for the client-only guide-door
+  // flag (no server twin). Built from GUIDE_SURFACES so a surface added
+  // later shows up automatically; A-67 rule is booleans by name, never the
+  // raw env value.
+  it("reports guideDoor surface states — off unset, on for '1', exactly the named surfaces for a list, raw value never leaked", async () => {
+    const createHealthHandler = await importHandler();
+    const GET = createHealthHandler({ db: () => testDb.db, now: () => NOW });
+
+    const ALL_OFF = {
+      ideas: "off",
+      source: "off",
+      calm: "off",
+      orient: "off",
+      home: "off",
+      intake: "off",
+      "ideas-full": "off",
+      numbers: "off",
+      refer: "off",
+      doctor: "off",
+      plan: "off",
+      guide: "off",
+    } as const;
+
+    delete process.env.NEXT_PUBLIC_GUIDE_DOOR;
+    let payload = await (await GET()).json();
+    expect(payload.guideDoor).toEqual(ALL_OFF);
+
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "1");
+    payload = await (await GET()).json();
+    expect(payload.guideDoor).toEqual({
+      ideas: "on",
+      source: "on",
+      calm: "on",
+      orient: "on",
+      home: "on",
+      intake: "on",
+      "ideas-full": "on",
+      numbers: "on",
+      refer: "on",
+      doctor: "on",
+      plan: "on",
+      guide: "on",
+    });
+    vi.unstubAllEnvs();
+
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "ideas,source");
+    payload = await (await GET()).json();
+    expect(payload.guideDoor).toEqual({
+      ...ALL_OFF,
+      ideas: "on",
+      source: "on",
+    });
+    // The raw comma-joined env value must never appear verbatim anywhere in
+    // the payload — only the derived "on"/"off" booleans by surface name.
+    expect(JSON.stringify(payload)).not.toContain("ideas,source");
+    vi.unstubAllEnvs();
+  });
+
   it("reports crons:ok when all five heartbeats are fresh", async () => {
     await testDb.db.insert(schema.cronHeartbeat).values([
       { name: "nudge", lastRunAt: new Date(NOW.getTime() - 30 * 60 * 1000) }, // 30m ago

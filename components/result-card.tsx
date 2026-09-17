@@ -6,6 +6,7 @@ import type {
   PalUserResponse
 } from "../lib/client/ui-state";
 import { RISK_LABELS } from "../lib/pal/labels";
+import { guideDoorEnabled } from "../lib/guide-door-flag";
 import { DisclaimerLine } from "./disclaimer-line";
 import { MealMemorySave } from "./meal-memory-save";
 import { ResultFeedback } from "./result-feedback";
@@ -23,6 +24,19 @@ const RISK_ICONS = {
   MODERATE: IconAlert,
   HIGH: IconPause
 } as const;
+
+// PRD v1.1 §6 F-SOURCE: the lead-in that names the source. Three brackets =
+// the three label meanings in docs/safety/claims-boundary.md (Verdict
+// Semantics), so `Hold off` on a materially incomplete description is
+// covered. Cites Prediabetes Pal's own documented rules and nothing else —
+// never an external authority, never a number. Ledger row `result-source-lead`.
+// The engine reason follows verbatim as its own sentence.
+export const SOURCE_LEAD: Record<PalRisk, string> = {
+  SAFE: "Why this label: under Prediabetes Pal's rules this description reads as generally balanced.",
+  MODERATE:
+    "Why this label: under Prediabetes Pal's rules this description reads as leaning toward a concentrated or less-balanced pattern.",
+  HIGH: "Why this label: under Prediabetes Pal's rules this description reads as unusually concentrated or too incomplete to read closely."
+};
 
 // §6.3 post-verdict pantry entry. The one-time Pantry Review line attaches ONLY
 // to non-SAFE results ("Be careful" / "Hold off") — SAFE never piles on, and no
@@ -176,7 +190,14 @@ export function ResultCard({
         </div>
         <div className="anatomy-row">
           <span className="anatomy-label">Why</span>
-          <p className="anatomy-copy">{response.reason}</p>
+          <p className="anatomy-copy">
+            {guideDoorEnabled("source") ? (
+              <span className="result-source-lead" data-testid="result-source-lead">
+                {SOURCE_LEAD[response.risk]}{" "}
+              </span>
+            ) : null}
+            {response.reason}
+          </p>
         </div>
         {hasTryRows ? (
           <div className="anatomy-row">

@@ -9,9 +9,12 @@ import {
 } from "../model-transport";
 import { PalModelOutputSchema, palModelJsonSchema } from "./schemas";
 import type { PalModelOutput } from "./schemas";
+import { activeModelId } from "./model-id";
 import type { PalPromptPayload } from "./prompt";
 
-export const DEFAULT_PAL_MODEL = "gpt-5.4-mini";
+// The model identity lives SDK-free in model-id.ts (next.config.ts reads it
+// for the production door guard); re-exported so every importer stays put.
+export { DEFAULT_PAL_MODEL, activeModelId, stripProviderPrefix } from "./model-id";
 export const PAL_JSON_SCHEMA_NAME = "pal_model_output";
 
 export type PalModelProvider = "openai" | "openrouter" | "compatible";
@@ -35,23 +38,6 @@ export class PalProviderResponseError extends Error {
           typeof value === "string" && /^[A-Za-z0-9_.-]{2,40}$/.test(value)
       ) ?? "EMPTY_OUTPUT";
   }
-}
-
-/**
- * The model this process will actually call — for telemetry (W-13/N-18).
- *
- * Telemetry used to record no model at all, so a user reporting a bad answer
- * could not be attributed to the model that produced it. This is the same
- * resolution the client itself does, kept in one place so the stamp cannot
- * drift from the call.
- */
-export function activeModelId(input: NodeJS.ProcessEnv = process.env): string {
-  // `??` alone is wrong here: a declared-but-empty PAL_MODEL= (a real .env
-  // and a real Vercel state) is a string, so it wins the coalesce and every
-  // call asks the provider for model "" — a 400 on every request, product and
-  // eval alike. Blank means unset.
-  //
-  return input.PAL_MODEL?.trim() || DEFAULT_PAL_MODEL;
 }
 
 function providerForBaseUrl(baseURL: string | undefined): PalModelProvider {

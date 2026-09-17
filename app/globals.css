@@ -4400,11 +4400,118 @@ button.inline-link {
   line-height: 1.1;
 }
 
+/* Amendment A-106: guide door on ⇒ the greeting's one <h1> collapses into the
+   same treatment as .hero-eyebrow/.status-eyebrow/.result-eyebrow (app/globals.css
+   above), instead of the large date title — the ideas title takes the page's
+   "section title" role (DESIGN.md §4). Same element, same class, same test ids;
+   this modifier only overrides the type scale. Flag off ⇒ .dash-greet-date alone,
+   byte-for-byte today's markup. */
+.dash-greet-date--eyebrow {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
 .dash-greet-sum {
   margin: 0;
   color: var(--text-muted);
   margin-top: 4px;
   font-size: 16px;
+}
+
+/* Review A-54: ideas are ROWS, not chips. DESIGN.md §10's selectable chip is a
+   1–3 word label; idea lines run 25–60 characters and a pill holds ~38 at 375
+   (content column 347px − block padding 32 − chip padding 36), so 12 of the 18
+   seed lines would wrap inside the pill. A full-width row reads as a list of
+   meals and wraps to a second line cleanly. Review fix round 1: the row's
+   min-height (below, shared by .idea-row and .idea-row--skeleton — a skeleton
+   li always carries both classes) is sized for TWO lines, not one — at 375px
+   the text column is only ~259px (~30 chars at 16px), and more than half the
+   seed bank wraps there, so a one-line min-height let the block grow on
+   hydration and shift the check hero down, contradicting this comment. Sizing
+   both states off the same two-line floor is what actually keeps the block's
+   height constant before and after hydration, for every rotation. */
+.ideas-block {
+  /* Review A-71 (default): a bordered --surface at the outer radius, no shadow —
+     DESIGN.md §11: --surface-muted on --page-bg "stops reading as an object".
+     The hero keeps the system's one shadow and stays the accent. */
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 24px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.ideas-title {
+  /* Review A-106: the page's first heading (22px/700 — recorded in DESIGN.md §4
+     as the app "section title" in the same PR); the date and the day collapse
+     into one .status-eyebrow line above it when the flag is on, which is what
+     keeps the check CTA above the tab bar at 360×667 with two-line rows. */
+  margin: 0 0 2px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-strong);
+}
+.ideas-sub {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: var(--text-body);
+}
+.ideas-list {
+  list-style: none; /* §12: carries role="list" in the markup */
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.idea-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  /* Two-line floor, border-box (`* { box-sizing: border-box }` above):
+     16px font-size × 1.35 line-height × 2 lines = 43.2px content, + 16px
+     vertical padding (8px × 2) + 2px border (1px × 2) = 61.2px. This is the
+     ONE height .idea-row and .idea-row--skeleton share — a wrapped real row
+     and the pre-hydration skeleton both stop here, so the block never grows
+     on hydration, for every rotation (44px would only hold a single line and
+     is well under the 44px tap-target floor anyway, since 61.2px > 44px).
+     Task 1.8 fold budget (§3 shrink order, step 3): padding 10px 14px →
+     8px 12px, min-height 65.2px → 61.2px. */
+  min-height: 61.2px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text-body);
+  font-size: 16px;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.idea-row:hover { border-color: var(--accent); }
+.idea-row:active { transform: translateY(1px); }
+.idea-row--skeleton {
+  border-color: transparent;
+  background: var(--border-soft);
+  animation: pal-skeleton 1.4s ease-in-out infinite; /* §6: the sanctioned loading shimmer */
+}
+
+/* Review A-93's mechanism, Task 1.8 fix round 1: below 375px Home's ideas
+   block shows TWO rows. With one greeting line, two-row-safe bank lines and
+   the §3 shrink steps, three rows still left the check CTA 3.3px under the tab
+   bar at 360×667 (the hero copy wraps there). The third row stays in the DOM —
+   rotation, ideas_shown and tap slots are unchanged — and the skeleton's third
+   row hides the same way, so hydration does not shift the hero. Scoped to
+   .ideas-block: the /check first-run IdeaRows keep all three. */
+@media (max-width: 374px) {
+  .ideas-block .ideas-list > li:nth-child(n + 3) {
+    display: none;
+  }
 }
 
 /* The one Committed color moment on the surface: the meal-check hero

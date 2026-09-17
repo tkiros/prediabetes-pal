@@ -2,7 +2,9 @@ import Link from "next/link";
 
 import type { StoredCheck } from "../lib/client/history-store";
 import type { NextAction } from "../lib/coach/next-action";
+import { guideDoorEnabled } from "../lib/guide-door-flag";
 import type { PlanBoxData } from "../lib/server/plan-box";
+import { GuideIdeas } from "./guide-ideas";
 import { HomeCheckHero } from "./home-check-hero";
 import { PlanBox } from "./plan-box";
 import { TodayList } from "./today-list";
@@ -38,6 +40,14 @@ export type DashboardData = {
 };
 
 export function DashboardView({ data }: { data: DashboardData }) {
+  // Amendment A-106: flag on ⇒ the whole greeting collapses into ONE
+  // .status-eyebrow-styled date line (there is no "day" yet — that arrives
+  // with the orientation step in a later PR). The week summary is not
+  // rendered: PRD v1.1 §7.6's wireframe shows one greeting line, /journey
+  // owns the week, and plan §3's fold budget already spent those ~28px on the
+  // ideas block (Task 1.8 fix round 1). Flag off ⇒ today's markup, byte-for-byte.
+  const ideasOn = guideDoorEnabled("ideas");
+
   return (
     <div data-testid="dashboard">
       {data.showFirstWin ? (
@@ -51,11 +61,23 @@ export function DashboardView({ data }: { data: DashboardData }) {
       ) : null}
 
       <div className="dash-greet">
-        <h1 className="dash-greet-date">{data.todayLabel}</h1>
-        <p className="dash-greet-sum" data-testid="dash-summary">
-          {data.weekSummary}
-        </p>
+        <h1
+          className={
+            ideasOn ? "dash-greet-date dash-greet-date--eyebrow" : "dash-greet-date"
+          }
+        >
+          {data.todayLabel}
+        </h1>
+        {ideasOn ? null : (
+          <p className="dash-greet-sum" data-testid="dash-summary">
+            {data.weekSummary}
+          </p>
+        )}
       </div>
+
+      {/* PRD v1.1 §7.4/§7.6: ideas lead, the check hero drops to second and
+          stays the one accent-filled action. Flag off ⇒ unchanged Home. */}
+      {ideasOn ? <GuideIdeas /> : null}
 
       <HomeCheckHero />
 

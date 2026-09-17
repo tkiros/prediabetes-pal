@@ -115,6 +115,9 @@ describe("GET /api/health", () => {
     delete process.env.LONGITUDINAL_INSIGHTS_ENABLED;
     delete process.env.MEAL_MEMORY_ENABLED;
     delete process.env.LEARNING_JOURNEY_ENABLED;
+    // Same hygiene as the four twins above: the guide-door flag also has no
+    // server twin, so it must be hermetic against a local shell export.
+    delete process.env.NEXT_PUBLIC_GUIDE_DOOR;
 
     const response = await GET();
     const payload = await response.json();
@@ -149,6 +152,22 @@ describe("GET /api/health", () => {
         mealMemory: "off",
         learningJourney: "off",
       },
+      // A-11: guideDoor is the only runtime probe for the client-only door
+      // flag (no server twin) — same "booleans by name, never values" rule.
+      guideDoor: {
+        ideas: "off",
+        source: "off",
+        calm: "off",
+        orient: "off",
+        home: "off",
+        intake: "off",
+        "ideas-full": "off",
+        numbers: "off",
+        refer: "off",
+        doctor: "off",
+        plan: "off",
+        guide: "off",
+      },
       db: "unconfigured",
       crons: {
         nudge: "unknown",
@@ -176,6 +195,7 @@ describe("GET /api/health", () => {
     delete process.env.LONGITUDINAL_INSIGHTS_ENABLED;
     delete process.env.MEAL_MEMORY_ENABLED;
     delete process.env.LEARNING_JOURNEY_ENABLED;
+    delete process.env.NEXT_PUBLIC_GUIDE_DOOR;
 
     const response = await GET();
     const payload = await response.json();
@@ -199,6 +219,22 @@ describe("GET /api/health", () => {
         longitudinalInsights: "off",
         mealMemory: "off",
         learningJourney: "off",
+      },
+      // Same reasoning as flagTwins above — the early-return path must
+      // report guideDoor too, not only the ready path.
+      guideDoor: {
+        ideas: "off",
+        source: "off",
+        calm: "off",
+        orient: "off",
+        home: "off",
+        intake: "off",
+        "ideas-full": "off",
+        numbers: "off",
+        refer: "off",
+        doctor: "off",
+        plan: "off",
+        guide: "off",
       },
       db: "unconfigured",
       crons: {

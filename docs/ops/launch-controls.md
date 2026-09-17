@@ -555,3 +555,107 @@ are write-only (`vercel env pull` returns the literal `[SENSITIVE]`), so
 production's exact `PAL_MODEL` string is unverifiable from outside the
 console. A confirmatory run against a real preview deploy needs deployment
 protection bypass (not provisioned) plus a rate-limit exemption.
+
+## 13. The guide door's reads (PRD v1.1 §9.1; review A-34)
+
+One place to read the guide door's numbers from, added in PR-1. Four reads,
+each naming the Umami view that produces it — `ideas_shown`, `idea_tapped`,
+`idea_check_completed`, `onboarding_step`, `onboarding_started` and
+`check_completed` are typed events in `lib/client/analytics.ts` (closed enums
+only; the no-PII source scan enforces it). **Nothing here measures A1C,
+glucose, weight, or any other health outcome, and nothing will.**
+
+### 13.1 Kill line 2 — idea engagement vs impressions (review A-95; owner rules in UC1)
+
+Read as **tapped**, not opened: `idea_tapped` sessions ÷ sessions in which a
+block rendered (`ideas_shown`), computed per `surface` (`"home"` | `"check"`).
+The impression count (`ideas_shown`) stays the denominator. **< 25% after four
+weeks** is the kill-line breach; the owner rules on it in UC1, not an
+automatic revert.
+
+> **Why "tapped", not "shown":** the plan's original "four reads" sentence
+> reads this line as `ideas_shown` sessions ÷ sessions total (the impression
+> form). Review A-95 replaced it: once the ideas row also renders on `/check`
+> (Task 1.14), it reads ~100% of `/check` sessions by construction — every
+> landing CTA reaches `/check`, so the impression form cannot discriminate a
+> working door from a broken one. `idea_tapped` ÷ block-rendered sessions is
+> the action the impression count cannot see.
+
+**Sample floor (review A-41):** read only once at least 100 sessions have
+rendered a block (`ideas_shown` ≥ 100 for the surface being read), and start
+the four-week clock on the first day Phase 5 traffic exists, not at the flag
+flip.
+
+**Umami view:** `idea_tapped` count ÷ `ideas_shown` count, both grouped by
+`surface`.
+
+### 13.2 Idea → check conversion — `idea_tapped` → `idea_check_completed`
+
+Non-zero and rising is the bar today — no numeric floor. `idea_check_completed`
+carries only `risk` (`lib/client/analytics.ts`), no `surface` prop, so this
+read cannot yet be split by home vs. check; a later PR adds the prop if the
+split becomes load-bearing.
+
+**Umami view:** `idea_tapped` count beside `idea_check_completed` count, read
+together.
+
+### 13.3 The F-ASK floor — `onboarding_step{step:"attribution"}` ÷ `onboarding_started` (Task 6.7)
+
+The 70% floor over the first 50 starts after the F-ASK screens go live (PR-6),
+read against the six-screen baseline the funnel already collects starting in
+this PR: `onboarding_started` plus five `onboarding_step` values (`"segment"`,
+`"ask_pains"`, `"ask_win"`, `"attribution"`, `"expectations"` —
+`lib/client/analytics.ts`; `"ask_pains"` / `"ask_win"` are typed today but do
+not emit until PR-6's screens ship). If the floor fires, the per-screen counts
+(`onboarding_step` grouped by `step`, each divided into `onboarding_started`)
+locate where sessions drop — Task 6.7 is the follow-up that reads them.
+
+**Umami view:** `onboarding_step` count by `step`, and `onboarding_started`
+count.
+
+### 13.4 Orientation completion — `orientation_step_done` by step (arrives with PR-3)
+
+Completion beyond day 1, read by step once orientation ships. `orientation_step_done`
+does not exist in `lib/client/analytics.ts` as of this PR — this row is a
+placeholder until PR-3 (F-ORIENT) defines and emits it; do not read counts
+from an event this build cannot produce.
+
+**Umami view:** not yet available — arrives with PR-3.
+
+### 13.5 Beside kill line 2 — return, not just exposure (review A-15, A-65)
+
+Read beside kill line 2, never in place of it — neither flips the flag alone.
+Exposure can rise while nobody comes back, so the owner's own 2026-07-10
+evidence checkpoint (review A-15) is read alongside it: the share of
+non-founder users with a check on 2+ distinct calendar days since the flip.
+
+**Query (review A-65):** signed-in users other than the founder with checks on
+≥ 2 distinct calendar days since the flip (`checks` grouped by `user_id`,
+`count(distinct day) ≥ 2`), read weekly. Guests cannot be joined across days,
+so their proxy is Umami: `check_completed{first_check:false}` ÷
+`check_completed{first_check:true}`. `first_check` is a real prop on
+`check_completed` today (`lib/client/analytics.ts`), so this proxy is already
+computable — it is not waiting on a later PR.
+
+### 13.6 The A-107 prune trigger
+
+A production trigger, not a dashboard read: any `idea_check_completed { risk ≠
+"SAFE" }` in Umami says the bank still holds a line the pre-launch labelling
+eval (Task 4.1) missed. That eval is the gate for this exact failure mode;
+this trigger is the production-traffic backstop for whatever its sample did
+not catch.
+
+**The event names no line, and never will.** `idea_check_completed` carries
+only `{ risk }` — no idea id, no text, no daypart (`lib/client/analytics.ts`).
+That is deliberate: §9.1 promises nothing here links an analytics row to a
+meal, and the idea props that do exist (`ideas_shown`, `idea_tapped`) are
+closed enums of daypart and slot for the same reason. So a non-SAFE event
+proves a bad line exists and cannot say which one. Adding a prop that could
+say is an analytics-surface decision taken against that promise — not
+something to be read off the dashboard, and not a step in this runbook.
+
+**The response, therefore, is a re-run, not a lookup:** run
+`npm run eval:pal:ideas` over the whole bank and prune from `GUIDE_IDEA_BANK`
+(`lib/pal/guide-ideas.ts`) every line the eval does not label SAFE at all
+three bands, in the next PR. The eval is what can name the line; the
+production event is only what tells you to run it again.

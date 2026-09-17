@@ -2,6 +2,7 @@ import type {
   ClarifyElapsedBucket,
   ClarifyReason
 } from "../pal/clarify";
+import type { Daypart } from "../coach/insights";
 import type { Channel } from "./attribution";
 import type {
   ClinicalRoute,
@@ -196,6 +197,24 @@ export type AnalyticsEvent =
   // the bounded offer `variant` — "standard" today (price experiments are
   // human-gated; no price reaches analytics).
   | { name: "maintenance_selected"; props: { variant: "standard" } }
+  // PRD v1.1 §9.1 — the guide door's kill-line instruments. Bounded props
+  // only: the daypart bucket the device already computes, the chip slot, the
+  // risk class. Never the idea text, even though it is a closed bank.
+  // `surface` = where the block rendered (review A-41): the PR-1 prototype
+  // sits on Home AND on /check's first-run empty state, because session-one
+  // guests land on /check. Kill line 2 counts either surface.
+  | { name: "ideas_shown"; props: { daypart: Daypart; surface: "home" | "check" } }
+  // `more` = a tap inside the expanded block (Task 4.4 "See all"), so the enum
+  // stays closed however large the bank grows (review A-08).
+  | { name: "idea_tapped"; props: { daypart: Daypart; slot: "1" | "2" | "3" | "more"; surface: "home" | "check" } }
+  // The check that ran was the idea prefill (pal.recheck.source = "idea").
+  | { name: "idea_check_completed"; props: { risk: PalRisk } }
+  // PRD v1.1 §7.5 (amended 2026-09-14) — tour funnel. Which screen a tour
+  // start reached, as a closed enum of screen ids. The number screen and the
+  // out-of-range exit are deliberately absent: reaching them says something
+  // about a person's result, and §9.1 promises nothing here measures it.
+  // "ask_pains" / "ask_win" arrive with the F-ASK screens (PR-6).
+  | { name: "onboarding_step"; props: { step: "segment" | "ask_pains" | "ask_win" | "attribution" | "expectations" } }
   | { name: "photo_draft"; props: { items: number; uncertain: number } };
 
 // Runtime belt-over-type-belt guard: even if a caller bypasses the type
@@ -224,6 +243,10 @@ const ALLOWED_EVENT_NAMES: ReadonlySet<AnalyticsEvent["name"]> = new Set([
   "pantry_viewed",
   "pantry_checkout_started",
   "attribution",
+  "ideas_shown",
+  "idea_tapped",
+  "idea_check_completed",
+  "onboarding_step",
   "photo_draft",
   "result_feedback_submitted",
   "clarification_requested",

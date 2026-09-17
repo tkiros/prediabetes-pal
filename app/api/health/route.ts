@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 
+import {
+  GUIDE_SURFACES,
+  guideDoorEnabled,
+  type GuideSurface,
+} from "../../../lib/guide-door-flag";
 import { learningJourneyServerEnabled } from "../../../lib/learning-journey-flag";
 import { longitudinalInsightsServerEnabled } from "../../../lib/longitudinal-insights-flag";
 import { mealMemoryServerEnabled } from "../../../lib/meal-memory-flag";
@@ -87,6 +92,7 @@ export function createHealthHandler(deps: HealthDeps = {}) {
           emailDelivery,
           billingWebhook,
           flagTwins: flagTwinStates(),
+          guideDoor: guideDoorStates(),
           db,
           crons,
         },
@@ -135,6 +141,10 @@ export function createHealthHandler(deps: HealthDeps = {}) {
         // Runtime state of the four kill switches. See flagTwinStates() — this
         // is the only place any of them is observable after the build.
         flagTwins: flagTwinStates(),
+        // A-11: the guide-door flag (lib/guide-door-flag.ts) is a client
+        // build flag with no server twin — this is its ONLY runtime probe.
+        // See guideDoorStates() below.
+        guideDoor: guideDoorStates(),
         // These bounded states contain no secrets, URLs, timestamps, or counts.
         // Unlike the process-liveness route, this endpoint is product readiness:
         // stateful features and scheduled recovery paths must actually work.
@@ -175,6 +185,29 @@ function flagTwinStates() {
     mealMemory: mealMemoryServerEnabled() ? "on" : "off",
     learningJourney: learningJourneyServerEnabled() ? "on" : "off",
   } as const;
+}
+
+/**
+ * A-11: `NEXT_PUBLIC_GUIDE_DOOR` (lib/guide-door-flag.ts) is a client build
+ * flag with no server twin — the door adds no server boundary, so there is
+ * nothing for next.config.ts's build-time twin guard to pair it with. This
+ * is therefore the ONLY runtime probe that says which guide surfaces a
+ * given deploy renders; Task 1.12's e2e global setup reads
+ * `guideDoor.ideas === "on"` here to decide whether door smoke specs run.
+ *
+ * Built from GUIDE_SURFACES so a surface added later shows up automatically
+ * — never hand-enumerated. Same "booleans by name, never values" rule as
+ * flagTwinStates() above (review A-67): the raw env value (`"1"` or a
+ * comma-separated list) never appears in the payload, only one `"on"|"off"`
+ * per surface.
+ */
+function guideDoorStates(): Record<GuideSurface, "on" | "off"> {
+  return Object.fromEntries(
+    GUIDE_SURFACES.map((surface) => [
+      surface,
+      guideDoorEnabled(surface) ? "on" : "off",
+    ]),
+  ) as Record<GuideSurface, "on" | "off">;
 }
 
 function readinessIssues(input: {
