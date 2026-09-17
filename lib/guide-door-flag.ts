@@ -110,7 +110,15 @@ export const SURFACE_ROWS: Record<GuideSurface, readonly string[]> = {
     "onboarding-expectations-ideas",
     "onboarding-welcome-guide"
   ],
-  "ideas-full": ["guide-ideas-see-all"],
+  // PR-4: Task 4.4's "See all" toggle plus Task 4.3's three bank-growth rows
+  // (two more lines per daypart, keyed one row per daypart — same shape as
+  // guide-ideas-breakfast/-lunch/-dinner above).
+  "ideas-full": [
+    "guide-ideas-see-all",
+    "guide-ideas-more-breakfast",
+    "guide-ideas-more-lunch",
+    "guide-ideas-more-dinner"
+  ],
   numbers: [],
   refer: [],
   doctor: [],
