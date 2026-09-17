@@ -1,5 +1,5 @@
 import type { A1CBand } from "./pal/a1c";
-import { GUIDE_IDEAS } from "./pal/guide-ideas";
+import { GUIDE_IDEAS, type GuideIdea } from "./pal/guide-ideas";
 import { stripProviderPrefix } from "./pal/model-id";
 import {
   GUIDE_SURFACES,
@@ -28,10 +28,13 @@ import {
  *      neither; a retired one renders copy the ledger says is on no surface).
  * Warning (the build continues — A-100, a prompt hotfix is never blocked by
  * the idea bank): when the list opens `ideas` or `ideas-full` and the idea
- * labels are stale, missing, or not all SAFE, both are dropped from
- * `effective` — and so, transitively, is every surface whose
- * SURFACE_REQUIRES are no longer all open (home, orient, intake), each named
- * in the warning — so /api/health's guideDoor reads them "off".
+ * labels are stale, missing, or not all SAFE, PR-4 Task C scopes the drop to
+ * where the staleness actually is — a stale SEED line (`more === false`)
+ * closes both `ideas` and `ideas-full` exactly as before; a stale line that
+ * is only among the `more` lines (Task 4.3 growth) closes `ideas-full` alone
+ * and leaves `ideas` open. Either way every surface whose SURFACE_REQUIRES
+ * are no longer all open (home, orient, intake) drops too, transitively,
+ * each named in the warning — so /api/health's guideDoor reads them "off".
  *
  * `effective` is the value to inline: the listed surfaces in input order,
  * deduplicated, minus any dropped ones — or "" whenever there is an error
@@ -143,29 +146,32 @@ export function checkProductionDoor(
 
   let open = surfaces;
   if (surfaces.some((surface) => IDEAS_SURFACES.includes(surface))) {
-    const reasons = ideaLabelStaleness(labels, promptVersion, modelId);
-    if (reasons.length > 0) {
-      open = surfaces.filter((surface) => !IDEAS_SURFACES.includes(surface));
-      // Fix round 1: closing the ideas surfaces must not leave a surface open
-      // whose requirement is now closed (home's quick row, orient's step 4,
-      // and intake through orient). Drop dependents until the list is stable.
-      for (let changed = true; changed; ) {
-        const stillOpen = new Set<GuideSurface>(open);
-        const kept = open.filter((surface) =>
-          (SURFACE_REQUIRES[surface] ?? []).every((required) => stillOpen.has(required))
-        );
-        changed = kept.length !== open.length;
-        open = kept;
-      }
+    // PR-4 Task C: a stale SEED line (a line every build has always shipped)
+    // closes both ideas surfaces, exactly as before; a stale line that is
+    // only among the `more` lines (Task 4.3 growth, `ideas-full` only)
+    // closes `ideas-full` alone. `allReasons` names every reason either way —
+    // it is a superset of `seedReasons` (the prompt/model checks run
+    // regardless of which ideas the caller passes).
+    const seedReasons = ideaLabelStaleness(
+      labels,
+      promptVersion,
+      modelId,
+      GUIDE_IDEAS.filter((idea) => !idea.more)
+    );
+    const allReasons = ideaLabelStaleness(labels, promptVersion, modelId, GUIDE_IDEAS);
+
+    const dropped: readonly GuideSurface[] = seedReasons.length > 0 ? IDEAS_SURFACES : ["ideas-full"];
+    if (allReasons.length > 0) {
+      open = closeSurfaces(surfaces, dropped);
       const dependents = surfaces.filter(
-        (surface) => !IDEAS_SURFACES.includes(surface) && !open.includes(surface)
+        (surface) => !dropped.includes(surface) && !open.includes(surface)
       );
       const named =
         dependents.length === 0
-          ? '"ideas" and "ideas-full"'
-          : [...IDEAS_SURFACES, ...dependents].map((surface) => `"${surface}"`).join(", ");
+          ? dropped.map((surface) => `"${surface}"`).join(" and ")
+          : [...dropped, ...dependents].map((surface) => `"${surface}"`).join(", ");
       warnings.push(
-        `idea labels are stale (${reasons.join(", or ")}) — ${named} dropped from this build; ` +
+        `idea labels are stale (${allReasons.join(", or ")}) — ${named} dropped from this build; ` +
           "run npm run eval:pal:ideas"
       );
     }
@@ -175,17 +181,44 @@ export function checkProductionDoor(
 }
 
 /**
+ * `surfaces` with `drop` removed, then every surface whose SURFACE_REQUIRES
+ * is no longer fully open dropped too, repeated to a fixed point (fix round
+ * 1: closing the ideas surfaces must not leave home's quick row, orient's
+ * step 4, or intake-through-orient open with a closed requirement).
+ */
+function closeSurfaces(
+  surfaces: readonly GuideSurface[],
+  drop: readonly GuideSurface[]
+): GuideSurface[] {
+  let open = surfaces.filter((surface) => !drop.includes(surface));
+  for (let changed = true; changed; ) {
+    const stillOpen = new Set<GuideSurface>(open);
+    const kept = open.filter((surface) =>
+      (SURFACE_REQUIRES[surface] ?? []).every((required) => stillOpen.has(required))
+    );
+    changed = kept.length !== open.length;
+    open = kept;
+  }
+  return open;
+}
+
+/**
  * Why the idea labels cannot vouch for this build (empty = fresh): no file,
  * a different PROMPT_VERSION or model (A-100/A-117), or a bank line whose
  * text drifted, has no label, or is not SAFE at every band (A-91). The unit
  * gate (tests/unit/pal/guide-ideas-labels.test.ts) also fails on the last
  * three; the guard repeats them so a non-SAFE label can never reach
  * production through a skipped or bypassed gate.
+ *
+ * `ideas` (PR-4 Task C, default GUIDE_IDEAS — every idea) lets the caller
+ * check just the seed lines or just the whole bank, so checkProductionDoor
+ * can scope which ideas surface a stale label actually closes.
  */
 export function ideaLabelStaleness(
   labels: IdeaLabelsFile | null,
   promptVersion: string,
-  modelId: string
+  modelId: string,
+  ideas: readonly GuideIdea[] = GUIDE_IDEAS
 ): string[] {
   if (!labels || typeof labels !== "object") return [`no readable ${IDEA_LABELS_PATH}`];
 
@@ -199,7 +232,7 @@ export function ideaLabelStaleness(
   }
 
   const ideaReasons: string[] = [];
-  for (const idea of GUIDE_IDEAS) {
+  for (const idea of ideas) {
     const entry = labels.labels?.[idea.id];
     if (!entry) {
       ideaReasons.push(`idea "${idea.id}" has no label`);
