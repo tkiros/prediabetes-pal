@@ -134,27 +134,102 @@ object ownership during this change.
 
 ## Migration sequence
 
-The current source journal ends at `0018_accounts-expires-at-integer.sql`
-(19 journal entries). Migrations `0014` through `0018` are additive.
-Migration `0017` adds only bounded operational attempt/lease metadata to
-`push_subscriptions`; existing rows receive `nudge_attempt_count = 0` and
-require no data backfill.
+The current source journal ends at `0019_profile-orientation.sql`
+(20 journal entries; applied to production 2026-09-17). Migrations `0014`
+through `0019` are additive. Migration `0017` adds only bounded operational
+attempt/lease metadata to `push_subscriptions`; existing rows receive
+`nudge_attempt_count = 0` and require no data backfill. Migration `0019` adds
+one nullable `profiles.orientation jsonb` column (no backfill).
 
 ⚠️ When this head advances, update this line. It read `0017` for the whole of
 the 2026-08-10 outage and rebuild, which is exactly when an operator would
 have trusted it.
 
 1. Take/verify a provider backup and record its timestamp.
-2. Export both URLs only in the operator shell. Confirm they target the same
-   host/database and different usernames without printing passwords.
-3. Run `npm run db:governance:check`. A pending migration makes
+2. Put both URLs in a private (`chmod 600`) env file, each value in double
+   quotes, and load it with `node --env-file` (see the traps below — never
+   `source` it). `DATABASE_MIGRATION_URL` uses the **direct** owner host (no
+   `-pooler`). Confirm both target the same database and different usernames
+   without printing passwords.
+3. Run the governance check. A pending migration makes
    `migrationJournalComplete` false; every other field must already be true.
-4. Run `npm run db:migrate:production`. The command refuses missing credentials
-   or the same username for runtime and migration roles.
-5. Run `npm run db:governance:check` again. Every boolean must be true and the
-   expected/recorded migration counts must match.
+4. Run the migration. It refuses missing credentials or the same username for
+   runtime and migration roles.
+5. Run the governance check again. Every boolean must be true and the
+   expected/recorded migration counts must match. **This is the only reliable
+   success signal** — see the drizzle-kit trap below.
 6. Deploy the application with only the restricted `DATABASE_URL`, then verify
    `/api/health` and one owner-scoped read/write/delete journey.
+
+Steps 3–5 from the operator shell (`FILE` is the private env file):
+
+```bash
+export NODE_OPTIONS=--network-family-autoselection-attempt-timeout=5000
+node --env-file=FILE scripts/check-db-governance.mjs
+PAL_DB_ENV=production node --env-file=FILE node_modules/drizzle-kit/bin.cjs migrate
+node --env-file=FILE scripts/check-db-governance.mjs
+rm FILE
+```
+
+### Operator traps (learned 2026-09-17, migration 0019)
+
+- **Connections time out from a slow link.** Node 24 gives each resolved
+  address 250 ms before trying the next. When the link to Neon is slower (and
+  IPv6 has no route), every connect fails with `AggregateError` / `ETIMEDOUT`
+  and an empty message, although `bash -c '</dev/tcp/<host>/5432'` connects.
+  Set `NODE_OPTIONS=--network-family-autoselection-attempt-timeout=5000` for
+  every database command, or call
+  `net.setDefaultAutoSelectFamilyAttemptTimeout(5000)` in a script.
+- **`drizzle-kit migrate` (0.31.x) never prints its error.** The spinner shows
+  "applying migrations..." and the process exits 1 with no message. Treat any
+  non-zero exit as a failure. Retrying is safe: pending migrations commit in one
+  transaction, so a failed run commits nothing. To see the real error, connect
+  with a small `pg` script that redacts `user:pass@` before printing anything.
+- **Never print a raw `pg` error.** A value that has lost its `postgresql:`
+  scheme (starts with `//`) is parsed as a Unix-socket path, and the resulting
+  `EINVAL` message contains the whole URL, password included.
+- **Never `source` or `.` an env file that holds a URL.** An unquoted `&` in
+  `?sslmode=require&channel_binding=require` turns each line into a background
+  job; bash then prints `[1] Done DATABASE_URL=…` with the full value, and the
+  variables end up unset anyway. Use `node --env-file`. This leaked a password
+  on 2026-08-10 and again on 2026-09-17.
+- **Never `cat` a credential file.** Check its shape only: key names, scheme,
+  username, host, password length.
+- **Pooled vs direct.** The runtime `DATABASE_URL` uses the `-pooler` host.
+  Migrations, backups (`DB_BACKUP_URL`) and the governance check's migration
+  URL use the direct host.
+
+## Rotating a password
+
+Rotate immediately if a password is ever printed to a terminal, log or
+transcript.
+
+**Runtime role (`prediabetespal_app`)** — created in SQL, so SQL can rotate it.
+Order chosen to keep the gap to seconds:
+
+1. Generate a password (`openssl rand -hex 24`) and build the new **pooled**
+   URL in a private file.
+2. `vercel env update DATABASE_URL production --sensitive --yes < FILE`
+   (stdin keeps the value out of the process list).
+3. `vercel redeploy <current production deployment URL> --target production`
+   — not `vercel --prod`, which ships the local checkout.
+4. Once the redeploy is Ready, as `neondb_owner`:
+   `ALTER ROLE prediabetespal_app WITH PASSWORD '<generated>';`
+5. Verify: the new URL logs in, the old one is rejected (`28P01`), and
+   `/api/health` reports `db:"ok"` several times over 30 s (the pool's idle
+   timeout is 10 s, so this probes fresh connections). Delete the file.
+
+**Owner role (`neondb_owner`)** — console-managed. Reset its password in the
+**Neon console** (the role's "Reset password" action), not with SQL — Neon
+manages this role and its role sync can revert an SQL `ALTER ROLE`. Then, in
+the same sitting:
+
+1. Update the GitHub secret `DB_BACKUP_URL` with the new **direct** owner URL,
+   or the nightly `db-backup.yml` fails.
+2. Run `db-backup.yml` manually (workflow_dispatch) and confirm it succeeds.
+3. The Vercel Neon integration's `NEON_*` variables and any local `.env.local`
+   `NEON_*` lines still hold the old password. No tracked code reads them;
+   refresh or remove them.
 
 ## Connection budget
 
