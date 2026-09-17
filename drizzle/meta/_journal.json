@@ -134,6 +134,13 @@
       "when": 1784883162385,
       "tag": "0018_accounts-expires-at-integer",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789458851856,
+      "tag": "0019_profile-orientation",
+      "breakpoints": true
     }
   ]
 }
