@@ -148,6 +148,12 @@ export function GuideIdeas() {
     router.push("/check?stay=1");
   }
 
+  const heading = (
+    <h2 className="ideas-title" id="ideas-title">
+      {view ? DAYPART_HEADING[view.daypart] : "Ideas for today"}
+    </h2>
+  );
+
   return (
     <section
       className="ideas-block"
@@ -156,9 +162,33 @@ export function GuideIdeas() {
       data-expanded={expanded || undefined}
       data-full={full || undefined}
     >
-      <h2 className="ideas-title" id="ideas-title">
-        {view ? DAYPART_HEADING[view.daypart] : "Ideas for today"}
-      </h2>
+      {/* Review fix round 1 (F1): the toggle moved into the heading row as a
+          real 44px button — DESIGN.md §5 forbids faking a tap target with an
+          invisible hit area, which the first cut of this button did and which
+          overlapped the last idea row. The row wrapper renders only under
+          `full`, so the `ideas`-only render keeps its bare `<h2>`, byte for
+          byte — no markup change, not only no layout change. */}
+      {full ? (
+        <div className="ideas-heading-row">
+          {heading}
+          {/* Task 4.4 "See all": once there is a real list to expand — a
+              quiet text button, not a second accent-filled action
+              (DESIGN.md §8 stays the check hero's alone). */}
+          {view ? (
+            <button
+              type="button"
+              className="ideas-see-all"
+              aria-expanded={expanded}
+              aria-controls="ideas-list"
+              onClick={() => setExpanded((current) => !current)}
+            >
+              {expanded ? "Show fewer" : "See all"}
+            </button>
+          ) : null}
+        </div>
+      ) : (
+        heading
+      )}
       <p className="ideas-sub">
         Meal ideas that sit within Prediabetes Pal&apos;s rules. Tap one to send it to the check.
       </p>
@@ -179,20 +209,6 @@ export function GuideIdeas() {
           ))}
         </ul>
       )}
-      {/* Task 4.4 "See all": ideas-full only, and only once there is a real
-          list to expand — a quiet text button, not a second accent-filled
-          action (DESIGN.md §8 stays the check hero's alone). */}
-      {full && view ? (
-        <button
-          type="button"
-          className="ideas-see-all"
-          aria-expanded={expanded}
-          aria-controls="ideas-list"
-          onClick={() => setExpanded((current) => !current)}
-        >
-          {expanded ? "Show fewer" : "See all"}
-        </button>
-      ) : null}
     </section>
   );
 }
