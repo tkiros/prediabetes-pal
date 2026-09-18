@@ -4624,6 +4624,7 @@ button.inline-link {
   color: var(--text-body);
 }
 .ideas-list {
+  /* The onboarding ask screens (Screens A/B) reuse this class on a role="group" div, so an unscoped .ideas-list rule restyles the tour too. */
   list-style: none; /* §12: carries role="list" in the markup */
   margin: 0;
   padding: 0;
