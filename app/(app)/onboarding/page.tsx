@@ -27,6 +27,8 @@ import { IconAlert, IconCheck, IconPause } from "../../../components/icons";
 type Step =
   | "welcome"
   | "segment"
+  | "ask_pains"
+  | "ask_win"
   | "attribution"
   | "a1c"
   | "expectations"
@@ -66,20 +68,44 @@ const ATTRIBUTION_CHIPS: ReadonlyArray<{ label: string; channel: Channel }> = [
 export const STEP_PROGRESS: Record<Step, number> = {
   welcome: 20,
   segment: 40,
+  ask_pains: 0,
+  ask_win: 0,
   attribution: 48,
   a1c: 58,
   expectations: 90,
   boundary: 0
 };
 
+// Goal-gradient bar for the eight-screen tour (PRD v1.1 §7.5). Never 0 on a
+// visible step; strictly increasing on every path.
+export const STEP_PROGRESS_ASK: Record<Step, number> = {
+  welcome: 14,
+  segment: 26,
+  ask_pains: 36,
+  ask_win: 44,
+  attribution: 52,
+  a1c: 62,
+  expectations: 90,
+  boundary: 0
+};
+
+export function progressFor(step: Step, askEnabled: boolean): number {
+  return askEnabled ? STEP_PROGRESS_ASK[step] : STEP_PROGRESS[step];
+}
+
+export function nextStepAfterSegment(askEnabled: boolean): Step {
+  return askEnabled ? "ask_pains" : "attribution";
+}
+
 // Visible "Step X of N" text beside the goal-gradient bar. N depends on the
 // user's actual path: returning guests with an on-device A1C skip the a1c
 // step, so their tour is 4 steps, not 5 with a hole in the numbering. Pure so
 // it is unit-testable in node without a component harness.
-export function stepCounter(step: Step, skipsA1c: boolean): string {
+export function stepCounter(step: Step, skipsA1c: boolean, askEnabled = false): string {
+  const ask: readonly Step[] = askEnabled ? ["ask_pains", "ask_win"] : [];
   const steps: readonly Step[] = skipsA1c
-    ? ["welcome", "segment", "attribution", "expectations"]
-    : ["welcome", "segment", "attribution", "a1c", "expectations"];
+    ? ["welcome", "segment", ...ask, "attribution", "expectations"]
+    : ["welcome", "segment", ...ask, "attribution", "a1c", "expectations"];
   const index = steps.indexOf(step);
   return index === -1 ? "" : `Step ${index + 1} of ${steps.length}`;
 }
@@ -93,8 +119,8 @@ export function nextStepAfterAttribution(hasProfile: boolean): Step {
 
 // The tour funnel (PRD §7.5). Only these screens are reported; the number
 // screen and the exit never are. Task 6.1 adds the two F-ASK screens.
-export type TrackedStep = Extract<Step, "segment" | "attribution" | "expectations">;
-const TRACKED_STEPS: ReadonlySet<Step> = new Set<Step>(["segment", "attribution", "expectations"]);
+export type TrackedStep = Extract<Step, "segment" | "ask_pains" | "ask_win" | "attribution" | "expectations">;
+const TRACKED_STEPS: ReadonlySet<Step> = new Set<Step>(["segment", "ask_pains", "ask_win", "attribution", "expectations"]);
 export function trackedStep(step: Step): TrackedStep | null {
   return TRACKED_STEPS.has(step) ? (step as TrackedStep) : null;
 }

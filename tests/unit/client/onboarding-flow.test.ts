@@ -43,7 +43,10 @@ vi.stubGlobal("window", { localStorage: storage });
 import OnboardingPage, {
   leaveTour,
   nextStepAfterAttribution,
+  nextStepAfterSegment,
+  progressFor,
   STEP_PROGRESS,
+  STEP_PROGRESS_ASK,
   stepCounter,
   trackedStep
 } from "../../../app/(app)/onboarding/page";
@@ -150,6 +153,35 @@ describe("trackedStep — the tour funnel never names a result", () => {
     expect(trackedStep("expectations")).toBe("expectations");
     expect(trackedStep("a1c")).toBeNull();
     expect(trackedStep("boundary")).toBeNull();
+  });
+});
+
+describe("F-ASK tour plumbing (PRD v1.1 §7.5)", () => {
+  it("counts 7 / 6 contiguous steps with the two ask screens, and 5 / 4 without", () => {
+    expect(stepCounter("ask_pains", false, true)).toBe("Step 3 of 7");
+    expect(stepCounter("ask_win", false, true)).toBe("Step 4 of 7");
+    expect(stepCounter("expectations", false, true)).toBe("Step 7 of 7");
+    expect(stepCounter("expectations", true, true)).toBe("Step 6 of 6");
+    expect(stepCounter("ask_pains", false, false)).toBe("");
+    expect(stepCounter("expectations", false, false)).toBe("Step 5 of 5");
+  });
+
+  it("routes segment → ask_pains only when the door is on", () => {
+    expect(nextStepAfterSegment(true)).toBe("ask_pains");
+    expect(nextStepAfterSegment(false)).toBe("attribution");
+  });
+
+  it("the ask bar never shows a visible step at zero and only moves forward", () => {
+    const full = ["welcome", "segment", "ask_pains", "ask_win", "attribution", "a1c", "expectations"] as const;
+    const skip = ["welcome", "segment", "ask_pains", "ask_win", "attribution", "expectations"] as const;
+    for (const path of [full, skip]) {
+      for (let i = 0; i < path.length; i++) {
+        expect(progressFor(path[i], true)).toBeGreaterThan(0);
+        expect(progressFor(path[i], true)).toBeLessThan(100);
+        if (i > 0) expect(STEP_PROGRESS_ASK[path[i]]).toBeGreaterThan(STEP_PROGRESS_ASK[path[i - 1]]);
+      }
+    }
+    expect(progressFor("segment", false)).toBe(STEP_PROGRESS.segment);
   });
 });
 
