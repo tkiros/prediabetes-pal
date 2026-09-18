@@ -44,16 +44,18 @@ import OnboardingPage, {
   leaveTour,
   nextStepAfterAttribution,
   nextStepAfterSegment,
+  painCounterText,
   progressFor,
   STEP_PROGRESS,
   STEP_PROGRESS_ASK,
   stepCounter,
+  togglePain,
   trackedStep
 } from "../../../app/(app)/onboarding/page";
 
 const STEPS = ["welcome", "segment", "attribution", "a1c", "expectations", "boundary"] as const;
 
-function renderStep(step: (typeof STEPS)[number]): string {
+function renderStep(step: (typeof STEPS)[number] | "ask_pains"): string {
   forced.step = step;
   try {
     return renderToStaticMarkup(createElement(OnboardingPage));
@@ -184,6 +186,53 @@ describe("F-ASK tour plumbing (PRD v1.1 §7.5)", () => {
       }
     }
     expect(progressFor("segment", false)).toBe(STEP_PROGRESS.segment);
+  });
+});
+
+describe("F-ASK Screen A (Task 6.2)", () => {
+  it("keeps tap order, unpicks on a second tap, refuses a fourth", () => {
+    expect(togglePain([], "food")).toEqual(["food"]);
+    expect(togglePain(["food"], "number")).toEqual(["food", "number"]);
+    expect(togglePain(["food", "number", "plan"], "number")).toEqual(["food", "plan"]);
+    expect(togglePain(["food", "number", "plan"], "worried")).toBeNull();
+  });
+
+  it("counts '{n} of 3' and swaps to the refusal line after a refused fourth tap", () => {
+    expect(painCounterText(0, false)).toBe("0 of 3");
+    expect(painCounterText(2, false)).toBe("2 of 3");
+    expect(painCounterText(3, false)).toBe("3 of 3");
+    expect(painCounterText(3, true)).toBe("Three picked — unpick one to change");
+  });
+
+  it("renders seven unpressed rows, the live counter, a Continue that is never disabled, and Skip", () => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "1");
+    const markup = renderStep("ask_pains");
+    expect(markup).toContain('<h1 class="page-title">What is hardest right now?</h1>');
+    expect(markup).toContain('<p class="page-copy">Pick up to three.</p>');
+    const rows = markup.match(/<button type="button" class="idea-row"[^>]*>/g) ?? [];
+    expect(rows).toHaveLength(7);
+    for (const row of rows) expect(row).toContain('aria-pressed="false"');
+    const labels = [
+      "Understanding what my number means",
+      "My effort is not showing in the number",
+      "I have no plan, I do not know where to start",
+      "My doctor did not give me much",
+      "I am worried about where this is going",
+      "Knowing what I can eat",
+      "Something else"
+    ];
+    let at = -1;
+    for (const label of labels) {
+      const next = markup.indexOf(label);
+      expect(next, label).toBeGreaterThan(at);
+      at = next;
+    }
+    expect(markup).toMatch(/<p[^>]*aria-live="polite"[^>]*>0 of 3<\/p>/);
+    const cont = markup.match(/<button[^>]*class="primary-button"[^>]*>Continue<\/button>/)?.[0] ?? "";
+    expect(cont).not.toBe("");
+    expect(cont).not.toContain("disabled");
+    expect(markup).toContain(">Skip</button>");
+    expect(markup).not.toContain("ideas-block");
   });
 });
 

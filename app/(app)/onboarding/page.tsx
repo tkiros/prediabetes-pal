@@ -20,6 +20,7 @@ import {
   storedUtmChannel,
   type Channel
 } from "../../../lib/client/attribution";
+import { PAIN_KEYS, type PainKey } from "../../../lib/client/ask-store";
 import { orientationStore } from "../../../lib/client/orientation-store";
 import { profileStore } from "../../../lib/client/profile-store";
 import { IconAlert, IconCheck, IconPause } from "../../../components/icons";
@@ -140,11 +141,35 @@ export function leaveTour(push: (href: string) => void): void {
   }
 }
 
+// Screen A (F-ASK, Task 6.2). The options are sentences in the reader's own
+// words, one per PAIN_KEYS entry in the same order.
+const PAIN_LABELS: Record<PainKey, string> = {
+  number: "Understanding what my number means",
+  effort: "My effort is not showing in the number",
+  plan: "I have no plan, I do not know where to start",
+  clinician: "My doctor did not give me much",
+  worried: "I am worried about where this is going",
+  food: "Knowing what I can eat",
+  other: "Something else"
+};
+
+/** Tap order is the signal: append on pick, remove on unpick, null when a fourth pick is refused. */
+export function togglePain(pains: readonly PainKey[], key: PainKey): PainKey[] | null {
+  if (pains.includes(key)) return pains.filter((pain) => pain !== key);
+  return pains.length >= 3 ? null : [...pains, key];
+}
+
+export function painCounterText(count: number, refused: boolean): string {
+  return refused ? "Three picked — unpick one to change" : `${count} of 3`;
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
   const orientOn = guideDoorEnabled("orient");
   const askEnabled = guideDoorEnabled("intake");
   const [step, setStep] = useState<Step>("welcome");
+  const [pains, setPains] = useState<PainKey[]>([]);
+  const [painRefused, setPainRefused] = useState(false);
   const [a1cText, setA1cText] = useState("");
   const [a1cError, setA1cError] = useState<string | null>(null);
   const [a1cValue, setA1cValue] = useState<number | null>(null);
@@ -178,6 +203,20 @@ export default function OnboardingPage() {
       }
     }
     setStep(nextStepAfterSegment(askEnabled));
+  }
+
+  function pickPain(key: PainKey) {
+    const next = togglePain(pains, key);
+    setPainRefused(next === null);
+    if (next) setPains(next);
+  }
+
+  // Continue with no picks is Skip (A-58); nothing is stored or tracked here —
+  // Screen B writes pal.ask.v1 and fires the one event for both screens.
+  function advanceFromPains(skip: boolean) {
+    if (skip) setPains([]);
+    setPainRefused(false);
+    setStep("ask_win");
   }
 
   function advanceFromAttribution(choice?: Channel) {
@@ -329,6 +368,41 @@ export default function OnboardingPage() {
                 type="button"
                 className="inline-link onboarding-skip"
                 onClick={() => advanceFromSegment()}
+              >
+                Skip
+              </button>
+            </>
+          ) : null}
+
+          {step === "ask_pains" ? (
+            <>
+              <h1 className="page-title">What is hardest right now?</h1>
+              <p className="page-copy">Pick up to three.</p>
+              <div className="ideas-list" role="group" aria-label="What is hardest right now?">
+                {PAIN_KEYS.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className="idea-row"
+                    aria-pressed={pains.includes(key)}
+                    onClick={() => pickPain(key)}
+                  >
+                    {PAIN_LABELS[key]}
+                  </button>
+                ))}
+              </div>
+              <p aria-live="polite">{painCounterText(pains.length, painRefused)}</p>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => advanceFromPains(pains.length === 0)}
+              >
+                Continue
+              </button>
+              <button
+                type="button"
+                className="inline-link onboarding-skip"
+                onClick={() => advanceFromPains(true)}
               >
                 Skip
               </button>

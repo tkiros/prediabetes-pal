@@ -4658,6 +4658,13 @@ button.inline-link {
   transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
 }
 .idea-row:hover { border-color: var(--accent); }
+/* Screen A's picked row (DESIGN.md §10): a fill change only, same as
+   .selectable-chip[aria-pressed="true"]. Home's rows never carry aria-pressed. */
+.idea-row[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
 .idea-row:active { transform: translateY(1px); }
 .idea-row--skeleton {
   border-color: transparent;
