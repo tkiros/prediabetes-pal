@@ -112,7 +112,7 @@ claim.
 - OpenAI: submitted meal and A1C for meal responses with `store: false`; Pantry
   photos and confirmed text for Pantry extraction; meal photo-assist remains
   disabled in the proposed candidate.
-- Hosting/database: Vercel application hosting and Railway-hosted Postgres.
+- Hosting/database: Vercel application hosting and Neon-hosted Postgres (migrated from Railway 2026-08-10; see docs/runbooks/incident-2026-08-10-database-outage.md).
 - Identity/email: Auth.js email flow and Resend.
 - Commerce: Stripe and Google Play.
 - Operations: Sentry with scrubbing, Umami coarse analytics, browser/push

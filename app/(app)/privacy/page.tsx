@@ -117,7 +117,7 @@ export default function PrivacyPage() {
           </li>
           <li>OpenRouter as the API gateway routing those model calls;</li>
           <li>Vercel for application hosting and delivery;</li>
-          <li>Railway-hosted Postgres for encrypted account data;</li>
+          <li>Neon-hosted Postgres for encrypted account data;</li>
           <li>Resend for sign-in, reminder, and service email;</li>
           <li>Google Play and Stripe for purchases and subscription status;</li>
           <li>Sentry for scrubbed error reporting;</li>
