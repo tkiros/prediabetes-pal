@@ -20,7 +20,15 @@ import {
   storedUtmChannel,
   type Channel
 } from "../../../lib/client/attribution";
-import { PAIN_KEYS, type PainKey } from "../../../lib/client/ask-store";
+import { askResponse } from "../../../lib/client/ask-response";
+import {
+  askStore,
+  PAIN_KEYS,
+  WIN_KEYS,
+  type AskState,
+  type PainKey,
+  type WinKey
+} from "../../../lib/client/ask-store";
 import { orientationStore } from "../../../lib/client/orientation-store";
 import { profileStore } from "../../../lib/client/profile-store";
 import { IconAlert, IconCheck, IconPause } from "../../../components/icons";
@@ -163,6 +171,34 @@ export function painCounterText(count: number, refused: boolean): string {
   return refused ? "Three picked — unpick one to change" : `${count} of 3`;
 }
 
+// Screen B (F-ASK, Task 6.3): one label per WIN_KEYS entry, same order.
+export const WIN_LABELS: Record<WinKey, string> = {
+  explanation: "A clear explanation",
+  number_watch: "A number I can watch",
+  steps: "A plan of steps",
+  food_enjoy: "Food I can enjoy without worry",
+  peace: "Peace of mind",
+  trust: "Numbers I can trust",
+  unsure: "Not sure yet"
+};
+
+/**
+ * Leaving Screen B (R-36): the one intake_ask event's props, and what to write
+ * to pal.ask.v1 — nothing when both screens were skipped, so the key stays absent.
+ */
+export function askExit(
+  pains: readonly PainKey[],
+  win: WinKey | null
+): {
+  props: { pain_1: PainKey | "none"; pain_2: PainKey | "none"; pain_3: PainKey | "none"; win: WinKey | "skipped" };
+  write: AskState | null;
+} {
+  return {
+    props: { pain_1: pains[0] ?? "none", pain_2: pains[1] ?? "none", pain_3: pains[2] ?? "none", win: win ?? "skipped" },
+    write: pains.length > 0 || win !== null ? { pains: [...pains], win } : null
+  };
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
   const orientOn = guideDoorEnabled("orient");
@@ -170,6 +206,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState<Step>("welcome");
   const [pains, setPains] = useState<PainKey[]>([]);
   const [painRefused, setPainRefused] = useState(false);
+  const [win, setWin] = useState<WinKey | null>(null);
   const [a1cText, setA1cText] = useState("");
   const [a1cError, setA1cError] = useState<string | null>(null);
   const [a1cValue, setA1cValue] = useState<number | null>(null);
@@ -217,6 +254,21 @@ export default function OnboardingPage() {
     if (skip) setPains([]);
     setPainRefused(false);
     setStep("ask_win");
+  }
+
+  // Single-select: tapping the picked row clears it. Continue with no pick is
+  // Skip; either way the one event fires and pal.ask.v1 is written (or not).
+  function pickWin(key: WinKey) {
+    setWin(win === key ? null : key);
+  }
+
+  function advanceFromWin(skip: boolean) {
+    const chosen = skip ? null : win;
+    if (skip) setWin(null);
+    const { props, write } = askExit(pains, chosen);
+    track({ name: "intake_ask", props });
+    if (write) askStore.set(write);
+    setStep("attribution");
   }
 
   function advanceFromAttribution(choice?: Channel) {
@@ -391,7 +443,7 @@ export default function OnboardingPage() {
                   </button>
                 ))}
               </div>
-              <p aria-live="polite">{painCounterText(pains.length, painRefused)}</p>
+              <p className="field-hint" aria-live="polite">{painCounterText(pains.length, painRefused)}</p>
               <button
                 type="button"
                 className="primary-button"
@@ -403,6 +455,44 @@ export default function OnboardingPage() {
                 type="button"
                 className="inline-link onboarding-skip"
                 onClick={() => advanceFromPains(true)}
+              >
+                Skip
+              </button>
+            </>
+          ) : null}
+
+          {step === "ask_win" ? (
+            <>
+              <h1 className="page-title">What would count as a win for you?</h1>
+              <p className="page-copy">Pick one.</p>
+              <div className="ideas-list" role="group" aria-label="What would count as a win for you?">
+                {WIN_KEYS.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className="idea-row"
+                    aria-pressed={win === key}
+                    onClick={() => pickWin(key)}
+                  >
+                    {WIN_LABELS[key]}
+                  </button>
+                ))}
+              </div>
+              {/* Always rendered, empty until a pick: an empty-then-filled live region is what announces the line. */}
+              <p className="page-copy ask-response" aria-live="polite">
+                {win === null ? "" : askResponse(win)}
+              </p>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => advanceFromWin(win === null)}
+              >
+                Continue
+              </button>
+              <button
+                type="button"
+                className="inline-link onboarding-skip"
+                onClick={() => advanceFromWin(true)}
               >
                 Skip
               </button>
@@ -524,6 +614,11 @@ export default function OnboardingPage() {
                 </li>
                 <li>It is information to decide with, not medical advice.</li>
               </ul>
+              {askEnabled ? (
+                <p className="page-copy">
+                  Ideas come first. The check is there when you are unsure.
+                </p>
+              ) : null}
               {orientOn ? (
                 <p className="page-copy">
                   Your first week starts on Home: seven small steps, one a day.

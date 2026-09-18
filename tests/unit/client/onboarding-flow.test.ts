@@ -41,6 +41,7 @@ vi.stubGlobal("localStorage", storage);
 vi.stubGlobal("window", { localStorage: storage });
 
 import OnboardingPage, {
+  askExit,
   leaveTour,
   nextStepAfterAttribution,
   nextStepAfterSegment,
@@ -50,12 +51,13 @@ import OnboardingPage, {
   STEP_PROGRESS_ASK,
   stepCounter,
   togglePain,
-  trackedStep
+  trackedStep,
+  WIN_LABELS
 } from "../../../app/(app)/onboarding/page";
 
 const STEPS = ["welcome", "segment", "attribution", "a1c", "expectations", "boundary"] as const;
 
-function renderStep(step: (typeof STEPS)[number] | "ask_pains"): string {
+function renderStep(step: (typeof STEPS)[number] | "ask_pains" | "ask_win"): string {
   forced.step = step;
   try {
     return renderToStaticMarkup(createElement(OnboardingPage));
@@ -233,6 +235,67 @@ describe("F-ASK Screen A (Task 6.2)", () => {
     expect(cont).not.toContain("disabled");
     expect(markup).toContain(">Skip</button>");
     expect(markup).not.toContain("ideas-block");
+  });
+});
+
+describe("F-ASK Screen B (Task 6.3 / 6.4)", () => {
+  it("renders seven unpressed rows in WIN_KEYS order, an empty live response line, a Continue that is never disabled, and Skip", () => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "1");
+    const markup = renderStep("ask_win");
+    expect(markup).toContain('<h1 class="page-title">What would count as a win for you?</h1>');
+    expect(markup).toContain('<p class="page-copy">Pick one.</p>');
+    expect(markup).toContain('role="group" aria-label="What would count as a win for you?"');
+    const rows = markup.match(/<button type="button" class="idea-row"[^>]*>/g) ?? [];
+    expect(rows).toHaveLength(7);
+    for (const row of rows) expect(row).toContain('aria-pressed="false"');
+    const labels = [
+      "A clear explanation",
+      "A number I can watch",
+      "A plan of steps",
+      "Food I can enjoy without worry",
+      "Peace of mind",
+      "Numbers I can trust",
+      "Not sure yet"
+    ];
+    expect(Object.values(WIN_LABELS)).toEqual(labels);
+    let at = -1;
+    for (const label of labels) {
+      const next = markup.indexOf(`>${label}</button>`);
+      expect(next, label).toBeGreaterThan(at);
+      at = next;
+    }
+    expect(markup).toContain('<p class="page-copy ask-response" aria-live="polite"></p>');
+    const cont = markup.match(/<button[^>]*class="primary-button"[^>]*>Continue<\/button>/)?.[0] ?? "";
+    expect(cont).not.toBe("");
+    expect(cont).not.toContain("disabled");
+    expect(markup).toContain('<button type="button" class="inline-link onboarding-skip">Skip</button>');
+  });
+
+  it("askExit: skipping both screens writes nothing and reports none/skipped (R-36)", () => {
+    expect(askExit([], null)).toEqual({
+      props: { pain_1: "none", pain_2: "none", pain_3: "none", win: "skipped" },
+      write: null
+    });
+  });
+
+  it("askExit: two pains plus a win write and send in tap order; a win alone still writes", () => {
+    expect(askExit(["plan", "number"], "steps")).toEqual({
+      props: { pain_1: "plan", pain_2: "number", pain_3: "none", win: "steps" },
+      write: { pains: ["plan", "number"], win: "steps" }
+    });
+    expect(askExit([], "trust").write).toEqual({ pains: [], win: "trust" });
+    expect(askExit(["food"], null).write).toEqual({ pains: ["food"], win: null });
+  });
+
+  it("expectations: the ideas line sits between the bullets and the first-week line under intake, and only there", () => {
+    const IDEAS_LINE = "Ideas come first. The check is there when you are unsure.";
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "1");
+    const on = renderStep("expectations");
+    expect(on).toContain(`<p class="page-copy">${IDEAS_LINE}</p>`);
+    expect(on.indexOf("It is information to decide with")).toBeLessThan(on.indexOf(IDEAS_LINE));
+    expect(on.indexOf(IDEAS_LINE)).toBeLessThan(on.indexOf(FIRST_WEEK_LINE));
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "ideas,orient");
+    expect(renderStep("expectations")).not.toContain(IDEAS_LINE);
   });
 });
 

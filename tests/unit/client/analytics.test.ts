@@ -34,6 +34,7 @@ const ALLOWED_NAMES = [
   "orientation_step_done",
   "orientation_dismissed",
   "learn_opened",
+  "intake_ask",
   "photo_draft",
   "result_feedback_submitted",
   "clarification_requested",
@@ -75,6 +76,7 @@ function assertExhaustive(name: AnalyticsEvent["name"]): void {
     case "orientation_step_done":
     case "orientation_dismissed":
     case "learn_opened":
+    case "intake_ask":
     case "photo_draft":
     case "result_feedback_submitted":
     case "onboarding_started":
@@ -141,6 +143,7 @@ describe("AnalyticsEvent allowlist", () => {
       { name: "orientation_step_done", props: { step: "5" } },
       { name: "orientation_dismissed" },
       { name: "learn_opened", props: { page: "first-week", from: "step" } },
+      { name: "intake_ask", props: { pain_1: "number", pain_2: "none", pain_3: "none", win: "skipped" } },
       { name: "photo_draft", props: { items: 3, uncertain: 1 } },
       { name: "result_feedback_submitted", props: { helpful: true } },
       {
@@ -357,6 +360,15 @@ describe("orientation and Learn events (Task 3.6)", () => {
     const umami = { track: vi.fn() };
     track(event as never, { umami });
     expect(umami.track).toHaveBeenCalledWith(event.name, "props" in event ? event.props : undefined);
+  });
+});
+
+describe("intake_ask (Task 6.3)", () => {
+  it("forwards its closed-enum props unchanged", () => {
+    const umami = { track: vi.fn() };
+    const props = { pain_1: "effort", pain_2: "plan", pain_3: "none", win: "steps" } as const;
+    track({ name: "intake_ask", props }, { umami });
+    expect(umami.track).toHaveBeenCalledWith("intake_ask", props);
   });
 });
 

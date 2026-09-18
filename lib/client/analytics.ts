@@ -4,6 +4,7 @@ import type {
 } from "../pal/clarify";
 import type { Daypart } from "../coach/insights";
 import type { OrientationStepId } from "../coach/orientation";
+import type { PainKey, WinKey } from "./ask-store";
 import type { Channel } from "./attribution";
 import type {
   ClinicalRoute,
@@ -227,6 +228,12 @@ export type AnalyticsEvent =
         from: "home" | "result_footer" | "onboarding" | "step" | "journey";
       };
     }
+  // PRD v1.1 §7.5 F-ASK: the two intake screens, reported once as closed enums
+  // (up to three pain keys in tap order, one win key). Never free text.
+  | {
+      name: "intake_ask";
+      props: { pain_1: PainKey | "none"; pain_2: PainKey | "none"; pain_3: PainKey | "none"; win: WinKey | "skipped" };
+    }
   | { name: "photo_draft"; props: { items: number; uncertain: number } };
 
 // Runtime belt-over-type-belt guard: even if a caller bypasses the type
@@ -262,6 +269,7 @@ const ALLOWED_EVENT_NAMES: ReadonlySet<AnalyticsEvent["name"]> = new Set([
   "orientation_step_done",
   "orientation_dismissed",
   "learn_opened",
+  "intake_ask",
   "photo_draft",
   "result_feedback_submitted",
   "clarification_requested",

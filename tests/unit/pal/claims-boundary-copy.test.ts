@@ -321,6 +321,8 @@ const EXTRA_SOURCES = [
   "lib/pal/coach-outputs.ts",
   // PRD v1.1 §6 F-IDEAS: the idea bank is user-facing copy that lives in lib/.
   "lib/pal/guide-ideas.ts",
+  // PRD v1.1 §7.5 F-ASK: the response line beneath Screen B's pick.
+  "lib/client/ask-response.ts",
   "lib/pal/labels.ts",
   "lib/coach/insights.ts",
   "lib/coach/bai.ts",
