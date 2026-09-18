@@ -219,7 +219,7 @@ and used it. `impeccable` bans them; this file does not. The rule above is about
 ## 7. Icons
 
 `components/icons.tsx` is the entire vocabulary: Check, Alert, Pause (verdicts) · Keyboard, Mic, Camera (input) · Lock,
-Leaf, Heart, EyeOff (trust) · ArrowRight · Home, Person, CheckCircle, Bookmark, Compass (shell nav). Hand-written
+Leaf, Heart, EyeOff (trust) · ArrowRight, Book · Home, Person, CheckCircle, Bookmark, Compass (shell nav). Hand-written
 24-viewbox strokes, `stroke: currentColor`, sized by `--icon-sm`/`--icon`, always `aria-hidden`. **No icon libraries;**
 adding a glyph edits that file and this list.
 

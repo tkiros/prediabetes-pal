@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 
-import { track } from "../lib/client/analytics";
 import { dispatchIdeasExpand } from "../lib/client/ideas-expand";
-import { IconBookmark, IconCheckCircle, IconCompass, IconLeaf } from "./icons";
+import { IconBook, IconCheckCircle, IconCompass, IconLeaf } from "./icons";
+import { LearnLink } from "./learn-link";
 
 /**
  * Task 5.1: the quick-action row (review A-54, below the hero, outside the
@@ -15,9 +15,17 @@ import { IconBookmark, IconCheckCircle, IconCompass, IconLeaf } from "./icons";
  * Ideas is Task 4.4's See-all trigger, not a plain anchor to the block above:
  * its anchor link to the ideas heading keeps the scroll native (no scroll
  * code here), and the CustomEvent dispatch (R-2, `lib/client/ideas-expand.ts`) asks
- * <GuideIdeas> to expand in place. A client leaf — like LearnLink and
- * StepLink (ruling F-38) — so DashboardView stays a server tree; Learn's tap
- * reports `learn_opened` (Task 3.6).
+ * <GuideIdeas> to expand in place. Learn reuses `<LearnLink>` — the one place
+ * that reports the Learn-open analytics event (ruling F-38, Task 3.6) —
+ * rather than a second inline tracker.
+ *
+ * Fix round 1: Journey's glyph and Learn's glyph swapped from the task
+ * brief's original draft — `components/app-nav.tsx`, the five-slot tab bar
+ * rendered directly below this row, already binds the compass glyph to
+ * `/journey` (and its own bookmark glyph to a different destination
+ * entirely, unrelated to this row). Matching the tab bar's own pairing here,
+ * instead of giving one glyph two meanings a few pixels apart, is the point;
+ * DESIGN.md §7 lists the new book glyph for Learn.
  */
 export function HomeQuickRow() {
   return (
@@ -30,16 +38,12 @@ export function HomeQuickRow() {
         <IconCheckCircle size={22} />
         <span>Check</span>
       </Link>
-      <Link
-        href="/learn"
-        className="quick-action"
-        onClick={() => track({ name: "learn_opened", props: { page: "index", from: "home" } })}
-      >
-        <IconCompass size={22} />
+      <LearnLink href="/learn" from="home" className="quick-action">
+        <IconBook size={22} />
         <span>Learn</span>
-      </Link>
+      </LearnLink>
       <Link href="/journey" className="quick-action">
-        <IconBookmark size={22} />
+        <IconCompass size={22} />
         <span>Journey</span>
       </Link>
     </nav>

@@ -22,14 +22,20 @@ export function learnPage(href: string): LearnOpened["page"] {
 export function LearnLink({
   href,
   from,
+  className,
   children
 }: {
   href: string;
   from: LearnOpened["from"];
+  className?: string;
   children: ReactNode;
 }) {
   return (
-    <Link href={href} onClick={() => track({ name: "learn_opened", props: { page: learnPage(href), from } })}>
+    <Link
+      href={href}
+      className={className}
+      onClick={() => track({ name: "learn_opened", props: { page: learnPage(href), from } })}
+    >
       {children}
     </Link>
   );

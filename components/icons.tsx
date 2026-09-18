@@ -166,3 +166,13 @@ export function IconCompass(props: IconProps) {
     </svg>
   );
 }
+
+/** Learn — an open guide (PR-5 quick row, 2026-09-18). */
+export function IconBook(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M4 5.5C4 4.7 4.7 4 5.5 4H12v16H5.5c-.8 0-1.5-.7-1.5-1.5v-13z" />
+      <path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H12v16h6.5c.8 0 1.5-.7 1.5-1.5v-13z" />
+    </svg>
+  );
+}

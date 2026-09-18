@@ -36,9 +36,10 @@ describe("home-quick-row.tsx — four pinned actions, quiet, client (Task 5.1)",
 
   it("carries exactly four hrefs, in order: #ideas-title, /check, /learn, /journey", () => {
     // Scoped to the component body (past the doc comment) so a `href="..."`
-    // mentioned in prose above can never double-count.
+    // mentioned in prose above can never double-count. Learn renders through
+    // <LearnLink>, not a bare <Link> (fix round 1), so both tags count.
     const body = src.slice(src.indexOf("export function HomeQuickRow"));
-    const hrefs = [...body.matchAll(/<Link\s[^>]*\bhref="([^"]+)"/g)].map((m) => m[1]);
+    const hrefs = [...body.matchAll(/<(?:Link|LearnLink)\s[^>]*\bhref="([^"]+)"/g)].map((m) => m[1]);
     expect(hrefs).toEqual(["#ideas-title", "/check", "/learn", "/journey"]);
   });
 
@@ -51,11 +52,25 @@ describe("home-quick-row.tsx — four pinned actions, quiet, client (Task 5.1)",
     expect(src).toContain('aria-label="Quick actions"');
   });
 
-  it("uses the pinned icon per item — Leaf/Ideas, CheckCircle/Check, Compass/Learn, Bookmark/Journey", () => {
+  it("uses the pinned icon per item — Leaf/Ideas, CheckCircle/Check, Book/Learn, Compass/Journey (fix round 1)", () => {
     expect(src).toMatch(/IconLeaf[\s\S]*?Ideas/);
     expect(src).toMatch(/IconCheckCircle[\s\S]*?Check/);
-    expect(src).toMatch(/IconCompass[\s\S]*?Learn/);
-    expect(src).toMatch(/IconBookmark[\s\S]*?Journey/);
+    expect(src).toMatch(/IconBook[\s\S]*?Learn/);
+    expect(src).toMatch(/IconCompass[\s\S]*?Journey/);
+    // The reverse pairing (task brief's original draft) must not survive.
+    expect(src).not.toContain("IconBookmark");
+  });
+
+  it("the row's Journey icon matches the shell tab bar's own icon for /journey — one glyph, one meaning (fix round 1)", () => {
+    const navSrc = read("components/app-nav.tsx");
+    const navJourneyIcon = navSrc.match(/href:\s*"\/journey"[^}]*icon:\s*(Icon\w+)/)?.[1];
+    expect(navJourneyIcon).toBe("IconCompass");
+    expect(src).toMatch(/IconCompass[\s\S]*?Journey/);
+    // And the row must not reuse app-nav's /meals glyph (IconBookmark) for
+    // anything — that pairing belongs to a different destination entirely.
+    const navMealsIcon = navSrc.match(/href:\s*"\/meals"[^}]*icon:\s*(Icon\w+)/)?.[1];
+    expect(navMealsIcon).toBe("IconBookmark");
+    expect(src).not.toContain(navMealsIcon!);
   });
 
   it("the Ideas item is the See-all trigger — a native anchor plus the one CustomEvent dispatch, no scroll code", () => {
@@ -64,9 +79,23 @@ describe("home-quick-row.tsx — four pinned actions, quiet, client (Task 5.1)",
     expect(src).not.toMatch(/scrollIntoView|scrollTo/);
   });
 
-  it("only the Learn link reports learn_opened, with page: index, from: home (Task 3.6)", () => {
-    expect(src.match(/name:\s*"learn_opened"/g)).toHaveLength(1);
-    expect(src).toMatch(/name:\s*"learn_opened",\s*props:\s*\{\s*page:\s*"index",\s*from:\s*"home"\s*\}/);
+  it("Learn renders through <LearnLink from=\"home\"> — the one place that reports learn_opened (ruling F-38, fix round 1)", () => {
+    // No second inline tracker here — LearnLink (components/learn-link.tsx)
+    // already emits { page: learnPage(href), from } on its own onClick.
+    expect(src).not.toContain("learn_opened");
+    expect(src).not.toMatch(/from\s+["'].*\/analytics["']/);
+    expect(src).toMatch(/from\s+["'].*learn-link["']/);
+    expect(src).toMatch(/<LearnLink\s+href="\/learn"\s+from="home"\s+className="quick-action">/);
+  });
+
+  it('LearnLink accepts the optional className this row needs, and every existing call site is untouched', () => {
+    const learnLinkSrc = read("components/learn-link.tsx");
+    expect(learnLinkSrc).toMatch(/className\?:\s*string/);
+    for (const rel of ["app/(app)/journey/page.tsx", "components/dashboard-view.tsx"]) {
+      const callerSrc = read(rel);
+      expect(callerSrc).toMatch(/<LearnLink href=\{?[^>]*\bfrom="[a-z_]+"/);
+      expect(callerSrc).not.toMatch(/<LearnLink[^>]*className=/);
+    }
   });
 });
 
