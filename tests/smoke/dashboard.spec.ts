@@ -707,4 +707,143 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
     await expect(page.getByTestId("dash-check-cta")).toBeFocused();
     expect(await serverIdeasBlockSurvived(page)).toEqual({ sameNode: true, taggedBeforeHydration: true });
   });
+
+  // Task 5.4 — the Home layout PR-5 adds (quick row, /learn, 1280 order).
+  // Nested here rather than gated separately: `home` requires `ideas` and
+  // `ideas-full` (SURFACE_REQUIRES), so a standalone gate on `home` alone
+  // would only ever re-derive "ideas is on".
+  test.describe("Home layout (Task 5.4)", () => {
+    test.beforeAll(async () => {
+      test.skip(!(await doorSurfaceOn("home")), "home surface off in this build");
+    });
+
+    const quickRow = (page: Page) => page.locator('nav[aria-label="Quick actions"]');
+
+    // R-24(a): four links, and — since a class name alone would still pass if
+    // someone added an accent-filled modifier without renaming `.quick-action`
+    // (review A-74 rejected a third fill) — the actual computed background is
+    // checked against the page's one accent colour, not just class presence.
+    test("quick row has four links, none accent-filled (A-74)", async ({ page }) => {
+      await page.goto("/home?stay=1");
+      const links = quickRow(page).locator(".quick-action");
+      await expect(links).toHaveCount(4);
+
+      const accentRgb = await page.evaluate(() => {
+        const probe = document.createElement("div");
+        probe.style.background = "var(--accent)";
+        document.body.appendChild(probe);
+        const rgb = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        return rgb;
+      });
+
+      for (const link of await links.all()) {
+        const bg = await link.evaluate((el) => getComputedStyle(el).backgroundColor);
+        expect(bg).not.toBe(accentRgb);
+      }
+    });
+
+    // R-24(b): Learn is reachable from the row and the destination renders.
+    test("Learn is reachable from the quick row", async ({ page }) => {
+      await page.goto("/home?stay=1");
+      await quickRow(page).getByRole("link", { name: "Learn" }).click();
+      await expect(page).toHaveURL(/\/learn$/);
+      await expect(page.locator(".learn-grid")).toBeVisible();
+    });
+
+    // R-24(c) / R-26: Home is one column at every width — this pins the
+    // default door's DOM order by y at the ≥1024px shell, where the sidebar
+    // (not the tab bar) is the nav, and it still carries all five slots.
+    test("at 1280: single-column order is unchanged, sidebar keeps five links", async ({
+      page
+    }) => {
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await page.goto("/home?stay=1");
+
+      const ideasY = (await page.getByTestId("ideas-block").boundingBox())!.y;
+      const ctaY = (await page.getByTestId("dash-check-cta").boundingBox())!.y;
+      const quickRowY = (await quickRow(page).boundingBox())!.y;
+      const todayY = (await page.locator('section[aria-label="Today"]').boundingBox())!.y;
+
+      expect(ideasY).toBeLessThan(ctaY);
+      expect(ctaY).toBeLessThan(quickRowY);
+      expect(quickRowY).toBeLessThan(todayY);
+
+      await expect(page.locator(".app-sidebar .app-navlink")).toHaveCount(5);
+    });
+
+    // R-24(d): RV-3 holds on the home-surface build too.
+    test("main has no percent language on Home", async ({ page }) => {
+      await page.goto("/home?stay=1");
+      const text = await page.locator("main").innerText();
+      expect(text).not.toMatch(/%/);
+    });
+
+    // R-27: a second tap on Ideas, URL already ending in the same hash, must
+    // scroll again — Next's <Link> maintains scroll position rather than
+    // re-scrolling to an unchanged hash fragment (see
+    // node_modules/next/dist/docs/01-app/03-api-reference/02-components/link.md
+    // §scroll), so this is not native anchor behaviour to assume for free.
+    test("a second Ideas tap re-scrolls to the same hash (R-27)", async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 400 });
+      await page.goto("/home?stay=1");
+
+      const ideasLink = quickRow(page).getByRole("link", { name: "Ideas" });
+      const heading = page.locator("#ideas-title");
+
+      await ideasLink.click();
+      await expect(page).toHaveURL(/#ideas-title$/);
+
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await expect(heading).not.toBeInViewport();
+
+      await ideasLink.click();
+      await expect(heading).toBeInViewport();
+    });
+  });
+});
+
+// R-25: the negative case, deliberately OUTSIDE the ideas-gated describe
+// above so it also runs in the no-flag config (where `ideas` is off too) and
+// under `ideas,source` (where `ideas` is on but `home` is not named).
+test("Home has no quick row and /learn 404s with the home surface off", async ({ page }) => {
+  test.skip(await doorSurfaceOn("home"), "home surface on in this build");
+
+  await page.goto("/home?stay=1");
+  await expect(page.locator('nav[aria-label="Quick actions"]')).toHaveCount(0);
+
+  const response = await page.goto("/learn");
+  expect(response?.status()).toBe(404);
+});
+
+// R-28: /learn's own render quality behind the flag — same axe pattern as
+// "dashboard has no critical or serious a11y violations" above.
+test.describe("/learn (Task 5.2/5.4) with the home surface on", () => {
+  test.beforeAll(async () => {
+    test.skip(!(await doorSurfaceOn("home")), "home surface off in this build");
+  });
+
+  for (const width of [375, 1280]) {
+    test(`renders at ${width}px: tiles visible, no horizontal scroll, no critical/serious a11y violations`, async ({
+      page
+    }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto("/learn");
+      await expect(page.locator(".learn-grid")).toBeVisible();
+      await expect(page.locator(".learn-tile").first()).toBeVisible();
+
+      const overflowsX = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+      );
+      expect(overflowsX).toBe(false);
+
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+        .analyze();
+      const serious = results.violations
+        .filter((v) => v.impact === "critical" || v.impact === "serious")
+        .map((v) => `${width}px: ${v.id} (${v.impact}): ${v.nodes.length} node(s)`);
+      expect(serious).toEqual([]);
+    });
+  }
 });

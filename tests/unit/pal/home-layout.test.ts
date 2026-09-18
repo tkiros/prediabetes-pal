@@ -84,9 +84,17 @@ describe("home-quick-row.tsx — four pinned actions, quiet, client (Task 5.1)",
     expect(body).not.toContain(navMealsIcon!);
   });
 
-  it("the Ideas item's own onClick — not just an import — dispatches the See-all CustomEvent; no scroll code anywhere (fix round 2, M1)", () => {
-    expect(body).toMatch(/<Link href="#ideas-title"[^>]*\bonClick=\{dispatchIdeasExpand\}/);
-    expect(src).not.toMatch(/scrollIntoView|scrollTo/);
+  it("the Ideas item's own onClick calls handleIdeasClick, which dispatches the See-all CustomEvent and only re-scrolls when the hash already matches (ruling R-27, fix round 1 supersedes fix round 2's no-scroll pin)", () => {
+    expect(body).toMatch(/<Link href="#ideas-title"[^>]*\bonClick=\{handleIdeasClick\}/);
+    const handlerSrc = src.slice(
+      src.indexOf("function handleIdeasClick"),
+      src.indexOf("export function HomeQuickRow")
+    );
+    expect(handlerSrc).toContain("dispatchIdeasExpand();");
+    // The scroll call is gated on the hash already matching — a first tap
+    // (hash not yet set) is left to Next's own scroll-to-hash behaviour.
+    expect(handlerSrc).toMatch(/window\.location\.hash === "#ideas-title"/);
+    expect(handlerSrc).toMatch(/scrollIntoView/);
   });
 
   it("Learn renders through <LearnLink from=\"home\"> — the one place that reports learn_opened (ruling F-38, fix round 1)", () => {

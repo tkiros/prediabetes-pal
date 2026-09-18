@@ -13,11 +13,21 @@ import { LearnLink } from "./learn-link";
  * here (including on Check) breaks the one colour moment (review A-74).
  *
  * Ideas is Task 4.4's See-all trigger, not a plain anchor to the block above:
- * its anchor link to the ideas heading keeps the scroll native (no scroll
- * code here), and the CustomEvent dispatch (R-2, `lib/client/ideas-expand.ts`) asks
- * <GuideIdeas> to expand in place. Learn reuses `<LearnLink>` — the one place
- * that reports the Learn-open analytics event (ruling F-38, Task 3.6) —
- * rather than a second inline tracker.
+ * its anchor link to the ideas heading keeps the scroll native for a first
+ * tap (Next's <Link> scrolls a fresh hash into view on its own), and the
+ * CustomEvent dispatch (R-2, `lib/client/ideas-expand.ts`) asks <GuideIdeas>
+ * to expand in place. Learn reuses `<LearnLink>` — the one place that reports
+ * the Learn-open analytics event (ruling F-38, Task 3.6) — rather than a
+ * second inline tracker.
+ *
+ * Task 5.4, ruling R-27: a SECOND tap on Ideas, with the URL already ending
+ * in `#ideas-title`, must scroll again — someone scrolled away and wants
+ * back. Next's <Link> maintains scroll position when the URL does not change
+ * (see the `scroll` prop docs), so a same-hash tap is a no-op for the router.
+ * `handleIdeasClick` covers exactly that gap: it reads the CURRENT hash
+ * (still the pre-navigation value inside onClick) and only when it already
+ * matches does it scroll manually — the first tap's hash change is left to
+ * Next's own scroll-to-hash behaviour, untouched.
  *
  * Fix round 1: Journey's glyph and Learn's glyph swapped from the task
  * brief's original draft — `components/app-nav.tsx`, the five-slot tab bar
@@ -27,10 +37,17 @@ import { LearnLink } from "./learn-link";
  * instead of giving one glyph two meanings a few pixels apart, is the point;
  * DESIGN.md §7 lists the new book glyph for Learn.
  */
+function handleIdeasClick() {
+  dispatchIdeasExpand();
+  if (window.location.hash === "#ideas-title") {
+    document.getElementById("ideas-title")?.scrollIntoView();
+  }
+}
+
 export function HomeQuickRow() {
   return (
     <nav className="quick-row" aria-label="Quick actions">
-      <Link href="#ideas-title" className="quick-action" onClick={dispatchIdeasExpand}>
+      <Link href="#ideas-title" className="quick-action" onClick={handleIdeasClick}>
         <IconLeaf size={22} />
         <span>Ideas</span>
       </Link>
