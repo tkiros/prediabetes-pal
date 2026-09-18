@@ -42,23 +42,26 @@ describe("doorFor (PRD v1.1 §7.5)", () => {
 
 describe("doorLayout — the four orders as amended by R-19 and R-20", () => {
   it.each([
-    // door, orientationDay, hasStep → order, rows, heading
-    ["ideas", 2, true, "ideas hero quickRow step", 3, undefined],
-    ["ideas", null, false, "ideas hero quickRow step", 3, undefined],
-    ["numbers", 1, true, "step ideas hero quickRow", 2, "Ideas for later"],
-    ["numbers", 2, false, "ideas hero quickRow step", 3, undefined],
-    ["numbers", null, false, "ideas hero quickRow step", 3, undefined],
-    ["plan", 1, true, "step ideas hero quickRow", 2, undefined],
-    ["plan", null, false, "ideas hero quickRow step", 3, undefined],
-    ["worried", 1, true, "line ideas hero quickRow step", 2, undefined],
-    ["worried", 3, false, "line ideas hero quickRow step", 2, undefined],
+    // door, orientationDay, hasStep → order, rows, heading, effective door
+    // (what data-door carries: a numbers/plan pick with no step falls back
+    // to "ideas", so the owner's one-row rule below 375px never reaches it)
+    ["ideas", 2, true, "ideas hero quickRow step", 3, undefined, "ideas"],
+    ["ideas", null, false, "ideas hero quickRow step", 3, undefined, "ideas"],
+    ["numbers", 1, true, "step ideas hero quickRow", 2, "Ideas for later", "numbers"],
+    ["numbers", 2, false, "ideas hero quickRow step", 3, undefined, "ideas"],
+    ["numbers", null, false, "ideas hero quickRow step", 3, undefined, "ideas"],
+    ["plan", 1, true, "step ideas hero quickRow", 2, undefined, "plan"],
+    ["plan", null, false, "ideas hero quickRow step", 3, undefined, "ideas"],
+    ["worried", 1, true, "line ideas hero quickRow step", 2, undefined, "worried"],
+    ["worried", 3, false, "line ideas hero quickRow step", 2, undefined, "worried"],
     // A-88: after day 3 the line drops below the step line, and R-20 gives
     // the third row back. R-19: no week running counts as past day 3.
-    ["worried", 4, true, "ideas hero quickRow step line", 3, undefined],
-    ["worried", null, false, "ideas hero quickRow step line", 3, undefined]
-  ] as const)("%s, day %s, step %s → %s (%d rows)", async (door, day, hasStep, order, count, heading) => {
+    ["worried", 4, true, "ideas hero quickRow step line", 3, undefined, "worried"],
+    ["worried", null, false, "ideas hero quickRow step line", 3, undefined, "worried"]
+  ] as const)("%s, day %s, step %s → %s (%d rows)", async (door, day, hasStep, order, count, heading, applied) => {
     const { doorLayout } = await import("../../../components/home-door");
     const layout = doorLayout(door, day, hasStep);
+    expect(layout.door).toBe(applied);
     expect(layout.order.join(" ")).toBe(order);
     expect(layout.count).toBe(count);
     expect(layout.heading).toBe(heading);
@@ -157,6 +160,26 @@ describe("no remount: GuideIdeas takes count/heading at render, HomeDoor keeps i
     expect(doorSrc).toContain('cloneElement(ideas, { key: "ideas", count, heading })');
     // One region, one keyed array — never a wrapper per door.
     expect(doorSrc).toContain("{order.map((key) => slots[key])}");
+  });
+
+  it("data-door carries the effective door (after the null-step fallback), not the raw pick", () => {
+    expect(doorSrc).toContain('data-door={layout.door}');
+    expect(doorSrc).not.toContain("data-door={door}");
+  });
+
+  it("owner ruling: below 375px the numbers/plan doors show one idea row, collapsed only", () => {
+    const css = read("app/globals.css");
+    const media = css.slice(css.indexOf("@media (max-width: 374px) {"));
+    const block = media.slice(0, media.indexOf("\n}\n"));
+    expect(block).toMatch(
+      /\.home-door:is\(\[data-door="numbers"\], \[data-door="plan"\]\)\s+\.ideas-block:not\(\[data-expanded="true"\]\)\s+\.ideas-list\s+> li:nth-child\(n \+ 2\) \{\s*display: none;/
+    );
+    // worried is out of the ruling's scope: no one-row rule reaches it.
+    expect(block).not.toContain('data-door="worried"');
+    // The everyone-rule is untouched.
+    expect(block).toMatch(
+      /\n {2}\.ideas-block:not\(\[data-expanded="true"\]\) \.ideas-list > li:nth-child\(n \+ 3\) \{\s*display: none;/
+    );
   });
 
   it("no CSS transition on the reorder", () => {

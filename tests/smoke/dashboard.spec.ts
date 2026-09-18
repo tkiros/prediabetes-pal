@@ -428,31 +428,57 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
   //   • numbers and plan on day 1, where step 1 (a /guides/ link, not
   //     /check) renders the step line before any check — the case that puts
   //     the step on top. With no step they fall back to the default door.
-  // Those three doors render two idea rows at every width (A-93). Each cell
-  // also proves GuideIdeas did not remount on the reorder: a remount re-runs
-  // the mount effect, which would advance the rotation a second time and
-  // show a different first idea.
+  // Those three doors render two idea rows (A-93) — except that below 375px,
+  // where the third row is already hidden for everyone, numbers and plan
+  // show ONE (owner ruling 2026-09-18: every step line wraps to two lines,
+  // 6.3px over the tab bar at 360 with two rows). The fourth case is the
+  // R-20 fallback: a numbers pick on day 2 before any check has no step
+  // line, so the default door applies — `data-door="ideas"` and the default
+  // rows, never the one-row rule. Each cell also proves GuideIdeas did not
+  // remount on the reorder: a remount re-runs the mount effect, which would
+  // advance the rotation a second time and show a different first idea.
   const DOORS = [
     {
+      label: "worried door",
       door: "worried",
       pick: "worried",
       day: 2,
       order: ["line", "ideas", "hero", "quickRow"],
-      title: null
+      title: null,
+      rows: (_width: number) => 2
     },
     {
+      label: "numbers door",
       door: "numbers",
       pick: "number",
       day: 1,
       order: ["step", "ideas", "hero", "quickRow"],
-      title: "Ideas for later"
+      title: "Ideas for later",
+      rows: (width: number) => (width < 375 ? 1 : 2)
     },
-    { door: "plan", pick: "plan", day: 1, order: ["step", "ideas", "hero", "quickRow"], title: null }
+    {
+      label: "plan door",
+      door: "plan",
+      pick: "plan",
+      day: 1,
+      order: ["step", "ideas", "hero", "quickRow"],
+      title: null,
+      rows: (width: number) => (width < 375 ? 1 : 2)
+    },
+    {
+      label: "numbers pick with no step (falls back to the default door)",
+      door: "ideas",
+      pick: "number",
+      day: 2,
+      order: ["ideas", "hero", "quickRow"],
+      title: null,
+      rows: (width: number) => (width < 375 ? 2 : 3)
+    }
   ] as const;
 
   for (const width of [360, 375, 430]) {
-    for (const { door, pick, day, order, title } of DOORS) {
-      test(`door fold at ${width}×667, ${door} door: the check CTA clears the tab bar at every daypart and rotation page`, async ({
+    for (const { label, door, pick, day, order, title, rows } of DOORS) {
+      test(`door fold at ${width}×667, ${label}: the check CTA clears the tab bar at every daypart and rotation page`, async ({
         page
       }) => {
         test.skip(
@@ -488,7 +514,7 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
             );
             await page.goto("/home?stay=1");
 
-            const cell = `${width}px ${door} ${time.slice(11, 16)} seed ${seed}`;
+            const cell = `${width}px ${door === "ideas" ? "fallback" : door} ${time.slice(11, 16)} seed ${seed}`;
             const region = page.locator(".home-door");
             await expect(region, cell).toHaveAttribute("data-door", door);
             await expect(page.getByRole("heading", { level: 1 }), cell).toHaveText(
@@ -531,8 +557,8 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
               );
             }
 
-            // A-93: two rows in every non-default door with a line above the
-            // ideas, at every width; each within the two-line floor.
+            // A-93 / owner ruling: the door's row count at this width; each
+            // visible row within the two-line floor.
             let visibleRows = 0;
             for (const row of await page.getByTestId(/^idea-row-\d$/).all()) {
               if (!(await row.isVisible())) continue;
@@ -546,7 +572,7 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
                 floor + 0.5
               );
             }
-            expect.soft(visibleRows, `${cell}: visible idea rows`).toBe(2);
+            expect.soft(visibleRows, `${cell}: visible idea rows`).toBe(rows(width));
 
             const ctaBox = await page.getByTestId("dash-check-cta").boundingBox();
             const barBox = await page.locator(".app-tabbar").boundingBox();

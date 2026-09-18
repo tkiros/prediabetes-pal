@@ -4678,6 +4678,18 @@ button.inline-link {
   .ideas-block:not([data-expanded="true"]) .ideas-list > li:nth-child(n + 3) {
     display: none;
   }
+  /* Task 5.3, owner ruling 2026-09-18: below 375px the third row is already
+     gone for everyone, so a step line leading the numbers/plan doors has
+     nothing left to pay with (measured 6.3px under the tab bar at 360). One
+     row there, same collapsed-only shape as above. Keyed on the EFFECTIVE
+     door (HomeDoor's data-door): a numbers/plan pick with no step falls back
+     to the default door and keeps the default rows. */
+  .home-door:is([data-door="numbers"], [data-door="plan"])
+    .ideas-block:not([data-expanded="true"])
+    .ideas-list
+    > li:nth-child(n + 2) {
+    display: none;
+  }
 }
 
 /* Review fix round 1 (F1): the heading row is now 44px tall (the toggle's

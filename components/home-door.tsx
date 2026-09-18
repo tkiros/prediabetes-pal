@@ -21,9 +21,14 @@ import { BOUNDARY_DISCLAIMER } from "../lib/pal/boundary-copy";
 export const CLINICIAN_LINE = BOUNDARY_DISCLAIMER.slice(BOUNDARY_DISCLAIMER.indexOf(". ") + 2);
 
 export type SlotKey = "line" | "ideas" | "hero" | "quickRow" | "step";
-export type DoorLayout = { order: readonly SlotKey[]; count: 2 | 3; heading?: string };
+/**
+ * `door` is the door actually applied, after the null-step fallback — what
+ * `data-door` carries, so CSS scoped to a door (the owner's one-row rule
+ * below 375px) never reaches a pick that fell back to the default layout.
+ */
+export type DoorLayout = { door: Door; order: readonly SlotKey[]; count: 2 | 3; heading?: string };
 
-const DEFAULT_LAYOUT: DoorLayout = { order: ["ideas", "hero", "quickRow", "step"], count: 3 };
+const DEFAULT_LAYOUT: DoorLayout = { door: "ideas", order: ["ideas", "hero", "quickRow", "step"], count: 3 };
 
 /**
  * The four door orders (plan Task 5.3, review A-62) as amended by rulings
@@ -44,14 +49,19 @@ export function doorLayout(
   switch (door) {
     case "numbers":
       return hasStep
-        ? { order: ["step", "ideas", "hero", "quickRow"], count: 2, heading: "Ideas for later" }
+        ? {
+            door,
+            order: ["step", "ideas", "hero", "quickRow"],
+            count: 2,
+            heading: "Ideas for later"
+          }
         : DEFAULT_LAYOUT;
     case "plan":
-      return hasStep ? { order: ["step", "ideas", "hero", "quickRow"], count: 2 } : DEFAULT_LAYOUT;
+      return hasStep ? { door, order: ["step", "ideas", "hero", "quickRow"], count: 2 } : DEFAULT_LAYOUT;
     case "worried":
       return orientationDay !== null && orientationDay <= 3
-        ? { order: ["line", "ideas", "hero", "quickRow", "step"], count: 2 }
-        : { order: ["ideas", "hero", "quickRow", "step", "line"], count: 3 };
+        ? { door, order: ["line", "ideas", "hero", "quickRow", "step"], count: 2 }
+        : { door, order: ["ideas", "hero", "quickRow", "step", "line"], count: 3 };
     default:
       return DEFAULT_LAYOUT;
   }
@@ -101,7 +111,8 @@ export function HomeDoor({
         : doorFor(askStore.get())),
     () => "ideas" as Door
   );
-  const { order, count, heading } = doorLayout(door, orientationDay, hasStep);
+  const layout = doorLayout(door, orientationDay, hasStep);
+  const { order, count, heading } = layout;
 
   const slots: Record<SlotKey, ReactNode> = {
     line:
@@ -119,7 +130,7 @@ export function HomeDoor({
   };
 
   return (
-    <div ref={regionRef} className="home-door" data-door={door}>
+    <div ref={regionRef} className="home-door" data-door={layout.door}>
       {order.map((key) => slots[key])}
     </div>
   );
