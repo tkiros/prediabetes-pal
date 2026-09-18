@@ -225,7 +225,6 @@ export function SavedMealsSection() {
 
   return (
     <section
-      id="saved"
       className="account-section"
       aria-label="Saved meals"
       data-testid="saved-meals-section"

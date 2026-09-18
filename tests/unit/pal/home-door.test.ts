@@ -189,10 +189,17 @@ describe("no remount: GuideIdeas takes count/heading at render, HomeDoor keeps i
     expect(ideasSrc).toContain("ideas={expanded ? view.allIdeas : view.ideas.slice(0, count)}");
   });
 
-  it("the ideas element is always cloned with the same key, whatever the door", () => {
-    expect(doorSrc).toContain('cloneElement(ideas, { key: "ideas", count, heading })');
+  it("the ideas slot is rendered by HomeDoor itself, always keyed \"ideas\", whatever the door (ruling R-29)", () => {
+    expect(doorSrc).toContain('ideasOn ? <GuideIdeas key="ideas" count={count} heading={heading} /> : null');
     // One region, one keyed array — never a wrapper per door.
     expect(doorSrc).toContain("{order.map((key) => slots[key])}");
+    // Ruling R-29 (final review F1): neither is ever CALLED — a slot that
+    // arrives as an unresolved RSC lazy wrapper (not yet a React element —
+    // the signed-in Home crash the ruling fixed) must never reach either.
+    // Call syntax, not a bare substring match, so the doc comment above is
+    // free to name them in prose without tripping this pin.
+    expect(doorSrc).not.toContain("cloneElement(");
+    expect(doorSrc).not.toContain("isValidElement(");
   });
 
   it("data-door carries the effective door (after the null-step fallback), not the raw pick", () => {
@@ -239,5 +246,46 @@ describe("no remount: GuideIdeas takes count/heading at render, HomeDoor keeps i
     } finally {
       vi.unstubAllEnvs();
     }
+  });
+});
+
+// F1.5 (final review, ruling R-29): the regression the old cloneElement /
+// isValidElement pattern left open — a slot prop that arrives as something
+// other than a resolved React element (in production, an RSC lazy wrapper
+// whose chunk had not finished loading when signed-in Home's props parsed;
+// here, a string/array stand-in, which is enough to exercise the same code
+// path without a real flight stream). The server render is the one that
+// matters: it uses the server snapshot (DEFAULT_LAYOUT) unconditionally, so
+// this is a same-render proof, not a hydration-timing one.
+//
+// Against the OLD component (a byte-for-byte copy, never the real file in
+// place — see the fix report's F1.5 section for the exact reproduction and
+// thrown error text) this same case throws: `cloneElement(hero, { key:
+// "hero" })` with no `isValidElement` guard builds a malformed element whose
+// `type` is `undefined` (property access on a string has no `.type`), which
+// React's renderer then rejects.
+describe("HomeDoor never inspects a slot prop as an element (ruling R-29, F1)", () => {
+  it("a non-element hero/quickRow renders without throwing, in the default order", async () => {
+    const { HomeDoor } = await import("../../../components/home-door");
+    let html = "";
+    expect(() => {
+      html = renderToStaticMarkup(
+        createElement(HomeDoor, {
+          ideasOn: false,
+          hero: "hero-text-not-an-element",
+          quickRow: ["quick-row-a", "quick-row-b"],
+          step: null,
+          orientationDay: null,
+          stepHref: null
+        })
+      );
+    }).not.toThrow();
+    expect(html).toContain("hero-text-not-an-element");
+    expect(html).toContain("quick-row-aquick-row-b");
+    // DEFAULT_LAYOUT's order (ideasOn false ⇒ no ideas slot rendered):
+    // hero before quickRow, unchanged by either prop's shape.
+    expect(html.indexOf("hero-text-not-an-element")).toBeLessThan(
+      html.indexOf("quick-row-aquick-row-b")
+    );
   });
 });

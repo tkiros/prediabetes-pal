@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
@@ -706,6 +709,104 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
     expect(await regionSlots(page)).toEqual(["ideas", "hero", "quickRow", "step"]);
     await expect(page.getByTestId("dash-check-cta")).toBeFocused();
     expect(await serverIdeasBlockSurvived(page)).toEqual({ sameNode: true, taggedBeforeHydration: true });
+  });
+
+  // Final review F1.6 (ruling R-29): a signed-in flag-on door cell. Every
+  // other door cell above visits /home as a guest — the SERVER
+  // `DashboardView` (app/(app)/home/page.tsx) is only reached signed in, and
+  // that path is exactly where an unresolved RSC lazy wrapper on `hero` used
+  // to crash the whole render (F1). DB-backed, so it skips under the same
+  // guard tests/smoke/auth.spec.ts uses — a real Postgres plus the disk
+  // mailbox scripts/e2e-runtime-env.ts provisions when a database is present.
+  //
+  // The whole signed-in flow stays on ONE explicit origin, `SIGNED_IN_ORIGIN`
+  // — never a relative goto (which resolves against playwright.config.ts's
+  // `baseURL`, 127.0.0.1:3100). Confirmed empirically: `next start` here
+  // answers a 127.0.0.1 request but the auth callback's own redirect lands
+  // the browser on `localhost:3100` (same comment already left in
+  // tests/smoke/a11y.spec.ts's `signInVia`, re-derived here rather than
+  // assumed) — a different origin, so a `pal.ask.v1` write on one and a read
+  // on the other see two different localStorages. Every navigation below is
+  // absolute on `localhost` so the session cookie and the device-only
+  // `pal.ask.v1` seed both land where `/home` is actually read from.
+  const SIGNED_IN_ORIGIN = "http://localhost:3100";
+
+  test("signed-in Home renders a non-default door via the server DashboardView — no crash, no remount (F1, ruling R-29)", async ({
+    page
+  }) => {
+    test.skip(
+      !process.env.DATABASE_URL || !process.env.AUTH_EMAIL_STUB_DIR,
+      "signed-in door smoke needs DATABASE_URL + AUTH_EMAIL_STUB_DIR (Railway dev database / e2e-runtime-env's auto mailbox)"
+    );
+    test.skip(!(await doorSurfaceOn("home")), "home surface off in this build");
+
+    // Magic-link round trip (same mechanism as tests/smoke/auth.spec.ts and
+    // tests/smoke/a11y.spec.ts's signInVia — not imported: both live in
+    // different files and neither export is public; the shape is small
+    // enough to repeat rather than restructure).
+    const email = `e2e-door-${Date.now()}@pal.test`;
+    await page.goto(`${SIGNED_IN_ORIGIN}/signin`);
+    await page.getByLabel("Email address").fill(email);
+    await page.getByRole("button", { name: /email me a sign-in link/i }).click();
+    await expect(page).toHaveURL(/check-email/);
+
+    const mailboxFile = path.join(
+      process.env.AUTH_EMAIL_STUB_DIR!,
+      `${email.replace(/[^a-z0-9@.]/gi, "_")}.json`
+    );
+    await expect.poll(() => fs.existsSync(mailboxFile), { timeout: 10_000 }).toBe(true);
+    const { url } = JSON.parse(fs.readFileSync(mailboxFile, "utf8")) as { url: string };
+    await page.goto(url); // signed in — no /welcome consent needed to reach /home
+
+    // pal.ask.v1 is device-only (lib/client/ask-store.ts) and read client-side
+    // by HomeDoor whether or not the visitor is signed in — seed a `worried`
+    // pick, which needs no orientation step (doorLayout, home-door.tsx: with
+    // no week running the clinician line still renders, just last).
+    await tagServerIdeasBlock(page);
+    await page.evaluate(() => {
+      window.localStorage.setItem(
+        "pal.ask.v1",
+        JSON.stringify({ pains: ["worried"], win: null })
+      );
+    });
+
+    const consoleErrors: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error") consoleErrors.push(msg.text());
+    });
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+
+    await page.goto(`${SIGNED_IN_ORIGIN}/home`);
+
+    const region = page.locator(".home-door");
+    // Goes red if the door stayed default (the old crash's silent-drop
+    // sibling: `data-door="ideas"` would mean the worried pick never took).
+    await expect(region).toHaveAttribute("data-door", "worried");
+    // A fresh signed-in account has no next action yet (zero checks, no
+    // orientation step), so the "step" slot's Fragment renders no DOM child
+    // at all — the same shape the guest "worried" cell above shows (no
+    // `nextAction`, `order` also comes out without "step").
+    expect(await regionSlots(page)).toEqual(["ideas", "hero", "quickRow", "line"]);
+    await expect(page.getByTestId("home-door-line")).toHaveText(
+      "Talk with a doctor or registered dietitian for guidance that is specific to you."
+    );
+    // No remount (R-18/A-108) on the signed-in path either.
+    expect(await serverIdeasBlockSurvived(page)).toEqual({
+      sameNode: true,
+      taggedBeforeHydration: true
+    });
+    // Filters exactly one pre-existing, unrelated Firefox finding: production
+    // builds correctly omit `unsafe-eval` from the CSP `script-src` (only
+    // `development` gets it, next.config.ts) and Firefox's engine trips a
+    // "Missing 'unsafe-eval'" console error loading a shared framework chunk
+    // — confirmed the SAME on a plain GUEST `/home?stay=1` load in Firefox
+    // too (a throwaway diagnostic spec, run and discarded — not F1, not this
+    // PR's surface), so it is not this fix's regression to own or silence
+    // more broadly. Anything else still fails the cell.
+    const knownUnrelated = /Content-Security-Policy.*unsafe-eval/i;
+    expect(consoleErrors.filter((message) => !knownUnrelated.test(message))).toEqual([]);
+    expect(pageErrors).toEqual([]);
   });
 
   // Task 5.4 — the Home layout PR-5 adds (quick row, /learn, 1280 order).

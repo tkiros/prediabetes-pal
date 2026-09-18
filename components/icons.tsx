@@ -1,6 +1,6 @@
 // Sanctioned inline icon set (DESIGN.md §Icons). Hand-written 24-viewbox
 // strokes, sized via the --icon tokens, colored via currentColor. No icon
-// library — these fourteen glyphs are the whole vocabulary.
+// library — these seventeen glyphs are the whole vocabulary.
 import type { SVGProps } from "react";
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number };

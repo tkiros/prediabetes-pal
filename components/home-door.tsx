@@ -1,18 +1,17 @@
 "use client";
 
 import {
-  cloneElement,
-  isValidElement,
+  Fragment,
   useLayoutEffect,
   useRef,
   useSyncExternalStore,
-  type ReactElement,
   type ReactNode
 } from "react";
 
 import { askStore } from "../lib/client/ask-store";
 import { doorFor, type Door } from "../lib/client/home-door";
 import { BOUNDARY_DISCLAIMER } from "../lib/pal/boundary-copy";
+import { GuideIdeas } from "./guide-ideas";
 
 /**
  * The worried door's clinician pointer: the `result-footer` disclaimer's
@@ -112,29 +111,45 @@ const subscribe = () => () => {};
  * - The layout is a useSyncExternalStore snapshot. The pick is read from
  *   `pal.ask.v1` once and frozen; the layout follows the live props through
  *   `guardLayout`, measured against `committed` — what the DOM shows. React
- *   calls the client snapshot in two places: in its post-commit consistency
- *   check (a passive effect — this is how a hydrated page gets its door, with
- *   the region's ref attached), and during render on every client render
- *   after that, and on a mount with no hydration (a soft navigation). During
- *   a mount render the ref is still null, so nothing can be focused inside a
- *   region that is not on the page yet — the guard correctly reads "outside".
- *   Doing it in the snapshot keeps the ref and `document` reads out of the
- *   component body (react-hooks/refs, react-hooks/purity) and needs no
- *   setState in an effect (react-hooks/set-state-in-effect). No transition.
+ *   calls the client snapshot in three places: during render, on every
+ *   client render (a mount with no hydration — a soft navigation — included);
+ *   in its post-commit consistency check (a passive effect — this is how a
+ *   hydrated page gets its door, with the region's ref attached); and in its
+ *   pre-commit consistency check on non-blocking (transition) lanes — this
+ *   third call is what keeps the focus guard (R-21) true under
+ *   `router.refresh()`, a transition that can re-render this component
+ *   without an intervening commit. During a mount render the ref is still
+ *   null, so nothing can be focused inside a region that is not on the page
+ *   yet — the guard correctly reads "outside". Doing it in the snapshot keeps
+ *   the ref and `document` reads out of the component body
+ *   (react-hooks/refs, react-hooks/purity) and needs no setState in an
+ *   effect (react-hooks/set-state-in-effect).
  *
  * `display: contents` (globals.css `.home-door`) keeps the region out of
  * layout, so the slots lay out exactly as direct children of the dashboard.
+ *
+ * Ruling R-29 (final review F1): `hero`, `quickRow` and `step` arrive as
+ * plain `ReactNode` — never inspected with `isValidElement`/`cloneElement`,
+ * which crash or silently drop a prop that lands as an RSC lazy wrapper
+ * instead of a resolved element (signed-in Home, where these come from the
+ * SERVER `DashboardView`). Each is placed in its own keyed `<Fragment>`
+ * instead: React moves a keyed Fragment exactly as it moves a keyed element
+ * (the reorder contract above still holds), and a Fragment accepts any
+ * ReactNode. `ideas` is no longer a prop at all — `HomeDoor` renders
+ * `<GuideIdeas>` itself, gated on the boolean `ideasOn`, so there is nothing
+ * to clone or validate for that slot either; `count`/`heading` still arrive
+ * as render-time props (ruling R-18: never a remount).
  */
 export function HomeDoor({
-  ideas,
+  ideasOn,
   hero,
   quickRow,
   step,
   orientationDay,
   stepHref
 }: {
-  ideas: ReactElement<{ count?: number; heading?: string }> | null;
-  hero: ReactElement;
+  ideasOn: boolean;
+  hero: ReactNode;
   quickRow: ReactNode;
   step: ReactNode;
   orientationDay: number | null;
@@ -174,12 +189,19 @@ export function HomeDoor({
         {CLINICIAN_LINE}
       </p>
     ),
-    // Always cloned, always keyed "ideas" — the element's identity is the
-    // same on every render, whatever the door.
-    ideas: isValidElement(ideas) ? cloneElement(ideas, { key: "ideas", count, heading }) : null,
-    hero: cloneElement(hero, { key: "hero" }),
-    quickRow: isValidElement(quickRow) ? cloneElement(quickRow, { key: "quickRow" }) : null,
-    step: isValidElement(step) ? cloneElement(step, { key: "step" }) : null
+    // Rendered here, not passed in — always keyed "ideas", the same identity
+    // on every render, whatever the door (R-18: no remount, no second
+    // rotation step, no second `ideas_shown`). `count`/`heading` are the only
+    // per-door bits; the ideas themselves are still computed once, inside
+    // GuideIdeas' own mount effect.
+    ideas: ideasOn ? <GuideIdeas key="ideas" count={count} heading={heading} /> : null,
+    // Keyed Fragments, not cloned elements (ruling R-29): a Fragment accepts
+    // any ReactNode — including an RSC lazy wrapper that has not resolved to
+    // an element yet — and React moves a keyed Fragment exactly as it moves a
+    // keyed element, so the reorder contract above still holds.
+    hero: <Fragment key="hero">{hero}</Fragment>,
+    quickRow: <Fragment key="quickRow">{quickRow}</Fragment>,
+    step: <Fragment key="step">{step}</Fragment>
   };
 
   return (

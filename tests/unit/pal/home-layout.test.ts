@@ -341,7 +341,7 @@ describe("app/(app)/learn/page.tsx — the Learn index of tiles (Task 5.2)", () 
     expect(html).not.toContain("/learn/doctor");
   });
 
-  it('meal memory UI on ⇒ "Saved meals" tile links /meals#saved; off ⇒ tile absent', async () => {
+  it('ruling R-30 (revert of R-12): "Saved meals" never renders, meal memory on or off — no server/premium gate of its own, and the hash target can\'t land (Next 16.3 drops a hash scroll whose target isn\'t in the DOM at commit)', async () => {
     vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "home");
 
     vi.stubEnv("NEXT_PUBLIC_MEAL_MEMORY", "");
@@ -351,8 +351,14 @@ describe("app/(app)/learn/page.tsx — the Learn index of tiles (Task 5.2)", () 
     vi.stubEnv("NEXT_PUBLIC_MEAL_MEMORY", "1");
     const { default: memoryOn } = await importLearnPage();
     const html = renderToStaticMarkup(memoryOn());
-    expect(html).toContain("Saved meals");
-    expect(html).toContain('href="/meals#saved"');
+    expect(html).not.toContain("Saved meals");
+    expect(html).not.toContain('href="/meals#saved"');
+  });
+
+  it("drops the now-unused mealMemoryUiEnabled import — the tile it gated is gone (R-30)", () => {
+    expect(read("app/(app)/learn/page.tsx")).not.toMatch(
+      /import\s*\{[^}]*mealMemoryUiEnabled[^}]*\}\s*from/
+    );
   });
 
   it('the tile grid carries aria-label="Learn" on its <nav>', async () => {
@@ -391,9 +397,10 @@ describe("app/(app)/learn/page.tsx — R-10 positive path (fix round 1, I2)", ()
   });
 });
 
-describe('components/saved-meals-section.tsx — id="saved" makes /meals#saved land on the section (R-12)', () => {
-  it('the <section> carries id="saved" alongside its existing aria-label', () => {
+describe('components/saved-meals-section.tsx — no id="saved" (ruling R-30, revert of R-12)', () => {
+  it('the <section> carries no id at all — it leaked into the flag-off /meals DOM and could never work (the section renders after an async fetch; Next 16.3 layout-router.js:158-165 drops a hash scroll whose target is not in the DOM at commit)', () => {
     const src = read("components/saved-meals-section.tsx");
-    expect(src).toMatch(/<section\s+id="saved"\s*\n\s*className="account-section"\s*\n\s*aria-label="Saved meals"/);
+    expect(src).not.toMatch(/<section\s+id="saved"/);
+    expect(src).toMatch(/<section\s*\n\s*className="account-section"\s*\n\s*aria-label="Saved meals"/);
   });
 });

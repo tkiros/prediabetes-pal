@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { DisclaimerLine } from "../../../components/disclaimer-line";
 import { LEARN_NUMBERS_HREF } from "../../../lib/coach/orientation";
 import { guideDoorEnabled } from "../../../lib/guide-door-flag";
-import { mealMemoryUiEnabled } from "../../../lib/meal-memory-flag";
 
 export const metadata: Metadata = {
   title: "Learn — Prediabetes Pal",
@@ -28,8 +27,12 @@ type LearnTile = { label: string; href: string };
  *    /learn/first-week 404s without it.
  *  - "Questions for my doctor" is left out entirely — F-DOCTOR's page
  *    doesn't exist yet.
- *  - "Saved meals" only once meal memory's UI is on, same gate the memory
- *    page itself uses.
+ *  - "Saved meals" (→ /meals#saved) is dropped for now (ruling R-30, revert
+ *    of R-12): `mealMemoryUiEnabled()` has no premium or server gating of
+ *    its own, so a free user got a tile pointing at nothing; the hash target
+ *    also can't land — the section renders after an async fetch, and Next
+ *    16.3 (`layout-router.js:158-165`) drops a hash scroll whose target
+ *    isn't in the DOM at commit. Returns once meal memory ships for real.
  *
  * Tiles here are plain `<Link>`s, not `<LearnLink>`: LearnLink's
  * `learn_opened` event carries a closed `from` enum (home | result_footer |
@@ -57,9 +60,6 @@ export default function LearnPage() {
   // F-DOCTOR ships its page — added together, same PR.
   tiles.push({ label: "How it works", href: "/how-it-works" });
   tiles.push({ label: "My meals", href: "/meals" });
-  if (mealMemoryUiEnabled()) {
-    tiles.push({ label: "Saved meals", href: "/meals#saved" });
-  }
   tiles.push({ label: "Pantry review", href: "/pantry" });
 
   return (

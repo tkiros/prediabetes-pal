@@ -134,7 +134,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
           byte (Fragments and nulls emit nothing). */}
       {homeOn ? (
         <HomeDoor
-          ideas={ideas}
+          ideasOn={ideasOn}
           hero={hero}
           quickRow={quickRow}
           step={step}
