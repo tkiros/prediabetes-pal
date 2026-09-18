@@ -25,6 +25,21 @@ async function answerAttribution(page: Page, chip = "Reddit") {
   await page.getByRole("button", { name: chip, exact: true }).click();
 }
 
+// F-ASK (Task 6.4): under the intake surface two ask screens sit between
+// segment and attribution. Walks that are not about them pass both with Skip
+// (exact: every step also shows "Skip setup and check a meal"). Flag off it
+// does nothing, so those walks stay exactly as they were.
+async function passAskScreens(page: Page) {
+  if (!(await doorSurfaceOn("intake"))) return;
+  for (const step of ["ask_pains", "ask_win"]) {
+    await expect(page.getByTestId("onboarding-step")).toHaveAttribute(
+      "data-step",
+      step
+    );
+    await page.getByRole("button", { name: "Skip", exact: true }).click();
+  }
+}
+
 test("a new user walks welcome→segment→attribution→a1c→expectations into the check page's guided chips", async ({
   page
 }) => {
@@ -40,12 +55,19 @@ test("a new user walks welcome→segment→attribution→a1c→expectations into
   // W-09: the welcome step used to promise "one reason, one adjustment, and one
   // safer swap" unconditionally. A SAFE verdict is structurally forbidden from
   // carrying either an adjustment or a swap, so that promise was false for every
-  // Clear result. The copy is now hedged and this assertion follows it.
-  await expect(
-    page.getByText(
-      /one reason and, when appropriate, an adjustment and one practical alternative/
-    )
-  ).toBeVisible();
+  // Clear result. The copy is now hedged and this assertion follows it. Under
+  // the intake surface the welcome speaks the guide's line instead (A-73).
+  if (await doorSurfaceOn("intake")) {
+    await expect(
+      page.getByRole("heading", { name: "You were just told you have prediabetes." })
+    ).toBeVisible();
+  } else {
+    await expect(
+      page.getByText(
+        /one reason and, when appropriate, an adjustment and one practical alternative/
+      )
+    ).toBeVisible();
+  }
   await expectNoSeriousViolations(page);
   await page.getByRole("button", { name: "Get started" }).click();
 
@@ -59,6 +81,7 @@ test("a new user walks welcome→segment→attribution→a1c→expectations into
   ).toBeVisible();
   await expectNoSeriousViolations(page);
   await page.getByRole("button", { name: "New A1C result" }).click();
+  await passAskScreens(page);
 
   // Step 3: attribution — one tap, closed enum, then on to A1C
   await expectNoSeriousViolations(page);
@@ -147,6 +170,7 @@ test("a returning guest with a saved A1C skips the A1C step", async ({
     "segment"
   );
   await page.getByRole("button", { name: "Just checking" }).click();
+  await passAskScreens(page);
   await answerAttribution(page, "Somewhere else");
 
   // Single-source rule: the device already knows the A1C, so a1c is skipped.
@@ -182,6 +206,7 @@ test("an A1C entered mid-tour survives 'Skip setup' — never re-asked on /check
   await page.goto("/onboarding");
   await page.getByRole("button", { name: "Get started" }).click();
   await page.getByRole("button", { name: "New A1C result" }).click();
+  await passAskScreens(page);
   await answerAttribution(page);
   await page.getByLabel("Latest A1C").fill("6.1");
   await page.getByRole("button", { name: "Continue" }).click();
@@ -201,6 +226,7 @@ test("invalid A1C shows a field error, not progress", async ({ page }) => {
   await page.goto("/onboarding");
   await page.getByRole("button", { name: "Get started" }).click();
   await page.getByRole("button", { name: "New A1C result" }).click();
+  await passAskScreens(page);
   await answerAttribution(page, "Search");
 
   // Empty submit (number inputs refuse non-numeric text entirely)
@@ -222,6 +248,7 @@ test.describe("out-of-range A1C ends at boundary guidance, never a verdict", () 
       await page.goto("/onboarding");
       await page.getByRole("button", { name: "Get started" }).click();
       await page.getByRole("button", { name: "New A1C result" }).click();
+      await passAskScreens(page);
       await answerAttribution(page, "Facebook");
       await page.getByLabel("Latest A1C").fill(value);
       await page.getByRole("button", { name: "Continue" }).click();
@@ -237,4 +264,119 @@ test.describe("out-of-range A1C ends at boundary guidance, never a verdict", () 
       await expectNoSeriousViolations(page);
     });
   }
+});
+
+// F-ASK (Tasks 6.2–6.5): the eight-screen tour, intake surface only.
+test.describe("intake: the eight-screen tour", () => {
+  test.beforeAll(async () => {
+    test.skip(!(await doorSurfaceOn("intake")), "intake surface off in this build");
+  });
+
+  const step = (page: Page) => page.getByTestId("onboarding-step");
+  const skip = (page: Page) =>
+    page.getByRole("button", { name: "Skip", exact: true });
+
+  test("pick two pains and a win, finish the tour: pal.ask.v1 written, Home mounts by soft navigation with the picked door (R-45)", async ({
+    page
+  }) => {
+    await page.goto("/onboarding");
+    await expect(step(page)).toHaveAttribute("data-step", "welcome");
+    await page.getByRole("button", { name: "Get started" }).click();
+
+    await expect(step(page)).toHaveAttribute("data-step", "segment");
+    await page.getByRole("button", { name: "New A1C result" }).click();
+
+    // Screen A: up to three pains, tap order kept, counter follows.
+    await expect(step(page)).toHaveAttribute("data-step", "ask_pains");
+    await expect(
+      page.getByRole("heading", { name: "What is hardest right now?" })
+    ).toBeVisible();
+    const worried = page.getByRole("button", {
+      name: "I am worried about where this is going",
+      exact: true
+    });
+    const food = page.getByRole("button", { name: "Knowing what I can eat", exact: true });
+    await worried.click();
+    await food.click();
+    await expect(worried).toHaveAttribute("aria-pressed", "true");
+    await expect(food).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByText("2 of 3", { exact: true })).toBeVisible();
+    await expectNoSeriousViolations(page);
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+    // Screen B: one win, and the response line appears beneath the rows.
+    await expect(step(page)).toHaveAttribute("data-step", "ask_win");
+    await expect(
+      page.getByRole("heading", { name: "What would count as a win for you?" })
+    ).toBeVisible();
+    const peace = page.getByRole("button", { name: "Peace of mind", exact: true });
+    await peace.click();
+    await expect(peace).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      page.getByText(
+        "Plain words, and a clear pointer to a person when an app is not the right reader."
+      )
+    ).toBeVisible();
+    await expectNoSeriousViolations(page);
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+    await answerAttribution(page);
+
+    await expect(step(page)).toHaveAttribute("data-step", "a1c");
+    await page.getByLabel("Latest A1C").fill("6.1");
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+    await expect(step(page)).toHaveAttribute("data-step", "expectations");
+    await expect(
+      page.getByText("Ideas come first. The check is there when you are unsure.")
+    ).toBeVisible();
+
+    // R-45: the PR-5 soft-navigation mount path. The marker lives on the
+    // window, so it survives a client navigation and dies on a full load.
+    await page.evaluate(() => {
+      (window as unknown as { __palSoftNav?: boolean }).__palSoftNav = true;
+    });
+    await page.getByRole("button", { name: "Start your first week" }).click();
+
+    await expect(page).toHaveURL(/\/home\?stay=1$/);
+    expect(
+      await page.evaluate(
+        () => (window as unknown as { __palSoftNav?: boolean }).__palSoftNav
+      )
+    ).toBe(true);
+    await expect(page.getByTestId("idea-row-1")).toBeVisible();
+
+    const ask = await page.evaluate(() => window.localStorage.getItem("pal.ask.v1"));
+    expect(JSON.parse(ask ?? "null")).toEqual({ pains: ["worried", "food"], win: "peace" });
+
+    if (await doorSurfaceOn("home")) {
+      await expect(page.locator(".home-door")).toHaveAttribute("data-door", "worried");
+    }
+  });
+
+  test("skip both ask screens: pal.ask.v1 stays absent and the tour still completes", async ({
+    page
+  }) => {
+    await page.goto("/onboarding");
+    await page.getByRole("button", { name: "Get started" }).click();
+    await page.getByRole("button", { name: "New A1C result" }).click();
+
+    await expect(step(page)).toHaveAttribute("data-step", "ask_pains");
+    await skip(page).click();
+    await expect(step(page)).toHaveAttribute("data-step", "ask_win");
+    await skip(page).click();
+
+    await answerAttribution(page);
+    await expect(step(page)).toHaveAttribute("data-step", "a1c");
+    await page.getByLabel("Latest A1C").fill("6.1");
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+    await expect(step(page)).toHaveAttribute("data-step", "expectations");
+    await page.getByRole("button", { name: "Start your first week" }).click();
+    await expect(page).toHaveURL(/\/home\?stay=1$/);
+
+    expect(
+      await page.evaluate(() => window.localStorage.getItem("pal.ask.v1"))
+    ).toBeNull();
+  });
 });

@@ -758,6 +758,18 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
     const { url } = JSON.parse(fs.readFileSync(mailboxFile, "utf8")) as { url: string };
     await page.goto(url); // signed in — no /welcome consent needed to reach /home
 
+    // Positively assert the session: a silently signed-out page would still
+    // render a door, just not the server DashboardView this cell exists for.
+    const session = await page.request.get(`${SIGNED_IN_ORIGIN}/api/auth/session`);
+    expect(((await session.json()) as { user?: { email?: string } }).user?.email).toBe(email);
+    expect(page.url()).not.toContain("/signin");
+
+    // Let the landing page's in-flight RSC prefetches (e.g. the /terms footer
+    // link) settle. Otherwise the goto below aborts one, and WebKit reports it
+    // as a pageerror ("...due to access control checks") on the listener
+    // attached next.
+    await page.waitForLoadState("networkidle");
+
     // pal.ask.v1 is device-only (lib/client/ask-store.ts) and read client-side
     // by HomeDoor whether or not the visitor is signed in — seed a `worried`
     // pick, which needs no orientation step (doorLayout, home-door.tsx: with
