@@ -4227,6 +4227,46 @@ button.inline-link {
   color: var(--text-strong);
 }
 
+/* Task 5.2: /learn's index grid. One column by default, two equal columns
+   from 480px. Tiles: --surface fill, 1px --border-soft (the card-edge token
+   — --border-strong above is reserved for a tappable row, not a card), 14px
+   radius (nested-card step on DESIGN.md §5's 24/22/18/14/999 scale — pick
+   from it, never invent), no shadow ("a card is one step from its plane").
+   Real ≥44px targets sized directly (§5 bans negative-margin/::before
+   hit-area tricks) — these are <Link>s, so the global
+   button/input/textarea min-height rule never reaches them. */
+.learn-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin: 4px 0 14px;
+}
+
+@media (min-width: 480px) {
+  .learn-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.learn-tile {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text-body);
+  font-size: 15px;
+  font-weight: 600;
+  transition: border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.learn-tile:hover {
+  border-color: var(--accent);
+  color: var(--text-strong);
+}
+
 /* C7 four-jobs bottom tab bar (<1024px only; design review 2026-07-21).
    Five equal slots — four jobs + the accent-filled center Check action. No
    icon-in-circle decoration, no fills beyond the one action, stroke glyphs

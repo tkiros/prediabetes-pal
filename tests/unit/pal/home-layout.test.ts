@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * Task 5.1: the Home quick-action row. Task 5.2 extends this file with its
@@ -16,9 +17,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * EventTarget/CustomEvent.
  */
 // Same shim guide-door.test.ts uses for GuideIdeas — top-level so vitest's
-// mock hoist applies before the component import runs.
+// mock hoist applies before the component import runs. Task 5.2 extends the
+// mock with a `notFound` spy that throws (matching Next's own behavior:
+// notFound() never returns) — /learn/page.tsx calls it directly.
+const notFoundMock = vi.hoisted(() =>
+  vi.fn(() => {
+    throw Object.assign(new Error("NEXT_NOT_FOUND"), { digest: "NEXT_HTTP_ERROR_FALLBACK;404" });
+  })
+);
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push() {} })
+  useRouter: () => ({ push() {} }),
+  notFound: notFoundMock
 }));
 vi.mock("../../../lib/client/use-hydrated", () => ({ useHydrated: () => false }));
 
@@ -213,3 +222,109 @@ describe("guide-ideas.tsx — the See-all listener expands only, never toggles, 
 // proved nothing and are gone. The real evidence that the ideas-only and
 // flag-off renders are untouched is that tests/unit/pal/guide-door.test.ts's
 // own byte-for-byte DashboardView/GuideIdeas pins still pass unchanged.
+
+describe("app/(app)/learn/page.tsx — the Learn index of tiles (Task 5.2)", () => {
+  // Dynamic import per test (the guide-door.test.ts HomePage pattern): the
+  // page reads guideDoorEnabled()/mealMemoryUiEnabled() at render time, not
+  // at module load, so a fresh import isn't required for the env to take —
+  // it just keeps this describe's imports colocated with the env it stubs,
+  // same as the rest of the suite.
+  async function importLearnPage() {
+    return import("../../../app/(app)/learn/page");
+  }
+
+  beforeEach(() => {
+    notFoundMock.mockClear();
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('declares the brief\'s exact title and robots metadata', async () => {
+    const { metadata } = await importLearnPage();
+    expect(metadata).toEqual({ title: "Learn — Prediabetes Pal", robots: { index: false } });
+  });
+
+  it('R-9: 404s (via notFound) when the "home" surface is off, before any tile is built', async () => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "ideas,ideas-full");
+    const { default: LearnPage } = await importLearnPage();
+    expect(() => LearnPage()).toThrow();
+    expect(notFoundMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders when "home" is on: labels and hrefs for every unconditional tile, in brief order', async () => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "home");
+    vi.stubEnv("NEXT_PUBLIC_MEAL_MEMORY", "");
+    const { default: LearnPage } = await importLearnPage();
+    const html = renderToStaticMarkup(LearnPage());
+    const tiles = [
+      ["How it works", "/how-it-works"],
+      ["My meals", "/meals"],
+      ["Pantry review", "/pantry"]
+    ] as const;
+    for (const [label, href] of tiles) {
+      expect(html).toContain(label);
+      expect(html).toContain(`href="${href}"`);
+    }
+  });
+
+  it('R-13: "Your first week" is absent with "home" alone (SURFACE_REQUIRES.home is ["ideas","ideas-full"], not "orient") — present, linking /learn/first-week, once "orient" is also on', async () => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "home");
+    const { default: withoutOrient } = await importLearnPage();
+    expect(renderToStaticMarkup(withoutOrient())).not.toContain("Your first week");
+
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "home,orient");
+    const { default: withOrient } = await importLearnPage();
+    const html = renderToStaticMarkup(withOrient());
+    expect(html).toContain("Your first week");
+    expect(html).toContain('href="/learn/first-week"');
+  });
+
+  it('R-10: "What the numbers mean" stays omitted — LEARN_NUMBERS_HREF has not flipped to /learn/numbers yet', async () => {
+    const orientation = await import("../../../lib/coach/orientation");
+    expect(orientation.LEARN_NUMBERS_HREF).not.toBe("/learn/numbers");
+
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "1");
+    const { default: LearnPage } = await importLearnPage();
+    const html = renderToStaticMarkup(LearnPage());
+    expect(html).not.toContain("What the numbers mean");
+    expect(html).not.toContain('href="/learn/numbers"');
+  });
+
+  it('R-11: never renders "Questions for my doctor" or links /learn/doctor, flag fully open or not', async () => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "1");
+    vi.stubEnv("NEXT_PUBLIC_MEAL_MEMORY", "1");
+    const { default: LearnPage } = await importLearnPage();
+    const html = renderToStaticMarkup(LearnPage());
+    expect(html).not.toContain("Questions for my doctor");
+    expect(html).not.toContain("/learn/doctor");
+  });
+
+  it('meal memory UI on ⇒ "Saved meals" tile links /meals#saved; off ⇒ tile absent', async () => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "home");
+
+    vi.stubEnv("NEXT_PUBLIC_MEAL_MEMORY", "");
+    const { default: memoryOff } = await importLearnPage();
+    expect(renderToStaticMarkup(memoryOff())).not.toContain("Saved meals");
+
+    vi.stubEnv("NEXT_PUBLIC_MEAL_MEMORY", "1");
+    const { default: memoryOn } = await importLearnPage();
+    const html = renderToStaticMarkup(memoryOn());
+    expect(html).toContain("Saved meals");
+    expect(html).toContain('href="/meals#saved"');
+  });
+
+  it('the tile grid carries aria-label="Learn" on its <nav>', async () => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "home");
+    const { default: LearnPage } = await importLearnPage();
+    const html = renderToStaticMarkup(LearnPage());
+    expect(html).toMatch(/<nav[^>]*aria-label="Learn"/);
+  });
+});
+
+describe('components/saved-meals-section.tsx — id="saved" makes /meals#saved land on the section (R-12)', () => {
+  it('the <section> carries id="saved" alongside its existing aria-label', () => {
+    const src = read("components/saved-meals-section.tsx");
+    expect(src).toMatch(/<section\s+id="saved"\s*\n\s*className="account-section"\s*\n\s*aria-label="Saved meals"/);
+  });
+});
