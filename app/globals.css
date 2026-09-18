@@ -4228,13 +4228,20 @@ button.inline-link {
 }
 
 /* Task 5.2: /learn's index grid. One column by default, two equal columns
-   from 480px. Tiles: --surface fill, 1px --border-soft (the card-edge token
-   — --border-strong above is reserved for a tappable row, not a card), 14px
-   radius (nested-card step on DESIGN.md §5's 24/22/18/14/999 scale — pick
-   from it, never invent), no shadow ("a card is one step from its plane").
-   Real ≥44px targets sized directly (§5 bans negative-margin/::before
+   from 480px. Tiles: --surface fill, 14px radius (nested-card step on
+   DESIGN.md §5's 24/22/18/14/999 scale — pick from it, never invent), no
+   shadow. Real ≥44px targets sized directly (§5 bans negative-margin/::before
    hit-area tricks) — these are <Link>s, so the global
-   button/input/textarea min-height rule never reaches them. */
+   button/input/textarea min-height rule never reaches them.
+   R-16 (fix round 1): border is 1px --border-strong, not --border-soft. The
+   brief's --border-soft came from DESIGN.md's "a card is one clear step
+   away from the plane it sits on" (DESIGN.md:352-356), but that sentence is
+   about a card's *background* against its page plane, not border weight —
+   it doesn't apply here. These tiles are tappable, same as .quick-action
+   just above (its own comment at globals.css:4202-4206) and .idea-row,
+   both of which use --border-strong; DESIGN.md:275 gives selectable chips
+   the same token. --border-soft stays reserved for a static card edge
+   (~1.2:1 against white, too faint for a tap target). */
 .learn-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -4253,7 +4260,7 @@ button.inline-link {
   align-items: center;
   min-height: 56px;
   padding: 14px 16px;
-  border: 1px solid var(--border-soft);
+  border: 1px solid var(--border-strong);
   border-radius: 14px;
   background: var(--surface);
   color: var(--text-body);

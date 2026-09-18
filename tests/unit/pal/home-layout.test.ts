@@ -322,6 +322,34 @@ describe("app/(app)/learn/page.tsx — the Learn index of tiles (Task 5.2)", () 
   });
 });
 
+// Fix round 1, I2: the negative case above (LEARN_NUMBERS_HREF unchanged ⇒
+// tile absent) has no positive counterpart — nothing forced the constant to
+// "/learn/numbers" and asserted the tile then renders. Its own describe:
+// vi.doMock (not the top-level vi.mock, which is hoisted and would leak into
+// every other test in this file) plus vi.resetModules() around a dynamic
+// import, so only this block ever sees a patched orientation module — every
+// other test in this file still imports the real, unflipped constant.
+describe("app/(app)/learn/page.tsx — R-10 positive path (fix round 1, I2)", () => {
+  afterEach(() => {
+    vi.doUnmock("../../../lib/coach/orientation");
+    vi.resetModules();
+    vi.unstubAllEnvs();
+  });
+
+  it('once LEARN_NUMBERS_HREF is "/learn/numbers", the tile renders with that exact label and href', async () => {
+    vi.resetModules();
+    vi.doMock("../../../lib/coach/orientation", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("../../../lib/coach/orientation")>()),
+      LEARN_NUMBERS_HREF: "/learn/numbers"
+    }));
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "home");
+    const { default: LearnPage } = await import("../../../app/(app)/learn/page");
+    const html = renderToStaticMarkup(LearnPage());
+    expect(html).toContain("What the numbers mean");
+    expect(html).toContain('href="/learn/numbers"');
+  });
+});
+
 describe('components/saved-meals-section.tsx — id="saved" makes /meals#saved land on the section (R-12)', () => {
   it('the <section> carries id="saved" alongside its existing aria-label', () => {
     const src = read("components/saved-meals-section.tsx");
