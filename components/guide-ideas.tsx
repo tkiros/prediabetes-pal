@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { track } from "../lib/client/analytics";
+import { listenForIdeasExpand } from "../lib/client/ideas-expand";
 import { nextIdeasRotation } from "../lib/client/ideas-rotation";
 import { useHydrated } from "../lib/client/use-hydrated";
 import { daypartOfHour, type Daypart } from "../lib/coach/insights";
@@ -131,6 +132,15 @@ export function GuideIdeas() {
     });
     track({ name: "ideas_shown", props: { daypart, surface: "home" } });
   }, [hydrated, full]);
+
+  // R-2: the quick row's Ideas item is the See-all trigger. Expand-only —
+  // tapping it twice must not collapse the block back down, so the handler
+  // never reads or toggles `expanded`. Registered only under `ideas-full`,
+  // the surface that owns the toggle at all; removed on unmount.
+  useEffect(() => {
+    if (!full) return;
+    return listenForIdeasExpand(() => setExpanded(true));
+  }, [full]);
 
   // Review A-25: a double-tap must not push /check twice (duplicate history
   // entry, Back lands on /check). First tap wins; the ref never resets because

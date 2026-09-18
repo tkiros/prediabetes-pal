@@ -7,6 +7,7 @@ import { guideDoorEnabled } from "../lib/guide-door-flag";
 import type { PlanBoxData } from "../lib/server/plan-box";
 import { GuideIdeas } from "./guide-ideas";
 import { HomeCheckHero } from "./home-check-hero";
+import { HomeQuickRow } from "./home-quick-row";
 import { LearnLink } from "./learn-link";
 import { PlanBox } from "./plan-box";
 import { StepLink } from "./step-link";
@@ -58,6 +59,9 @@ export function DashboardView({ data }: { data: DashboardData }) {
   // and the guest hydration reflow both depend on staying one line.
   // Flag off ⇒ today's markup, byte-for-byte.
   const ideasOn = guideDoorEnabled("ideas");
+  // Task 5.1: the quick-action row. Review A-54: below the hero, so the fold
+  // budget (measured on the check CTA's bottom edge) never sees it.
+  const homeOn = guideDoorEnabled("home");
   // Review A-89: the day eyebrow carries day 1, so the first-win block (its
   // own "Day 1" eyebrow) does not render while a week runs.
   const weekOn = data.orientationDay !== null;
@@ -99,6 +103,8 @@ export function DashboardView({ data }: { data: DashboardData }) {
       {ideasOn ? <GuideIdeas /> : null}
 
       <HomeCheckHero stepToday={heroIsStep} />
+
+      {homeOn ? <HomeQuickRow /> : null}
 
       {data.nextAction ? (
         <p className="dash-next-action" data-testid="next-action">

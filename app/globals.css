@@ -4186,6 +4186,44 @@ button.inline-link {
   color: var(--accent-strong);
 }
 
+/* Task 5.1 quick-action row — below the hero (review A-54), out of the fold
+   budget the smoke tests pin. Four equal, real (≥44px) targets, visible
+   labels at every width. Quiet: no fill on any item, Check included — the
+   hero above and the tab bar's Check puck already hold the app's one accent
+   (DESIGN.md §8); a third fill is review A-74's rejected direction, so this
+   file declares no accent-filled modifier of `.quick-action` at all. */
+.quick-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 4px 0 14px;
+  list-style: none;
+  padding: 0;
+}
+
+.quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 64px;
+  padding: 10px 4px;
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text-body);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  transition: border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.quick-action:hover {
+  border-color: var(--accent);
+  color: var(--text-strong);
+}
+
 /* C7 four-jobs bottom tab bar (<1024px only; design review 2026-07-21).
    Five equal slots — four jobs + the accent-filled center Check action. No
    icon-in-circle decoration, no fills beyond the one action, stroke glyphs
