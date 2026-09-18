@@ -149,6 +149,8 @@ describe("trackedStep — the tour funnel never names a result", () => {
   it("maps the screens the floor reads and nothing else", () => {
     expect(trackedStep("welcome")).toBeNull();
     expect(trackedStep("segment")).toBe("segment");
+    expect(trackedStep("ask_pains")).toBe("ask_pains");
+    expect(trackedStep("ask_win")).toBe("ask_win");
     expect(trackedStep("attribution")).toBe("attribution");
     expect(trackedStep("expectations")).toBe("expectations");
     expect(trackedStep("a1c")).toBeNull();

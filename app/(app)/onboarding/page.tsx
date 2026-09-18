@@ -143,6 +143,7 @@ export function leaveTour(push: (href: string) => void): void {
 export default function OnboardingPage() {
   const router = useRouter();
   const orientOn = guideDoorEnabled("orient");
+  const askEnabled = guideDoorEnabled("intake");
   const [step, setStep] = useState<Step>("welcome");
   const [a1cText, setA1cText] = useState("");
   const [a1cError, setA1cError] = useState<string | null>(null);
@@ -176,7 +177,7 @@ export default function OnboardingPage() {
         // best-effort — the chip choice still steers this tour
       }
     }
-    setStep("attribution");
+    setStep(nextStepAfterSegment(askEnabled));
   }
 
   function advanceFromAttribution(choice?: Channel) {
@@ -252,19 +253,19 @@ export default function OnboardingPage() {
           {step !== "boundary" ? (
             <>
               <p className="onboarding-step-count">
-                {stepCounter(step, skipsA1c)} · about 30 seconds
+                {stepCounter(step, skipsA1c, askEnabled)} · about 30 seconds
               </p>
               <div
                 className="onboarding-progress"
                 role="progressbar"
-                aria-label={`Tour progress — ${stepCounter(step, skipsA1c)}`}
+                aria-label={`Tour progress — ${stepCounter(step, skipsA1c, askEnabled)}`}
                 aria-valuemin={0}
                 aria-valuemax={100}
-                aria-valuenow={STEP_PROGRESS[step]}
+                aria-valuenow={progressFor(step, askEnabled)}
               >
                 <div
                   className="onboarding-progress-fill"
-                  style={{ width: `${STEP_PROGRESS[step]}%` }}
+                  style={{ width: `${progressFor(step, askEnabled)}%` }}
                 />
               </div>
             </>
