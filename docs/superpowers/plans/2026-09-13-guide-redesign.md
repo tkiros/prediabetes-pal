@@ -2023,10 +2023,20 @@ Note: taps still run a live check (the cache is evidence, not a serving path) �
 | Day eyebrow (PR-3) | 18 | `.status-eyebrow` |
 | **Total above the CTA's bottom edge, as first budgeted** | **569 typical · 635 worst** against a usable **611** (667 − the 56px tab bar) | **fails by up to 24px** → A-106 |
 | **A-106: the date and the day collapse into one eyebrow line (−52), the ideas title is the page's first heading (22px, +4)** | **521 typical · 587 worst** of 611 | ≥ 24px of slack; the smoke seeds the rotation (page 1 and page 2), the clock, and each door |
-
-> **⚠ 2026-09-18, after PR-4 (#153): this table's "≥ 24px of slack" is stale — do not plan PR-5 against it.** The e2e legs now measure the real slack from the check CTA's bottom edge to the tab bar as **58.2 / 12.3 / 12.3 px** at 360 / 375 / 430 with `ideas-full` on (the `ideas,source` leg is unchanged at 65.8 / 19.8 / 19.9). A-93's net for a non-default door is **+4px** when the added line is one line and **+26px** when it wraps to two — and `BOUNDARY_DISCLAIMER`'s second sentence, which Task 5.3 reuses verbatim for the `worried` door, is 76 characters and wraps to two lines at 375. So the `worried` door is projected **~14px over** at 375 and 430 before anything else is added. Task 5.3 must run the flag-on e2e leg (`PAL_E2E_GUIDE_DOOR=1 npm run e2e -- tests/smoke/dashboard.spec.ts`) and, if it exceeds, apply the shrink order below — never the hero, never the quick-row labels, never the assertion. If the shrink order runs out, that is an owner decision, not an implementer's fix.
 | Quick row (PR-5) | ~100 with labels | **below the hero**, outside the fold budget |
 | Non-default doors (PR-5): a step line or the clinician line **above** the ideas | +48 (one line) / +70 (two) | review A-93: these doors render **two** idea rows, not three, so the added line is paid for by the removed row (worst case stays ≤ 605); the smoke seeds `pal.ask.v1` for each first pick, the rotation counter and the clock, and measures each door |
+
+> **⚠ 2026-09-18, measured after PR-5 Task 5.3 (branch `feat/guide-pr5-home-layout`, `cb0d8d9`): the arithmetic in this table is superseded — plan against the measurement below.** Slack is px from the check CTA's bottom edge to the tab bar, flag on (`PAL_E2E_GUIDE_DOOR=1`), the minimum over every daypart × rotation page × the four e2e browsers. The `ideas,source` leg (no `home`) is unchanged at 65.8 / 19.8 / 19.9.
+>
+> | Door | 360 | 375 | 430 |
+> |---|---|---|---|
+> | default (`ideas`) | 58.2 | 12.3 | 12.3 |
+> | `numbers` / `plan` pick with no step line, or a day whose step targets the ideas block (falls back to default) | 58.2 | 12.3 | 12.3 |
+> | `worried`, days 1–3 (clinician line above two idea rows) | **2.8** | 26.1 | 26.1 |
+> | `numbers`, day 1 (step line above "Ideas for later") | 62.9 | 17.0 | 17.0 |
+> | `plan`, day 1 | 62.9 | 17.0 | 17.0 |
+>
+> **Withdrawn:** an earlier version of this note (#155's first commit) projected the `worried` door **~14px over** at 375 and 430. It fits at every width (tightest: 2.8px at 360). The projection assumed ~44px idea rows; they measure **61.2px** (two-line floor), so the dropped third row pays for more than the arithmetic said, and the clinician line uses the 14px disclaimer style. **The real overflow was `numbers` / `plan` at 360** (−6.3px with two idea rows: every step line wraps to two lines at every width, 64.5px). **Owner ruling, 2026-09-18:** below 375px the `numbers` and `plan` doors show **one** idea row instead of two, keyed on the effective door (not `worried`) — A-93's trade carried one row further at the one width where Task 1.8 already hides row 3. The shrink order below is already spent (Task 1.8: `.ideas-sub` 14px, block padding 12px, row 3 hidden under 375px), so anything added above the Home fold — Task 5.5's hero H2 included — needs the flag-on e2e leg (`PAL_E2E_GUIDE_DOOR=1 npm run e2e -- tests/smoke/dashboard.spec.ts`) re-run before it is believed. A miss goes to the owner — never the hero, never the quick-row labels, never the assertion.
 
 The smoke measures real strings at 360, 375 and 430 (Task 1.8). If a measurement ever exceeds 667, the shrink order is: `.ideas-sub` to 14px → block padding to 12px → row padding to 8px 12px — never the hero, never the quick-row labels (an icon-only row would make Leaf/Compass/Bookmark carry meaning alone), never the assertion.
 
