@@ -275,10 +275,21 @@ test.describe("intake: the eight-screen tour", () => {
   const step = (page: Page) => page.getByTestId("onboarding-step");
   const skip = (page: Page) =>
     page.getByRole("button", { name: "Skip", exact: true });
+  // track() reads window.umami at call time and no Umami script loads in e2e,
+  // so a recorder installed before load stands in for it.
+  const recordEvents = (page: Page) =>
+    page.addInitScript(() => {
+      const w = window as unknown as { __ev: unknown[]; umami: unknown };
+      w.__ev = [];
+      w.umami = { track: (n: string, p?: unknown) => w.__ev.push([n, p ?? null]) };
+    });
+  const recorded = (page: Page) =>
+    page.evaluate(() => (window as unknown as { __ev: [string, unknown][] }).__ev);
 
   test("pick two pains and a win, finish the tour: pal.ask.v1 written, Home mounts by soft navigation with the picked door (R-45)", async ({
     page
   }) => {
+    await recordEvents(page);
     await page.goto("/onboarding");
     await expect(step(page)).toHaveAttribute("data-step", "welcome");
     await page.getByRole("button", { name: "Get started" }).click();
@@ -349,6 +360,16 @@ test.describe("intake: the eight-screen tour", () => {
     const ask = await page.evaluate(() => window.localStorage.getItem("pal.ask.v1"));
     expect(JSON.parse(ask ?? "null")).toEqual({ pains: ["worried", "food"], win: "peace" });
 
+    // The research event and the funnel, end to end (M2). The recorder
+    // survived: /home?stay=1 was a soft navigation.
+    const ev = await recorded(page);
+    expect(ev.filter(([n]) => n === "intake_ask")).toEqual([
+      ["intake_ask", { pain_1: "worried", pain_2: "food", pain_3: "none", win: "peace" }]
+    ]);
+    expect(
+      ev.filter(([n]) => n === "onboarding_step").map(([, p]) => (p as { step: string }).step)
+    ).toEqual(["segment", "ask_pains", "ask_win", "attribution", "expectations"]);
+
     if (await doorSurfaceOn("home")) {
       await expect(page.locator(".home-door")).toHaveAttribute("data-door", "worried");
     }
@@ -357,6 +378,7 @@ test.describe("intake: the eight-screen tour", () => {
   test("skip both ask screens: pal.ask.v1 stays absent and the tour still completes", async ({
     page
   }) => {
+    await recordEvents(page);
     await page.goto("/onboarding");
     await page.getByRole("button", { name: "Get started" }).click();
     await page.getByRole("button", { name: "New A1C result" }).click();
@@ -378,5 +400,11 @@ test.describe("intake: the eight-screen tour", () => {
     expect(
       await page.evaluate(() => window.localStorage.getItem("pal.ask.v1"))
     ).toBeNull();
+
+    expect(
+      (await recorded(page)).filter(([n]) => n === "intake_ask")
+    ).toEqual([
+      ["intake_ask", { pain_1: "none", pain_2: "none", pain_3: "none", win: "skipped" }]
+    ]);
   });
 });
