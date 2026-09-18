@@ -4197,10 +4197,13 @@ button.inline-link {
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
   margin: 4px 0 14px;
-  list-style: none;
-  padding: 0;
 }
 
+/* R-8: matches .idea-row directly above (same radius step on DESIGN.md's
+   24/22/18/14/999 scale, same tappable-row border token — --border-soft
+   reads ~1.2:1 on white and is reserved for card edges, not a row you tap).
+   Rounded rectangles, not circles or pills — the C7 review above
+   .app-tabbar already rejected icon-in-circle decoration. */
 .quick-action {
   display: flex;
   flex-direction: column;
@@ -4209,8 +4212,8 @@ button.inline-link {
   gap: 6px;
   min-height: 64px;
   padding: 10px 4px;
-  border: 1px solid var(--border-soft);
-  border-radius: 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
   background: var(--surface);
   color: var(--text-body);
   font-size: 12px;

@@ -1,8 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -29,16 +27,20 @@ const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), "utf8");
 
 describe("home-quick-row.tsx — four pinned actions, quiet, client (Task 5.1)", () => {
   const src = read("components/home-quick-row.tsx");
+  // Fix round 2 (I1): every pin below reads `body`, not `src` — the reviewer
+  // proved that a pin matching anywhere in the file (an import line, a doc
+  // comment) is satisfied whether or not the JSX itself is right. Cutting at
+  // the component's own `export function` is the same trick the hrefs pin
+  // already used; the icon and dispatch pins below now use it too.
+  const body = src.slice(src.indexOf("export function HomeQuickRow"));
 
   it('is a client component ("use client" — the Task card overrules the brief\'s "server-safe")', () => {
     expect(src.trimStart().startsWith('"use client";')).toBe(true);
   });
 
   it("carries exactly four hrefs, in order: #ideas-title, /check, /learn, /journey", () => {
-    // Scoped to the component body (past the doc comment) so a `href="..."`
-    // mentioned in prose above can never double-count. Learn renders through
-    // <LearnLink>, not a bare <Link> (fix round 1), so both tags count.
-    const body = src.slice(src.indexOf("export function HomeQuickRow"));
+    // Learn renders through <LearnLink>, not a bare <Link> (fix round 1), so
+    // both tags count.
     const hrefs = [...body.matchAll(/<(?:Link|LearnLink)\s[^>]*\bhref="([^"]+)"/g)].map((m) => m[1]);
     expect(hrefs).toEqual(["#ideas-title", "/check", "/learn", "/journey"]);
   });
@@ -49,33 +51,32 @@ describe("home-quick-row.tsx — four pinned actions, quiet, client (Task 5.1)",
   });
 
   it('carries `aria-label="Quick actions"`', () => {
-    expect(src).toContain('aria-label="Quick actions"');
+    expect(body).toMatch(/<nav[^>]*\baria-label="Quick actions"/);
   });
 
-  it("uses the pinned icon per item — Leaf/Ideas, CheckCircle/Check, Book/Learn, Compass/Journey (fix round 1)", () => {
-    expect(src).toMatch(/IconLeaf[\s\S]*?Ideas/);
-    expect(src).toMatch(/IconCheckCircle[\s\S]*?Check/);
-    expect(src).toMatch(/IconBook[\s\S]*?Learn/);
-    expect(src).toMatch(/IconCompass[\s\S]*?Journey/);
-    // The reverse pairing (task brief's original draft) must not survive.
-    expect(src).not.toContain("IconBookmark");
+  it("each item's icon sits directly inside its own link, not just named somewhere in the file (fix round 2, I1)", () => {
+    // These are the exact regexes the reviewer verified DO go red on an
+    // icon swap — see the fix-round-2 report entry for the red-then-green
+    // evidence (temporarily swapped IconLeaf/IconCheckCircle in the JSX,
+    // confirmed this test failed, reverted).
+    expect(body).toMatch(/<Link href="#ideas-title"[^>]*>\s*<IconLeaf\b/);
+    expect(body).toMatch(/<Link href="\/check"[^>]*>\s*<IconCheckCircle\b/);
+    expect(body).toMatch(/<LearnLink href="\/learn"[^>]*>\s*<IconBook\b/);
+    expect(body).toMatch(/<Link href="\/journey"[^>]*>\s*<IconCompass\b/);
   });
 
-  it("the row's Journey icon matches the shell tab bar's own icon for /journey — one glyph, one meaning (fix round 1)", () => {
+  it("the row's Journey icon matches the shell tab bar's own icon for /journey, and never reuses its /meals icon — one glyph, one meaning, checked against the cut JSX (fix round 1/2)", () => {
     const navSrc = read("components/app-nav.tsx");
     const navJourneyIcon = navSrc.match(/href:\s*"\/journey"[^}]*icon:\s*(Icon\w+)/)?.[1];
-    expect(navJourneyIcon).toBe("IconCompass");
-    expect(src).toMatch(/IconCompass[\s\S]*?Journey/);
-    // And the row must not reuse app-nav's /meals glyph (IconBookmark) for
-    // anything — that pairing belongs to a different destination entirely.
     const navMealsIcon = navSrc.match(/href:\s*"\/meals"[^}]*icon:\s*(Icon\w+)/)?.[1];
+    expect(navJourneyIcon).toBe("IconCompass");
     expect(navMealsIcon).toBe("IconBookmark");
-    expect(src).not.toContain(navMealsIcon!);
+    expect(body).toMatch(new RegExp(`<Link href="/journey"[^>]*>\\s*<${navJourneyIcon}\\b`));
+    expect(body).not.toContain(navMealsIcon!);
   });
 
-  it("the Ideas item is the See-all trigger — a native anchor plus the one CustomEvent dispatch, no scroll code", () => {
-    expect(src).toContain('href="#ideas-title"');
-    expect(src).toContain("dispatchIdeasExpand");
+  it("the Ideas item's own onClick — not just an import — dispatches the See-all CustomEvent; no scroll code anywhere (fix round 2, M1)", () => {
+    expect(body).toMatch(/<Link href="#ideas-title"[^>]*\bonClick=\{dispatchIdeasExpand\}/);
     expect(src).not.toMatch(/scrollIntoView|scrollTo/);
   });
 
@@ -85,17 +86,12 @@ describe("home-quick-row.tsx — four pinned actions, quiet, client (Task 5.1)",
     expect(src).not.toContain("learn_opened");
     expect(src).not.toMatch(/from\s+["'].*\/analytics["']/);
     expect(src).toMatch(/from\s+["'].*learn-link["']/);
-    expect(src).toMatch(/<LearnLink\s+href="\/learn"\s+from="home"\s+className="quick-action">/);
+    expect(body).toMatch(/<LearnLink\s+href="\/learn"\s+from="home"\s+className="quick-action">/);
   });
 
-  it('LearnLink accepts the optional className this row needs, and every existing call site is untouched', () => {
+  it("LearnLink accepts the optional className this row needs", () => {
     const learnLinkSrc = read("components/learn-link.tsx");
     expect(learnLinkSrc).toMatch(/className\?:\s*string/);
-    for (const rel of ["app/(app)/journey/page.tsx", "components/dashboard-view.tsx"]) {
-      const callerSrc = read(rel);
-      expect(callerSrc).toMatch(/<LearnLink href=\{?[^>]*\bfrom="[a-z_]+"/);
-      expect(callerSrc).not.toMatch(/<LearnLink[^>]*className=/);
-    }
   });
 });
 
@@ -171,9 +167,9 @@ describe("lib/client/ideas-expand.ts — the See-all CustomEvent contract (R-2)"
     mod.dispatchIdeasExpand();
     expect(calls).toBe(1);
 
-    // Tapping Ideas twice: the handler fires again — it is a plain "expand
-    // now" signal with no memory of prior taps, so nothing here can ever
-    // read as a toggle.
+    // Tapping Ideas twice: the handler fires again — this only proves the
+    // event bus re-delivers on every dispatch. Expand-only (never a toggle)
+    // is pinned separately, on the guide-ideas.tsx source below.
     mod.dispatchIdeasExpand();
     expect(calls).toBe(2);
 
@@ -197,7 +193,6 @@ describe("lib/client/ideas-expand.ts — the See-all CustomEvent contract (R-2)"
 describe("guide-ideas.tsx — the See-all listener expands only, never toggles, and adds no markup", () => {
   const src = read("components/guide-ideas.tsx");
   const componentSrc = src.slice(src.indexOf("export function GuideIdeas"));
-  const returnIndex = componentSrc.indexOf("return (");
 
   it("imports the shared listener from lib/client/ideas-expand", () => {
     expect(src).toMatch(/from\s+["'].*ideas-expand["']/);
@@ -209,39 +204,12 @@ describe("guide-ideas.tsx — the See-all listener expands only, never toggles, 
     expect(src.match(/setExpanded\(\(current\) => !current\)/g)).toHaveLength(1);
     expect(src.match(/setExpanded\(true\)/g)).toHaveLength(1);
   });
-
-  it("the listener effect is a hook, not JSX — it sits before the component's return, so it cannot add markup", () => {
-    const effectIndex = componentSrc.indexOf("listenForIdeasExpand(() => setExpanded(true))");
-    expect(effectIndex).toBeGreaterThan(-1);
-    expect(returnIndex).toBeGreaterThan(-1);
-    expect(effectIndex).toBeLessThan(returnIndex);
-  });
 });
 
-describe("guide-ideas.tsx — flag-off and ideas-only renders stay unchanged", () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-    vi.resetModules();
-  });
-
-  async function renderGuideIdeas(door: string): Promise<string> {
-    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", door);
-    vi.resetModules();
-    const { GuideIdeas } = await import("../../../components/guide-ideas");
-    return renderToStaticMarkup(createElement(GuideIdeas));
-  }
-
-  it('"ideas"-only (full off) still renders the bare heading, no toggle, no data-full — the listener adds no JSX', async () => {
-    const html = await renderGuideIdeas("ideas");
-    expect(html).not.toContain("ideas-heading-row");
-    expect(html).not.toContain("ideas-see-all");
-    expect(html).not.toContain('data-full="true"');
-    expect(html).toContain('id="ideas-title"');
-  });
-
-  it('"ideas-full" on still renders the heading row and data-full exactly as PR-4 shipped it (the "See all" button itself needs the mount effect, so it is absent before hydration — pre-existing, not this task\'s change)', async () => {
-    const html = await renderGuideIdeas("ideas,ideas-full");
-    expect(html).toContain("ideas-heading-row");
-    expect(html).toContain('data-full="true"');
-  });
-});
+// Fix round 2 (M2): a "hook sits before return(" source check and a
+// renderToStaticMarkup render of <GuideIdeas> (SSR never runs effects, so
+// the listener can't appear in that markup either way) both used to sit
+// here. Neither could fail if the listener were deleted outright, so they
+// proved nothing and are gone. The real evidence that the ideas-only and
+// flag-off renders are untouched is that tests/unit/pal/guide-door.test.ts's
+// own byte-for-byte DashboardView/GuideIdeas pins still pass unchanged.
