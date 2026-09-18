@@ -91,7 +91,20 @@ function expandFrom(daypart: Daypart, first: GuideIdea): GuideIdea[] {
   return Array.from({ length: bank.length }, (_, offset) => bank[(start + offset) % bank.length]);
 }
 
-export function GuideIdeas() {
+/**
+ * Task 5.3 (ruling R-18): HomeDoor passes `count` and `heading` per door. Both
+ * apply at RENDER time only — the ideas are still computed once, in the mount
+ * effect below, so a post-hydration change (3 → 2 rows, a new title) never
+ * re-runs it: no second rotation step, no second `ideas_shown`. `count` limits
+ * the collapsed view only; "See all" still shows the whole bank.
+ */
+export function GuideIdeas({
+  count = 3,
+  heading: headingText
+}: {
+  count?: number;
+  heading?: string;
+}) {
   const router = useRouter();
   const hydrated = useHydrated();
   const full = guideDoorEnabled("ideas-full");
@@ -165,7 +178,7 @@ export function GuideIdeas() {
 
   const heading = (
     <h2 className="ideas-title" id="ideas-title">
-      {view ? DAYPART_HEADING[view.daypart] : "Ideas for today"}
+      {headingText ?? (view ? DAYPART_HEADING[view.daypart] : "Ideas for today")}
     </h2>
   );
 
@@ -210,7 +223,7 @@ export function GuideIdeas() {
       {view ? (
         <IdeaRows
           id={full ? IDEAS_LIST_ID : undefined}
-          ideas={expanded ? view.allIdeas : view.ideas}
+          ideas={expanded ? view.allIdeas : view.ideas.slice(0, count)}
           onPick={(idea, slot) => pick(idea, slot, view.daypart)}
         />
       ) : (
@@ -219,7 +232,7 @@ export function GuideIdeas() {
         // same "ideas-list" wrapper IdeaRows uses, kept inline here (not
         // moved into IdeaRows) since it has no ideas/onPick to give it.
         <ul className="ideas-list" role="list" aria-label="Meal ideas">
-          {[1, 2, 3].map((n) => (
+          {Array.from({ length: count }, (_, n) => (
             <li key={n} className="idea-row idea-row--skeleton" aria-hidden="true" />
           ))}
         </ul>

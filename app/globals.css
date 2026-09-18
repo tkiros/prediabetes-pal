@@ -4186,6 +4186,20 @@ button.inline-link {
   color: var(--accent-strong);
 }
 
+/* Task 5.3 HomeDoor: the region exists for the focus check and `data-door`;
+   `display: contents` keeps it out of layout, so every slot lays out (and
+   collapses margins) exactly as a direct child of the dashboard. */
+.home-door {
+  display: contents;
+}
+
+/* The worried door's clinician line — the disclaimer's own sentence in the
+   disclaimer's own type (.result-disclaimer, 14px muted). Bottom margin only:
+   its top meets .dash-greet's 18px, and 12px below matches .ideas-block's. */
+.home-door-line {
+  margin: 0 2px 12px;
+}
+
 /* Task 5.1 quick-action row — below the hero (review A-54), out of the fold
    budget the smoke tests pin. Four equal, real (≥44px) targets, visible
    labels at every width. Quiet: no fill on any item, Check included — the

@@ -115,11 +115,18 @@ const week = (over: Partial<OrientationState> = {}): OrientationState => ({ ...E
 /** React's attribute-safe apostrophe, decoded. */
 const decode = (html: string) => html.replace(/&#x27;/g, "'");
 
-/** Every element in a tree whose type is `type` (props.children walk, no render). */
+/**
+ * Every element in a tree whose type is `type` (props walk, no render). Every
+ * prop, not only children: with the home surface on, Home's slots reach
+ * HomeDoor as named props (Task 5.3).
+ */
 function findAll(node: ReactNode, type: unknown): ReactElement<Record<string, unknown>>[] {
   if (Array.isArray(node)) return node.flatMap((child) => findAll(child, type));
   if (!isValidElement<Record<string, unknown>>(node)) return [];
-  return [...(node.type === type ? [node] : []), ...findAll(node.props.children as ReactNode, type)];
+  return [
+    ...(node.type === type ? [node] : []),
+    ...Object.values(node.props).flatMap((value) => findAll(value as ReactNode, type))
+  ];
 }
 
 beforeEach(() => {

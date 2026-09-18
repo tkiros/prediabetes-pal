@@ -416,4 +416,150 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
       }
     });
   }
+
+  // Task 5.3 (review A-93, rulings R-19/R-20): every non-default door,
+  // measured the same way as the default door above — each width, each
+  // daypart, each rotation page. The door comes from the first F-ASK pick in
+  // `pal.ask.v1`, seeded before the load. Each door runs with a line above
+  // the ideas, the case that costs fold height:
+  //   • worried on day 2 of the week (days 1–3 put the clinician line on
+  //     top; day 2 is the default fold test's own tallest Home — the hero's
+  //     step eyebrow, no step line);
+  //   • numbers and plan on day 1, where step 1 (a /guides/ link, not
+  //     /check) renders the step line before any check — the case that puts
+  //     the step on top. With no step they fall back to the default door.
+  // Those three doors render two idea rows at every width (A-93). Each cell
+  // also proves GuideIdeas did not remount on the reorder: a remount re-runs
+  // the mount effect, which would advance the rotation a second time and
+  // show a different first idea.
+  const DOORS = [
+    {
+      door: "worried",
+      pick: "worried",
+      day: 2,
+      order: ["line", "ideas", "hero", "quickRow"],
+      title: null
+    },
+    {
+      door: "numbers",
+      pick: "number",
+      day: 1,
+      order: ["step", "ideas", "hero", "quickRow"],
+      title: "Ideas for later"
+    },
+    { door: "plan", pick: "plan", day: 1, order: ["step", "ideas", "hero", "quickRow"], title: null }
+  ] as const;
+
+  for (const width of [360, 375, 430]) {
+    for (const { door, pick, day, order, title } of DOORS) {
+      test(`door fold at ${width}×667, ${door} door: the check CTA clears the tab bar at every daypart and rotation page`, async ({
+        page
+      }) => {
+        test.skip(
+          !(await doorSurfaceOn("home")) || !(await doorSurfaceOn("orient")),
+          "home and orient surfaces must both be on"
+        );
+        const fullOn = await doorSurfaceOn("ideas-full");
+        await page.setViewportSize({ width, height: 667 });
+        await page.clock.install({ time: new Date(FOLD_CLOCKS[0]!.time) });
+        await page.goto("/home?stay=1");
+        await expect(page.getByTestId("idea-row-1")).toBeVisible();
+
+        for (const { time, daypart } of FOLD_CLOCKS) {
+          await page.clock.setSystemTime(new Date(time));
+
+          for (const seed of ROTATION_SEEDS) {
+            await page.evaluate(
+              ([value, firstPick, weekDay]) => {
+                window.localStorage.setItem("pal.ideas.rotation", String(value));
+                window.localStorage.removeItem("pal.segment.v1");
+                window.localStorage.setItem(
+                  "pal.ask.v1",
+                  JSON.stringify({ pains: [firstPick], win: null })
+                );
+                const startedAt = new Date(); // the installed clock
+                startedAt.setDate(startedAt.getDate() - (weekDay - 1));
+                window.localStorage.setItem(
+                  "pal.orient.v1",
+                  JSON.stringify({ done: [], dismissedAt: null, startedAt: startedAt.toISOString() })
+                );
+              },
+              [seed, pick, day] as const
+            );
+            await page.goto("/home?stay=1");
+
+            const cell = `${width}px ${door} ${time.slice(11, 16)} seed ${seed}`;
+            const region = page.locator(".home-door");
+            await expect(region, cell).toHaveAttribute("data-door", door);
+            await expect(page.getByRole("heading", { level: 1 }), cell).toHaveText(
+              `Day ${day} of your first week`
+            );
+            await expect(page.locator("#ideas-title"), cell).toHaveText(
+              title ?? `Ideas for ${daypart}`
+            );
+            // No remount: the rotation advanced exactly once, and the first
+            // row is that page's first idea.
+            await expect(page.getByTestId("idea-row-1"), cell).toHaveText(
+              ideasFor(daypart, seed + 1, { full: fullOn })[0]!.text
+            );
+            expect(
+              await page.evaluate(() => window.localStorage.getItem("pal.ideas.rotation")),
+              cell
+            ).toBe(String(seed + 1));
+
+            // DOM order is the reading order (A-55): the region's children,
+            // named by slot.
+            const slots = await region.evaluate((el) =>
+              Array.from(el.children).map((child) =>
+                child.matches('[data-testid="home-door-line"]')
+                  ? "line"
+                  : child.matches('[data-testid="ideas-block"]')
+                    ? "ideas"
+                    : child.matches(".meal-hero")
+                      ? "hero"
+                      : child.matches(".quick-row")
+                        ? "quickRow"
+                        : child.matches('[data-testid="next-action"]')
+                          ? "step"
+                          : child.outerHTML.slice(0, 40)
+              )
+            );
+            expect(slots.slice(0, order.length), cell).toEqual([...order]);
+            if (door === "worried") {
+              await expect(page.getByTestId("home-door-line"), cell).toHaveText(
+                "Talk with a doctor or registered dietitian for guidance that is specific to you."
+              );
+            }
+
+            // A-93: two rows in every non-default door with a line above the
+            // ideas, at every width; each within the two-line floor.
+            let visibleRows = 0;
+            for (const row of await page.getByTestId(/^idea-row-\d$/).all()) {
+              if (!(await row.isVisible())) continue;
+              visibleRows += 1;
+              const [height, floor, text] = await row.evaluate((el) => [
+                el.getBoundingClientRect().height,
+                Number.parseFloat(getComputedStyle(el).minHeight),
+                el.textContent ?? ""
+              ] as const);
+              expect.soft(height, `${cell}: "${text}" wraps past two lines`).toBeLessThanOrEqual(
+                floor + 0.5
+              );
+            }
+            expect.soft(visibleRows, `${cell}: visible idea rows`).toBe(2);
+
+            const ctaBox = await page.getByTestId("dash-check-cta").boundingBox();
+            const barBox = await page.locator(".app-tabbar").boundingBox();
+            expect(ctaBox, cell).not.toBeNull();
+            expect(barBox, cell).not.toBeNull();
+            const ctaBottom = ctaBox!.y + ctaBox!.height;
+            console.log(
+              `[fold] ${cell} (${daypart}): CTA bottom ${ctaBottom.toFixed(1)}, tab bar top ${barBox!.y.toFixed(1)}, slack ${(barBox!.y - ctaBottom).toFixed(1)}`
+            );
+            expect.soft(ctaBottom, cell).toBeLessThanOrEqual(barBox!.y);
+          }
+        }
+      });
+    }
+  }
 });

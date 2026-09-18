@@ -7,6 +7,7 @@ import { guideDoorEnabled } from "../lib/guide-door-flag";
 import type { PlanBoxData } from "../lib/server/plan-box";
 import { GuideIdeas } from "./guide-ideas";
 import { HomeCheckHero } from "./home-check-hero";
+import { HomeDoor } from "./home-door";
 import { HomeQuickRow } from "./home-quick-row";
 import { LearnLink } from "./learn-link";
 import { PlanBox } from "./plan-box";
@@ -70,6 +71,35 @@ export function DashboardView({ data }: { data: DashboardData }) {
   // week running, a null next action means exactly that.
   const heroIsStep = weekOn && data.nextAction === null;
 
+  // The four Home slots, in the default order. Plain elements, so the server
+  // tree stays a server tree; HomeDoor (a client leaf) only reorders them.
+  // PRD v1.1 §7.4/§7.6: ideas lead, the check hero drops to second and
+  // stays the one accent-filled action. Flag off ⇒ unchanged Home.
+  const ideas = ideasOn ? <GuideIdeas /> : null;
+  const hero = <HomeCheckHero stepToday={heroIsStep} />;
+  const quickRow = homeOn ? <HomeQuickRow /> : null;
+  const step = data.nextAction ? (
+    <p className="dash-next-action" data-testid="next-action">
+      {/* Ruling F-38: a step into /learn/ reports learn_opened; that
+          client leaf keeps this view a server tree. Review A-84, rulings
+          F-54/F-55: steps 1 and 7, picked by the line's step id, go
+          through StepLink, which completes the step and reports
+          learn_opened for a /learn/ href as LearnLink does. Flag off ⇒
+          no step id, so the plain link, byte-for-byte. */}
+      {stepCompletesFromLink(data.nextAction.step) ? (
+        <StepLink href={data.nextAction.href} step={data.nextAction.step}>
+          {data.nextAction.text}
+        </StepLink>
+      ) : data.nextAction.href.startsWith("/learn/") ? (
+        <LearnLink href={data.nextAction.href} from="step">
+          {data.nextAction.text}
+        </LearnLink>
+      ) : (
+        <Link href={data.nextAction.href}>{data.nextAction.text}</Link>
+      )}
+    </p>
+  ) : null;
+
   return (
     <div data-testid="dashboard">
       {data.showFirstWin && !weekOn ? (
@@ -98,35 +128,27 @@ export function DashboardView({ data }: { data: DashboardData }) {
         )}
       </div>
 
-      {/* PRD v1.1 §7.4/§7.6: ideas lead, the check hero drops to second and
-          stays the one accent-filled action. Flag off ⇒ unchanged Home. */}
-      {ideasOn ? <GuideIdeas /> : null}
-
-      <HomeCheckHero stepToday={heroIsStep} />
-
-      {homeOn ? <HomeQuickRow /> : null}
-
-      {data.nextAction ? (
-        <p className="dash-next-action" data-testid="next-action">
-          {/* Ruling F-38: a step into /learn/ reports learn_opened; that
-              client leaf keeps this view a server tree. Review A-84, rulings
-              F-54/F-55: steps 1 and 7, picked by the line's step id, go
-              through StepLink, which completes the step and reports
-              learn_opened for a /learn/ href as LearnLink does. Flag off ⇒
-              no step id, so the plain link, byte-for-byte. */}
-          {stepCompletesFromLink(data.nextAction.step) ? (
-            <StepLink href={data.nextAction.href} step={data.nextAction.step}>
-              {data.nextAction.text}
-            </StepLink>
-          ) : data.nextAction.href.startsWith("/learn/") ? (
-            <LearnLink href={data.nextAction.href} from="step">
-              {data.nextAction.text}
-            </LearnLink>
-          ) : (
-            <Link href={data.nextAction.href}>{data.nextAction.text}</Link>
-          )}
-        </p>
-      ) : null}
+      {/* Task 5.3: with the home surface on, the four slots go through
+          HomeDoor, which may reorder them per person after hydration. Flag
+          off ⇒ the same four elements, inline, in today's order — byte for
+          byte (Fragments and nulls emit nothing). */}
+      {homeOn ? (
+        <HomeDoor
+          ideas={ideas}
+          hero={hero}
+          quickRow={quickRow}
+          step={step}
+          orientationDay={data.orientationDay}
+          hasStep={data.nextAction?.step !== undefined}
+        />
+      ) : (
+        <>
+          {ideas}
+          {hero}
+          {quickRow}
+          {step}
+        </>
+      )}
 
       <section className="dash-card" aria-label="Today">
         <h3 className="dash-sect-title">Today</h3>
