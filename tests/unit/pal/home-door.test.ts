@@ -105,6 +105,13 @@ describe("guardLayout — R-21: no layout change lands while focus is inside the
     );
     expect(src).toMatch(/useLayoutEffect\(\(\) => \{\s*committed\.current = layout;\s*\}\);/);
   });
+
+  it("hero, quickRow and step are keyed Fragments — an unkeyed Fragment would break the reorder (R-29)", () => {
+    const src = read("components/home-door.tsx");
+    expect(src).toContain('<Fragment key="hero">{hero}</Fragment>');
+    expect(src).toContain('<Fragment key="quickRow">{quickRow}</Fragment>');
+    expect(src).toContain('<Fragment key="step">{step}</Fragment>');
+  });
 });
 
 describe("the worried door's clinician line", () => {

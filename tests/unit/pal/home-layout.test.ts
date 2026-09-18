@@ -400,7 +400,7 @@ describe("app/(app)/learn/page.tsx — R-10 positive path (fix round 1, I2)", ()
 describe('components/saved-meals-section.tsx — no id="saved" (ruling R-30, revert of R-12)', () => {
   it('the <section> carries no id at all — it leaked into the flag-off /meals DOM and could never work (the section renders after an async fetch; Next 16.3 layout-router.js:158-165 drops a hash scroll whose target is not in the DOM at commit)', () => {
     const src = read("components/saved-meals-section.tsx");
-    expect(src).not.toMatch(/<section\s+id="saved"/);
+    expect(src).not.toContain('id="saved"');
     expect(src).toMatch(/<section\s*\n\s*className="account-section"\s*\n\s*aria-label="Saved meals"/);
   });
 });
