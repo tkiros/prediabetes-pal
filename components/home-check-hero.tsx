@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { IconArrowRight } from "./icons";
+import { guideDoorEnabled } from "../lib/guide-door-flag";
 
 /**
  * Action-first Home hero (approved direction 2026-07-19, "Spruce Bento"
@@ -44,7 +45,9 @@ export function HomeCheckHero({ stepToday = false }: { stepToday?: boolean }) {
       <p className="meal-hero-eyebrow">
         {stepToday ? "Today's step · Meal check" : "Meal check"}
       </p>
-      <h2 id="meal-hero-title">What are you eating?</h2>
+      <h2 id="meal-hero-title">
+        {guideDoorEnabled("home") ? "Unsure about a meal?" : "What are you eating?"}
+      </h2>
       <p className="meal-hero-copy">
         Type it or say it. Get one clear food signal.
       </p>
