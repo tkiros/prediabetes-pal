@@ -13,12 +13,13 @@ import { normalizeSigninIdentifier } from "./lib/server/auth-identifier";
 import { sendEmail } from "./lib/server/email";
 
 /**
- * Auth.js v5 — email magic-link via Resend, database sessions in Railway
- * Postgres (docs/adr/hosting-hybrid.md). DB sessions make sign-out-everywhere
- * and account deletion trivially correct.
+ * Auth.js v5 — email magic-link via Resend, database sessions in Neon
+ * Postgres (docs/adr/hosting-hybrid.md; moved off Railway 2026-08-10, see
+ * docs/runbooks/incident-2026-08-10-database-outage.md). DB sessions make
+ * sign-out-everywhere and account deletion trivially correct.
  *
  * The adapter is only constructed when DATABASE_URL is present: it is always
- * present at runtime on Vercel (preview/prod) and in dev once Railway
+ * present at runtime on Vercel (preview/prod) and in dev once Neon
  * Postgres is provisioned (§10); without it, importing this module stays
  * safe (builds, tests) and auth simply isn't available.
  */

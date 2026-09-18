@@ -32,7 +32,7 @@
 
 ## 1. Gate / decision status table
 
-Status as of 2026-09-17 (commit `a4b76ed`); §8 recommendations recorded and the F-ASK floor ruling amended 2026-09-14. "Blocks" names what may not start; "Opens when" is the unblock condition the plan waits on. Built and merged dormant 2026-09-17: PR-1 (#144), migration 0019 (#145, applied to production first), PR-2 + PR-3 (#146), the first-week finish (#147); every surface is off in production.
+Status as of 2026-09-18 (commit `a2d327d`); §8 recommendations recorded and the F-ASK floor ruling amended 2026-09-14. "Blocks" names what may not start; "Opens when" is the unblock condition the plan waits on. Built and merged dormant 2026-09-17: PR-1 (#144), migration 0019 (#145, applied to production first), PR-2 + PR-3 (#146), the first-week finish (#147). Built and merged dormant 2026-09-18: **PR-4 (#153)** — the grown bank, segment steering and "See all", all behind the `ideas-full` surface. Every surface is off in production.
 
 | # | Decision / gate | Decider | Status | Blocks | Opens when |
 |---|---|---|---|---|---|
@@ -40,6 +40,7 @@ Status as of 2026-09-17 (commit `a4b76ed`); §8 recommendations recorded and the
 | D7 | Which claim class does a general A1C-education page file under; if none, does counsel add one | Safety owner / counsel | **To ask now**, in parallel with D5 | F-NUMBERS (§2.4.1) | A class is named (row class = that class). **Escalation:** no class by branch-read day ⇒ F-NUMBERS deferred, prototype ships regardless of branch |
 | Ledger batch 1 | eight rows (PR-1, all filed in Task 1.7 — A-119): `guide-ideas-breakfast`/`-lunch`/`-dinner`, `guide-ideas-hero`, `result-source-lead`, `check-empty-ideas`, `check-from-idea`, `check-classics-hint-guide` | Safety owner | **Filed, Pending** (all eight, 2026-09-15; safety-owner submission drafted 2026-09-17, not yet sent) | Production flag flip | Rows `Approved` **and** `tests/unit/pal/guide-ideas-labels.test.ts` green on the current `PROMPT_VERSION` (Task 4.1, pulled into PR-1 by review A-03) |
 | Ledger batch 2 | Orientation, Learn, Home, onboarding, F-ASK rows (PR-3…PR-6) | Safety owner | **Filed, Pending — 18 rows** (orientation half, PR-3 + #147; the Home/onboarding/F-ASK rows of PR-5/PR-6 are not filed) | Production flag flip for those surfaces | Rows `Approved` |
+| Ledger batch 3 | four rows (PR-4, filed in #153): `guide-ideas-more-breakfast`/`-lunch`/`-dinner`, `guide-ideas-see-all` | Safety owner | **Filed, Pending — 4 rows** (2026-09-18; added to the submission draft as §3b, still unsent) | Production flag flip for `ideas-full` | Rows `Approved` **and** `ideas` already live |
 | D3 | Later out-of-range A1C entry: **refuse** / **store without anchoring** / **anchor and route** | Owner | **Open, no recommendation** | F-TREND (§2.4.2) | One of the three is chosen |
 | RV-3 | `/journey` no-`%` rail: **(a)** amend `DESIGN.md` §9 + scope `expectRv3Clean`'s `%` assertion to the recap, or **(b)** render "A1C 5.9" with the unit in the heading (if a bare value still counts as a percentage under §9, (b) is unavailable) | Safety owner | **Open** | F-TREND (§2.4.2) | (a) or (b) chosen |
 | Consistency eval | "Same read every time" evidence on the panel | Engineering | **Single meal green** — 127/127, 0 flips on prompt `2026-08-16.1` (`docs/ops/launch-controls.md` §12); **panel not run** | F-SOURCE `/how-it-works` paragraph (§2.4.3) | A panel run (every `stratum-*` meal × 3 bands, N ≥ 20 each) logged in §12 at ≥ 95% modal class, **and** the paragraph is an `Approved` ledger row |
@@ -66,7 +67,7 @@ Status as of 2026-09-17 (commit `a4b76ed`); §8 recommendations recorded and the
 | PR-2 | Calm-tone audit | F-CALM | §2.3 Tasks 2.1–2.4 | Any time after PR-1 merges (near-zero cost) |
 | — | F-NUMBERS | gated | §2.4.1 | D7 resolved |
 | PR-3 | Orientation week | F-ORIENT (+ F-REFER if cleared) | §2.3 Tasks 3.1–3.8; F-REFER §5.1 | Ledger batch 2 filed |
-| PR-4 | Full idea bank (growth to ≥ 10 per daypart, segment steering, See all) | F-IDEAS (full) | §2.3 Tasks 4.3–4.4 + bank growth (4.1 and 4.2 moved to PR-1 by reviews A-03 and A-42) | PR-1's ideas-viewed : checks-run ratio "earns it" (owner reads the Umami counts; no threshold is set in the PRD — see Open questions) |
+| PR-4 | Full idea bank (growth to ≥ 10 per daypart, segment steering, See all) — **built and merged dormant 2026-09-18 (#153)** behind the `ideas-full` surface | F-IDEAS (full) | §2.3 Tasks 4.3–4.4 + bank growth (4.1 and 4.2 moved to PR-1 by reviews A-03 and A-42) | PR-1's ideas-viewed : checks-run ratio "earns it" (owner reads the Umami counts; no threshold is set in the PRD — see Open questions). **The ratio read was not taken before the build** — the owner chose to build anyway, so the merge is dormant work the read could still cancel; the *release* gate is unchanged |
 | PR-5 | Home layout | §7.4 / §7.6 | §3 Tasks 5.1–5.5 | After PR-3 (the step line) and PR-4 |
 | PR-6 | Intake | §7.4 onboarding changes + F-ASK (§7.5) | §4 Tasks 6.1–6.7 | After PR-5 (door order needs the Home slots) |
 | — | F-TREND | gated, **last in both branches** | §2.4.2 | D3 **and** RV-3 chosen |
@@ -1854,7 +1855,7 @@ export function nextAction(input: NextActionInput): NextAction {
 **Pulled into PR-1 by review A-03.** The prototype ships a bank whose model labels are otherwise unverified until PR-4, while §7.3 step 3 flips the flag to production after PR-1 — so a tapped idea could come back `Be careful` on the product's most trust-critical surface. This task therefore runs at the end of PR-1 (after Task 1.9), the labels file is committed with PR-1, and the production flip waits on `guide-ideas-labels.test.ts` green. PR-4 re-runs it only when the bank or `PROMPT_VERSION` changes (which the unit gate enforces).
 
 **Files:**
-- Create: `tests/evals/guide-ideas-label-eval.test.ts` (live; runs only with `PAL_LIVE_EVAL=1` + `OPENAI_API_KEY`, the `pal-safety-eval` convention; uses `checkFood` with **`createEvalModelClient` from `tests/support/pal-test-model.ts`** — A-117: `getModelClient` is not exported from the check route). **Steps 2–3 are the owner's hand-off** (a paid run, ~1,440 calls); the implementer finishes PR-1 with the unit suite skipped and the `ideas` surface closed by the guard until the file is committed.
+- Create: `tests/evals/guide-ideas-label-eval.test.ts` (live; runs only with `PAL_LIVE_EVAL=1` + `OPENAI_API_KEY`, the `pal-safety-eval` convention; uses `checkFood` with **`createEvalModelClient` from `tests/support/pal-test-model.ts`** — A-117: `getModelClient` is not exported from the check route). **Steps 2–3 are the owner's hand-off** (a paid run; ~1,440 calls when PR-1 shipped the 24-line seed, **~1,800 calls since PR-4 grew the bank to 30 lines** — the eval iterates `GUIDE_IDEAS`, not the seed constant, so bank growth enlarges the paid run automatically); the implementer finishes PR-1 with the unit suite skipped and the `ideas` surface closed by the guard until the file is committed.
 - Create: `lib/pal/guide-ideas.labels.json` (written by the eval: `{ "promptVersion": "<PROMPT_VERSION>", "labels": { "<idea id>": { "text": "<the exact bank line>", "prediabetes_57_59": { "risk", "reason" }, "prediabetes_60_62": …, "prediabetes_63_64": … } } }` — **`text` is stored with every entry and the unit gate and the production guard both assert it equals the current bank line (review A-91): ids are positional, so a line reworded after the eval would otherwise keep the old wording's labels green**)
 - Create: `tests/unit/pal/guide-ideas-labels.test.ts`
 - Modify: `package.json` scripts: `"eval:pal:ideas": "PAL_LIVE_EVAL=1 vitest run tests/evals/guide-ideas-label-eval.test.ts"`
@@ -1887,9 +1888,12 @@ const LABELS_PATH = path.join(process.cwd(), "lib/pal/guide-ideas.labels.json");
 // live run). Until it exists this suite SKIPS with the instruction — test:pal
 // stays green for an implementer without a key, and the production door guard
 // (Task 1.11) keeps `ideas` closed until the file is committed.
+// 2026-09-18: the shipped wording drifted from this block when PR-4 grew the
+// bank — `tests/unit/pal/guide-ideas-labels.test.ts:162` is the live literal.
+// Only the count and price are corrected here (~1,440/$15 → ~1,800/$19).
 const hasLabels = fs.existsSync(LABELS_PATH);
 describe.skipIf(!hasLabels)(
-  "guide idea labels (skipped: run `npm run eval:pal:ideas` — OPENAI_API_KEY, ~1,440 calls at twenty per cell, about $15 — and commit lib/pal/guide-ideas.labels.json)",
+  "guide idea labels (skipped: run `npm run eval:pal:ideas` — OPENAI_API_KEY, ~1,800 calls at twenty per cell, about $19 — and commit lib/pal/guide-ideas.labels.json)",
   () => {}
 );
 const labels: Labels = hasLabels ? JSON.parse(fs.readFileSync(LABELS_PATH, "utf8")) : { promptVersion: "", model: "", labels: {} };
@@ -1943,7 +1947,7 @@ Note: taps still run a live check (the cache is evidence, not a serving path) �
 ##### Task 4.3: Segment steering
 
 **Files:**
-- Modify: `lib/pal/guide-ideas.ts` — `ideasFor(daypart, rotation, count, segment?: string)`: the existing "What brought you here?" answer (`pal.segment.v1`) steers the first idea the same way it steers the first-check chips (PRD §7.4): `"Doctor's advice"` and `"Family history"` start from the second half of the bank so returning segments see variety; `"New A1C result"` / `"Just checking"` / unknown → the default. (Deterministic; unit test extends `guide-ideas.test.ts`.)
+- Modify: `lib/pal/guide-ideas.ts` — `ideasFor(daypart, rotation, count, segment?: string)` (**shipped as `ideasFor(daypart, rotation, options?: IdeasOptions)` with `{ count, full, segment }` — `lib/pal/guide-ideas.ts:205`; use the options object, not this positional form**): the existing "What brought you here?" answer (`pal.segment.v1`) steers the first idea the same way it steers the first-check chips (PRD §7.4): `"Doctor's advice"` and `"Family history"` start from the second half of the bank so returning segments see variety; `"New A1C result"` / `"Just checking"` / unknown → the default. (Deterministic; unit test extends `guide-ideas.test.ts`.)
 - Modify: `components/guide-ideas.tsx` — pass `localStorage.getItem("pal.segment.v1")` (try/catch).
 
 ##### Task 4.4: "See all" expands the block
@@ -1951,6 +1955,8 @@ Note: taps still run a live check (the cache is evidence, not a serving path) �
 - Modify `components/guide-ideas.tsx`: a "See all" text button (`aria-expanded`) that shows the whole daypart bank; the collapsed state stays three chips. Taps on chips past the third emit `idea_tapped { slot: "more" }` (review A-08). No new route (Open questions: whether a dedicated ideas page is wanted). Copy: "See all" / "Show fewer" as their own row `guide-ideas-see-all` under the `ideas-full` surface (review A-94 — a batch-1 row must not carry a later PR's strings). Smoke: expanding keeps the CTA reachable (no assertion on the fold once expanded).
 
 **PR-4 done check:** all gates + both smoke runs green; the labels file is committed; `docs/safety/copy-ledger.md` `guide-ideas-*` Notes record any pruned ideas.
+
+**Status 2026-09-18: merged dormant (#153), done check partly outstanding.** Green: all four gates and all three e2e legs (fold slack, check CTA to tab bar, flag-on 58.2 / 12.3 / 12.3 px at 360 / 375 / 430; the `ideas,source` leg unchanged at 65.8 / 19.8 / 19.9). Tasks 4.3 (segment steering, Home only) and 4.4 ("See all" / "Show fewer") shipped behind `ideas-full`; the bank is ten lines per daypart. **Not done, and it is the owner's:** `lib/pal/guide-ideas.labels.json` does not exist — `npm run eval:pal:ideas` has not been run, so the production guard keeps `ideas` **and** `ideas-full` closed in any build whatever the flag says. Run it once, *after* this merge: the eval iterates `GUIDE_IDEAS`, so one run now covers all 30 lines. Any ideas pruned by that run get their reason recorded in the `guide-ideas-*` Notes then, not now. Four new rows (`guide-ideas-more-breakfast`/`-lunch`/`-dinner`, `guide-ideas-see-all`) are filed `Pending`; none is `Approved`.
 
 ### 2.4 Tier 1 — gated items (blockers, not sequence tasks)
 
@@ -2019,6 +2025,18 @@ Note: taps still run a live check (the cache is evidence, not a serving path) �
 | **A-106: the date and the day collapse into one eyebrow line (−52), the ideas title is the page's first heading (22px, +4)** | **521 typical · 587 worst** of 611 | ≥ 24px of slack; the smoke seeds the rotation (page 1 and page 2), the clock, and each door |
 | Quick row (PR-5) | ~100 with labels | **below the hero**, outside the fold budget |
 | Non-default doors (PR-5): a step line or the clinician line **above** the ideas | +48 (one line) / +70 (two) | review A-93: these doors render **two** idea rows, not three, so the added line is paid for by the removed row (worst case stays ≤ 605); the smoke seeds `pal.ask.v1` for each first pick, the rotation counter and the clock, and measures each door |
+
+> **⚠ 2026-09-18, measured after PR-5 Task 5.3 (branch `feat/guide-pr5-home-layout`, `cb0d8d9`): the arithmetic in this table is superseded — plan against the measurement below.** Slack is px from the check CTA's bottom edge to the tab bar, flag on (`PAL_E2E_GUIDE_DOOR=1`), the minimum over every daypart × rotation page × the four e2e browsers. The `ideas,source` leg (no `home`) is unchanged at 65.8 / 19.8 / 19.9.
+>
+> | Door | 360 | 375 | 430 |
+> |---|---|---|---|
+> | default (`ideas`) | 58.2 | 12.3 | 12.3 |
+> | `numbers` / `plan` pick with no step line, or a day whose step targets the ideas block (falls back to default) | 58.2 | 12.3 | 12.3 |
+> | `worried`, days 1–3 (clinician line above two idea rows) | **2.8** | 26.1 | 26.1 |
+> | `numbers`, day 1 (step line above "Ideas for later") | 62.9 | 17.0 | 17.0 |
+> | `plan`, day 1 | 62.9 | 17.0 | 17.0 |
+>
+> **Withdrawn:** an earlier version of this note (#155's first commit) projected the `worried` door **~14px over** at 375 and 430. It fits at every width (tightest: 2.8px at 360). The projection assumed ~44px idea rows; they measure **61.2px** (two-line floor), so the dropped third row pays for more than the arithmetic said, and the clinician line uses the 14px disclaimer style. **The real overflow was `numbers` / `plan` at 360** (−6.3px with two idea rows: every step line wraps to two lines at every width, 64.5px). **Owner ruling, 2026-09-18:** below 375px the `numbers` and `plan` doors show **one** idea row instead of two, keyed on the effective door (not `worried`) — A-93's trade carried one row further at the one width where Task 1.8 already hides row 3. The shrink order below is already spent (Task 1.8: `.ideas-sub` 14px, block padding 12px, row 3 hidden under 375px), so anything added above the Home fold — Task 5.5's hero H2 included — needs the flag-on e2e leg (`PAL_E2E_GUIDE_DOOR=1 npm run e2e -- tests/smoke/dashboard.spec.ts`) re-run before it is believed. A miss goes to the owner — never the hero, never the quick-row labels, never the assertion.
 
 The smoke measures real strings at 360, 375 and 430 (Task 1.8). If a measurement ever exceeds 667, the shrink order is: `.ideas-sub` to 14px → block padding to 12px → row padding to 8px 12px — never the hero, never the quick-row labels (an icon-only row would make Leaf/Compass/Bookmark carry meaning alone), never the assertion.
 
