@@ -175,6 +175,13 @@ describe("guide-door render sites (source pins, node env has no DOM)", () => {
       expect(read(rel)).toContain('"pal.recheck.source"');
     }
   });
+
+  it("the hero H2 switches on the flag and keeps today's string when it is off", () => {
+    const src = read("components/home-check-hero.tsx");
+    expect(src).toMatch(
+      /guideDoorEnabled\("home"\)\s*\?\s*"Unsure about a meal\?"\s*:\s*"What are you eating\?"/
+    );
+  });
 });
 
 describe("F-SOURCE lead-in (PRD v1.1 §6 F-SOURCE)", () => {

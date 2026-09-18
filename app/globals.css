@@ -4186,6 +4186,108 @@ button.inline-link {
   color: var(--accent-strong);
 }
 
+/* Task 5.3 HomeDoor: the region exists for the focus check and `data-door`;
+   `display: contents` keeps it out of layout, so every slot lays out (and
+   collapses margins) exactly as a direct child of the dashboard. */
+.home-door {
+  display: contents;
+}
+
+/* The worried door's clinician line — the disclaimer's own sentence in the
+   disclaimer's own type (.result-disclaimer, 14px muted). Bottom margin only:
+   its top meets .dash-greet's 18px, and 12px below matches .ideas-block's. */
+.home-door-line {
+  margin: 0 2px 12px;
+}
+
+/* Task 5.1 quick-action row — below the hero (review A-54), out of the fold
+   budget the smoke tests pin. Four equal, real (≥44px) targets, visible
+   labels at every width. Quiet: no fill on any item, Check included — the
+   hero above and the tab bar's Check puck already hold the app's one accent
+   (DESIGN.md §8); a third fill is review A-74's rejected direction, so this
+   file declares no accent-filled modifier of `.quick-action` at all. */
+.quick-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 4px 0 14px;
+}
+
+/* R-8: matches .idea-row directly above (same radius step on DESIGN.md's
+   24/22/18/14/999 scale, same tappable-row border token — --border-soft
+   reads ~1.2:1 on white and is reserved for card edges, not a row you tap).
+   Rounded rectangles, not circles or pills — the C7 review above
+   .app-tabbar already rejected icon-in-circle decoration. */
+.quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 64px;
+  padding: 10px 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text-body);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  transition: border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.quick-action:hover {
+  border-color: var(--accent);
+  color: var(--text-strong);
+}
+
+/* Task 5.2: /learn's index grid. One column by default, two equal columns
+   from 480px. Tiles: --surface fill, 14px radius (nested-card step on
+   DESIGN.md §5's 24/22/18/14/999 scale — pick from it, never invent), no
+   shadow. Real ≥44px targets sized directly (§5 bans negative-margin/::before
+   hit-area tricks) — these are <Link>s, so the global
+   button/input/textarea min-height rule never reaches them.
+   R-16 (fix round 1): border is 1px --border-strong, not --border-soft. The
+   brief's --border-soft came from DESIGN.md's "a card is one clear step
+   away from the plane it sits on" (DESIGN.md:352-356), but that sentence is
+   about a card's *background* against its page plane, not border weight —
+   it doesn't apply here. These tiles are tappable, same as .quick-action
+   just above (its own comment at globals.css:4202-4206) and .idea-row,
+   both of which use --border-strong; DESIGN.md:275 gives selectable chips
+   the same token. --border-soft stays reserved for a static card edge
+   (~1.2:1 against white, too faint for a tap target). */
+.learn-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin: 4px 0 14px;
+}
+
+@media (min-width: 480px) {
+  .learn-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.learn-tile {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text-body);
+  font-size: 15px;
+  font-weight: 600;
+  transition: border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.learn-tile:hover {
+  border-color: var(--accent);
+  color: var(--text-strong);
+}
+
 /* C7 four-jobs bottom tab bar (<1024px only; design review 2026-07-21).
    Five equal slots — four jobs + the accent-filled center Check action. No
    icon-in-circle decoration, no fills beyond the one action, stroke glyphs
@@ -4574,6 +4676,18 @@ button.inline-link {
   /* Task 4.4: expanding "See all" must show every row even below 375px —
      the fold-saving hide only applies while the block is collapsed. */
   .ideas-block:not([data-expanded="true"]) .ideas-list > li:nth-child(n + 3) {
+    display: none;
+  }
+  /* Task 5.3, owner ruling 2026-09-18: below 375px the third row is already
+     gone for everyone, so a step line leading the numbers/plan doors has
+     nothing left to pay with (measured 6.3px under the tab bar at 360). One
+     row there, same collapsed-only shape as above. Keyed on the EFFECTIVE
+     door (HomeDoor's data-door): a numbers/plan pick with no step falls back
+     to the default door and keeps the default rows. */
+  .home-door:is([data-door="numbers"], [data-door="plan"])
+    .ideas-block:not([data-expanded="true"])
+    .ideas-list
+    > li:nth-child(n + 2) {
     display: none;
   }
 }

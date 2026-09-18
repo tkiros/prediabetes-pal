@@ -36,7 +36,7 @@ function formatHour(hour: number): string {
 
 // Review A-104: none of these three has a server copy (pal.orient.v1 and
 // pal.orient.note.v1 are guest-only per lib/client/orientation-store.ts;
-// pal.ask.v1 is guest-only per the not-yet-built lib/client/ask-store.ts,
+// pal.ask.v1 is guest-only per lib/client/ask-store.ts,
 // Task 5.3), so account delete and consent withdrawal must drop them here or
 // the clinician-questions note and orientation state outlive the account.
 export const DEVICE_ONLY_KEYS = [

@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
@@ -414,6 +417,534 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
           expect.soft(ctaBottom, cell).toBeLessThanOrEqual(barBox!.y);
         }
       }
+    });
+  }
+
+  // Task 5.3 (review A-93, rulings R-19/R-20): every non-default door,
+  // measured the same way as the default door above — each width, each
+  // daypart, each rotation page. The door comes from the first F-ASK pick in
+  // `pal.ask.v1`, seeded before the load. Each door runs with a line above
+  // the ideas, the case that costs fold height:
+  //   • worried on day 2 of the week (days 1–3 put the clinician line on
+  //     top; day 2 is the default fold test's own tallest Home — the hero's
+  //     step eyebrow, no step line);
+  //   • numbers and plan on day 1, where step 1 (a /guides/ link, not
+  //     /check) renders the step line before any check — the case that puts
+  //     the step on top. With no step they fall back to the default door.
+  // Those three doors render two idea rows (A-93) — except that below 375px,
+  // where the third row is already hidden for everyone, numbers and plan
+  // show ONE (owner ruling 2026-09-18: every step line wraps to two lines,
+  // 6.3px over the tab bar at 360 with two rows). The last two cases are the
+  // fallbacks to the default door — `data-door="ideas"` and the default rows,
+  // never the one-row rule: R-20, a numbers pick on day 2 before any check
+  // (no step line); and R-22, a numbers pick on day 4, whose step ("Try one
+  // of today's ideas") IS the ideas block, so the ideas lead.
+  //
+  // Each cell also proves GuideIdeas did not remount (A-108). The rotation
+  // check alone cannot fail (review fix round 1: the pre-hydration instance
+  // never ran its effect, so a remount in the post-hydration render still
+  // advances the counter once). So an init script tags the SERVER-RENDERED
+  // ideas block with a JS expando before React hydrates it (an attribute
+  // would trip the hydration check); a node React moved keeps the expando, a
+  // remounted one is a new element without it.
+  const tagServerIdeasBlock = (page: Page) =>
+    page.addInitScript(() => {
+      const observer = new MutationObserver(() => {
+        const block = document.querySelector('[data-testid="ideas-block"]');
+        if (!block) return;
+        observer.disconnect();
+        Object.assign(block, {
+          __palServerNode: true,
+          // React marks a node it has hydrated; none yet ⇒ the server's node.
+          __palTaggedBeforeHydration: !Object.keys(block).some((key) => key.startsWith("__react"))
+        });
+      });
+      observer.observe(document, { childList: true, subtree: true });
+    });
+  const serverIdeasBlockSurvived = (page: Page) =>
+    page.evaluate(() => {
+      const block = document.querySelector('[data-testid="ideas-block"]') as
+        | (Element & { __palServerNode?: boolean; __palTaggedBeforeHydration?: boolean })
+        | null;
+      return {
+        sameNode: block?.__palServerNode === true,
+        taggedBeforeHydration: block?.__palTaggedBeforeHydration === true
+      };
+    });
+  // Review fix round 1: these cells keep the SERVER's calendar date and only
+  // move the hour. Guest Home renders today's date before hydration; a fake
+  // clock on another date (FOLD_CLOCKS' fixed 2026-09-14) makes the client's
+  // hydration render disagree with the server HTML, React discards the server
+  // DOM and mounts fresh — the door then applies at mount, so there is no
+  // reorder to watch, no server node to keep, and focus is dropped.
+  const todayAt = (time: string) => {
+    const [hours, minutes] = time.slice(11, 16).split(":").map(Number);
+    const date = new Date();
+    date.setHours(hours!, minutes!, 0, 0);
+    return date;
+  };
+  const regionSlots = (page: Page) =>
+    page.locator(".home-door").evaluate((el) =>
+      Array.from(el.children).map((child) =>
+        child.matches('[data-testid="home-door-line"]')
+          ? "line"
+          : child.matches('[data-testid="ideas-block"]')
+            ? "ideas"
+            : child.matches(".meal-hero")
+              ? "hero"
+              : child.matches(".quick-row")
+                ? "quickRow"
+                : child.matches('[data-testid="next-action"]')
+                  ? "step"
+                  : child.outerHTML.slice(0, 40)
+      )
+    );
+  const seedDoor = (page: Page, rotation: number, firstPick: string, weekDay: number) =>
+    page.evaluate(
+      ([value, pick, day]) => {
+        window.localStorage.setItem("pal.ideas.rotation", String(value));
+        window.localStorage.removeItem("pal.segment.v1");
+        window.localStorage.setItem("pal.ask.v1", JSON.stringify({ pains: [pick], win: null }));
+        const startedAt = new Date(); // the installed clock
+        startedAt.setDate(startedAt.getDate() - (day - 1));
+        window.localStorage.setItem(
+          "pal.orient.v1",
+          JSON.stringify({ done: [], dismissedAt: null, startedAt: startedAt.toISOString() })
+        );
+      },
+      [rotation, firstPick, weekDay] as const
+    );
+
+  const DOORS = [
+    {
+      tag: "worried",
+      label: "worried door",
+      door: "worried",
+      pick: "worried",
+      day: 2,
+      order: ["line", "ideas", "hero", "quickRow"],
+      title: null,
+      rows: (_width: number) => 2
+    },
+    {
+      tag: "numbers",
+      label: "numbers door",
+      door: "numbers",
+      pick: "number",
+      day: 1,
+      order: ["step", "ideas", "hero", "quickRow"],
+      title: "Ideas for later",
+      rows: (width: number) => (width < 375 ? 1 : 2)
+    },
+    {
+      tag: "plan",
+      label: "plan door",
+      door: "plan",
+      pick: "plan",
+      day: 1,
+      order: ["step", "ideas", "hero", "quickRow"],
+      title: null,
+      rows: (width: number) => (width < 375 ? 1 : 2)
+    },
+    {
+      tag: "fallback-no-step",
+      label: "numbers pick with no step (falls back to the default door)",
+      door: "ideas",
+      pick: "number",
+      day: 2,
+      order: ["ideas", "hero", "quickRow"],
+      title: null,
+      rows: (width: number) => (width < 375 ? 2 : 3)
+    },
+    {
+      tag: "fallback-ideas-step",
+      label: "numbers pick on day 4, whose step is the ideas block (R-22: falls back to the default door)",
+      door: "ideas",
+      pick: "number",
+      day: 4,
+      order: ["ideas", "hero", "quickRow", "step"],
+      title: null,
+      rows: (width: number) => (width < 375 ? 2 : 3)
+    }
+  ] as const;
+
+  for (const width of [360, 375, 430]) {
+    for (const { tag, label, door, pick, day, order, title, rows } of DOORS) {
+      test(`door fold at ${width}×667, ${label}: the check CTA clears the tab bar at every daypart and rotation page`, async ({
+        page
+      }) => {
+        test.skip(
+          !(await doorSurfaceOn("home")) || !(await doorSurfaceOn("orient")),
+          "home and orient surfaces must both be on"
+        );
+        const fullOn = await doorSurfaceOn("ideas-full");
+        await tagServerIdeasBlock(page);
+        await page.setViewportSize({ width, height: 667 });
+        await page.clock.install({ time: todayAt(FOLD_CLOCKS[0]!.time) });
+        await page.goto("/home?stay=1");
+        await expect(page.getByTestId("idea-row-1")).toBeVisible();
+
+        for (const { time, daypart } of FOLD_CLOCKS) {
+          await page.clock.setSystemTime(todayAt(time));
+
+          for (const seed of ROTATION_SEEDS) {
+            await seedDoor(page, seed, pick, day);
+            await page.goto("/home?stay=1");
+
+            const cell = `${width}px ${tag} ${time.slice(11, 16)} seed ${seed}`;
+            const region = page.locator(".home-door");
+            await expect(region, cell).toHaveAttribute("data-door", door);
+            await expect(page.getByRole("heading", { level: 1 }), cell).toHaveText(
+              `Day ${day} of your first week`
+            );
+            await expect(page.locator("#ideas-title"), cell).toHaveText(
+              title ?? `Ideas for ${daypart}`
+            );
+            // No remount: the server-rendered ideas block is the node on the
+            // page now (see tagServerIdeasBlock), the rotation advanced exactly
+            // once, and the first row is that page's first idea.
+            expect(await serverIdeasBlockSurvived(page), cell).toEqual({
+              sameNode: true,
+              taggedBeforeHydration: true
+            });
+            await expect(page.getByTestId("idea-row-1"), cell).toHaveText(
+              ideasFor(daypart, seed + 1, { full: fullOn })[0]!.text
+            );
+            expect(
+              await page.evaluate(() => window.localStorage.getItem("pal.ideas.rotation")),
+              cell
+            ).toBe(String(seed + 1));
+
+            // DOM order is the reading order (A-55): the region's children,
+            // named by slot — the whole list, so nothing extra hides behind it.
+            expect(await regionSlots(page), cell).toEqual([...order]);
+            if (door === "worried") {
+              await expect(page.getByTestId("home-door-line"), cell).toHaveText(
+                "Talk with a doctor or registered dietitian for guidance that is specific to you."
+              );
+            }
+
+            // A-93 / owner ruling: the door's row count at this width; each
+            // visible row within the two-line floor.
+            let visibleRows = 0;
+            for (const row of await page.getByTestId(/^idea-row-\d$/).all()) {
+              if (!(await row.isVisible())) continue;
+              visibleRows += 1;
+              const [height, floor, text] = await row.evaluate((el) => [
+                el.getBoundingClientRect().height,
+                Number.parseFloat(getComputedStyle(el).minHeight),
+                el.textContent ?? ""
+              ] as const);
+              expect.soft(height, `${cell}: "${text}" wraps past two lines`).toBeLessThanOrEqual(
+                floor + 0.5
+              );
+            }
+            expect.soft(visibleRows, `${cell}: visible idea rows`).toBe(rows(width));
+
+            const ctaBox = await page.getByTestId("dash-check-cta").boundingBox();
+            const barBox = await page.locator(".app-tabbar").boundingBox();
+            expect(ctaBox, cell).not.toBeNull();
+            expect(barBox, cell).not.toBeNull();
+            const ctaBottom = ctaBox!.y + ctaBox!.height;
+            console.log(
+              `[fold] ${cell} (${daypart}): CTA bottom ${ctaBottom.toFixed(1)}, tab bar top ${barBox!.y.toFixed(1)}, slack ${(barBox!.y - ctaBottom).toFixed(1)}`
+            );
+            expect.soft(ctaBottom, cell).toBeLessThanOrEqual(barBox!.y);
+          }
+        }
+      });
+    }
+  }
+
+  // A-55 / ruling R-21: no layout change lands while focus is inside the
+  // region, and focus is never moved. An init script focuses the check CTA
+  // (inside the region) while the server HTML is still unhydrated; a numbers
+  // pick on day 1 would otherwise put the step line first (the control page
+  // below proves it does). Since R-21 every layout change, the first one
+  // included, goes through the same guard (guardLayout, measured against the
+  // region's ref), so this cell proves that guard is live: detach the ref and
+  // the region reorders under focus.
+  test("door reorder is held while focus is inside the region (A-55, R-21)", async ({ page }) => {
+    test.skip(
+      !(await doorSurfaceOn("home")) || !(await doorSurfaceOn("orient")),
+      "home and orient surfaces must both be on"
+    );
+    // No fake clock here: the daypart does not matter, and the server's date
+    // must match the client's for the server DOM to survive hydration.
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto("/home?stay=1");
+    await seedDoor(page, 0, "number", 1);
+
+    // Control, in a fresh page without the focus script: this seed reorders.
+    const control = await page.context().newPage();
+    await control.setViewportSize({ width: 375, height: 667 });
+    await control.goto("/home?stay=1");
+    await expect(control.getByTestId("idea-row-1")).toBeVisible();
+    await expect(control.locator(".home-door")).toHaveAttribute("data-door", "numbers");
+    await control.close();
+
+    await tagServerIdeasBlock(page);
+    await page.addInitScript(() => {
+      const observer = new MutationObserver(() => {
+        const cta = document.querySelector<HTMLElement>('[data-testid="dash-check-cta"]');
+        if (!cta) return;
+        observer.disconnect();
+        cta.focus();
+        Object.assign(window, {
+          __palFocusedBeforeHydration:
+            document.activeElement === cta &&
+            !Object.keys(cta).some((key) => key.startsWith("__react"))
+        });
+      });
+      observer.observe(document, { childList: true, subtree: true });
+    });
+    await page.goto("/home?stay=1");
+    // Hydrated: the rows only render from GuideIdeas' mount effect.
+    await expect(page.getByTestId("idea-row-1")).toBeVisible();
+    expect(
+      await page.evaluate(() => (window as { __palFocusedBeforeHydration?: boolean }).__palFocusedBeforeHydration)
+    ).toBe(true);
+
+    await expect(page.locator(".home-door")).toHaveAttribute("data-door", "ideas");
+    expect(await regionSlots(page)).toEqual(["ideas", "hero", "quickRow", "step"]);
+    await expect(page.getByTestId("dash-check-cta")).toBeFocused();
+    expect(await serverIdeasBlockSurvived(page)).toEqual({ sameNode: true, taggedBeforeHydration: true });
+  });
+
+  // Final review F1.6 (ruling R-29): a signed-in flag-on door cell. Every
+  // other door cell above visits /home as a guest — the SERVER
+  // `DashboardView` (app/(app)/home/page.tsx) is only reached signed in, and
+  // that path is exactly where an unresolved RSC lazy wrapper on `hero` used
+  // to crash the whole render (F1). DB-backed, so it skips under the same
+  // guard tests/smoke/auth.spec.ts uses — a real Postgres plus the disk
+  // mailbox scripts/e2e-runtime-env.ts provisions when a database is present.
+  //
+  // The whole signed-in flow stays on ONE explicit origin, `SIGNED_IN_ORIGIN`
+  // — never a relative goto (which resolves against playwright.config.ts's
+  // `baseURL`, 127.0.0.1:3100). Confirmed empirically: `next start` here
+  // answers a 127.0.0.1 request but the auth callback's own redirect lands
+  // the browser on `localhost:3100` (same comment already left in
+  // tests/smoke/a11y.spec.ts's `signInVia`, re-derived here rather than
+  // assumed) — a different origin, so a `pal.ask.v1` write on one and a read
+  // on the other see two different localStorages. Every navigation below is
+  // absolute on `localhost` so the session cookie and the device-only
+  // `pal.ask.v1` seed both land where `/home` is actually read from.
+  const SIGNED_IN_ORIGIN = "http://localhost:3100";
+
+  test("signed-in Home renders a non-default door via the server DashboardView — no crash, no remount (F1, ruling R-29)", async ({
+    page
+  }) => {
+    test.skip(
+      !process.env.DATABASE_URL || !process.env.AUTH_EMAIL_STUB_DIR,
+      "signed-in door smoke needs DATABASE_URL + AUTH_EMAIL_STUB_DIR (Railway dev database / e2e-runtime-env's auto mailbox)"
+    );
+    test.skip(!(await doorSurfaceOn("home")), "home surface off in this build");
+
+    // Magic-link round trip (same mechanism as tests/smoke/auth.spec.ts and
+    // tests/smoke/a11y.spec.ts's signInVia — not imported: both live in
+    // different files and neither export is public; the shape is small
+    // enough to repeat rather than restructure).
+    const email = `e2e-door-${Date.now()}@pal.test`;
+    await page.goto(`${SIGNED_IN_ORIGIN}/signin`);
+    await page.getByLabel("Email address").fill(email);
+    await page.getByRole("button", { name: /email me a sign-in link/i }).click();
+    await expect(page).toHaveURL(/check-email/);
+
+    const mailboxFile = path.join(
+      process.env.AUTH_EMAIL_STUB_DIR!,
+      `${email.replace(/[^a-z0-9@.]/gi, "_")}.json`
+    );
+    await expect.poll(() => fs.existsSync(mailboxFile), { timeout: 10_000 }).toBe(true);
+    const { url } = JSON.parse(fs.readFileSync(mailboxFile, "utf8")) as { url: string };
+    await page.goto(url); // signed in — no /welcome consent needed to reach /home
+
+    // pal.ask.v1 is device-only (lib/client/ask-store.ts) and read client-side
+    // by HomeDoor whether or not the visitor is signed in — seed a `worried`
+    // pick, which needs no orientation step (doorLayout, home-door.tsx: with
+    // no week running the clinician line still renders, just last).
+    await tagServerIdeasBlock(page);
+    await page.evaluate(() => {
+      window.localStorage.setItem(
+        "pal.ask.v1",
+        JSON.stringify({ pains: ["worried"], win: null })
+      );
+    });
+
+    const consoleErrors: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error") consoleErrors.push(msg.text());
+    });
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+
+    await page.goto(`${SIGNED_IN_ORIGIN}/home`);
+
+    const region = page.locator(".home-door");
+    // Goes red if the door stayed default (the old crash's silent-drop
+    // sibling: `data-door="ideas"` would mean the worried pick never took).
+    await expect(region).toHaveAttribute("data-door", "worried");
+    // A fresh signed-in account has no next action yet (zero checks, no
+    // orientation step), so the "step" slot's Fragment renders no DOM child
+    // at all — the same shape the guest "worried" cell above shows (no
+    // `nextAction`, `order` also comes out without "step").
+    expect(await regionSlots(page)).toEqual(["ideas", "hero", "quickRow", "line"]);
+    await expect(page.getByTestId("home-door-line")).toHaveText(
+      "Talk with a doctor or registered dietitian for guidance that is specific to you."
+    );
+    // No remount (R-18/A-108) on the signed-in path either.
+    expect(await serverIdeasBlockSurvived(page)).toEqual({
+      sameNode: true,
+      taggedBeforeHydration: true
+    });
+    // Filters exactly one pre-existing, unrelated Firefox finding: production
+    // builds correctly omit `unsafe-eval` from the CSP `script-src` (only
+    // `development` gets it, next.config.ts) and Firefox's engine trips a
+    // "Missing 'unsafe-eval'" console error loading a shared framework chunk
+    // — confirmed the SAME on a plain GUEST `/home?stay=1` load in Firefox
+    // too (a throwaway diagnostic spec, run and discarded — not F1, not this
+    // PR's surface), so it is not this fix's regression to own or silence
+    // more broadly. Anything else still fails the cell.
+    const knownUnrelated = /Content-Security-Policy.*unsafe-eval/i;
+    expect(consoleErrors.filter((message) => !knownUnrelated.test(message))).toEqual([]);
+    expect(pageErrors).toEqual([]);
+  });
+
+  // Task 5.4 — the Home layout PR-5 adds (quick row, /learn, 1280 order).
+  // Nested here rather than gated separately: `home` requires `ideas` and
+  // `ideas-full` (SURFACE_REQUIRES), so a standalone gate on `home` alone
+  // would only ever re-derive "ideas is on".
+  test.describe("Home layout (Task 5.4)", () => {
+    test.beforeAll(async () => {
+      test.skip(!(await doorSurfaceOn("home")), "home surface off in this build");
+    });
+
+    const quickRow = (page: Page) => page.locator('nav[aria-label="Quick actions"]');
+
+    // R-24(a): four links, and — since a class name alone would still pass if
+    // someone added an accent-filled modifier without renaming `.quick-action`
+    // (review A-74 rejected a third fill) — the actual computed background is
+    // checked against the page's one accent colour, not just class presence.
+    test("quick row has four links, none accent-filled (A-74)", async ({ page }) => {
+      await page.goto("/home?stay=1");
+      const links = quickRow(page).locator(".quick-action");
+      await expect(links).toHaveCount(4);
+
+      const accentRgb = await page.evaluate(() => {
+        const probe = document.createElement("div");
+        probe.style.background = "var(--accent)";
+        document.body.appendChild(probe);
+        const rgb = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        return rgb;
+      });
+
+      for (const link of await links.all()) {
+        const bg = await link.evaluate((el) => getComputedStyle(el).backgroundColor);
+        expect(bg).not.toBe(accentRgb);
+      }
+    });
+
+    // R-24(b): Learn is reachable from the row and the destination renders.
+    test("Learn is reachable from the quick row", async ({ page }) => {
+      await page.goto("/home?stay=1");
+      await quickRow(page).getByRole("link", { name: "Learn" }).click();
+      await expect(page).toHaveURL(/\/learn$/);
+      await expect(page.locator(".learn-grid")).toBeVisible();
+    });
+
+    // R-24(c) / R-26: Home is one column at every width — this pins the
+    // default door's DOM order by y at the ≥1024px shell, where the sidebar
+    // (not the tab bar) is the nav, and it still carries all five slots.
+    test("at 1280: single-column order is unchanged, sidebar keeps five links", async ({
+      page
+    }) => {
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await page.goto("/home?stay=1");
+
+      const ideasY = (await page.getByTestId("ideas-block").boundingBox())!.y;
+      const ctaY = (await page.getByTestId("dash-check-cta").boundingBox())!.y;
+      const quickRowY = (await quickRow(page).boundingBox())!.y;
+      const todayY = (await page.locator('section[aria-label="Today"]').boundingBox())!.y;
+
+      expect(ideasY).toBeLessThan(ctaY);
+      expect(ctaY).toBeLessThan(quickRowY);
+      expect(quickRowY).toBeLessThan(todayY);
+
+      await expect(page.locator(".app-sidebar .app-navlink")).toHaveCount(5);
+    });
+
+    // R-24(d): RV-3 holds on the home-surface build too.
+    test("main has no percent language on Home", async ({ page }) => {
+      await page.goto("/home?stay=1");
+      const text = await page.locator("main").innerText();
+      expect(text).not.toMatch(/%/);
+    });
+
+    // R-27: a second tap on Ideas, URL already ending in the same hash, must
+    // scroll again — Next's <Link> maintains scroll position rather than
+    // re-scrolling to an unchanged hash fragment (see
+    // node_modules/next/dist/docs/01-app/03-api-reference/02-components/link.md
+    // §scroll), so this is not native anchor behaviour to assume for free.
+    test("a second Ideas tap re-scrolls to the same hash (R-27)", async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 400 });
+      await page.goto("/home?stay=1");
+
+      const ideasLink = quickRow(page).getByRole("link", { name: "Ideas" });
+      const heading = page.locator("#ideas-title");
+
+      await ideasLink.click();
+      await expect(page).toHaveURL(/#ideas-title$/);
+
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await expect(heading).not.toBeInViewport();
+
+      await ideasLink.click();
+      await expect(heading).toBeInViewport();
+    });
+  });
+});
+
+// R-25: the negative case, deliberately OUTSIDE the ideas-gated describe
+// above so it also runs in the no-flag config (where `ideas` is off too) and
+// under `ideas,source` (where `ideas` is on but `home` is not named).
+test("Home has no quick row and /learn 404s with the home surface off", async ({ page }) => {
+  test.skip(await doorSurfaceOn("home"), "home surface on in this build");
+
+  await page.goto("/home?stay=1");
+  await expect(page.locator('nav[aria-label="Quick actions"]')).toHaveCount(0);
+
+  const response = await page.goto("/learn");
+  expect(response?.status()).toBe(404);
+});
+
+// R-28: /learn's own render quality behind the flag — same axe pattern as
+// "dashboard has no critical or serious a11y violations" above.
+test.describe("/learn (Task 5.2/5.4) with the home surface on", () => {
+  test.beforeAll(async () => {
+    test.skip(!(await doorSurfaceOn("home")), "home surface off in this build");
+  });
+
+  for (const width of [375, 1280]) {
+    test(`renders at ${width}px: tiles visible, no horizontal scroll, no critical/serious a11y violations`, async ({
+      page
+    }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto("/learn");
+      await expect(page.locator(".learn-grid")).toBeVisible();
+      await expect(page.locator(".learn-tile").first()).toBeVisible();
+
+      const overflowsX = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+      );
+      expect(overflowsX).toBe(false);
+
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+        .analyze();
+      const serious = results.violations
+        .filter((v) => v.impact === "critical" || v.impact === "serious")
+        .map((v) => `${width}px: ${v.id} (${v.impact}): ${v.nodes.length} node(s)`);
+      expect(serious).toEqual([]);
     });
   }
 });
