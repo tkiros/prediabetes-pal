@@ -1,5 +1,5 @@
 import { createElement, type ReactNode } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup, renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Task 3.7: the tour's last screen is rendered in node, which has no DOM and
@@ -360,6 +360,21 @@ describe("the tour's last screen (Task 3.7, A-05, A-28)", () => {
     expect(last).toContain(">Check my first meal</button>");
     expect(last).not.toContain(FIRST_WEEK_LINE);
     expect(last).not.toContain("Start your first week");
+  });
+
+  // R-52: renderToStaticMarkup cannot see adjacent-text-node splits; renderToString (what the
+  // server sends) separates them with <!-- -->. Captured from 5df3557 (main) — byte-identical.
+  it("flag off: the server-rendered (renderToString) bytes are unchanged too", async () => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "");
+    const markup = STEPS.map((step) => {
+      forced.step = step;
+      try {
+        return `<!-- ${step} -->\n${renderToString(createElement(OnboardingPage))}`;
+      } finally {
+        forced.step = null;
+      }
+    }).join("\n\n");
+    await expect(`${markup}\n`).toMatchFileSnapshot("./__snapshots__/onboarding-flag-off-ssr.html");
   });
 
   it("orient on: the last screen gains the first-week line and the new button; no other step changes", () => {

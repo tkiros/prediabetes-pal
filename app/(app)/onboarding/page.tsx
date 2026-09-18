@@ -344,8 +344,8 @@ export default function OnboardingPage() {
           {step !== "boundary" ? (
             <>
               <p className="onboarding-step-count">
-                {stepCounter(step, skipsA1c, askEnabled)} ·{" "}
-                {askEnabled ? "about a minute" : "about 30 seconds"}
+                {stepCounter(step, skipsA1c, askEnabled)}
+                {askEnabled ? " · about a minute" : " · about 30 seconds"}
               </p>
               <div
                 className="onboarding-progress"
