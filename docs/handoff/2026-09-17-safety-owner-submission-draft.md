@@ -156,6 +156,60 @@ off" card — see §4). No word of the row's approved copy changed.
 
 ---
 
+## 3b. Batch 3 — 4 rows, PR-4 (`ideas-full`, dormant)
+
+Source: `docs/safety/copy-ledger.md` on branch `feat/guide-pr4-ideas-full`. All
+4 rows below are `Status: Pending`, `Active: Yes`, surface `ideas-full` — one
+level dormant below batch 1's `ideas`: the production door guard refuses
+`ideas-full` unless `ideas` is also open, so this batch cannot go live before
+batch 1 does.
+
+| Row ID | Where it appears | Copy (exact) | Status |
+| --- | --- | --- | --- |
+| `guide-ideas-more-breakfast` | Home, ideas block (ideas-full only) | two eggs with spinach · greek yogurt smoothie with frozen berries and chia seeds | Pending |
+| `guide-ideas-more-lunch` | Home, ideas block (ideas-full only) | turkey and lentil salad with tomatoes and cucumber · fish with green beans and salad greens | Pending |
+| `guide-ideas-more-dinner` | Home, ideas block (ideas-full only) | tempeh stir-fry with peppers and mushrooms · cottage cheese with tomatoes and peppers | Pending |
+| `guide-ideas-see-all` | Home, ideas block toggle | See all · Show fewer | Pending |
+
+**Decision needed on every row above:** Approve, reject, or request a rewrite.
+The production guard refuses the `ideas-full` surface until all 4 are
+`Approved`.
+
+The six new idea lines (`guide-ideas-more-breakfast` / `-lunch` / `-dinner`)
+go through the same live label eval as batch 1's 24 — one owner run of `npm
+run eval:pal:ideas` after PR-4 merges covers all 30 lines together.
+
+### Callout — three of the six new lines need a specific read
+
+Same situation as batch 1's dinner lines #7 and #8 (§2 above): `prediabetes-
+meal-plan`'s own lunches and dinners are already fully used by the seed bank
+(each remaining day either duplicates a seed line once its carb side is
+dropped, or leads with "leftover" and is excluded), so three of PR-4's six new
+lines are **composed**, not lifted from one guide sentence — they combine
+protein and nonstarchy-vegetable words from the same "What can I eat freely?"
+list in `app/guides/what-to-eat-with-prediabetes` that batch 1's dinner #7/#8
+used:
+
+> "turkey and lentil salad with tomatoes and cucumber" (lunch)
+
+> "fish with green beans and salad greens" (lunch)
+
+> "tempeh stir-fry with peppers and mushrooms" (dinner)
+
+Two more points worth a specific read:
+
+- The fourth new dinner line, "cottage cheese with tomatoes and peppers," is
+  lifted from `app/guides/prediabetes-snacks` ("Cottage cheese with tomato and
+  pepper, or with a little fruit.") but shown under the **dinner** heading —
+  the safety owner should read whether a snack-guide line belongs there.
+- The new breakfast line "greek yogurt smoothie with frozen berries and chia
+  seeds" is the one most likely to fail the live label eval: the Doctor's-
+  advice segment's first-check chips already use "fruit smoothie" as a
+  deliberately surprising read (`lib/client/first-check-chips.ts`), so a
+  smoothie reading anything but Clear here would not be a surprise.
+
+---
+
 ## 4. Calm-colour review (A-61 / Task 2.3)
 
 One production-facing (though currently dormant) change needs a design/safety
