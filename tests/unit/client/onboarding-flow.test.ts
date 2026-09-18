@@ -297,6 +297,57 @@ describe("F-ASK Screen B (Task 6.3 / 6.4)", () => {
     vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "ideas,orient");
     expect(renderStep("expectations")).not.toContain(IDEAS_LINE);
   });
+
+  it("intake page pin: only the welcome, the time claim and the ideas line differ from orient (Task 6.5, A-73)", () => {
+    const IDEAS_LINE = "Ideas come first. The check is there when you are unsure.";
+    const OLD_H1 = "Check a meal. Get a cautious educational read.";
+    const NEW_H1 = "You were just told you have prediabetes.";
+    const NEW_COPY =
+      "Here are meal ideas, calm first steps, and plain answers about what the words mean, in one place. Check any meal when you are unsure.";
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "ideas,orient");
+    const on = STEPS.map(renderStep);
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "ideas,orient,intake");
+    const intake = STEPS.map(renderStep);
+
+    // Intake adds two screens, so the counter ("Step 2 of 7") and the bar move; stepCounter and
+    // progressFor are pinned above. Mask those three numbers so the rest of the markup is compared.
+    const mask = (html: string) =>
+      html
+        .replace(/Step \d+ of \d+/g, "Step N of M")
+        .replace(/aria-valuenow="\d+"/, 'aria-valuenow="P"')
+        .replace(/width:\d+%/, "width:P%");
+    STEPS.forEach((step, index) => {
+      if (step === "welcome" || step === "expectations") return;
+      if (step === "boundary") {
+        expect(intake[index], step).toBe(on[index]);
+        return;
+      }
+      // Every non-boundary step carries the counter line's time claim.
+      expect(intake[index], step).toContain("about a minute");
+      expect(mask(intake[index]).replace("about a minute", "about 30 seconds"), step).toBe(mask(on[index]));
+    });
+
+    const welcome = intake[STEPS.indexOf("welcome")];
+    expect(welcome).toContain(`<h1 class="page-title">${NEW_H1}</h1>`);
+    expect(welcome).toContain(`<p class="page-copy">${NEW_COPY}</p>`);
+    expect(welcome).toContain("Welcome to Prediabetes Pal");
+    expect(welcome).toContain(">Get started</button>");
+    expect(welcome).toContain("about a minute");
+    expect(welcome).not.toContain("verdict-badge");
+    expect(welcome).not.toContain(OLD_H1);
+
+    const welcomeOrient = on[STEPS.indexOf("welcome")];
+    expect(welcomeOrient).toContain(OLD_H1);
+    expect(welcomeOrient).toContain("verdict-badge");
+    expect(welcomeOrient).toContain("about 30 seconds");
+
+    const expectations = intake[STEPS.indexOf("expectations")];
+    expect(expectations).toContain("about a minute");
+    expect(expectations).toContain(IDEAS_LINE);
+    expect(
+      mask(expectations.replace(`<p class="page-copy">${IDEAS_LINE}</p>`, "")).replace("about a minute", "about 30 seconds")
+    ).toBe(mask(on[STEPS.indexOf("expectations")]));
+  });
 });
 
 describe("the tour's last screen (Task 3.7, A-05, A-28)", () => {

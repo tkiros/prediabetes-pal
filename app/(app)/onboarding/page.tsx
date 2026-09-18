@@ -344,7 +344,8 @@ export default function OnboardingPage() {
           {step !== "boundary" ? (
             <>
               <p className="onboarding-step-count">
-                {stepCounter(step, skipsA1c, askEnabled)} · about 30 seconds
+                {stepCounter(step, skipsA1c, askEnabled)} ·{" "}
+                {askEnabled ? "about a minute" : "about 30 seconds"}
               </p>
               <div
                 className="onboarding-progress"
@@ -364,32 +365,47 @@ export default function OnboardingPage() {
           {step === "welcome" ? (
             <>
               <p className="hero-eyebrow">Welcome to Prediabetes Pal</p>
-              <h1 className="page-title">
-                Check a meal. Get a cautious educational read.
-              </h1>
-              <p className="page-copy">
-                At the moment of a meal, Prediabetes Pal gives you one cautious
-                educational label — {" "}
-                {RISK_LABELS.SAFE}, {RISK_LABELS.MODERATE}, or{" "}
-                {RISK_LABELS.HIGH} — with one reason and, when appropriate, an
-                adjustment and one practical alternative. Never a calorie,
-                never a
-                number to track.
-              </p>
-              <div className="chip-row" aria-hidden="true">
-                <span className="verdict-badge" data-risk="SAFE">
-                  <IconCheck size={16} />
-                  {RISK_LABELS.SAFE}
-                </span>
-                <span className="verdict-badge" data-risk="MODERATE">
-                  <IconAlert size={16} />
-                  {RISK_LABELS.MODERATE}
-                </span>
-                <span className="verdict-badge" data-risk="HIGH">
-                  <IconPause size={16} />
-                  {RISK_LABELS.HIGH}
-                </span>
-              </div>
+              {askEnabled ? (
+                <>
+                  <h1 className="page-title">
+                    You were just told you have prediabetes.
+                  </h1>
+                  <p className="page-copy">
+                    Here are meal ideas, calm first steps, and plain answers about
+                    what the words mean, in one place. Check any meal when you are
+                    unsure.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="page-title">
+                    Check a meal. Get a cautious educational read.
+                  </h1>
+                  <p className="page-copy">
+                    At the moment of a meal, Prediabetes Pal gives you one cautious
+                    educational label — {" "}
+                    {RISK_LABELS.SAFE}, {RISK_LABELS.MODERATE}, or{" "}
+                    {RISK_LABELS.HIGH} — with one reason and, when appropriate, an
+                    adjustment and one practical alternative. Never a calorie,
+                    never a
+                    number to track.
+                  </p>
+                  <div className="chip-row" aria-hidden="true">
+                    <span className="verdict-badge" data-risk="SAFE">
+                      <IconCheck size={16} />
+                      {RISK_LABELS.SAFE}
+                    </span>
+                    <span className="verdict-badge" data-risk="MODERATE">
+                      <IconAlert size={16} />
+                      {RISK_LABELS.MODERATE}
+                    </span>
+                    <span className="verdict-badge" data-risk="HIGH">
+                      <IconPause size={16} />
+                      {RISK_LABELS.HIGH}
+                    </span>
+                  </div>
+                </>
+              )}
               <button
                 type="button"
                 className="primary-button"
