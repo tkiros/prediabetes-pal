@@ -431,14 +431,90 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
   // Those three doors render two idea rows (A-93) — except that below 375px,
   // where the third row is already hidden for everyone, numbers and plan
   // show ONE (owner ruling 2026-09-18: every step line wraps to two lines,
-  // 6.3px over the tab bar at 360 with two rows). The fourth case is the
-  // R-20 fallback: a numbers pick on day 2 before any check has no step
-  // line, so the default door applies — `data-door="ideas"` and the default
-  // rows, never the one-row rule. Each cell also proves GuideIdeas did not
-  // remount on the reorder: a remount re-runs the mount effect, which would
-  // advance the rotation a second time and show a different first idea.
+  // 6.3px over the tab bar at 360 with two rows). The last two cases are the
+  // fallbacks to the default door — `data-door="ideas"` and the default rows,
+  // never the one-row rule: R-20, a numbers pick on day 2 before any check
+  // (no step line); and R-22, a numbers pick on day 4, whose step ("Try one
+  // of today's ideas") IS the ideas block, so the ideas lead.
+  //
+  // Each cell also proves GuideIdeas did not remount (A-108). The rotation
+  // check alone cannot fail (review fix round 1: the pre-hydration instance
+  // never ran its effect, so a remount in the post-hydration render still
+  // advances the counter once). So an init script tags the SERVER-RENDERED
+  // ideas block with a JS expando before React hydrates it (an attribute
+  // would trip the hydration check); a node React moved keeps the expando, a
+  // remounted one is a new element without it.
+  const tagServerIdeasBlock = (page: Page) =>
+    page.addInitScript(() => {
+      const observer = new MutationObserver(() => {
+        const block = document.querySelector('[data-testid="ideas-block"]');
+        if (!block) return;
+        observer.disconnect();
+        Object.assign(block, {
+          __palServerNode: true,
+          // React marks a node it has hydrated; none yet ⇒ the server's node.
+          __palTaggedBeforeHydration: !Object.keys(block).some((key) => key.startsWith("__react"))
+        });
+      });
+      observer.observe(document, { childList: true, subtree: true });
+    });
+  const serverIdeasBlockSurvived = (page: Page) =>
+    page.evaluate(() => {
+      const block = document.querySelector('[data-testid="ideas-block"]') as
+        | (Element & { __palServerNode?: boolean; __palTaggedBeforeHydration?: boolean })
+        | null;
+      return {
+        sameNode: block?.__palServerNode === true,
+        taggedBeforeHydration: block?.__palTaggedBeforeHydration === true
+      };
+    });
+  // Review fix round 1: these cells keep the SERVER's calendar date and only
+  // move the hour. Guest Home renders today's date before hydration; a fake
+  // clock on another date (FOLD_CLOCKS' fixed 2026-09-14) makes the client's
+  // hydration render disagree with the server HTML, React discards the server
+  // DOM and mounts fresh — the door then applies at mount, so there is no
+  // reorder to watch, no server node to keep, and focus is dropped.
+  const todayAt = (time: string) => {
+    const [hours, minutes] = time.slice(11, 16).split(":").map(Number);
+    const date = new Date();
+    date.setHours(hours!, minutes!, 0, 0);
+    return date;
+  };
+  const regionSlots = (page: Page) =>
+    page.locator(".home-door").evaluate((el) =>
+      Array.from(el.children).map((child) =>
+        child.matches('[data-testid="home-door-line"]')
+          ? "line"
+          : child.matches('[data-testid="ideas-block"]')
+            ? "ideas"
+            : child.matches(".meal-hero")
+              ? "hero"
+              : child.matches(".quick-row")
+                ? "quickRow"
+                : child.matches('[data-testid="next-action"]')
+                  ? "step"
+                  : child.outerHTML.slice(0, 40)
+      )
+    );
+  const seedDoor = (page: Page, rotation: number, firstPick: string, weekDay: number) =>
+    page.evaluate(
+      ([value, pick, day]) => {
+        window.localStorage.setItem("pal.ideas.rotation", String(value));
+        window.localStorage.removeItem("pal.segment.v1");
+        window.localStorage.setItem("pal.ask.v1", JSON.stringify({ pains: [pick], win: null }));
+        const startedAt = new Date(); // the installed clock
+        startedAt.setDate(startedAt.getDate() - (day - 1));
+        window.localStorage.setItem(
+          "pal.orient.v1",
+          JSON.stringify({ done: [], dismissedAt: null, startedAt: startedAt.toISOString() })
+        );
+      },
+      [rotation, firstPick, weekDay] as const
+    );
+
   const DOORS = [
     {
+      tag: "worried",
       label: "worried door",
       door: "worried",
       pick: "worried",
@@ -448,6 +524,7 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
       rows: (_width: number) => 2
     },
     {
+      tag: "numbers",
       label: "numbers door",
       door: "numbers",
       pick: "number",
@@ -457,6 +534,7 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
       rows: (width: number) => (width < 375 ? 1 : 2)
     },
     {
+      tag: "plan",
       label: "plan door",
       door: "plan",
       pick: "plan",
@@ -466,6 +544,7 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
       rows: (width: number) => (width < 375 ? 1 : 2)
     },
     {
+      tag: "fallback-no-step",
       label: "numbers pick with no step (falls back to the default door)",
       door: "ideas",
       pick: "number",
@@ -473,11 +552,21 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
       order: ["ideas", "hero", "quickRow"],
       title: null,
       rows: (width: number) => (width < 375 ? 2 : 3)
+    },
+    {
+      tag: "fallback-ideas-step",
+      label: "numbers pick on day 4, whose step is the ideas block (R-22: falls back to the default door)",
+      door: "ideas",
+      pick: "number",
+      day: 4,
+      order: ["ideas", "hero", "quickRow", "step"],
+      title: null,
+      rows: (width: number) => (width < 375 ? 2 : 3)
     }
   ] as const;
 
   for (const width of [360, 375, 430]) {
-    for (const { label, door, pick, day, order, title, rows } of DOORS) {
+    for (const { tag, label, door, pick, day, order, title, rows } of DOORS) {
       test(`door fold at ${width}×667, ${label}: the check CTA clears the tab bar at every daypart and rotation page`, async ({
         page
       }) => {
@@ -486,35 +575,20 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
           "home and orient surfaces must both be on"
         );
         const fullOn = await doorSurfaceOn("ideas-full");
+        await tagServerIdeasBlock(page);
         await page.setViewportSize({ width, height: 667 });
-        await page.clock.install({ time: new Date(FOLD_CLOCKS[0]!.time) });
+        await page.clock.install({ time: todayAt(FOLD_CLOCKS[0]!.time) });
         await page.goto("/home?stay=1");
         await expect(page.getByTestId("idea-row-1")).toBeVisible();
 
         for (const { time, daypart } of FOLD_CLOCKS) {
-          await page.clock.setSystemTime(new Date(time));
+          await page.clock.setSystemTime(todayAt(time));
 
           for (const seed of ROTATION_SEEDS) {
-            await page.evaluate(
-              ([value, firstPick, weekDay]) => {
-                window.localStorage.setItem("pal.ideas.rotation", String(value));
-                window.localStorage.removeItem("pal.segment.v1");
-                window.localStorage.setItem(
-                  "pal.ask.v1",
-                  JSON.stringify({ pains: [firstPick], win: null })
-                );
-                const startedAt = new Date(); // the installed clock
-                startedAt.setDate(startedAt.getDate() - (weekDay - 1));
-                window.localStorage.setItem(
-                  "pal.orient.v1",
-                  JSON.stringify({ done: [], dismissedAt: null, startedAt: startedAt.toISOString() })
-                );
-              },
-              [seed, pick, day] as const
-            );
+            await seedDoor(page, seed, pick, day);
             await page.goto("/home?stay=1");
 
-            const cell = `${width}px ${door === "ideas" ? "fallback" : door} ${time.slice(11, 16)} seed ${seed}`;
+            const cell = `${width}px ${tag} ${time.slice(11, 16)} seed ${seed}`;
             const region = page.locator(".home-door");
             await expect(region, cell).toHaveAttribute("data-door", door);
             await expect(page.getByRole("heading", { level: 1 }), cell).toHaveText(
@@ -523,8 +597,13 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
             await expect(page.locator("#ideas-title"), cell).toHaveText(
               title ?? `Ideas for ${daypart}`
             );
-            // No remount: the rotation advanced exactly once, and the first
-            // row is that page's first idea.
+            // No remount: the server-rendered ideas block is the node on the
+            // page now (see tagServerIdeasBlock), the rotation advanced exactly
+            // once, and the first row is that page's first idea.
+            expect(await serverIdeasBlockSurvived(page), cell).toEqual({
+              sameNode: true,
+              taggedBeforeHydration: true
+            });
             await expect(page.getByTestId("idea-row-1"), cell).toHaveText(
               ideasFor(daypart, seed + 1, { full: fullOn })[0]!.text
             );
@@ -534,23 +613,8 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
             ).toBe(String(seed + 1));
 
             // DOM order is the reading order (A-55): the region's children,
-            // named by slot.
-            const slots = await region.evaluate((el) =>
-              Array.from(el.children).map((child) =>
-                child.matches('[data-testid="home-door-line"]')
-                  ? "line"
-                  : child.matches('[data-testid="ideas-block"]')
-                    ? "ideas"
-                    : child.matches(".meal-hero")
-                      ? "hero"
-                      : child.matches(".quick-row")
-                        ? "quickRow"
-                        : child.matches('[data-testid="next-action"]')
-                          ? "step"
-                          : child.outerHTML.slice(0, 40)
-              )
-            );
-            expect(slots.slice(0, order.length), cell).toEqual([...order]);
+            // named by slot — the whole list, so nothing extra hides behind it.
+            expect(await regionSlots(page), cell).toEqual([...order]);
             if (door === "worried") {
               await expect(page.getByTestId("home-door-line"), cell).toHaveText(
                 "Talk with a doctor or registered dietitian for guidance that is specific to you."
@@ -588,4 +652,59 @@ test.describe("guide door (PRD v1.1 §7.6) — only when the built app reports t
       });
     }
   }
+
+  // A-55 / ruling R-21: no layout change lands while focus is inside the
+  // region, and focus is never moved. An init script focuses the check CTA
+  // (inside the region) while the server HTML is still unhydrated; a numbers
+  // pick on day 1 would otherwise put the step line first (the control page
+  // below proves it does). Since R-21 every layout change, the first one
+  // included, goes through the same guard (guardLayout, measured against the
+  // region's ref), so this cell proves that guard is live: detach the ref and
+  // the region reorders under focus.
+  test("door reorder is held while focus is inside the region (A-55, R-21)", async ({ page }) => {
+    test.skip(
+      !(await doorSurfaceOn("home")) || !(await doorSurfaceOn("orient")),
+      "home and orient surfaces must both be on"
+    );
+    // No fake clock here: the daypart does not matter, and the server's date
+    // must match the client's for the server DOM to survive hydration.
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto("/home?stay=1");
+    await seedDoor(page, 0, "number", 1);
+
+    // Control, in a fresh page without the focus script: this seed reorders.
+    const control = await page.context().newPage();
+    await control.setViewportSize({ width: 375, height: 667 });
+    await control.goto("/home?stay=1");
+    await expect(control.getByTestId("idea-row-1")).toBeVisible();
+    await expect(control.locator(".home-door")).toHaveAttribute("data-door", "numbers");
+    await control.close();
+
+    await tagServerIdeasBlock(page);
+    await page.addInitScript(() => {
+      const observer = new MutationObserver(() => {
+        const cta = document.querySelector<HTMLElement>('[data-testid="dash-check-cta"]');
+        if (!cta) return;
+        observer.disconnect();
+        cta.focus();
+        Object.assign(window, {
+          __palFocusedBeforeHydration:
+            document.activeElement === cta &&
+            !Object.keys(cta).some((key) => key.startsWith("__react"))
+        });
+      });
+      observer.observe(document, { childList: true, subtree: true });
+    });
+    await page.goto("/home?stay=1");
+    // Hydrated: the rows only render from GuideIdeas' mount effect.
+    await expect(page.getByTestId("idea-row-1")).toBeVisible();
+    expect(
+      await page.evaluate(() => (window as { __palFocusedBeforeHydration?: boolean }).__palFocusedBeforeHydration)
+    ).toBe(true);
+
+    await expect(page.locator(".home-door")).toHaveAttribute("data-door", "ideas");
+    expect(await regionSlots(page)).toEqual(["ideas", "hero", "quickRow", "step"]);
+    await expect(page.getByTestId("dash-check-cta")).toBeFocused();
+    expect(await serverIdeasBlockSurvived(page)).toEqual({ sameNode: true, taggedBeforeHydration: true });
+  });
 });

@@ -139,7 +139,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
           quickRow={quickRow}
           step={step}
           orientationDay={data.orientationDay}
-          hasStep={data.nextAction?.step !== undefined}
+          stepHref={data.nextAction?.step ? data.nextAction.href : null}
         />
       ) : (
         <>

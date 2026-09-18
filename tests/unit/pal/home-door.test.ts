@@ -40,31 +40,70 @@ describe("doorFor (PRD v1.1 §7.5)", () => {
   });
 });
 
-describe("doorLayout — the four orders as amended by R-19 and R-20", () => {
+// The day's step hrefs, as ORIENTATION_STEPS carries them.
+const STEP_1 = "/guides/a1c-5-7-to-6-4";
+const STEP_4 = "/home#ideas-title";
+const STEP_7 = "/journey";
+
+describe("doorLayout — the four orders as amended by R-19, R-20 and R-22", () => {
   it.each([
-    // door, orientationDay, hasStep → order, rows, heading, effective door
-    // (what data-door carries: a numbers/plan pick with no step falls back
-    // to "ideas", so the owner's one-row rule below 375px never reaches it)
-    ["ideas", 2, true, "ideas hero quickRow step", 3, undefined, "ideas"],
-    ["ideas", null, false, "ideas hero quickRow step", 3, undefined, "ideas"],
-    ["numbers", 1, true, "step ideas hero quickRow", 2, "Ideas for later", "numbers"],
-    ["numbers", 2, false, "ideas hero quickRow step", 3, undefined, "ideas"],
-    ["numbers", null, false, "ideas hero quickRow step", 3, undefined, "ideas"],
-    ["plan", 1, true, "step ideas hero quickRow", 2, undefined, "plan"],
-    ["plan", null, false, "ideas hero quickRow step", 3, undefined, "ideas"],
-    ["worried", 1, true, "line ideas hero quickRow step", 2, undefined, "worried"],
-    ["worried", 3, false, "line ideas hero quickRow step", 2, undefined, "worried"],
+    // door, orientationDay, step href → order, rows, heading, effective door
+    // (what data-door carries: a numbers/plan pick that falls back carries
+    // "ideas", so the owner's one-row rule below 375px never reaches it)
+    ["ideas", 2, STEP_1, "ideas hero quickRow step", 3, undefined, "ideas"],
+    ["ideas", null, null, "ideas hero quickRow step", 3, undefined, "ideas"],
+    ["numbers", 1, STEP_1, "step ideas hero quickRow", 2, "Ideas for later", "numbers"],
+    ["numbers", 7, STEP_7, "step ideas hero quickRow", 2, "Ideas for later", "numbers"],
+    ["numbers", 2, null, "ideas hero quickRow step", 3, undefined, "ideas"],
+    ["numbers", null, null, "ideas hero quickRow step", 3, undefined, "ideas"],
+    ["plan", 1, STEP_1, "step ideas hero quickRow", 2, undefined, "plan"],
+    ["plan", null, null, "ideas hero quickRow step", 3, undefined, "ideas"],
+    // R-22: the day's step IS the ideas block — the ideas lead (default).
+    ["numbers", 4, STEP_4, "ideas hero quickRow step", 3, undefined, "ideas"],
+    ["plan", 4, STEP_4, "ideas hero quickRow step", 3, undefined, "ideas"],
+    ["worried", 1, STEP_1, "line ideas hero quickRow step", 2, undefined, "worried"],
+    ["worried", 3, null, "line ideas hero quickRow step", 2, undefined, "worried"],
     // A-88: after day 3 the line drops below the step line, and R-20 gives
     // the third row back. R-19: no week running counts as past day 3.
-    ["worried", 4, true, "ideas hero quickRow step line", 3, undefined, "worried"],
-    ["worried", null, false, "ideas hero quickRow step line", 3, undefined, "worried"]
-  ] as const)("%s, day %s, step %s → %s (%d rows)", async (door, day, hasStep, order, count, heading, applied) => {
+    ["worried", 4, STEP_4, "ideas hero quickRow step line", 3, undefined, "worried"],
+    ["worried", null, null, "ideas hero quickRow step line", 3, undefined, "worried"]
+  ] as const)("%s, day %s, step %s → %s (%d rows)", async (door, day, stepHref, order, count, heading, applied) => {
     const { doorLayout } = await import("../../../components/home-door");
-    const layout = doorLayout(door, day, hasStep);
+    const layout = doorLayout(door, day, stepHref);
     expect(layout.door).toBe(applied);
     expect(layout.order.join(" ")).toBe(order);
     expect(layout.count).toBe(count);
     expect(layout.heading).toBe(heading);
+  });
+});
+
+describe("guardLayout — R-21: no layout change lands while focus is inside the region", () => {
+  it("keeps what is on screen while focus is inside, applies the change once it is not", async () => {
+    const { doorLayout, guardLayout } = await import("../../../components/home-door");
+    // The reviewer's case: a worried guest on day 3 (line on top, two rows)
+    // whose migrated day after sign-in is day 4 (line last, three rows).
+    const onScreen = doorLayout("worried", 3, null);
+    const wanted = doorLayout("worried", 4, STEP_4);
+    expect(guardLayout(wanted, onScreen, true)).toBe(onScreen);
+    expect(guardLayout(wanted, onScreen, false)).toBe(wanted);
+    // The first change after hydration goes through the same guard.
+    const fresh = doorLayout("ideas", null, null);
+    expect(guardLayout(doorLayout("numbers", 1, STEP_1), fresh, true)).toBe(fresh);
+  });
+
+  it("an unchanged layout is never held back", async () => {
+    const { doorLayout, guardLayout } = await import("../../../components/home-door");
+    const onScreen = doorLayout("plan", 1, STEP_1);
+    const same = doorLayout("plan", 2, STEP_1); // new object, same layout
+    expect(guardLayout(same, onScreen, true)).toBe(same);
+  });
+
+  it("HomeDoor routes every snapshot through the guard, measured against what the DOM shows", () => {
+    const src = read("components/home-door.tsx");
+    expect(src).toMatch(
+      /guardLayout\(\s*doorLayout\(pick\.current, orientationDay, stepHref\),\s*committed\.current,\s*regionRef\.current\?\.contains\(document\.activeElement\) \?\? false\s*\)/
+    );
+    expect(src).toMatch(/useLayoutEffect\(\(\) => \{\s*committed\.current = layout;\s*\}\);/);
   });
 });
 
@@ -127,13 +166,7 @@ describe("HomeDoor renders the default order on the server (no hydration mismatc
   });
 
   it("the server snapshot is the default door, by source", () => {
-    expect(read("components/home-door.tsx")).toMatch(/\(\) => "ideas" as Door\s*\);/);
-  });
-
-  it("focus inside the region at decision time keeps the default door, frozen once (A-55)", () => {
-    expect(read("components/home-door.tsx")).toMatch(
-      /frozen\.current \?\?= regionRef\.current\?\.contains\(document\.activeElement\)\s*\?\s*"ideas"\s*:\s*doorFor\(askStore\.get\(\)\)/
-    );
+    expect(read("components/home-door.tsx")).toMatch(/\(\) => DEFAULT_LAYOUT\s*\);/);
   });
 });
 

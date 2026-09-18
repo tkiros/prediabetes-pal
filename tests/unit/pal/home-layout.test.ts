@@ -132,7 +132,7 @@ describe(".quick-row / .quick-action (app/globals.css) — real 44px+ targets, n
   });
 });
 
-describe("dashboard-view.tsx — HomeQuickRow gated by guideDoorEnabled(\"home\"), source order pinned (A-54)", () => {
+describe("dashboard-view.tsx — HomeQuickRow gated by guideDoorEnabled(\"home\"), render order pinned (A-54)", () => {
   const src = read("components/dashboard-view.tsx");
 
   it('imports HomeQuickRow and gates it on guideDoorEnabled("home")', () => {
@@ -141,21 +141,54 @@ describe("dashboard-view.tsx — HomeQuickRow gated by guideDoorEnabled(\"home\"
     expect(src).toContain("homeOn ? <HomeQuickRow");
   });
 
-  it("renders between the hero and the next-action line, and after GuideIdeas — full order pin", () => {
-    const at = (needle: string) => {
-      const index = src.indexOf(needle);
-      expect(index, needle).toBeGreaterThan(-1);
-      return index;
+  // Review fix round 1 (M3): this used to read the source, which since Task
+  // 5.3 only orders the slot *declarations* — the render order lives in
+  // HomeDoor's default layout (home on) and DashboardView's inline fragment
+  // (home off). Both are pinned here from the rendered markup, so it fails if
+  // either default order changes.
+  const renderOrder = async (flag: string) => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", flag);
+    const { createElement } = await import("react");
+    const { DashboardView } = await import("../../../components/dashboard-view");
+    const html = renderToStaticMarkup(
+      createElement(DashboardView, {
+        data: {
+          todayLabel: "Monday, September 14",
+          weekSummary: "",
+          showFirstWin: false,
+          todayChecks: [],
+          nextAction: { text: "Today's step: x", href: "/home#ideas-title", step: "4" },
+          planBox: { planName: "", meta: "", isFree: true, signedIn: false, attention: false },
+          planBoxAttention: false,
+          isDay0: true,
+          orientationDay: 4
+        }
+      })
+    );
+    const needles = {
+      ideas: 'data-testid="ideas-block"',
+      hero: 'data-testid="dash-check-cta"',
+      quickRow: 'aria-label="Quick actions"',
+      step: 'data-testid="next-action"',
+      today: 'aria-label="Today"'
     };
-    const ideasIndex = at("<GuideIdeas");
-    const heroIndex = at("<HomeCheckHero");
-    const rowIndex = at("<HomeQuickRow");
-    const nextActionIndex = at('"dash-next-action"');
-    const todayIndex = at('aria-label="Today"');
-    expect(ideasIndex).toBeLessThan(heroIndex);
-    expect(heroIndex).toBeLessThan(rowIndex);
-    expect(rowIndex).toBeLessThan(nextActionIndex);
-    expect(nextActionIndex).toBeLessThan(todayIndex);
+    return Object.entries(needles)
+      .map(([name, needle]) => [name, html.indexOf(needle)] as const)
+      .filter(([, index]) => index > -1)
+      .sort((a, b) => a[1] - b[1])
+      .map(([name]) => name);
+  };
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("renders ideas → hero → quick row → step line → Today (A-54): the home door's default layout", async () => {
+    expect(await renderOrder("1")).toEqual(["ideas", "hero", "quickRow", "step", "today"]);
+  });
+
+  it("home off: the same order inline, with no quick row", async () => {
+    expect(await renderOrder("ideas,ideas-full")).toEqual(["ideas", "hero", "step", "today"]);
   });
 });
 
