@@ -25,6 +25,14 @@ What was done:
 immediately** and the leaked value never reached Vercel or any deployment. The
 credential in production is the post-rotation one.
 
+⚠️ **Recurred 2026-09-17** while applying migration 0019: two passwords (the
+runtime role's and `neondb_owner`'s) were printed to a session transcript —
+one through an unredacted connection error, one through the same unquoted-`&`
+echo. **Both were rotated the same day** (runtime role by SQL + Vercel
+redeploy; owner role in the Neon console, with `DB_BACKUP_URL` updated and a
+manual backup verified). The traps and the rotation procedure now live in
+`database-governance.md` ("Operator traps", "Rotating a password").
+
 ### Residual — cron heartbeats
 
 `/api/health` still returns **503**, now for a different reason: every cron
