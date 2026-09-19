@@ -21,6 +21,17 @@
 # Setup: add `CRON_SECRET` as a repository secret with the same value as the
 # `CRON_SECRET` env var in Vercel production. Scheduled workflows only run from
 # the default branch, so this does nothing until it is merged to `main`.
+#
+# Optional but strongly recommended: add `CRON_HEARTBEAT_URL` as a repository
+# secret — a heartbeat-monitor check URL (healthchecks.io / Better Stack style:
+# GET <url> = "ran fine", GET <url>/fail = "ran and failed"). Why: between
+# 2026-08-25 and 2026-09-05 every hourly run failed (`request_failed`, domain
+# hold) and nobody was told; and GitHub silently disables scheduled workflows
+# after 60 days without repository activity, which a workflow can never report
+# about itself. A monitor that EXPECTS a ping every hour catches both — the
+# success ping stops arriving. Unset → the two heartbeat steps skip; nothing
+# else changes. `/api/health` staleness plus an external uptime monitor
+# (docs/ops/launch-checklist.md §7) remain the second, independent signal.
 
 name: hourly-crons
 
@@ -42,6 +53,9 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      # Job-level so the step `if:` guards below can read it via the env context.
+      CRON_HEARTBEAT_URL: ${{ secrets.CRON_HEARTBEAT_URL }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -70,3 +84,17 @@ jobs:
         env:
           APP_URL: https://prediabetespal.com
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+      # Dead-man's switch (see header). `success()` = no earlier step failed;
+      # `failure()` = at least one did. Both skip when the secret is unset.
+      - name: Heartbeat (success)
+        if: success() && env.CRON_HEARTBEAT_URL != ''
+        run: curl -fsS --max-time 20 --retry 3 -o /dev/null "$CRON_HEARTBEAT_URL"
+      - name: Heartbeat (failure)
+        if: failure() && env.CRON_HEARTBEAT_URL != ''
+        run: |
+          curl -fsS --max-time 20 --retry 3 -o /dev/null \
+            --data-raw "hourly-crons failed: $RUN_URL" \
+            "$CRON_HEARTBEAT_URL/fail"
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

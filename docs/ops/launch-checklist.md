@@ -256,6 +256,10 @@ until the live PWA is stable (`docs/ops/play-twa-runbook.md`'s blocking note).
       macros loaded/pinned wherever the inbox owner will actually work from.
 - [ ] Uptime monitor configured against `https://<domain>/api/health`,
       alerting on non-200 / `ok:false`.
+- [ ] `CRON_HEARTBEAT_URL` repository secret set to a heartbeat monitor that
+      expects a ping every hour (`.github/workflows/hourly-crons.yml`); one
+      forced failure run (`workflow_dispatch` with a wrong `CRON_SECRET`) reached
+      a phone within the hour.
 - [ ] Sentry alert rule live for exception-volume spikes (filtered
       `stage:model` for provider issues per `docs/ops/launch-controls.md`
       §9.1).
