@@ -10,18 +10,20 @@ owner's behalf.
 ## 1. What this is
 
 This is a review request, not a launch notice. **Nothing described below is
-live.** Every guide surface (`ideas`, `source`, `orient`, `calm`) ships behind
-`NEXT_PUBLIC_GUIDE_DOOR` and is off in production; with the flag unset, the app
-renders byte-for-byte what it rendered before this work started. All of the
-code referenced here — PR #144 (merged), PR #146 and PR #147 (open, not
-merged) — is dormant until (a) its copy-ledger rows are `Approved` and (b) the
-owner deliberately adds the surface to the production flag value.
+live.** Every guide surface (`ideas`, `source`, `orient`, `calm`, `ideas-full`,
+`home`, `intake`) ships behind `NEXT_PUBLIC_GUIDE_DOOR` and is off in
+production; with the flag unset, the app renders byte-for-byte what it
+rendered before this work started. All of the code referenced here — PRs #144,
+#146, #147, #153, #156 and #157, all merged to `main` — is dormant until (a)
+its copy-ledger rows are `Approved` and (b) the owner deliberately adds the
+surface to the production flag value.
 
 Requested turnaround: **[turnaround: ____]**
 
 What we need from you: decisions on the copy rows below (Approved / not, and
-which variant), plus the design review in §4, plus the three questions in §5,
-plus the classification question in §6.
+which variant), plus the callouts and questions in §3 and §3d, plus the
+design review in §4, plus the three questions in §5, plus the classification
+question and the counsel question on `intake_ask` in §6.
 
 ---
 
@@ -106,12 +108,11 @@ the `clinical-*` routes," §7.5/§9 F5).
 
 ---
 
-## 3. Batch 2 — 18 rows, PR #146 + PR #147 (open, not merged)
+## 3. Batch 2 — 18 rows, PR #146 + PR #147 (merged, dormant)
 
-Source: `docs/safety/copy-ledger.md` on branch `feat/guide-orient-finish`
-(worktree `guide-pr23`), which contains both PRs. All 18 rows below are
-present in the ledger; none is missing. All are `Status: Pending`, `Active:
-Yes`, surface `orient`. 17 rows were filed with PR #146; `orientation-signin-step`
+Source: `docs/safety/copy-ledger.md` on `main`, which contains both PRs. All
+18 rows below are present in the ledger; none is missing. All are `Status:
+Pending`, `Active: Yes`, surface `orient`. 17 rows were filed with PR #146; `orientation-signin-step`
 was added in PR #147 (review A-83, "please queue it with batch 2 (#146)").
 
 | Row ID | Where it appears | Copy (exact) | Status |
@@ -207,6 +208,96 @@ Two more points worth a specific read:
   advice segment's first-check chips already use "fruit smoothie" as a
   deliberately surprising read (`lib/client/first-check-chips.ts`), so a
   smoothie reading anything but Clear here would not be a surprise.
+
+---
+
+## 3c. Batch 2, continued — 5 rows, PR-5 (#156, `home`, dormant)
+
+Source: `docs/safety/copy-ledger.md` on `main` (PR #156 is merged). All 5 rows
+below are `Status: Pending`, `Active: Yes`. Ledger surfaces are `Home` and
+`Learn`; the code ships behind the `home` flag surface, which needs `ideas`
+and `ideas-full` open too.
+
+| Row ID | Where it appears | Copy (exact) | Status |
+| --- | --- | --- | --- |
+| `home-quick-row` | Home, quick-actions row (below the check hero) | Ideas · Check · Learn · Journey · Quick actions | Pending |
+| `learn-tiles` | Learn, `/learn` index (heading, `<title>`, tile labels) | Learn · Learn — Prediabetes Pal · What the numbers mean · Your first week · How it works · My meals · Pantry review · aria-label "Learn" | Pending |
+| `guide-ideas-later` | Home, ideas block heading (`numbers` door) | Ideas for later | Pending |
+| `home-door-worried-line` | Home, first-week / ideas area (`worried` door only) | Talk with a doctor or registered dietitian for guidance that is specific to you. | Pending |
+| `home-check-hero-title` | Home, check hero heading | Unsure about a meal? · What are you eating? | Pending |
+
+`home-door-worried-line` is a reuse, not new copy: the second sentence of the
+`Approved` `result-footer` row, derived from `BOUNDARY_DISCLAIMER` in code and
+never retyped.
+
+**Decision needed on every row above:** Approve, reject, or request a rewrite.
+The production guard refuses the `home` surface until all 5 are `Approved`.
+
+---
+
+## 3d. Batch 2, continued — 5 rows, PR-6 (#157, `intake`, dormant)
+
+Source: `docs/safety/copy-ledger.md` on `main` (PR #157 is merged). All 5 rows
+below are `Status: Pending`, `Active: Yes`, ledger surface `Onboarding`; the
+code ships behind the `intake` flag surface, and with it off the tour is
+byte-for-byte the six-step tour it was before.
+
+| Row ID | Where it appears | Copy (exact) | Status |
+| --- | --- | --- | --- |
+| `onboarding-ask-pains` | Onboarding tour, Screen A (`ask_pains`) | What is hardest right now? · Pick up to three. · Understanding what my number means · My effort is not showing in the number · I have no plan, I do not know where to start · My doctor did not give me much · I am worried about where this is going · Knowing what I can eat · Something else · {n} of 3 · Three picked — unpick one to change · Continue · Skip | Pending |
+| `onboarding-ask-win` | Onboarding tour, Screen B (`ask_win`) | What would count as a win for you? · Pick one. · A clear explanation · A number I can watch · A plan of steps · Food I can enjoy without worry · Peace of mind · Numbers I can trust · Not sure yet · Continue · Skip | Pending |
+| `onboarding-ask-response` | Onboarding tour, Screen B, beneath the rows | The words on a result are explained in general terms. What your own number means is a question for your clinician. · The words on a result are explained in general terms. Your own results are for your clinician to read with you. · Your first week is seven small steps, one a day. None of them is a diet. · Meal ideas come first, and you can check any meal when you are unsure. · Plain words, and a clear pointer to a person when an app is not the right reader. · Every label says where it came from: Prediabetes Pal's rules. · Meal ideas come first, the check is there when you are unsure, and the words are explained in general terms. | Pending |
+| `onboarding-expectations-ideas` | Onboarding tour, expectations step | Ideas come first. The check is there when you are unsure. | Pending |
+| `onboarding-welcome-guide` | Onboarding tour, welcome step (h1, paragraph, counter line) | You were just told you have prediabetes. · Here are meal ideas, calm first steps, and plain answers about what the words mean, in one place. Check any meal when you are unsure. · about a minute | Pending |
+
+**Decision needed on every row above:** Approve, reject, or request a rewrite.
+The production guard refuses the `intake` surface until all 5 are `Approved`.
+`onboarding-welcome-guide` cannot be `Approved` as written — see the first
+callout below.
+
+### Callout — the welcome h1 meets PRD §7.3 only if the PRD is amended
+
+`onboarding-welcome-guide` opens with:
+
+> "You were just told you have prediabetes."
+
+This is the PRD v1.1 §3 positioning line, verbatim. PRD §7.3 says: "Second
+person is for actions ("check", "try", "ask"), never for the user's clinical
+state." The h1 states the reader's clinical state in second person. It also
+shows on the first screen, before the next screen asks which of "New A1C
+result", "Doctor's advice", "Family history" or "Just checking" applies, so a
+reader who chose "Family history" or "Just checking" has just been told they
+have prediabetes.
+
+**Question:** amend PRD §3 or PRD §7.3? The row cannot be `Approved` as
+written. This is a question for the PRD author as well as the safety owner.
+
+### Callout — "calm first steps" against DESIGN.md §2
+
+The same row's paragraph reads: "Here are meal ideas, calm first steps, and
+plain answers about what the words mean, in one place." It is PRD §3's wording.
+DESIGN.md §2 says: "Never claim the page is calm — a surface that has to say
+it is calm is not." The row's note reads it as naming the steps, not the page.
+
+**Question:** keep "calm first steps", or a one-word amendment?
+
+### Callout — `onboarding-ask-response`: two clinician-routing lines and one conditional line
+
+Two of the seven lines route to the clinician (the row's note calls them
+`out-of-scope-routing` in character; the safety owner may relabel them):
+
+- `explanation`: "The words on a result are explained in general terms. What
+  your own number means is a question for your clinician."
+- `number_watch`: "The words on a result are explained in general terms. Your
+  own results are for your clinician to read with you."
+
+The `trust` line, "Every label says where it came from: Prediabetes Pal's
+rules.", is true only while the `source` surface is live. The `intake` flag
+must not be flipped on without `source` (plan ruling R-40), and the production
+guard cannot enforce that.
+
+**Question:** a read on both — are the two routing lines right as written or
+relabelled, and is the `trust` line acceptable given it depends on `source`?
 
 ---
 
@@ -348,6 +439,31 @@ the food-first or number-first order), **F-NUMBERS is deferred** — the
 "what these numbers mean, in general" feature does not ship, and any
 in-app link that would have pointed at this page's second-person sentence is
 held back per the plan's default.
+
+### Question — may the analytics event `intake_ask` send `pain_2` and `pain_3`? (plan review A-105)
+
+When a reader leaves Screen B of the tour (flag surface `intake`), the app
+reports one analytics event, `intake_ask`, with four closed-enum properties:
+`pain_1`, `pain_2`, `pain_3` (the first, second and third pick on Screen A, in
+tap order, or `none`) and `win` (the pick on Screen B, or `skipped`). No free
+text. The picks themselves also stay on the device (`pal.ask.v1`), never sent
+to the server or the model.
+
+- `pain_*` values: `number` ("Understanding what my number means"), `effort`
+  ("My effort is not showing in the number"), `plan` ("I have no plan, I do
+  not know where to start"), `clinician` ("My doctor did not give me much"),
+  `worried` ("I am worried about where this is going"), `food` ("Knowing what
+  I can eat"), `other` ("Something else"), or `none`.
+- `win` values: `explanation`, `number_watch`, `steps`, `food_enjoy`, `peace`,
+  `trust`, `unsure`, or `skipped`.
+
+The privacy page (`app/(app)/privacy/page.tsx`) says: "Umami for coarse,
+non-identifying product analytics;". The picks are self-reported categories
+about how the reader feels about their situation (for example `worried`).
+
+**Question for counsel:** do `pain_2` and `pain_3` fit the privacy page's
+"coarse, non-identifying" promise? If not, the event sends `pain_1` only (a
+small code change). This answer gates the `intake` flip, not the build.
 
 ---
 
