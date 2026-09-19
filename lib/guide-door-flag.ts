@@ -135,7 +135,8 @@ export const SURFACE_REQUIRES: Partial<Record<GuideSurface, readonly GuideSurfac
   home: ["ideas", "ideas-full"],
   // Step 4 points at the ideas block.
   orient: ["ideas"],
-  intake: ["orient"],
+  // Screen B's trust reply is true only under source; the picks' only reader is Home's door.
+  intake: ["orient", "source", "home"],
   "ideas-full": ["ideas"]
 };
 
