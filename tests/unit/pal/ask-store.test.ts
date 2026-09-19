@@ -68,3 +68,34 @@ describe("askStore.get() (pal.ask.v1, ruling R-17)", () => {
     }
   });
 });
+
+describe("askStore.set() (Task 6.2)", () => {
+  beforeEach(() => storage.clear());
+
+  it("round-trips through get()", () => {
+    askStore.set({ pains: ["food", "number"], win: "peace" });
+    expect(askStore.get()).toEqual({ pains: ["food", "number"], win: "peace" });
+    askStore.set({ pains: [], win: null });
+    expect(askStore.get()).toEqual({ pains: [], win: null });
+  });
+
+  it("writes exactly {pains, win} to pal.ask.v1, in tap order", () => {
+    askStore.set({ pains: ["worried", "number", "plan"], win: null });
+    expect(storage.getItem("pal.ask.v1")).toBe('{"pains":["worried","number","plan"],"win":null}');
+  });
+
+  it("never throws when storage does", () => {
+    vi.stubGlobal("window", {
+      localStorage: {
+        setItem: () => {
+          throw new Error("quota");
+        }
+      }
+    });
+    try {
+      expect(() => askStore.set({ pains: ["food"], win: null })).not.toThrow();
+    } finally {
+      vi.stubGlobal("window", { localStorage: storage });
+    }
+  });
+});

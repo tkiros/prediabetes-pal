@@ -4624,6 +4624,7 @@ button.inline-link {
   color: var(--text-body);
 }
 .ideas-list {
+  /* The onboarding ask screens (Screens A/B) reuse this class on a role="group" div, so an unscoped .ideas-list rule restyles the tour too. */
   list-style: none; /* §12: carries role="list" in the markup */
   margin: 0;
   padding: 0;
@@ -4655,9 +4656,16 @@ button.inline-link {
   line-height: 1.35;
   text-align: left;
   cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
 .idea-row:hover { border-color: var(--accent); }
+/* Screen A's picked row (DESIGN.md §10): a fill change only, same as
+   .selectable-chip[aria-pressed="true"]. Home's rows never carry aria-pressed. */
+.idea-row[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
 .idea-row:active { transform: translateY(1px); }
 .idea-row--skeleton {
   border-color: transparent;

@@ -72,7 +72,9 @@ export function DashboardView({ data }: { data: DashboardData }) {
   const heroIsStep = weekOn && data.nextAction === null;
 
   // The four Home slots, in the default order. Plain elements, so the server
-  // tree stays a server tree; HomeDoor (a client leaf) only reorders them.
+  // tree stays a server tree. HomeDoor (a client leaf) renders the ideas
+  // block itself (<GuideIdeas key="ideas"> behind its ideasOn prop) and
+  // reorders the other three as keyed Fragments (R-29).
   // PRD v1.1 §7.4/§7.6: ideas lead, the check hero drops to second and
   // stays the one accent-filled action. Flag off ⇒ unchanged Home.
   const ideas = ideasOn ? <GuideIdeas /> : null;
@@ -128,8 +130,9 @@ export function DashboardView({ data }: { data: DashboardData }) {
         )}
       </div>
 
-      {/* Task 5.3: with the home surface on, the four slots go through
-          HomeDoor, which may reorder them per person after hydration. Flag
+      {/* Task 5.3: with the home surface on, the slots go through HomeDoor:
+          it renders the ideas block itself (ideasOn) and may reorder hero,
+          quickRow and step per person after hydration. Flag
           off ⇒ the same four elements, inline, in today's order — byte for
           byte (Fragments and nulls emit nothing). */}
       {homeOn ? (

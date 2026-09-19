@@ -30,6 +30,17 @@ import { doorSurfaceOn } from "./guide-door";
 
 const TRIAL = "http://127.0.0.1:3101";
 
+// F-ASK: under the intake surface two ask screens sit between segment and
+// attribution; pass both with Skip (exact — every step also has "Skip setup
+// and check a meal"). Flag off it does nothing. Same helper as onboarding.spec.
+async function passAskScreens(page: Page): Promise<void> {
+  if (!(await doorSurfaceOn("intake", TRIAL))) return;
+  for (const step of ["ask_pains", "ask_win"]) {
+    await expect(page.getByTestId("onboarding-step")).toHaveAttribute("data-step", step);
+    await page.getByRole("button", { name: "Skip", exact: true }).click();
+  }
+}
+
 // Mirrors lib/client/taster-store.ts dayLocal(): the user's LOCAL calendar day.
 function todayLocal(): string {
   const d = new Date();
@@ -93,6 +104,7 @@ test("taster: first-run walk lands a guided oatmeal check and meters used===1", 
   // A-16) it lands on Home first, so the walk goes on to /check from there.
   await page.getByRole("button", { name: "Get started" }).click();
   await page.getByRole("button", { name: "New A1C result" }).click();
+  await passAskScreens(page);
   await page.getByRole("button", { name: "Reddit", exact: true }).click();
   await page.getByLabel("Latest A1C").fill("6.1");
   await page.getByRole("button", { name: "Continue" }).click();

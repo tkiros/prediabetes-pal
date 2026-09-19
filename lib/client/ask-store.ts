@@ -8,9 +8,9 @@ import { z } from "zod";
  * (lib/client/home-door.ts), and account delete clears it
  * (app/(app)/account/page.tsx DEVICE_ONLY_KEYS).
  *
- * Task 5.3 ships the types and this read-only reader; Task 6.2 adds `set()`
- * (ruling R-17: the enums are the plan's PR-6 contract, verbatim, so PR-6
- * never changes the type).
+ * Task 5.3 shipped the types and the reader; Task 6.2 added `set()` (ruling
+ * R-17: the enums are the plan's PR-6 contract, verbatim, so PR-6 never
+ * changes the type).
  */
 export const PAIN_KEYS = ["number", "effort", "plan", "clinician", "worried", "food", "other"] as const;
 export const WIN_KEYS = [
@@ -46,6 +46,15 @@ export const askStore = {
       return parsed.success ? parsed.data : null;
     } catch {
       return null;
+    }
+  },
+
+  /** Best-effort write of exactly `{ pains, win }`; never throws. */
+  set(state: AskState): void {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ pains: state.pains, win: state.win }));
+    } catch {
+      // best-effort — the tour goes on without a stored answer
     }
   }
 };

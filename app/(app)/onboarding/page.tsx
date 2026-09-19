@@ -20,6 +20,15 @@ import {
   storedUtmChannel,
   type Channel
 } from "../../../lib/client/attribution";
+import { askResponse } from "../../../lib/client/ask-response";
+import {
+  askStore,
+  PAIN_KEYS,
+  WIN_KEYS,
+  type AskState,
+  type PainKey,
+  type WinKey
+} from "../../../lib/client/ask-store";
 import { orientationStore } from "../../../lib/client/orientation-store";
 import { profileStore } from "../../../lib/client/profile-store";
 import { IconAlert, IconCheck, IconPause } from "../../../components/icons";
@@ -27,6 +36,8 @@ import { IconAlert, IconCheck, IconPause } from "../../../components/icons";
 type Step =
   | "welcome"
   | "segment"
+  | "ask_pains"
+  | "ask_win"
   | "attribution"
   | "a1c"
   | "expectations"
@@ -66,20 +77,44 @@ const ATTRIBUTION_CHIPS: ReadonlyArray<{ label: string; channel: Channel }> = [
 export const STEP_PROGRESS: Record<Step, number> = {
   welcome: 20,
   segment: 40,
+  ask_pains: 0,
+  ask_win: 0,
   attribution: 48,
   a1c: 58,
   expectations: 90,
   boundary: 0
 };
 
+// Goal-gradient bar for the eight-screen tour (PRD v1.1 §7.5). Never 0 on a
+// visible step; strictly increasing on every path.
+export const STEP_PROGRESS_ASK: Record<Step, number> = {
+  welcome: 14,
+  segment: 26,
+  ask_pains: 36,
+  ask_win: 44,
+  attribution: 52,
+  a1c: 62,
+  expectations: 90,
+  boundary: 0
+};
+
+export function progressFor(step: Step, askEnabled: boolean): number {
+  return askEnabled ? STEP_PROGRESS_ASK[step] : STEP_PROGRESS[step];
+}
+
+export function nextStepAfterSegment(askEnabled: boolean): Step {
+  return askEnabled ? "ask_pains" : "attribution";
+}
+
 // Visible "Step X of N" text beside the goal-gradient bar. N depends on the
 // user's actual path: returning guests with an on-device A1C skip the a1c
 // step, so their tour is 4 steps, not 5 with a hole in the numbering. Pure so
 // it is unit-testable in node without a component harness.
-export function stepCounter(step: Step, skipsA1c: boolean): string {
+export function stepCounter(step: Step, skipsA1c: boolean, askEnabled = false): string {
+  const ask: readonly Step[] = askEnabled ? ["ask_pains", "ask_win"] : [];
   const steps: readonly Step[] = skipsA1c
-    ? ["welcome", "segment", "attribution", "expectations"]
-    : ["welcome", "segment", "attribution", "a1c", "expectations"];
+    ? ["welcome", "segment", ...ask, "attribution", "expectations"]
+    : ["welcome", "segment", ...ask, "attribution", "a1c", "expectations"];
   const index = steps.indexOf(step);
   return index === -1 ? "" : `Step ${index + 1} of ${steps.length}`;
 }
@@ -93,8 +128,8 @@ export function nextStepAfterAttribution(hasProfile: boolean): Step {
 
 // The tour funnel (PRD §7.5). Only these screens are reported; the number
 // screen and the exit never are. Task 6.1 adds the two F-ASK screens.
-export type TrackedStep = Extract<Step, "segment" | "attribution" | "expectations">;
-const TRACKED_STEPS: ReadonlySet<Step> = new Set<Step>(["segment", "attribution", "expectations"]);
+export type TrackedStep = Extract<Step, "segment" | "ask_pains" | "ask_win" | "attribution" | "expectations">;
+const TRACKED_STEPS: ReadonlySet<Step> = new Set<Step>(["segment", "ask_pains", "ask_win", "attribution", "expectations"]);
 export function trackedStep(step: Step): TrackedStep | null {
   return TRACKED_STEPS.has(step) ? (step as TrackedStep) : null;
 }
@@ -114,10 +149,64 @@ export function leaveTour(push: (href: string) => void): void {
   }
 }
 
+// Screen A (F-ASK, Task 6.2). The options are sentences in the reader's own
+// words, one per PAIN_KEYS entry in the same order.
+const PAIN_LABELS: Record<PainKey, string> = {
+  number: "Understanding what my number means",
+  effort: "My effort is not showing in the number",
+  plan: "I have no plan, I do not know where to start",
+  clinician: "My doctor did not give me much",
+  worried: "I am worried about where this is going",
+  food: "Knowing what I can eat",
+  other: "Something else"
+};
+
+/** Tap order is the signal: append on pick, remove on unpick, null when a fourth pick is refused. */
+export function togglePain(pains: readonly PainKey[], key: PainKey): PainKey[] | null {
+  if (pains.includes(key)) return pains.filter((pain) => pain !== key);
+  return pains.length >= 3 ? null : [...pains, key];
+}
+
+export function painCounterText(count: number, refused: boolean): string {
+  return refused ? "Three picked — unpick one to change" : `${count} of 3`;
+}
+
+// Screen B (F-ASK, Task 6.3): one label per WIN_KEYS entry, same order.
+export const WIN_LABELS: Record<WinKey, string> = {
+  explanation: "A clear explanation",
+  number_watch: "A number I can watch",
+  steps: "A plan of steps",
+  food_enjoy: "Food I can enjoy without worry",
+  peace: "Peace of mind",
+  trust: "Numbers I can trust",
+  unsure: "Not sure yet"
+};
+
+/**
+ * Leaving Screen B (R-36): the one intake_ask event's props, and what to write
+ * to pal.ask.v1 — nothing when both screens were skipped, so the key stays absent.
+ */
+export function askExit(
+  pains: readonly PainKey[],
+  win: WinKey | null
+): {
+  props: { pain_1: PainKey | "none"; pain_2: PainKey | "none"; pain_3: PainKey | "none"; win: WinKey | "skipped" };
+  write: AskState | null;
+} {
+  return {
+    props: { pain_1: pains[0] ?? "none", pain_2: pains[1] ?? "none", pain_3: pains[2] ?? "none", win: win ?? "skipped" },
+    write: pains.length > 0 || win !== null ? { pains: [...pains], win } : null
+  };
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
   const orientOn = guideDoorEnabled("orient");
+  const askEnabled = guideDoorEnabled("intake");
   const [step, setStep] = useState<Step>("welcome");
+  const [pains, setPains] = useState<PainKey[]>([]);
+  const [painRefused, setPainRefused] = useState(false);
+  const [win, setWin] = useState<WinKey | null>(null);
   const [a1cText, setA1cText] = useState("");
   const [a1cError, setA1cError] = useState<string | null>(null);
   const [a1cValue, setA1cValue] = useState<number | null>(null);
@@ -150,6 +239,35 @@ export default function OnboardingPage() {
         // best-effort — the chip choice still steers this tour
       }
     }
+    setStep(nextStepAfterSegment(askEnabled));
+  }
+
+  function pickPain(key: PainKey) {
+    const next = togglePain(pains, key);
+    setPainRefused(next === null);
+    if (next) setPains(next);
+  }
+
+  // Continue with no picks is Skip (A-58); nothing is stored or tracked here —
+  // Screen B writes pal.ask.v1 and fires the one event for both screens.
+  function advanceFromPains(skip: boolean) {
+    if (skip) setPains([]);
+    setPainRefused(false);
+    setStep("ask_win");
+  }
+
+  // Single-select: tapping the picked row clears it. Continue with no pick is
+  // Skip; either way the one event fires and pal.ask.v1 is written (or not).
+  function pickWin(key: WinKey) {
+    setWin(win === key ? null : key);
+  }
+
+  function advanceFromWin(skip: boolean) {
+    const chosen = skip ? null : win;
+    if (skip) setWin(null);
+    const { props, write } = askExit(pains, chosen);
+    track({ name: "intake_ask", props });
+    if (write) askStore.set(write);
     setStep("attribution");
   }
 
@@ -226,19 +344,20 @@ export default function OnboardingPage() {
           {step !== "boundary" ? (
             <>
               <p className="onboarding-step-count">
-                {stepCounter(step, skipsA1c)} · about 30 seconds
+                {stepCounter(step, skipsA1c, askEnabled)}
+                {askEnabled ? " · about a minute" : " · about 30 seconds"}
               </p>
               <div
                 className="onboarding-progress"
                 role="progressbar"
-                aria-label={`Tour progress — ${stepCounter(step, skipsA1c)}`}
+                aria-label={`Tour progress — ${stepCounter(step, skipsA1c, askEnabled)}`}
                 aria-valuemin={0}
                 aria-valuemax={100}
-                aria-valuenow={STEP_PROGRESS[step]}
+                aria-valuenow={progressFor(step, askEnabled)}
               >
                 <div
                   className="onboarding-progress-fill"
-                  style={{ width: `${STEP_PROGRESS[step]}%` }}
+                  style={{ width: `${progressFor(step, askEnabled)}%` }}
                 />
               </div>
             </>
@@ -246,32 +365,47 @@ export default function OnboardingPage() {
           {step === "welcome" ? (
             <>
               <p className="hero-eyebrow">Welcome to Prediabetes Pal</p>
-              <h1 className="page-title">
-                Check a meal. Get a cautious educational read.
-              </h1>
-              <p className="page-copy">
-                At the moment of a meal, Prediabetes Pal gives you one cautious
-                educational label — {" "}
-                {RISK_LABELS.SAFE}, {RISK_LABELS.MODERATE}, or{" "}
-                {RISK_LABELS.HIGH} — with one reason and, when appropriate, an
-                adjustment and one practical alternative. Never a calorie,
-                never a
-                number to track.
-              </p>
-              <div className="chip-row" aria-hidden="true">
-                <span className="verdict-badge" data-risk="SAFE">
-                  <IconCheck size={16} />
-                  {RISK_LABELS.SAFE}
-                </span>
-                <span className="verdict-badge" data-risk="MODERATE">
-                  <IconAlert size={16} />
-                  {RISK_LABELS.MODERATE}
-                </span>
-                <span className="verdict-badge" data-risk="HIGH">
-                  <IconPause size={16} />
-                  {RISK_LABELS.HIGH}
-                </span>
-              </div>
+              {askEnabled ? (
+                <>
+                  <h1 className="page-title">
+                    You were just told you have prediabetes.
+                  </h1>
+                  <p className="page-copy">
+                    Here are meal ideas, calm first steps, and plain answers about
+                    what the words mean, in one place. Check any meal when you are
+                    unsure.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="page-title">
+                    Check a meal. Get a cautious educational read.
+                  </h1>
+                  <p className="page-copy">
+                    At the moment of a meal, Prediabetes Pal gives you one cautious
+                    educational label — {" "}
+                    {RISK_LABELS.SAFE}, {RISK_LABELS.MODERATE}, or{" "}
+                    {RISK_LABELS.HIGH} — with one reason and, when appropriate, an
+                    adjustment and one practical alternative. Never a calorie,
+                    never a
+                    number to track.
+                  </p>
+                  <div className="chip-row" aria-hidden="true">
+                    <span className="verdict-badge" data-risk="SAFE">
+                      <IconCheck size={16} />
+                      {RISK_LABELS.SAFE}
+                    </span>
+                    <span className="verdict-badge" data-risk="MODERATE">
+                      <IconAlert size={16} />
+                      {RISK_LABELS.MODERATE}
+                    </span>
+                    <span className="verdict-badge" data-risk="HIGH">
+                      <IconPause size={16} />
+                      {RISK_LABELS.HIGH}
+                    </span>
+                  </div>
+                </>
+              )}
               <button
                 type="button"
                 className="primary-button"
@@ -302,6 +436,79 @@ export default function OnboardingPage() {
                 type="button"
                 className="inline-link onboarding-skip"
                 onClick={() => advanceFromSegment()}
+              >
+                Skip
+              </button>
+            </>
+          ) : null}
+
+          {step === "ask_pains" ? (
+            <>
+              <h1 className="page-title">What is hardest right now?</h1>
+              <p className="page-copy">Pick up to three.</p>
+              <div className="ideas-list" role="group" aria-label="What is hardest right now?">
+                {PAIN_KEYS.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className="idea-row"
+                    aria-pressed={pains.includes(key)}
+                    onClick={() => pickPain(key)}
+                  >
+                    {PAIN_LABELS[key]}
+                  </button>
+                ))}
+              </div>
+              <p className="field-hint" aria-live="polite">{painCounterText(pains.length, painRefused)}</p>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => advanceFromPains(pains.length === 0)}
+              >
+                Continue
+              </button>
+              <button
+                type="button"
+                className="inline-link onboarding-skip"
+                onClick={() => advanceFromPains(true)}
+              >
+                Skip
+              </button>
+            </>
+          ) : null}
+
+          {step === "ask_win" ? (
+            <>
+              <h1 className="page-title">What would count as a win for you?</h1>
+              <p className="page-copy">Pick one.</p>
+              <div className="ideas-list" role="group" aria-label="What would count as a win for you?">
+                {WIN_KEYS.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className="idea-row"
+                    aria-pressed={win === key}
+                    onClick={() => pickWin(key)}
+                  >
+                    {WIN_LABELS[key]}
+                  </button>
+                ))}
+              </div>
+              {/* Always rendered, empty until a pick: an empty-then-filled live region is what announces the line. */}
+              <p className="page-copy ask-response" aria-live="polite">
+                {win === null ? "" : askResponse(win)}
+              </p>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => advanceFromWin(win === null)}
+              >
+                Continue
+              </button>
+              <button
+                type="button"
+                className="inline-link onboarding-skip"
+                onClick={() => advanceFromWin(true)}
               >
                 Skip
               </button>
@@ -423,6 +630,11 @@ export default function OnboardingPage() {
                 </li>
                 <li>It is information to decide with, not medical advice.</li>
               </ul>
+              {askEnabled ? (
+                <p className="page-copy">
+                  Ideas come first. The check is there when you are unsure.
+                </p>
+              ) : null}
               {orientOn ? (
                 <p className="page-copy">
                   Your first week starts on Home: seven small steps, one a day.

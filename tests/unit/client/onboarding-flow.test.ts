@@ -1,5 +1,5 @@
 import { createElement, type ReactNode } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup, renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Task 3.7: the tour's last screen is rendered in node, which has no DOM and
@@ -41,16 +41,23 @@ vi.stubGlobal("localStorage", storage);
 vi.stubGlobal("window", { localStorage: storage });
 
 import OnboardingPage, {
+  askExit,
   leaveTour,
   nextStepAfterAttribution,
+  nextStepAfterSegment,
+  painCounterText,
+  progressFor,
   STEP_PROGRESS,
+  STEP_PROGRESS_ASK,
   stepCounter,
-  trackedStep
+  togglePain,
+  trackedStep,
+  WIN_LABELS
 } from "../../../app/(app)/onboarding/page";
 
 const STEPS = ["welcome", "segment", "attribution", "a1c", "expectations", "boundary"] as const;
 
-function renderStep(step: (typeof STEPS)[number]): string {
+function renderStep(step: (typeof STEPS)[number] | "ask_pains" | "ask_win"): string {
   forced.step = step;
   try {
     return renderToStaticMarkup(createElement(OnboardingPage));
@@ -146,10 +153,200 @@ describe("trackedStep — the tour funnel never names a result", () => {
   it("maps the screens the floor reads and nothing else", () => {
     expect(trackedStep("welcome")).toBeNull();
     expect(trackedStep("segment")).toBe("segment");
+    expect(trackedStep("ask_pains")).toBe("ask_pains");
+    expect(trackedStep("ask_win")).toBe("ask_win");
     expect(trackedStep("attribution")).toBe("attribution");
     expect(trackedStep("expectations")).toBe("expectations");
     expect(trackedStep("a1c")).toBeNull();
     expect(trackedStep("boundary")).toBeNull();
+  });
+});
+
+describe("F-ASK tour plumbing (PRD v1.1 §7.5)", () => {
+  it("counts 7 / 6 contiguous steps with the two ask screens, and 5 / 4 without", () => {
+    expect(stepCounter("ask_pains", false, true)).toBe("Step 3 of 7");
+    expect(stepCounter("ask_win", false, true)).toBe("Step 4 of 7");
+    expect(stepCounter("expectations", false, true)).toBe("Step 7 of 7");
+    expect(stepCounter("expectations", true, true)).toBe("Step 6 of 6");
+    expect(stepCounter("ask_pains", false, false)).toBe("");
+    expect(stepCounter("expectations", false, false)).toBe("Step 5 of 5");
+  });
+
+  it("routes segment → ask_pains only when the door is on", () => {
+    expect(nextStepAfterSegment(true)).toBe("ask_pains");
+    expect(nextStepAfterSegment(false)).toBe("attribution");
+  });
+
+  it("the ask bar never shows a visible step at zero and only moves forward", () => {
+    const full = ["welcome", "segment", "ask_pains", "ask_win", "attribution", "a1c", "expectations"] as const;
+    const skip = ["welcome", "segment", "ask_pains", "ask_win", "attribution", "expectations"] as const;
+    for (const path of [full, skip]) {
+      for (let i = 0; i < path.length; i++) {
+        expect(progressFor(path[i], true)).toBeGreaterThan(0);
+        expect(progressFor(path[i], true)).toBeLessThan(100);
+        if (i > 0) expect(STEP_PROGRESS_ASK[path[i]]).toBeGreaterThan(STEP_PROGRESS_ASK[path[i - 1]]);
+      }
+    }
+    expect(progressFor("segment", false)).toBe(STEP_PROGRESS.segment);
+  });
+});
+
+describe("F-ASK Screen A (Task 6.2)", () => {
+  it("keeps tap order, unpicks on a second tap, refuses a fourth", () => {
+    expect(togglePain([], "food")).toEqual(["food"]);
+    expect(togglePain(["food"], "number")).toEqual(["food", "number"]);
+    expect(togglePain(["food", "number", "plan"], "number")).toEqual(["food", "plan"]);
+    expect(togglePain(["food", "number", "plan"], "worried")).toBeNull();
+  });
+
+  it("counts '{n} of 3' and swaps to the refusal line after a refused fourth tap", () => {
+    expect(painCounterText(0, false)).toBe("0 of 3");
+    expect(painCounterText(2, false)).toBe("2 of 3");
+    expect(painCounterText(3, false)).toBe("3 of 3");
+    expect(painCounterText(3, true)).toBe("Three picked — unpick one to change");
+  });
+
+  it("renders seven unpressed rows, the live counter, a Continue that is never disabled, and Skip", () => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "1");
+    const markup = renderStep("ask_pains");
+    expect(markup).toContain('<h1 class="page-title">What is hardest right now?</h1>');
+    expect(markup).toContain('<p class="page-copy">Pick up to three.</p>');
+    const rows = markup.match(/<button type="button" class="idea-row"[^>]*>/g) ?? [];
+    expect(rows).toHaveLength(7);
+    for (const row of rows) expect(row).toContain('aria-pressed="false"');
+    const labels = [
+      "Understanding what my number means",
+      "My effort is not showing in the number",
+      "I have no plan, I do not know where to start",
+      "My doctor did not give me much",
+      "I am worried about where this is going",
+      "Knowing what I can eat",
+      "Something else"
+    ];
+    let at = -1;
+    for (const label of labels) {
+      const next = markup.indexOf(label);
+      expect(next, label).toBeGreaterThan(at);
+      at = next;
+    }
+    expect(markup).toMatch(/<p[^>]*aria-live="polite"[^>]*>0 of 3<\/p>/);
+    const cont = markup.match(/<button[^>]*class="primary-button"[^>]*>Continue<\/button>/)?.[0] ?? "";
+    expect(cont).not.toBe("");
+    expect(cont).not.toContain("disabled");
+    expect(markup).toContain(">Skip</button>");
+    expect(markup).not.toContain("ideas-block");
+  });
+});
+
+describe("F-ASK Screen B (Task 6.3 / 6.4)", () => {
+  it("renders seven unpressed rows in WIN_KEYS order, an empty live response line, a Continue that is never disabled, and Skip", () => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "1");
+    const markup = renderStep("ask_win");
+    expect(markup).toContain('<h1 class="page-title">What would count as a win for you?</h1>');
+    expect(markup).toContain('<p class="page-copy">Pick one.</p>');
+    expect(markup).toContain('role="group" aria-label="What would count as a win for you?"');
+    const rows = markup.match(/<button type="button" class="idea-row"[^>]*>/g) ?? [];
+    expect(rows).toHaveLength(7);
+    for (const row of rows) expect(row).toContain('aria-pressed="false"');
+    const labels = [
+      "A clear explanation",
+      "A number I can watch",
+      "A plan of steps",
+      "Food I can enjoy without worry",
+      "Peace of mind",
+      "Numbers I can trust",
+      "Not sure yet"
+    ];
+    expect(Object.values(WIN_LABELS)).toEqual(labels);
+    let at = -1;
+    for (const label of labels) {
+      const next = markup.indexOf(`>${label}</button>`);
+      expect(next, label).toBeGreaterThan(at);
+      at = next;
+    }
+    expect(markup).toContain('<p class="page-copy ask-response" aria-live="polite"></p>');
+    const cont = markup.match(/<button[^>]*class="primary-button"[^>]*>Continue<\/button>/)?.[0] ?? "";
+    expect(cont).not.toBe("");
+    expect(cont).not.toContain("disabled");
+    expect(markup).toContain('<button type="button" class="inline-link onboarding-skip">Skip</button>');
+  });
+
+  it("askExit: skipping both screens writes nothing and reports none/skipped (R-36)", () => {
+    expect(askExit([], null)).toEqual({
+      props: { pain_1: "none", pain_2: "none", pain_3: "none", win: "skipped" },
+      write: null
+    });
+  });
+
+  it("askExit: two pains plus a win write and send in tap order; a win alone still writes", () => {
+    expect(askExit(["plan", "number"], "steps")).toEqual({
+      props: { pain_1: "plan", pain_2: "number", pain_3: "none", win: "steps" },
+      write: { pains: ["plan", "number"], win: "steps" }
+    });
+    expect(askExit([], "trust").write).toEqual({ pains: [], win: "trust" });
+    expect(askExit(["food"], null).write).toEqual({ pains: ["food"], win: null });
+  });
+
+  it("expectations: the ideas line sits between the bullets and the first-week line under intake, and only there", () => {
+    const IDEAS_LINE = "Ideas come first. The check is there when you are unsure.";
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "1");
+    const on = renderStep("expectations");
+    expect(on).toContain(`<p class="page-copy">${IDEAS_LINE}</p>`);
+    expect(on.indexOf("It is information to decide with")).toBeLessThan(on.indexOf(IDEAS_LINE));
+    expect(on.indexOf(IDEAS_LINE)).toBeLessThan(on.indexOf(FIRST_WEEK_LINE));
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "ideas,orient");
+    expect(renderStep("expectations")).not.toContain(IDEAS_LINE);
+  });
+
+  it("intake page pin: only the welcome, the time claim and the ideas line differ from orient (Task 6.5, A-73)", () => {
+    const IDEAS_LINE = "Ideas come first. The check is there when you are unsure.";
+    const OLD_H1 = "Check a meal. Get a cautious educational read.";
+    const NEW_H1 = "You were just told you have prediabetes.";
+    const NEW_COPY =
+      "Here are meal ideas, calm first steps, and plain answers about what the words mean, in one place. Check any meal when you are unsure.";
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "ideas,orient");
+    const on = STEPS.map(renderStep);
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "ideas,orient,intake");
+    const intake = STEPS.map(renderStep);
+
+    // Intake adds two screens, so the counter ("Step 2 of 7") and the bar move; stepCounter and
+    // progressFor are pinned above. Mask those three numbers so the rest of the markup is compared.
+    const mask = (html: string) =>
+      html
+        .replace(/Step \d+ of \d+/g, "Step N of M")
+        .replace(/aria-valuenow="\d+"/, 'aria-valuenow="P"')
+        .replace(/width:\d+%/, "width:P%");
+    STEPS.forEach((step, index) => {
+      if (step === "welcome" || step === "expectations") return;
+      if (step === "boundary") {
+        expect(intake[index], step).toBe(on[index]);
+        return;
+      }
+      // Every non-boundary step carries the counter line's time claim.
+      expect(intake[index], step).toContain("about a minute");
+      expect(mask(intake[index]).replace("about a minute", "about 30 seconds"), step).toBe(mask(on[index]));
+    });
+
+    const welcome = intake[STEPS.indexOf("welcome")];
+    expect(welcome).toContain(`<h1 class="page-title">${NEW_H1}</h1>`);
+    expect(welcome).toContain(`<p class="page-copy">${NEW_COPY}</p>`);
+    expect(welcome).toContain("Welcome to Prediabetes Pal");
+    expect(welcome).toContain(">Get started</button>");
+    expect(welcome).toContain("about a minute");
+    expect(welcome).not.toContain("verdict-badge");
+    expect(welcome).not.toContain(OLD_H1);
+
+    const welcomeOrient = on[STEPS.indexOf("welcome")];
+    expect(welcomeOrient).toContain(OLD_H1);
+    expect(welcomeOrient).toContain("verdict-badge");
+    expect(welcomeOrient).toContain("about 30 seconds");
+
+    const expectations = intake[STEPS.indexOf("expectations")];
+    expect(expectations).toContain("about a minute");
+    expect(expectations).toContain(IDEAS_LINE);
+    expect(
+      mask(expectations.replace(`<p class="page-copy">${IDEAS_LINE}</p>`, "")).replace("about a minute", "about 30 seconds")
+    ).toBe(mask(on[STEPS.indexOf("expectations")]));
   });
 });
 
@@ -163,6 +360,21 @@ describe("the tour's last screen (Task 3.7, A-05, A-28)", () => {
     expect(last).toContain(">Check my first meal</button>");
     expect(last).not.toContain(FIRST_WEEK_LINE);
     expect(last).not.toContain("Start your first week");
+  });
+
+  // R-52: renderToStaticMarkup cannot see adjacent-text-node splits; renderToString (what the
+  // server sends) separates them with <!-- -->. Captured from 5df3557 (main) — byte-identical.
+  it("flag off: the server-rendered (renderToString) bytes are unchanged too", async () => {
+    vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "");
+    const markup = STEPS.map((step) => {
+      forced.step = step;
+      try {
+        return `<!-- ${step} -->\n${renderToString(createElement(OnboardingPage))}`;
+      } finally {
+        forced.step = null;
+      }
+    }).join("\n\n");
+    await expect(`${markup}\n`).toMatchFileSnapshot("./__snapshots__/onboarding-flag-off-ssr.html");
   });
 
   it("orient on: the last screen gains the first-week line and the new button; no other step changes", () => {
