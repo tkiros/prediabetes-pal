@@ -109,7 +109,25 @@ describe("production door guard — checkProductionDoor (Task 1.11)", () => {
     expect(home.errors).toEqual(['surface "home" requires "ideas", "ideas-full" — add them or remove "home"']);
 
     const intake = checkProductionDoor("intake,ideas", ledgerWith(ALL_ROWS), freshLabels(), PROMPT_VERSION, MODEL);
-    expect(intake.errors).toEqual(['surface "intake" requires "orient" — add it or remove "intake"']);
+    expect(intake.errors).toEqual([
+      'surface "intake" requires "orient", "source", "home" — add them or remove "intake"'
+    ]);
+  });
+
+  it("refuses `intake` without `source` and `home` — its flip order is enforced (R-40/M1)", () => {
+    // Screen B's trust reply is true only under `source`; pal.ask.v1's only
+    // reader is Home's door. `home` itself requires ideas + ideas-full.
+    const ledger = ledgerWith(ALL_ROWS);
+    const partial = checkProductionDoor("ideas,orient,intake", ledger, freshLabels(), PROMPT_VERSION, MODEL);
+    expect(partial.errors).toEqual(['surface "intake" requires "source", "home" — add them or remove "intake"']);
+    expect(partial.effective).toBe("");
+
+    const value = "ideas,ideas-full,home,source,orient,intake";
+    expect(checkProductionDoor(value, ledger, freshLabels(), PROMPT_VERSION, MODEL)).toEqual({
+      effective: value,
+      errors: [],
+      warnings: []
+    });
   });
 
   it("refuses a surface whose ledger rows are not all Approved — Pending or missing", () => {
@@ -177,7 +195,7 @@ describe("production door guard — checkProductionDoor (Task 1.11)", () => {
     expect(SURFACE_REQUIRES).toEqual({
       home: ["ideas", "ideas-full"],
       orient: ["ideas"],
-      intake: ["orient"],
+      intake: ["orient", "source", "home"],
       "ideas-full": ["ideas"]
     });
     for (const surface of GUIDE_SURFACES)
@@ -286,17 +304,18 @@ describe("production door guard — checkProductionDoor (Task 1.11)", () => {
     });
 
     it("also closes every surface that requires a dropped one, transitively, and names each (fix round 1)", () => {
-      // home and orient require ideas; intake requires orient. Labels go stale
-      // on every PROMPT_VERSION bump — a hotfix must not ship them half-open.
+      // home and orient require ideas; intake requires orient and home (and
+      // source, which needs nothing from ideas). Labels go stale on every
+      // PROMPT_VERSION bump — a hotfix must not ship them half-open.
       const probe = checkProductionDoor(
-        "ideas,ideas-full,home,orient,intake",
+        "ideas,ideas-full,home,source,orient,intake",
         ledger,
         freshLabels(),
         "2099-01-01.1",
         MODEL
       );
       expect(probe).toEqual({
-        effective: "",
+        effective: "source",
         errors: [],
         warnings: [
           `idea labels are stale (prompt 2099-01-01.1 ≠ ${PROMPT_VERSION}) — "ideas", "ideas-full", "home", "orient", "intake" dropped from this build; run npm run eval:pal:ideas`
@@ -304,12 +323,18 @@ describe("production door guard — checkProductionDoor (Task 1.11)", () => {
       });
 
       // Surfaces that need nothing from ideas survive, in input order.
-      const survivors = checkProductionDoor("source,ideas,orient,calm,intake", ledger, null, PROMPT_VERSION, MODEL);
+      const survivors = checkProductionDoor(
+        "source,ideas,ideas-full,home,orient,calm,intake",
+        ledger,
+        null,
+        PROMPT_VERSION,
+        MODEL
+      );
       expect(survivors).toEqual({
         effective: "source,calm",
         errors: [],
         warnings: [
-          'idea labels are stale (no readable lib/pal/guide-ideas.labels.json) — "ideas", "ideas-full", "orient", "intake" dropped from this build; run npm run eval:pal:ideas'
+          'idea labels are stale (no readable lib/pal/guide-ideas.labels.json) — "ideas", "ideas-full", "home", "orient", "intake" dropped from this build; run npm run eval:pal:ideas'
         ]
       });
     });
