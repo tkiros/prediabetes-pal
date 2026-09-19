@@ -159,7 +159,7 @@ off" card — see §4). No word of the row's approved copy changed.
 
 ## 3b. Batch 3 — 4 rows, PR-4 (`ideas-full`, dormant)
 
-Source: `docs/safety/copy-ledger.md` on branch `feat/guide-pr4-ideas-full`. All
+Source: `docs/safety/copy-ledger.md` on `main` (PR #153, dormant). All
 4 rows below are `Status: Pending`, `Active: Yes`, surface `ideas-full` — one
 level dormant below batch 1's `ideas`: the production door guard refuses
 `ideas-full` unless `ideas` is also open, so this batch cannot go live before
