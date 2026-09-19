@@ -190,7 +190,7 @@ export function checkProductionDoor(
  * `surfaces` with `drop` removed, then every surface whose SURFACE_REQUIRES
  * is no longer fully open dropped too, repeated to a fixed point (fix round
  * 1: closing the ideas surfaces must not leave home's quick row, orient's
- * step 4, or intake-through-orient open with a closed requirement).
+ * step 4, or intake (through orient or home) open with a closed requirement).
  */
 function closeSurfaces(
   surfaces: readonly GuideSurface[],
