@@ -65,7 +65,7 @@ export function isolatedE2ERuntimeEnv(
     PAYWALL_MODE: base.PAYWALL_MODE?.trim() || "legacy",
     PAL_ALLOW_NO_MEASUREMENT: "1",
     SUPPORT_INBOX_EMAIL: "support@pal.test",
-    TRIAL_PRICE_VARIANT: "1299",
+    TRIAL_PRICE_VARIANT: "999",
     VAPID_PUBLIC_KEY: E2E_VAPID_PUBLIC_KEY,
 
     // This is an optimized local server, not an internet-reachable preview.
@@ -128,6 +128,7 @@ export function isolatedE2ERuntimeEnv(
     STRIPE_PRICE_MONTHLY_1299: "",
     STRIPE_PRICE_MONTHLY_1999: "",
     STRIPE_PRICE_ANNUAL: "",
+    STRIPE_PRICE_ANNUAL_8999: "",
     STRIPE_PRICE_PANTRY: "",
     STRIPE_SECRET_KEY: "",
     STRIPE_WEBHOOK_SECRET: "",

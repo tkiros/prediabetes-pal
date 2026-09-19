@@ -18,6 +18,8 @@ import {
 import { generateClaimToken } from "../../../lib/server/pantry/claims";
 import { intakeEmailText } from "../../../lib/server/pantry/emails";
 import {
+  ANNUAL_PRICE,
+  isAnnualPriceId,
   resolveAnnualPrice,
   resolvePriceVariant
 } from "../../../lib/server/pricing";
@@ -962,7 +964,7 @@ export async function applyStripeEvent(
         provider: "stripe",
         providerRef: subscriptionId,
         productId:
-          item?.price.id === process.env.STRIPE_PRICE_ANNUAL
+          isAnnualPriceId(item?.price.id, process.env)
             ? "premium_annual"
             : "premium_monthly",
         status,
@@ -1530,7 +1532,7 @@ export function createTrialCheckoutHandler(
       plan === "annual" ? resolveAnnualPrice(env).priceId : monthly.priceId;
     // The metadata drives the pre-charge email's price line; annual rows carry
     // the plan name instead of a monthly variant.
-    const variant = plan === "annual" ? "annual" : monthly.variant;
+    const variant = plan === "annual" ? ANNUAL_PRICE.variant : monthly.variant;
     if (!priceId) {
       return NextResponse.json(
         { error: "Billing is not configured." },

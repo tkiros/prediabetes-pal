@@ -73,7 +73,7 @@ function buildMode(mode: keyof typeof E2E_DIST_DIRS): void {
     ...isolatedE2ERuntimeEnv(process.env),
     NEXT_DIST_DIR: E2E_DIST_DIRS[mode],
     PAYWALL_MODE: mode,
-    STRIPE_PRICE_ANNUAL: "price_e2e_annual_smoke_only"
+    STRIPE_PRICE_ANNUAL_8999: "price_e2e_annual_smoke_only"
   });
 }
 

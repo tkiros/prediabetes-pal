@@ -114,8 +114,8 @@ async function ensurePrice(envId, args, label) {
   const price = await stripe.prices.create({ product: product.id, currency: "usd", ...args });
   return price.id;
 }
-const PRICE_MONTHLY = await ensurePrice(fileEnv.STRIPE_PRICE_MONTHLY_1299, { unit_amount: 1299, recurring: { interval: "month" } }, "monthly");
-const PRICE_ANNUAL = await ensurePrice(fileEnv.STRIPE_PRICE_ANNUAL, { unit_amount: 9999, recurring: { interval: "year" } }, "annual");
+const PRICE_MONTHLY = await ensurePrice(fileEnv.STRIPE_PRICE_MONTHLY_999, { unit_amount: 999, recurring: { interval: "month" } }, "monthly");
+const PRICE_ANNUAL = await ensurePrice(fileEnv.STRIPE_PRICE_ANNUAL_8999, { unit_amount: 8999, recurring: { interval: "year" } }, "annual");
 
 fs.rmSync(STUB_DIR, { recursive: true, force: true });
 fs.mkdirSync(STUB_DIR, { recursive: true });
@@ -129,9 +129,9 @@ const serverEnv = {
   AUTH_EMAIL_STUB_DIR: STUB_DIR,
   STRIPE_SECRET_KEY: STRIPE_KEY,
   STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
-  STRIPE_PRICE_MONTHLY_1299: PRICE_MONTHLY,
-  STRIPE_PRICE_ANNUAL: PRICE_ANNUAL,
-  TRIAL_PRICE_VARIANT: "1299",
+  STRIPE_PRICE_MONTHLY_999: PRICE_MONTHLY,
+  STRIPE_PRICE_ANNUAL_8999: PRICE_ANNUAL,
+  TRIAL_PRICE_VARIANT: "999",
   // paymentReturnUrlGate requires https (PR #11). Stripe accepts an https
   // return URL it never resolves; the harness itself always talks to the
   // server over plain-http BASE and re-origins any link before fetching it.
@@ -172,6 +172,10 @@ async function cleanup(code) {
   fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
   const out = path.join(EVIDENCE_DIR, `e2e06-${RUN_ID}.json`);
   fs.writeFileSync(out, JSON.stringify(evidence, null, 2));
+  // Always keep the dev server's own output next to the evidence: a webhook
+  // that answers 500 ("retry") swallows its exception, and this file is the
+  // only place the stack trace survives. artifacts/qa is gitignored.
+  fs.writeFileSync(path.join(EVIDENCE_DIR, `e2e06-${RUN_ID}-server.log`), serverLog);
   console.log(`\nEvidence: ${out}`);
   console.log(failures === 0 ? "E2E-06: ALL STEPS PASSED" : `E2E-06: ${failures} step(s) FAILED`);
   process.exit(code ?? (failures === 0 ? 0 : 1));
