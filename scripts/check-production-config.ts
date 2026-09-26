@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
+import { GDM_GATES_PATH, checkProductionGdmDoor } from "../lib/gdm-door-guard";
 import {
   COPY_LEDGER_PATH,
   IDEA_LABELS_PATH,
@@ -48,6 +49,8 @@ function loadConfig(extraEnv: Record<string, string>): Loaded {
     delete env[server];
   }
   delete env.NEXT_PUBLIC_GUIDE_DOOR;
+  delete env.NEXT_PUBLIC_GDM_DOOR;
+  delete env.GDM_DOOR_ENABLED;
   Object.assign(env, extraEnv);
   // tsx (already a devDependency) resolves the config's extensionless TS
   // imports; node's bare type stripping cannot. The child prints the config's
@@ -149,6 +152,34 @@ if ((source.status === 0) !== (sourceCheck.errors.length === 0)) {
 // Staleness: what a production build that opens the ideas surfaces would drop.
 for (const warning of door("ideas,ideas-full").warnings) {
   console.log(`issue: ${warning}`);
+}
+
+// ── GDM door guard (Task 0.2) ────────────────────────────────────────────────
+// With the server twin on, the usual refusals hold.
+for (const value of ["1", "nonsense"]) {
+  if (loadConfig({ GDM_DOOR_ENABLED: "1", NEXT_PUBLIC_GDM_DOOR: value }).status === 0) {
+    console.error(`FAIL: NEXT_PUBLIC_GDM_DOOR=${value} loaded in production — GDM door guard missing`);
+    failures += 1;
+  } else {
+    console.log(`ok: NEXT_PUBLIC_GDM_DOOR=${value} is rejected in production`);
+  }
+}
+
+// The revert, rehearsed in the one place the production guard runs outside a
+// production build (G-09): unsetting the twin, or setting it to "0", must
+// LOAD — a redeploy that carries the revert must never itself fail to build.
+if (loadConfig({ NEXT_PUBLIC_GDM_DOOR: "landing,organiser" }).status !== 0) {
+  console.error("FAIL: NEXT_PUBLIC_GDM_DOOR=landing,organiser with GDM_DOOR_ENABLED unset did not load");
+  failures += 1;
+} else {
+  console.log("ok: NEXT_PUBLIC_GDM_DOOR=landing,organiser with GDM_DOOR_ENABLED unset loads (door closed)");
+}
+
+if (loadConfig({ GDM_DOOR_ENABLED: "0", NEXT_PUBLIC_GDM_DOOR: "landing,organiser" }).status !== 0) {
+  console.error("FAIL: NEXT_PUBLIC_GDM_DOOR=landing,organiser with GDM_DOOR_ENABLED=0 did not load");
+  failures += 1;
+} else {
+  console.log("ok: NEXT_PUBLIC_GDM_DOOR=landing,organiser with GDM_DOOR_ENABLED=0 loads (door closed)");
 }
 
 if (failures > 0) {
