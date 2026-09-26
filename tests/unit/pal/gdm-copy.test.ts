@@ -153,6 +153,10 @@ function scanExpressionForLiteralCopy(expr: ts.Expression | undefined, report: (
   if (ts.isTemplateExpression(expr)) {
     if (HAS_LETTER_OR_DIGIT.test(expr.head.text)) report(expr.head.text);
     for (const span of expr.templateSpans) {
+      // A `${…}` substitution is a rendered position too: descend into it
+      // with the same bounded whitelist (an identifier or a bank lookup
+      // stays opaque; a ternary/logical with string literals is flagged).
+      scanExpressionForLiteralCopy(span.expression, report);
       if (HAS_LETTER_OR_DIGIT.test(span.literal.text)) report(span.literal.text);
     }
     return;
@@ -201,13 +205,18 @@ function findLiteralCopyOffenders(sourceText: string, fileLabel: string): string
   return offenders;
 }
 
-const LITERAL_KNOWN_BAD: Record<string, string> = {
-  "jsx-text": "<p>Saving</p>",
-  "jsx-expression-string": '<p>{"Saving"}</p>',
-  "conditional-string": '<p>{saving ? "Saving" : label}</p>',
-  "attribute-expression-string": "<button aria-label={'Close'} />",
-  "template-literal": "<p>{`Hello ${name}`}</p>",
-  "attribute-string-literal": '<input placeholder="Type here" />'
+/** Each control names the text the walker must flag, not just that it flags something. */
+const LITERAL_KNOWN_BAD: Record<string, { snippet: string; expectedFlags: string[] }> = {
+  "jsx-text": { snippet: "<p>Saving</p>", expectedFlags: ["Saving"] },
+  "jsx-expression-string": { snippet: '<p>{"Saving"}</p>', expectedFlags: ["Saving"] },
+  "conditional-string": { snippet: '<p>{saving ? "Saving" : label}</p>', expectedFlags: ["Saving"] },
+  "attribute-expression-string": { snippet: "<button aria-label={'Close'} />", expectedFlags: ["Close"] },
+  "template-literal": { snippet: "<p>{`Hello ${name}`}</p>", expectedFlags: ["Hello"] },
+  "attribute-string-literal": { snippet: '<input placeholder="Type here" />', expectedFlags: ["Type here"] },
+  "template-substitution": {
+    snippet: '<p>{`${saving ? "Saving" : "Saved"}`}</p>',
+    expectedFlags: ["Saving", "Saved"]
+  }
 };
 
 const LITERAL_KNOWN_GOOD: Record<string, string> = {
@@ -262,8 +271,15 @@ describe("GDM copy banks — one test over every product-authored string (PRD §
   });
 
   it("has a control sample for every literal-copy bypass, and each known-good pattern passes (ruling R5)", () => {
-    for (const [label, snippet] of Object.entries(LITERAL_KNOWN_BAD)) {
-      expect(findLiteralCopyOffenders(snippet, label), label).not.toEqual([]);
+    for (const [label, { snippet, expectedFlags }] of Object.entries(LITERAL_KNOWN_BAD)) {
+      const offenders = findLiteralCopyOffenders(snippet, label);
+      expect(offenders, label).not.toEqual([]);
+      for (const flag of expectedFlags) {
+        expect(
+          offenders.some((offender) => offender.includes(flag)),
+          `${label}: expected an offender mentioning "${flag}", got ${JSON.stringify(offenders)}`
+        ).toBe(true);
+      }
     }
     for (const [label, snippet] of Object.entries(LITERAL_KNOWN_GOOD)) {
       expect(findLiteralCopyOffenders(snippet, label), label).toEqual([]);
