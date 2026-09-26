@@ -2,7 +2,6 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
-import { GDM_GATES_PATH, checkProductionGdmDoor } from "../lib/gdm-door-guard";
 import {
   COPY_LEDGER_PATH,
   IDEA_LABELS_PATH,
