@@ -35,6 +35,14 @@ const ALLOWED_NAMES = [
   "orientation_dismissed",
   "learn_opened",
   "intake_ask",
+  "gdm_door_shown",
+  "gdm_onboarding_step",
+  "gdm_waiting_opened",
+  "gdm_asklist_opened",
+  "gdm_ask_parked",
+  "gdm_plan_entered",
+  "gdm_meal_saved",
+  "gdm_summary_printed",
   "photo_draft",
   "result_feedback_submitted",
   "clarification_requested",
@@ -77,6 +85,14 @@ function assertExhaustive(name: AnalyticsEvent["name"]): void {
     case "orientation_dismissed":
     case "learn_opened":
     case "intake_ask":
+    case "gdm_door_shown":
+    case "gdm_onboarding_step":
+    case "gdm_waiting_opened":
+    case "gdm_asklist_opened":
+    case "gdm_ask_parked":
+    case "gdm_plan_entered":
+    case "gdm_meal_saved":
+    case "gdm_summary_printed":
     case "photo_draft":
     case "result_feedback_submitted":
     case "onboarding_started":
@@ -144,6 +160,14 @@ describe("AnalyticsEvent allowlist", () => {
       { name: "orientation_dismissed" },
       { name: "learn_opened", props: { page: "first-week", from: "step" } },
       { name: "intake_ask", props: { pain_1: "number", pain_2: "none", pain_3: "none", win: "skipped" } },
+      { name: "gdm_door_shown", props: { surface: "landing" } },
+      { name: "gdm_onboarding_step", props: { step: "not_told_exit" } },
+      { name: "gdm_waiting_opened" },
+      { name: "gdm_asklist_opened" },
+      { name: "gdm_ask_parked", props: { from: "quick_add" } },
+      { name: "gdm_plan_entered", props: { unit: "choices", has_figure: true } },
+      { name: "gdm_meal_saved", props: { occasion: "snack_bedtime" } },
+      { name: "gdm_summary_printed", props: { before_appointment: "no_date" } },
       { name: "photo_draft", props: { items: 3, uncertain: 1 } },
       { name: "result_feedback_submitted", props: { helpful: true } },
       {
@@ -369,6 +393,18 @@ describe("intake_ask (Task 6.3)", () => {
     const props = { pain_1: "effort", pain_2: "plan", pain_3: "none", win: "steps" } as const;
     track({ name: "intake_ask", props }, { umami });
     expect(umami.track).toHaveBeenCalledWith("intake_ask", props);
+  });
+});
+
+describe("GDM door events (PRD GDM v1.1 §7.4, §9.1)", () => {
+  it.each([
+    [{ name: "gdm_ask_parked", props: { from: "list" } }],
+    [{ name: "gdm_plan_entered", props: { unit: "grams", has_figure: false } }],
+    [{ name: "gdm_asklist_opened" }]
+  ] as const)("forwards %j to umami", (event) => {
+    const umami = { track: vi.fn() };
+    track(event as never, { umami });
+    expect(umami.track).toHaveBeenCalledWith(event.name, "props" in event ? event.props : undefined);
   });
 });
 
