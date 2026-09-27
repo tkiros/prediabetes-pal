@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { track } from "../../lib/client/analytics";
 import { gdmFetch } from "../../lib/client/gdm-api";
+import { useFocusAfterRender } from "../../lib/client/gdm-focus";
 import { useHydrated } from "../../lib/client/use-hydrated";
 import type { ClinicalRoute } from "../../lib/pal/clinical-risk";
 import { GDM_COPY } from "../../lib/pal/gdm/copy";
@@ -131,24 +132,6 @@ export const askDraft = {
     }
   }
 };
-
-/**
- * Focus moves on purpose after an action (G-39, G-46, G-76), never by a
- * setState inside an effect: a handler names the element's id, and the effect
- * after the next commit focuses it, once the element exists and is enabled.
- */
-function useFocusAfterRender(): (id: string) => void {
-  const pending = useRef<string | null>(null);
-  useEffect(() => {
-    const id = pending.current;
-    if (!id) return;
-    pending.current = null;
-    document.getElementById(id)?.focus();
-  });
-  return useCallback((id: string) => {
-    pending.current = id;
-  }, []);
-}
 
 /**
  * My questions (PRD §6.2 F-ASKLIST): park a question the moment she has it,

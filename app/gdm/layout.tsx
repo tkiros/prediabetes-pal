@@ -41,7 +41,7 @@ export default function GdmLayout({ children }: Readonly<{ children: ReactNode }
       <a href="#gdm-content" className="app-skip">
         {GDM_COPY["gdm-door-name"].skip}
       </a>
-      <main className="page-shell">
+      <main className="page-shell gdm-door">
         <div className="page-frame" id="gdm-content" tabIndex={-1}>
           {/* G-38: no wordmark here. The landing's h1 IS the name; door pages get
               <GdmWordmark /> as the Home link in (door)/layout.tsx's nav (G-34), and

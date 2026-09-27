@@ -39,6 +39,21 @@ export const GdmPlanSchema = z
 export type GdmPlan = z.infer<typeof GdmPlanSchema>;
 export type StoredPlan = GdmPlan & { id: string };
 
+/**
+ * A plan that holds nothing to show: none of her words, no figure, and no way
+ * of counting given. (What one choice is shows only with Choices, so with
+ * `none` it is not read.) It renders as empty; nothing is ever filled in.
+ */
+export function isEmptyPlan(plan: GdmPlan): boolean {
+  return (
+    plan.unit === "none" &&
+    plan.givenBy === null &&
+    plan.note === null &&
+    plan.perDay === null &&
+    Object.keys(plan.figures).length === 0
+  );
+}
+
 export function currentPlans(plans: StoredPlan[]): StoredPlan[] {
   return plans.filter((plan) => plan.replacedOn === null);
 }

@@ -149,5 +149,50 @@ export const GDM_COPY = {
     remove: "Delete",
     empty: "No questions yet. Add one above whenever it comes to you.",
     cardTitle: "Before anything else"
+  },
+  // Task 3.2, F-PLANKEEP. One heading per GDM_OCCASIONS key (lib/pal/gdm/
+  // plan-record.ts), in the order of her day. The bedtime snack is a heading,
+  // never advice (PRD §6.1 row 11).
+  "gdm-occasions": {
+    breakfast: "Breakfast",
+    snack_morning: "Morning snack",
+    lunch: "Lunch",
+    snack_afternoon: "Afternoon snack",
+    dinner: "Dinner",
+    snack_bedtime: "Bedtime snack"
+  },
+  // `counts` labels how her clinic counts, not "Unit" (a word in the copy
+  // test's medication family). `grams`, `choices`, `servings` and `none` are
+  // its four options, keyed by GDM_UNITS. `photoAdd` and `photoRemove` render
+  // with the sheet photo (Task 3.3). G-25: `empty` is the drafted empty state.
+  "gdm-plan-controls": {
+    title: "My plan",
+    sub: "In your care team's words.",
+    givenBy: "Who gave you this",
+    note: "What the sheet says",
+    perDay: "Meals and snacks per day, as written",
+    counts: "How my clinic counts",
+    grams: "Grams",
+    choices: "Choices",
+    servings: "Servings",
+    none: "None given",
+    choiceMeans: "One choice is, as your sheet says",
+    figure: "Figure for this occasion, exactly as written",
+    save: "Save",
+    replace: "Replace this plan",
+    replacedOn: "Replaced on",
+    enteredOn: "Entered on",
+    photoAdd: "Add a photo of your sheet",
+    photoRemove: "Remove photo",
+    empty: "No plan here yet. When your care team gives you one, add it above."
+  },
+  // PRD §6.1 row 12: two current entries that differ are shown side by side and
+  // never resolved. `askText` is the only product-authored sentence that lands
+  // in her list: it says two entries differ and asks which stands. No clinician
+  // is named and no entry is preferred.
+  "gdm-plan-differ": {
+    flag: "These differ",
+    park: "Add to my questions",
+    askText: "Two entries in my plan differ for {occasion}. Which one stands?"
   }
 } as const satisfies Record<string, Record<string, string>>;

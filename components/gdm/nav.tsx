@@ -16,7 +16,10 @@ type GdmNavItem = { href: string; label: string };
  * are not here: they sit in the frame's footer (app/gdm/layout.tsx), on every
  * page.
  */
-const NAV: readonly GdmNavItem[] = [{ href: GDM_ROUTES.questions, label: GDM_COPY["gdm-nav"].asks }];
+const NAV: readonly GdmNavItem[] = [
+  { href: GDM_ROUTES.questions, label: GDM_COPY["gdm-nav"].asks },
+  { href: GDM_ROUTES.plan, label: GDM_COPY["gdm-nav"].plan }
+];
 
 /**
  * The door's nav, in two rows (G-34, owner decision). Row one: the wordmark,

@@ -17,7 +17,7 @@ import { GDM_ROUTES } from "../../lib/pal/gdm/routes";
 import { loadSafetyContract } from "../../lib/pal/safety-contract";
 import { doorSurfaceOn } from "./gdm-door";
 
-const DARK_PATHS = ["/gdm", "/gdm/start", "/gdm/home", "/gdm/questions", "/gdm/data", "/gdm/privacy"] as const;
+const DARK_PATHS = ["/gdm", "/gdm/start", "/gdm/home", "/gdm/questions", "/gdm/plan", "/gdm/data", "/gdm/privacy"] as const;
 
 const TOLD = GDM_COPY["gdm-onboarding-told"];
 const DATE = GDM_COPY["gdm-onboarding-date"];

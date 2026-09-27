@@ -27,8 +27,8 @@ import {
 
 export const runtime = "nodejs";
 
-// What she keeps on the door: questions for her appointment (F-ASKLIST), and
-// later her plan and her meals. No model call on this path (PRD §6.2): the one
+// What she keeps on the door: questions for her appointment (F-ASKLIST), her
+// plan (F-PLANKEEP), and later her meals. No model call on this path (PRD §6.2): the one
 // thing that reads her words is the existing clinical router, over an ask.
 
 const Kind = z.enum(GDM_ITEM_KINDS);
@@ -122,6 +122,10 @@ export function createGdmItemsHandlers(deps: Deps = {}) {
       const hers = and(eq(schema.gdmItems.id, parsed.data.id), eq(schema.gdmItems.userId, gate.userId));
       const [row] = await db().select({ kind: schema.gdmItems.kind }).from(schema.gdmItems).where(hers);
       if (!row) return gdmNotFound();
+      // R47: a plan is never edited in place. It is only replaced (POST with
+      // `replaces`), so `replacedOn` is set inside that one transaction and
+      // nowhere else, and a plan's record stays as she entered it.
+      if (row.kind === "plan") return gdmInvalid();
       const body = isItemKind(row.kind) ? GDM_ITEM_BODY[row.kind]?.safeParse(parsed.data.body) : undefined;
       if (!body?.success) return gdmInvalid();
       const updated = await db()
@@ -155,8 +159,8 @@ export function createGdmItemsHandlers(deps: Deps = {}) {
  *   2. insert the new plan;
  *   3. rewrite the old body with replacedOn = the new plan's enteredOn.
  * An old body that will not decrypt or parse throws, and the whole transaction
- * rolls back. Reachable once Task 3.2 registers the plan body schema; its
- * tests cover these three outcomes (ruling R28).
+ * rolls back. tests/unit/pal/gdm-items-route.test.ts covers these three
+ * outcomes (ruling R28).
  */
 async function replacePlan(db: Db, userId: string, oldId: string, next: PlanDates) {
   return db.transaction(async (tx) => {

@@ -5146,6 +5146,13 @@ button.inline-link {
 }
 
 /* GDM door */
+/* One accent (DESIGN.md §1): every checkbox inside the door is the door's
+   teal, not the browser's default blue. `.gdm-door` is the door's own frame
+   (app/gdm/layout.tsx), so the prediabetes door is untouched. */
+.gdm-door input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
 /* G-38 (DESIGN.md §11): the hero is deliberately NOT a .surface-card — a card
    in a hero is banned there. Plain grid, no border, no shadow. */
 .gdm-hero {
@@ -5420,15 +5427,13 @@ button.inline-link {
   gap: 10px;
 }
 
-/* One accent (DESIGN.md §1): a ticked box is the door's teal, not the
-   browser's default blue. */
+/* Its colour is the door-wide checkbox rule at the top of this block. */
 .gdm-ask-check input[type="checkbox"] {
   width: 20px;
   height: 20px;
   min-height: 0;
   margin: 0;
   flex-shrink: 0;
-  accent-color: var(--accent);
 }
 
 .gdm-ask-check label {
@@ -5446,10 +5451,146 @@ button.inline-link {
   cursor: progress;
 }
 
-/* G-25: the empty state is a sentence with a way forward, not a muted hint. */
-.gdm-ask-empty {
+/* G-25: the empty state is a sentence with a way forward, not a muted hint.
+   My plan's empty line (page and card) reads the same. */
+.gdm-ask-empty,
+.gdm-plan-empty {
   margin: 0;
   color: var(--text-body);
   font-size: 16px;
   line-height: 1.65;
+}
+
+/* Task 3.2 — My plan (F-PLANKEEP). */
+
+.gdm-plan-head {
+  display: grid;
+  gap: 8px;
+}
+
+.gdm-plan,
+.gdm-plan-form {
+  display: grid;
+  gap: 16px;
+}
+
+/* G-39: the six figure inputs in one fieldset, its legend the `figure` label.
+   One column at every width, like every door form. */
+.gdm-plan-figures {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.gdm-plan-figures legend {
+  margin-bottom: 4px;
+  padding: 0;
+}
+
+.gdm-plan-occasion {
+  color: var(--text-strong);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.gdm-plan-current,
+.gdm-plan-replaced {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gdm-plan-slot {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.gdm-plan-replace {
+  justify-self: start;
+}
+
+/* Two current plans side by side from 720px, stacked below; one plan keeps
+   the full width. */
+@media (min-width: 720px) {
+  .gdm-plan-current {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gdm-plan-current > .gdm-plan-slot:only-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.gdm-plan-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 18px;
+}
+
+.gdm-plan-date {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.gdm-plan-fields {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.gdm-plan-row {
+  display: grid;
+  gap: 2px;
+}
+
+.gdm-plan-row dt {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Her words and figures, as she typed them (line breaks kept, long words
+   wrapped), never in --text-soft. */
+.gdm-plan-row dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 16px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* G-40: "These differ" never borrows a verdict colour and carries no icon; the
+   same neutral chip sits on both cards, so neither entry reads as the wrong
+   one. Smaller and thinner-edged than a button, so it never looks pressable. */
+.gdm-differ-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--text-strong);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.gdm-differ-park:disabled {
+  opacity: 0.6;
+  cursor: progress;
 }
