@@ -10,25 +10,8 @@
 // organiser's Pending rows in public JS. The door pages exist only under
 // `organiser`.
 //
-// The button calls `retry()`, not `reset()`: in this Next version `reset()`
-// clears the boundary and re-renders WITHOUT re-fetching, so a Server Component
-// that failed on the database would fail again from the same payload; `retry()`
-// re-fetches and re-renders the segment (Next docs, 03-file-conventions/error.md).
-//
-// `gdm-load-failed` is an organiser row. With the organiser off this rethrows,
-// so the error bubbles to the parent boundary and the row never renders.
-import { gdmDoorEnabled } from "../../../lib/gdm-door-flag";
-import { GDM_COPY } from "../../../lib/pal/gdm/copy";
-
-export default function GdmError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
-  if (!gdmDoorEnabled("organiser")) throw error;
-  const copy = GDM_COPY["gdm-load-failed"];
-  return (
-    <section className="surface-card legal-card">
-      <p role="alert">{copy.line}</p>
-      <button type="button" className="secondary-button gdm-retry" onClick={() => retry()}>
-        {copy.retry}
-      </button>
-    </section>
-  );
-}
+// R45: the component itself lives in components/gdm/error-boundary.tsx and is
+// re-exported here so this file and app/gdm/start/error.tsx (the other page
+// with a live database read, outside this route group) share one
+// implementation instead of two copies of the same logic.
+export { GdmErrorBoundary as default } from "../../../components/gdm/error-boundary";

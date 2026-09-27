@@ -110,6 +110,27 @@ function findElement(node: ReactNode, match: (element: ReactElement) => boolean)
   return findElement((element.props as { children?: ReactNode }).children, match);
 }
 
+type GdmErrorBoundaryComponent = (props: { error: Error & { digest?: string }; retry: () => void }) => ReactNode;
+
+// Shared by both error.tsx files' tests (R45): each re-exports the SAME
+// component (components/gdm/error-boundary.tsx), so the behaviour asserted
+// here must hold for both without duplicating this assertion logic per file.
+function expectGdmErrorBoundary(GdmErrorBoundary: GdmErrorBoundaryComponent): void {
+  const failure = Object.assign(new Error("db hiccup"), { digest: "x" });
+  const retry = vi.fn();
+  const tree = GdmErrorBoundary({ error: failure, retry });
+  const text = collectText(tree);
+  expect(text).toContain(GDM_COPY["gdm-load-failed"].line);
+  const button = findElement(tree, (element) => element.type === "button");
+  expect(collectText(button)).toBe(GDM_COPY["gdm-load-failed"].retry);
+  (button!.props as { onClick: () => void }).onClick();
+  expect(retry).toHaveBeenCalledOnce();
+
+  vi.stubEnv("NEXT_PUBLIC_GDM_DOOR", "landing");
+  expect(() => GdmErrorBoundary({ error: failure, retry })).toThrow(failure);
+  vi.stubEnv("NEXT_PUBLIC_GDM_DOOR", "organiser");
+}
+
 // The row belongs to the `organiser` surface, so it can never render while
 // Pending in a landing-only production build.
 describe("the organiser's public pieces: the privacy notice, the footer links, the error boundary", () => {
@@ -150,18 +171,21 @@ describe("the organiser's public pieces: the privacy notice, the footer links, t
 
   it("error.tsx says it did not load and retries (G-15); with the organiser off it rethrows, so a Pending row never shows", async () => {
     const { default: GdmError } = await import("../../../app/gdm/(door)/error");
-    const failure = Object.assign(new Error("db hiccup"), { digest: "x" });
-    const retry = vi.fn();
-    const tree = GdmError({ error: failure, retry });
-    const text = collectText(tree);
-    expect(text).toContain(GDM_COPY["gdm-load-failed"].line);
-    const button = findElement(tree, (element) => element.type === "button");
-    expect(collectText(button)).toBe(GDM_COPY["gdm-load-failed"].retry);
-    (button!.props as { onClick: () => void }).onClick();
-    expect(retry).toHaveBeenCalledOnce();
+    expectGdmErrorBoundary(GdmError);
+  });
 
-    vi.stubEnv("NEXT_PUBLIC_GDM_DOOR", "landing");
-    expect(() => GdmError({ error: failure, retry })).toThrow(failure);
+  // R45: app/gdm/start (outside (door), a live database read via
+  // gdmDoorState()) had no error boundary after R43 moved it into (door).
+  // This gives it the SAME behaviour, from the SAME component.
+  it("app/gdm/start/error.tsx gives /gdm/start the same boundary (R45)", async () => {
+    const { default: GdmStartError } = await import("../../../app/gdm/start/error");
+    expectGdmErrorBoundary(GdmStartError);
+  });
+
+  it("both error boundaries are the same component, not two copies of the same logic (R45)", async () => {
+    const { default: DoorError } = await import("../../../app/gdm/(door)/error");
+    const { default: StartError } = await import("../../../app/gdm/start/error");
+    expect(StartError).toBe(DoorError);
   });
 
   // R43: a client module that imports the bank ships the WHOLE bank in a public
