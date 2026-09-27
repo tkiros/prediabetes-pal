@@ -114,11 +114,9 @@ export function createGdmPlanPhotoHandlers(deps: GdmRouteDeps = {}) {
     async POST(request: Request) {
       const gate = await gdmRouteGuard(deps);
       if (gate instanceof Response) return gate;
-      const body = await boundedJson(request, PLAN_PHOTO_MAX_REQUEST_BYTES);
-      if (body === TOO_LARGE) return gdmInvalid();
-      const photo = PlanPhotoBodySchema.safeParse(body);
-      if (!photo.success) return gdmInvalid();
 
+      // Counted FIRST (final review F10): at the cap nothing she sends can be
+      // kept, so the body (up to ~2.8 MB) is never read just to be refused.
       // ponytail: count-then-insert, so two uploads at once can pass the cap; it bounds storage, it is not an invariant.
       const [held] = await db()
         .select({ n: count() })
@@ -126,6 +124,11 @@ export function createGdmPlanPhotoHandlers(deps: GdmRouteDeps = {}) {
         .where(and(eq(schema.gdmItems.userId, gate.userId), eq(schema.gdmItems.kind, KIND)));
       // G-20: unreachable from the page, which stops offering the add control at the cap.
       if ((held?.n ?? 0) >= PLAN_PHOTO_CAP) return NextResponse.json({ error: "Photo limit reached." }, { status: 409 });
+
+      const body = await boundedJson(request, PLAN_PHOTO_MAX_REQUEST_BYTES);
+      if (body === TOO_LARGE) return gdmInvalid();
+      const photo = PlanPhotoBodySchema.safeParse(body);
+      if (!photo.success) return gdmInvalid();
 
       const [row] = await db()
         .insert(schema.gdmItems)
