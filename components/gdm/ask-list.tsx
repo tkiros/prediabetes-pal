@@ -4,19 +4,19 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { track } from "../../lib/client/analytics";
 import { gdmFetch } from "../../lib/client/gdm-api";
-import { useFocusAfterRender } from "../../lib/client/gdm-focus";
+import { focusIdAfterRemove, useFocusAfterRender } from "../../lib/client/gdm-focus";
+import { gdmSaveFailure, useGdmItems, type GdmListItem } from "../../lib/client/gdm-items-list";
 import { useHydrated } from "../../lib/client/use-hydrated";
 import type { ClinicalRoute } from "../../lib/pal/clinical-risk";
 import { GDM_COPY } from "../../lib/pal/gdm/copy";
 import type { AskBody } from "../../lib/pal/gdm/items";
+import { GdmLoadFailed } from "./load-failed";
 
 const CONTROLS = GDM_COPY["gdm-asklist-controls"];
 const LEAD = GDM_COPY["gdm-asklist-lead"].line;
 const STATUS = GDM_COPY["gdm-status"];
-const LOAD_FAILED = GDM_COPY["gdm-load-failed"];
 const CANCEL = GDM_COPY["gdm-data-controls"].cancel;
 const SAVE_FAILED = GDM_COPY["gdm-save-failed"].line;
-const LIST_FULL = GDM_COPY["gdm-list-full"].line;
 
 const ITEMS_PATH = "/api/gdm/items";
 
@@ -31,7 +31,7 @@ const CLINICAL_KIND = "clinical";
 /** G-14: each field's maxLength is its bound in AskBodySchema (lib/pal/gdm/items.ts), so a 400 is unreachable. */
 export const ASK_MAX_LENGTH = { text: 500, note: 500, answer: 1000 } as const;
 
-export type AskItem = { id: string; createdAt: string; updatedAt: string; body: AskBody };
+export type AskItem = GdmListItem<AskBody>;
 export type AskCard = { route: ClinicalRoute; routeCopy: string };
 type AskControl = "text" | "asked" | "answer" | "save" | "remove" | "cancel";
 
@@ -66,7 +66,7 @@ export function savedAskBody(parked: AskBody, asked: boolean, answer: string): A
 
 /** G-14: "try again in a moment" is untrue for a full list; everything else is the save-failed line. */
 export function parkFailure(status: number): string {
-  return status === 409 ? LIST_FULL : SAVE_FAILED;
+  return gdmSaveFailure(status);
 }
 
 /** `gdm_ask_parked.from`: she came through the nav's Add a question, or used the list itself. */
@@ -80,9 +80,7 @@ export function parkedFrom(hash: string): "quick_add" | "list" {
  * is empty. Never `<body>`. `orderedIds` is the list as rendered.
  */
 export function focusAfterRemove(orderedIds: readonly string[], removedId: string): string {
-  const index = orderedIds.indexOf(removedId);
-  const neighbour = orderedIds[index + 1] ?? orderedIds[index - 1];
-  return neighbour && neighbour !== removedId ? askControlId(neighbour, "asked") : ASK_FIELD_ID;
+  return focusIdAfterRemove(orderedIds, removedId, (id) => askControlId(id, "asked"), ASK_FIELD_ID);
 }
 
 // ── The unsent draft ──────────────────────────────────────────────────────────
@@ -142,15 +140,14 @@ export const askDraft = {
  */
 export function AskList() {
   const hydrated = useHydrated();
-  const [items, setItems] = useState<AskItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadFailed, setLoadFailed] = useState(false);
+  // The list loads after the first commit (the form is usable at once) and
+  // carries the page's polite status line: shared with My meals.
+  const { items, loading, loadFailed, status, setStatus, prepend, save, remove: removeItem, retry } =
+    useGdmItems<AskBody>("ask");
   const [draft, setDraft] = useState<AskDraft | null>(null);
   const [adding, setAdding] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [card, setCard] = useState<(AskCard & { key: number }) | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-  const [attempt, setAttempt] = useState(0); // a retry after a failed load is the next attempt
   const opened = useRef(false);
   const cards = useRef(0);
   const focusLater = useFocusAfterRender();
@@ -168,25 +165,6 @@ export function AskList() {
     // Arrived through the nav's Add a question: the field, not the page top.
     if (parkedFrom(window.location.hash) === "quick_add") document.getElementById(ASK_FIELD_ID)?.focus();
   }, []);
-
-  // The list loads after the first commit; the form is usable at once.
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const result = await gdmFetch<{ items: AskItem[] }>(`${ITEMS_PATH}?kind=ask`);
-      if (cancelled) return;
-      if (result.ok) {
-        const fetched = result.data.items;
-        // One parked while the list was loading stays at the top.
-        setItems((shown) => [...shown.filter((item) => !fetched.some((f) => f.id === item.id)), ...fetched]);
-      }
-      setLoadFailed(!result.ok);
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [attempt]);
 
   function edit(field: keyof AskDraft, text: string) {
     const next = { ...current, [field]: text };
@@ -222,8 +200,7 @@ export function AskList() {
     if (result.ok) {
       const from = parkedFrom(window.location.hash);
       track({ name: "gdm_ask_parked", props: { from } });
-      const now = new Date().toISOString();
-      setItems((shown) => [{ id: result.data.id, createdAt: now, updatedAt: now, body }, ...shown]);
+      prepend(result.data.id, body);
       setDraft(EMPTY_DRAFT);
       askDraft.clear();
       setStatus(STATUS.saved);
@@ -238,35 +215,8 @@ export function AskList() {
     setAdding(false);
   }
 
-  async function save(id: string, body: AskBody): Promise<boolean> {
-    setStatus(STATUS.saving);
-    const result = await gdmFetch(ITEMS_PATH, { method: "PATCH", body: { id, body } });
-    if (!result.ok) {
-      setStatus(null);
-      return false;
-    }
-    const now = new Date().toISOString();
-    setItems((shown) => shown.map((item) => (item.id === id ? { ...item, updatedAt: now, body } : item)));
-    setStatus(STATUS.saved);
-    return true;
-  }
-
-  async function remove(id: string): Promise<boolean> {
-    setStatus(null);
-    const result = await gdmFetch(`${ITEMS_PATH}?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    // A 404 is a question already gone (another tab): the list catches up.
-    if (!result.ok && result.status !== 404) return false;
-    focusLater(focusAfterRemove(ordered.map((item) => item.id), id));
-    setItems((shown) => shown.filter((item) => item.id !== id));
-    setStatus(STATUS.removed);
-    return true;
-  }
-
-  function retry() {
-    setLoading(true);
-    setLoadFailed(false);
-    setAttempt((count) => count + 1);
-  }
+  // G-39: where focus goes is worked out from the list as rendered, before the question leaves it.
+  const remove = (id: string) => removeItem(id, focusAfterRemove(ordered.map((item) => item.id), id));
 
   return (
     <>
@@ -336,12 +286,7 @@ export function AskList() {
 
       <div className="gdm-ask-list" aria-busy={loading}>
         {loadFailed ? (
-          <div className="surface-card legal-card">
-            <p role="alert">{LOAD_FAILED.line}</p>
-            <button type="button" className="secondary-button gdm-retry" onClick={retry}>
-              {LOAD_FAILED.retry}
-            </button>
-          </div>
+          <GdmLoadFailed onRetry={retry} />
         ) : ordered.length > 0 ? (
           <ul className="gdm-asks" role="list">
             {ordered.map((item) => (

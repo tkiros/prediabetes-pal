@@ -86,12 +86,6 @@ describe("My meals — the list's own rules", () => {
     expect(focusAfterMealRemove(["a"], "a")).toBe(MEAL_FIELD_ID);
   });
 
-  it("a full list says so; every other failed save keeps the save-failed line (G-14)", async () => {
-    const { mealSaveFailure } = await import("../../../components/gdm/my-meals");
-    expect(mealSaveFailure(409)).toBe(GDM_COPY["gdm-list-full"].line);
-    for (const status of [0, 400, 403, 404, 500, 502]) expect(mealSaveFailure(status)).toBe(GDM_COPY["gdm-save-failed"].line);
-  });
-
   it("G-70: one add form — her words, which occasion (six, in the order of her day), Save — and no other field", async () => {
     const { MyMeals } = await import("../../../components/gdm/my-meals");
     const html = renderToStaticMarkup(createElement(MyMeals));

@@ -1,21 +1,21 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 
 import { track } from "../../lib/client/analytics";
 import { gdmFetch } from "../../lib/client/gdm-api";
-import { useFocusAfterRender } from "../../lib/client/gdm-focus";
+import { focusIdAfterRemove, useFocusAfterRender } from "../../lib/client/gdm-focus";
+import { gdmSaveFailure, useGdmItems, type GdmListItem } from "../../lib/client/gdm-items-list";
 import { GDM_COPY } from "../../lib/pal/gdm/copy";
 import { groupMeals, type MealBody } from "../../lib/pal/gdm/items";
 import { GDM_OCCASIONS, type GdmOccasion } from "../../lib/pal/gdm/plan-record";
+import { GdmLoadFailed } from "./load-failed";
 
 const CONTROLS = GDM_COPY["gdm-meals-controls"];
 const OCCASIONS = GDM_COPY["gdm-occasions"];
 const STATUS = GDM_COPY["gdm-status"];
-const LOAD_FAILED = GDM_COPY["gdm-load-failed"];
 const CANCEL = GDM_COPY["gdm-data-controls"].cancel;
 const SAVE_FAILED = GDM_COPY["gdm-save-failed"].line;
-const LIST_FULL = GDM_COPY["gdm-list-full"].line;
 
 const ITEMS_PATH = "/api/gdm/items";
 
@@ -25,7 +25,7 @@ const OCCASION_FIELD_ID = "gdm-meal-occasion";
 /** G-14: the field's maxLength is its bound in MealBodySchema (lib/pal/gdm/items.ts), so a 400 is unreachable. */
 export const MEAL_MAX_LENGTH = 200;
 
-export type MealItem = { id: string; createdAt: string; updatedAt: string; body: MealBody };
+export type MealItem = GdmListItem<MealBody>;
 type MealControl = "text" | "inSummary" | "remove" | "cancel";
 
 export const mealControlId = (id: string, control: MealControl) => `gdm-meal-${id}-${control}`;
@@ -44,14 +44,7 @@ export function mealsInOrder<T extends { body: MealBody }>(meals: T[]): T[] {
  * list as rendered, across the occasions (`mealsInOrder`).
  */
 export function focusAfterMealRemove(orderedIds: readonly string[], removedId: string): string {
-  const index = orderedIds.indexOf(removedId);
-  const neighbour = orderedIds[index + 1] ?? orderedIds[index - 1];
-  return neighbour && neighbour !== removedId ? mealControlId(neighbour, "inSummary") : MEAL_FIELD_ID;
-}
-
-/** G-14: "try again in a moment" is untrue for a full list; everything else is the save-failed line. */
-export function mealSaveFailure(status: number): string {
-  return status === 409 ? LIST_FULL : SAVE_FAILED;
+  return focusIdAfterRemove(orderedIds, removedId, (id) => mealControlId(id, "inSummary"), MEAL_FIELD_ID);
 }
 
 /** The select only offers the six occasions; anything else reads as the first of her day. */
@@ -68,37 +61,17 @@ function occasionFrom(value: string): GdmOccasion {
  * heading is hers.
  */
 export function MyMeals() {
-  const [items, setItems] = useState<MealItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadFailed, setLoadFailed] = useState(false);
+  // The list loads after the first commit (the form is usable at once) and
+  // carries the page's polite status line: shared with My questions.
+  const { items, loading, loadFailed, status, setStatus, prepend, save, remove: removeItem, retry } =
+    useGdmItems<MealBody>("meal");
   const [text, setText] = useState("");
   // The first occasion of her day to start; after a save it keeps her choice,
   // since she often adds several under one. An occasion, never a figure.
   const [occasion, setOccasion] = useState<GdmOccasion>(GDM_OCCASIONS[0]);
   const [adding, setAdding] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-  const [attempt, setAttempt] = useState(0); // a retry after a failed load is the next attempt
   const focusLater = useFocusAfterRender();
-
-  // The list loads after the first commit; the form is usable at once.
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const result = await gdmFetch<{ items: MealItem[] }>(`${ITEMS_PATH}?kind=meal`);
-      if (cancelled) return;
-      if (result.ok) {
-        const fetched = result.data.items;
-        // One saved while the list was loading stays at the top.
-        setItems((shown) => [...shown.filter((item) => !fetched.some((f) => f.id === item.id)), ...fetched]);
-      }
-      setLoadFailed(!result.ok);
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [attempt]);
 
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -118,14 +91,13 @@ export function MyMeals() {
     const result = await gdmFetch<{ id: string }>(ITEMS_PATH, { method: "POST", body: { kind: "meal", body: meal } });
     if (result.ok) {
       track({ name: "gdm_meal_saved", props: { occasion } });
-      const now = new Date().toISOString();
-      setItems((shown) => [{ id: result.data.id, createdAt: now, updatedAt: now, body: meal }, ...shown]);
+      prepend(result.data.id, meal);
       // Cleared only if she has not typed on while it was saving.
       setText((current) => (current === typed ? "" : current));
       setStatus(STATUS.saved);
     } else {
       // Her words stay in the field.
-      setFailure(mealSaveFailure(result.status));
+      setFailure(gdmSaveFailure(result.status));
       setStatus(null);
     }
     // G-39: back to the field, ready for the next meal.
@@ -133,35 +105,8 @@ export function MyMeals() {
     setAdding(false);
   }
 
-  async function save(id: string, meal: MealBody): Promise<boolean> {
-    setStatus(STATUS.saving);
-    const result = await gdmFetch(ITEMS_PATH, { method: "PATCH", body: { id, body: meal } });
-    if (!result.ok) {
-      setStatus(null);
-      return false;
-    }
-    const now = new Date().toISOString();
-    setItems((shown) => shown.map((item) => (item.id === id ? { ...item, updatedAt: now, body: meal } : item)));
-    setStatus(STATUS.saved);
-    return true;
-  }
-
-  async function remove(id: string): Promise<boolean> {
-    setStatus(null);
-    const result = await gdmFetch(`${ITEMS_PATH}?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    // A 404 is a meal already gone (another tab): the list catches up.
-    if (!result.ok && result.status !== 404) return false;
-    focusLater(focusAfterMealRemove(mealsInOrder(items).map((item) => item.id), id));
-    setItems((shown) => shown.filter((item) => item.id !== id));
-    setStatus(STATUS.removed);
-    return true;
-  }
-
-  function retry() {
-    setLoading(true);
-    setLoadFailed(false);
-    setAttempt((count) => count + 1);
-  }
+  // G-39: where focus goes is worked out from the list as rendered, before the meal leaves it.
+  const remove = (id: string) => removeItem(id, focusAfterMealRemove(mealsInOrder(items).map((item) => item.id), id));
 
   return (
     <>
@@ -219,12 +164,7 @@ export function MyMeals() {
 
       <div className="gdm-meal-list" aria-busy={loading}>
         {loadFailed ? (
-          <div className="surface-card legal-card">
-            <p role="alert">{LOAD_FAILED.line}</p>
-            <button type="button" className="secondary-button gdm-retry" onClick={retry}>
-              {LOAD_FAILED.retry}
-            </button>
-          </div>
+          <GdmLoadFailed onRetry={retry} />
         ) : loading && items.length === 0 ? null : (
           <MealSections meals={items} onSave={save} onRemove={remove} />
         )}
