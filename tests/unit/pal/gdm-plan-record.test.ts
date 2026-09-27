@@ -59,6 +59,18 @@ describe("plan record (PRD §6.2 F-PLANKEEP; §7.4 deep module 1)", () => {
     expect(detectConflicts([old, now])).toEqual([]);
   });
 
+  it("two plans that define a choice differently are flagged: same unit, same figure, different choiceMeans", () => {
+    const a = plan("a", { unit: "choices", choiceMeans: "15 g", figures: { breakfast: "3" } });
+    const b = plan("b", { unit: "choices", choiceMeans: "10 g", figures: { breakfast: "3" } });
+    expect(detectConflicts([a, b])).toEqual([{ occasion: "breakfast", planIds: ["a", "b"] }]);
+  });
+
+  it("choiceMeans differing only in whitespace/case is not a conflict", () => {
+    const a = plan("a", { unit: "choices", choiceMeans: "15 g", figures: { lunch: "2" } });
+    const b = plan("b", { unit: "choices", choiceMeans: "15  G", figures: { lunch: "2" } });
+    expect(detectConflicts([a, b])).toEqual([]);
+  });
+
   it("the module does no arithmetic on a figure", () => {
     const source = fs.readFileSync(path.join(process.cwd(), "lib/pal/gdm/plan-record.ts"), "utf8");
     expect(source).not.toMatch(/parseFloat|parseInt|Number\(|Math\./);

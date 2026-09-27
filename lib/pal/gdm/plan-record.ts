@@ -56,7 +56,9 @@ export function detectConflicts(plans: StoredPlan[]): PlanConflict[] {
     for (let i = 0; i < holders.length; i += 1) {
       for (let j = i + 1; j < holders.length; j += 1) {
         const [a, b] = [holders[i], holders[j]];
-        const same = a.unit === b.unit && asWritten(a.figures[occasion]!) === asWritten(b.figures[occasion]!);
+        const same = a.unit === b.unit &&
+                     asWritten(a.figures[occasion]!) === asWritten(b.figures[occasion]!) &&
+                     asWritten(a.choiceMeans ?? "") === asWritten(b.choiceMeans ?? "");
         if (!same) conflicts.push({ occasion, planIds: [a.id, b.id] });
       }
     }
