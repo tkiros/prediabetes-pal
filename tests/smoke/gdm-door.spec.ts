@@ -714,6 +714,26 @@ test.describe("GDM door — organiser, signed in", () => {
     await expect(lunchMeal.getByRole("checkbox", { name: MEALS.inSummary })).not.toBeChecked();
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
+    // A tick whose save fails (the PATCH answers 500): nothing changed on the
+    // server, so the box goes back to what is stored, the save-failed line
+    // shows, no "Saved." is announced, and focus stays on the box (Task 5.1's
+    // deferred check, committed by final review F12). `click`, not `check`:
+    // check() itself fails when the box does not stay ticked.
+    let refusedPatches = 0;
+    await page.route("**/api/gdm/items", (route) => {
+      if (route.request().method() !== "PATCH") return route.continue();
+      refusedPatches += 1;
+      return route.fulfill({ status: 500, contentType: "application/json", body: "{}" });
+    });
+    const lunchBox = lunchMeal.getByRole("checkbox", { name: MEALS.inSummary });
+    await lunchBox.click();
+    await expect(lunchMeal.getByText(SAVE_FAILED)).toBeVisible();
+    await expect(lunchBox).not.toBeChecked();
+    await expect(status).toHaveText("");
+    await expect(lunchBox).toBeFocused();
+    expect(refusedPatches).toBe(1);
+    await page.unroute("**/api/gdm/items");
+
     // G-76: deleting her own words takes two presses. The first only asks,
     // with focus on Cancel; the second deletes, its heading goes with it, and
     // focus moves to the next meal's first control (G-39).
@@ -774,7 +794,9 @@ test.describe("GDM door — organiser, signed in", () => {
     await expect(links.getByRole("link", { name: NAV.meals })).toHaveAttribute("href", GDM_ROUTES.meals);
     await expect(links.getByRole("link", { name: NAV.asks })).toHaveAttribute("href", GDM_ROUTES.questions);
     await expect(page.getByRole("button", { name: SUMMARY.print })).toHaveCount(0);
-    await expect(page.locator("body")).toContainText(GDM_COPY["gdm-disclaimer"].line);
+    await expect(page.getByRole("heading", { level: 2 })).toHaveCount(0);
+    // Twice, each as its own line: in the page body (it prints) and in the footer (it does not).
+    await expect(page.getByText(GDM_COPY["gdm-disclaimer"].line, { exact: true })).toHaveCount(2);
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
     // Enter a plan, a meal marked for the summary, and an open question.
@@ -838,7 +860,8 @@ test.describe("GDM door — organiser, signed in", () => {
     await expect(planSection).toContainText(lunchFigure);
     await expect(mealsSection).toContainText(mealText);
     await expect(asksSection).toContainText(askText);
-    await expect(page.locator("body")).toContainText(GDM_COPY["gdm-disclaimer"].line);
+    // In the body as well as the footer: the footer's copy alone would not pass (final review F12).
+    await expect(page.getByText(GDM_COPY["gdm-disclaimer"].line, { exact: true })).toHaveCount(2);
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
     // Print is present now that something is entered, and it really calls
