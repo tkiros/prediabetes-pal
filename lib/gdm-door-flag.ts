@@ -5,10 +5,15 @@
  * surface (dev, previews, the e2e build); a comma list opens only those named;
  * anything else opens none. Production never carries `1`.
  *
- * Unlike the guide door this one has a SERVER TWIN. The door adds API routes
- * that store health data, and the repo's rule (app/api/health/route.ts) is
- * that a client flag may skip the twin only when it adds no server boundary.
- * Every /api/gdm/* route 404s unless GDM_DOOR_ENABLED is exactly "1".
+ * Unlike the guide door this one has a SERVER TWIN. The corrected rule (see
+ * the comment above `guideDoorStates()` in app/api/health/route.ts, G-67) is
+ * that a flag may skip a twin only when there is no separate runtime kill
+ * switch for it to pair with — not, as this file used to say, whenever the
+ * door "adds no server boundary". The GDM door stores health data behind
+ * server routes, a real server boundary with its own runtime switch
+ * (GDM_DOOR_ENABLED), so it gets the full twin pair (see `gdmDoorStates()` in
+ * the same file for how the two are combined). Every /api/gdm/* route 404s
+ * unless GDM_DOOR_ENABLED is exactly "1".
  *
  * THE TWIN IS THE INCIDENT LEVER, AND IT FAILS CLOSED (review G-09). On Vercel
  * an env change only takes effect through a redeploy, and a redeploy runs the
@@ -33,8 +38,15 @@ export type GdmSurface = (typeof GDM_SURFACES)[number];
  * Concrete IDs only. The task that files a row adds it here.
  */
 export const GDM_SURFACE_ROWS: Record<GdmSurface, readonly string[]> = {
-  landing: [],
-  organiser: [],
+  landing: [
+    "gdm-door-name",
+    "gdm-landing-hero",
+    "gdm-landing-points",
+    "gdm-landing-holding",
+    "gdm-disclaimer",
+    "gdm-maker"
+  ],
+  organiser: ["gdm-door-name", "gdm-disclaimer", "gdm-maker"],
   ideas: [],
   read: []
 };
