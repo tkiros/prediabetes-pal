@@ -68,19 +68,12 @@ export function createGdmItemsHandlers(deps: Deps = {}) {
       const body = GDM_ITEM_BODY[kind]?.safeParse(parsed.data.body);
       if (!body?.success) return gdmInvalid();
 
-      const [held] = await db()
-        .select({ n: count() })
-        .from(schema.gdmItems)
-        .where(and(eq(schema.gdmItems.userId, gate.userId), eq(schema.gdmItems.kind, kind)));
-      if ((held?.n ?? 0) >= GDM_ITEM_CAP) {
-        // G-14: "try again in a moment" is untrue for a full list.
-        return NextResponse.json({ error: GDM_COPY["gdm-list-full"].line }, { status: 409 });
-      }
-
       // G-11: the card is decided BEFORE anything is stored, and the contract is
       // read on EVERY ask — not first on the rarest, most serious question. A
       // ledger that cannot be read fails here, loudly, on an ordinary question,
-      // with nothing saved, so a retry cannot duplicate it.
+      // with nothing saved, so a retry cannot duplicate it. R46: and before the
+      // cap, so a full list never hides the card (PRD §6.2: these routes are
+      // "answered by their own approved rows first").
       let route: ClinicalRoute | null = null;
       let routeCopy: string | null = null;
       if (kind === "ask") {
@@ -94,6 +87,16 @@ export function createGdmItemsHandlers(deps: Deps = {}) {
         const { text, note } = body.data as AskBody;
         route = askListCardRoute(`${text} ${note ?? ""}`);
         routeCopy = route ? contract.copy.clinicalRoutes[route] : null;
+      }
+
+      const [held] = await db()
+        .select({ n: count() })
+        .from(schema.gdmItems)
+        .where(and(eq(schema.gdmItems.userId, gate.userId), eq(schema.gdmItems.kind, kind)));
+      if ((held?.n ?? 0) >= GDM_ITEM_CAP) {
+        // G-14: "try again in a moment" is untrue for a full list. R46: the card
+        // travels with the refusal; the question is not kept.
+        return NextResponse.json({ error: GDM_COPY["gdm-list-full"].line, route, routeCopy }, { status: 409 });
       }
 
       if (replaces === undefined) {

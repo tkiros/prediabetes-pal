@@ -151,14 +151,18 @@ describe("/api/gdm/items", () => {
     expect(await rawRows()).toHaveLength(0);
   });
 
-  it("G-21: another user's PATCH of her row is refused and her row is unchanged", async () => {
+  it("G-21: another consented user cannot PATCH, DELETE or read her row", async () => {
     const { id } = await (await as(her).POST(req("POST", ask("Which sheet stands?")))).json();
+    // `other` consents here, so every refusal below is the userId scope, not the consent gate.
     await testDb.db.insert(schema.gdmProfiles).values({ userId: other, consentedAt: new Date() });
     try {
       const before = await rawRows();
       const overwrite = { text: "Not hers", note: null, asked: true, answer: "Not hers either" };
       expect((await as(other).PATCH(req("PATCH", { id, body: overwrite }))).status).not.toBe(200);
       expect(await rawRows()).toEqual(before);
+      expect((await as(other).DELETE(req("DELETE", undefined, `?id=${id}`))).status).toBe(404);
+      expect(await rawRows()).toEqual(before);
+      expect(await (await as(other).GET(req("GET", undefined, "?kind=ask"))).json()).toEqual({ items: [] });
       const mine = await (await as(her).GET(req("GET", undefined, "?kind=ask"))).json();
       expect(mine.items.map((item: { body: { text: string } }) => item.body.text)).toEqual(["Which sheet stands?"]);
     } finally {
@@ -173,7 +177,22 @@ describe("/api/gdm/items", () => {
     );
     const response = await as(her).POST(req("POST", ask("One more")));
     expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({ error: GDM_COPY["gdm-list-full"].line });
+    expect(await response.json()).toEqual({ error: GDM_COPY["gdm-list-full"].line, route: null, routeCopy: null });
+  });
+
+  it("R46: a full list still answers a clinical question with its card — nothing is stored", async () => {
+    await testDb.raw.query(
+      `INSERT INTO gdm_items (user_id, kind, body_ciphertext) SELECT $1, 'ask', 'v1:x' FROM generate_series(1, ${GDM_ITEM_CAP})`,
+      [her]
+    );
+    const response = await as(her).POST(req("POST", ask("my blood sugar is 48 and im shaky, what now")));
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: GDM_COPY["gdm-list-full"].line,
+      route: "possible_hypoglycemia",
+      routeCopy: loadSafetyContract().copy.clinicalRoutes.possible_hypoglycemia
+    });
+    expect(await rawRows()).toHaveLength(GDM_ITEM_CAP);
   });
 
   it("no model call on this path (PRD §6.2 acceptance)", () => {
