@@ -2,7 +2,6 @@ import { and, asc, count, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { GDM_COPY } from "../../../../lib/pal/gdm/copy";
 import {
   PLAN_PHOTO_CAP,
   PLAN_PHOTO_MAX_REQUEST_BYTES,
@@ -91,7 +90,8 @@ export function createGdmPlanPhotoHandlers(deps: GdmRouteDeps = {}) {
         .where(hers(gate.userId, id.data));
       if (!row) return gdmNotFound();
       const photo = readPhoto(row.bodyCiphertext);
-      if (!photo) return NextResponse.json({ error: GDM_COPY["gdm-load-failed"].line }, { status: 500 });
+      // Like the 409's, a server string the page never shows: an <img> cannot render a body.
+      if (!photo) return NextResponse.json({ error: "Unreadable." }, { status: 500 });
       return new Response(new Uint8Array(Buffer.from(photo.dataBase64, "base64")), {
         headers: {
           "content-type": photo.mime,

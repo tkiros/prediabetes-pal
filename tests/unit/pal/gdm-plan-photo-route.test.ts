@@ -6,7 +6,13 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { createGdmPlanPhotoHandlers } from "../../../app/api/gdm/plan-photo/route";
 import { createGdmItemsHandlers } from "../../../app/api/gdm/items/route";
-import { PLAN_PHOTO_CAP, PLAN_PHOTO_MAX_BASE64, PLAN_PHOTO_MAX_REQUEST_BYTES } from "../../../lib/pal/gdm/plan-photo";
+import {
+  PLAN_PHOTO_CAP,
+  PLAN_PHOTO_MAX_BASE64,
+  PLAN_PHOTO_MAX_REQUEST_BYTES,
+  planPhotoForExport
+} from "../../../lib/pal/gdm/plan-photo";
+import { UNREADABLE_PLACEHOLDER } from "../../../lib/server/crypto";
 import { schema } from "../../../lib/server/db";
 import { createTestDb } from "../../helpers/test-db";
 
@@ -207,6 +213,28 @@ describe("/api/gdm/plan-photo — a photo of her sheet, stored as a photo", () =
     const response = await as(her).GET(get(`?id=${id}`));
     expect(response.status).toBe(500);
     expect(response.headers.get("content-type")).not.toMatch(/^image\//);
+    // A server string the page never shows (the <img> cannot render a body), like the 409's: no bank copy.
+    expect(await response.json()).toEqual({ error: "Unreadable." });
+  });
+
+  it("R52: only this route deletes a photo — the items route's DELETE of her photo id is a 404, and the photo stays", async () => {
+    const id = await added();
+    const items = createGdmItemsHandlers({ db: () => testDb.db, getSession: session(her) });
+    expect((await items.DELETE(new Request(`http://test/api/gdm/items?id=${id}`, { method: "DELETE" }))).status).toBe(404);
+    expect(await rows()).toHaveLength(1);
+    expect((await as(her).GET(get(`?id=${id}`))).status).toBe(200);
+  });
+
+  it("G-62: the export form of a photo never carries its bytes — not even for a body that has drifted from the schema", () => {
+    const size = Buffer.from(PNG, "base64").length;
+    expect(planPhotoForExport({ mime: "image/png", dataBase64: PNG })).toEqual({ mime: "image/png", sizeBytes: size });
+    expect(planPhotoForExport({ mime: "image/heic", dataBase64: PNG, caption: "x" })).toEqual({
+      mime: "image/heic",
+      caption: "x",
+      sizeBytes: size
+    });
+    expect(planPhotoForExport({ mime: "image/png", dataBase64: 7 })).toEqual({ mime: "image/png" });
+    expect(planPhotoForExport(UNREADABLE_PLACEHOLDER)).toBe(UNREADABLE_PLACEHOLDER);
   });
 
   it("photo bodies never ride the list endpoint: GET /api/gdm/items?kind=plan_photo → 400", async () => {

@@ -40,13 +40,15 @@ export type PlanPhotoBody = z.infer<typeof PlanPhotoBodySchema>;
  * its type and its size. Measured on 2026-09-27: three photos at the length
  * bound make an 8.4 MB export, over the platform's 4.5 MB response cap, so
  * the export would fail for everything else she keeps. Each photo downloads
- * on its own from Your data. A body that is not a photo is returned as it is
- * (an unreadable row exports as its placeholder, like any other item).
+ * on its own from Your data. Keyed on the field, not the schema, so a body
+ * that ever drifts from PlanPhotoBodySchema still sheds its bytes. A body
+ * with no bytes is returned as it is (an unreadable row exports as its
+ * placeholder, like any other item).
  */
 export function planPhotoForExport(body: unknown): unknown {
-  const photo = PlanPhotoBodySchema.safeParse(body);
-  if (!photo.success) return body;
-  const { mime, dataBase64 } = photo.data;
+  if (typeof body !== "object" || body === null || !("dataBase64" in body)) return body;
+  const { dataBase64, ...rest } = body as Record<string, unknown>;
+  if (typeof dataBase64 !== "string") return rest;
   const padding = dataBase64.endsWith("==") ? 2 : dataBase64.endsWith("=") ? 1 : 0;
-  return { mime, sizeBytes: (dataBase64.length / 4) * 3 - padding };
+  return { ...rest, sizeBytes: Math.floor((dataBase64.length * 3) / 4) - padding };
 }
