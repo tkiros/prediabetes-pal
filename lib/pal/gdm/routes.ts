@@ -9,6 +9,9 @@ export const GDM_ROUTES = {
   start: "/gdm/start",
   home: "/gdm/home",
   questions: "/gdm/questions",
+  // G-34: the nav's "Add a question" lands on the questions page's add form
+  // (`id="add"` in components/gdm/ask-list.tsx), one tap from every screen.
+  quickAdd: "/gdm/questions#add",
   plan: "/gdm/plan",
   meals: "/gdm/meals",
   summary: "/gdm/summary",

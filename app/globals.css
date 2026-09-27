@@ -5335,3 +5335,114 @@ button.inline-link {
   align-items: center;
   min-height: 44px;
 }
+
+/* Task 2.2 — My questions (F-ASKLIST). */
+
+/* G-34: "Add a question", the nav's one filled action, on every door page but
+   the questions page. A 44px target, a little shorter than a page CTA so the
+   two nav rows stay compact at 375px. */
+.gdm-nav-add {
+  min-height: 44px;
+  padding: 8px 18px;
+}
+
+.gdm-ask-head {
+  display: grid;
+  gap: 8px;
+}
+
+/* The one fixed line (gdm-asklist-lead): body colour, never --text-soft. */
+.gdm-lead {
+  margin: 0;
+  color: var(--text-body);
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.gdm-ask-form {
+  display: grid;
+  gap: 16px;
+}
+
+/* The optional note is usually a line or two. */
+.gdm-ask-form textarea.gdm-ask-note-input {
+  min-height: 88px;
+}
+
+.gdm-asks {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gdm-ask {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+
+/* Her own words, as she typed them (line breaks kept, long words wrapped). */
+.gdm-ask-text,
+.gdm-ask-note {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.gdm-ask-text {
+  color: var(--text-strong);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.gdm-ask-note {
+  color: var(--text-body);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.gdm-ask-edit {
+  display: grid;
+  gap: 12px;
+}
+
+/* Asked: the box and its label together are the 44px target. */
+.gdm-ask-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gdm-ask-check input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  min-height: 0;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.gdm-ask-check label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--text-strong);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* G-76: the second Delete must not look live while it runs. */
+.gdm-ask .danger-button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* G-25: the empty state is a sentence with a way forward, not a muted hint. */
+.gdm-ask-empty {
+  margin: 0;
+  color: var(--text-body);
+  font-size: 16px;
+  line-height: 1.65;
+}
