@@ -30,6 +30,33 @@ describe("checkProductionGdmDoor — no gate opens by accident", () => {
     expect(checkProductionGdmDoor("ideas", "1", ALL_APPROVED, ALL_SIGNED, ROWS).errors.join()).toMatch(/requires "organiser"/);
   });
 
+  // Final review F1: the frame renders gdm-landing-hero on every /gdm/* page
+  // (<meta description>, og:description), a row only `landing` lists, and
+  // sign-out, erase and delete land on /gdm. So an organiser without the
+  // landing would publish a row the guard never checked, and 404 her exits.
+  it("refuses the organiser without the landing, as it refuses a food surface without the organiser", () => {
+    const check = checkProductionGdmDoor("organiser", "1", ALL_APPROVED, NONE_SIGNED, ROWS);
+    expect(check.effective).toBe("");
+    expect(check.errors.join()).toMatch(/surface "organiser" requires "landing"/);
+    // Refused even when the landing's own rows are the unapproved ones: listing
+    // `landing` is what makes the guard read them.
+    const landingPending = HEADER + row("gdm-a", "Pending") + row("gdm-b", "Approved");
+    expect(checkProductionGdmDoor("organiser", "1", landingPending, NONE_SIGNED, ROWS).errors.join()).toMatch(
+      /requires "landing"/
+    );
+    expect(checkProductionGdmDoor("landing,organiser", "1", landingPending, NONE_SIGNED, ROWS).errors.join()).toMatch(
+      /"gdm-a" whose Status is Pending/
+    );
+  });
+
+  it("the landing opens alone, and the organiser opens with it once both surfaces' rows allow", () => {
+    expect(checkProductionGdmDoor("landing", "1", ALL_APPROVED, NONE_SIGNED, ROWS)).toEqual({ effective: "landing", errors: [] });
+    expect(checkProductionGdmDoor("organiser,landing", "1", ALL_APPROVED, NONE_SIGNED, ROWS)).toEqual({
+      effective: "organiser,landing",
+      errors: []
+    });
+  });
+
   // G-09: the revert. Unsetting the twin alone must yield a build that LOADS
   // with the door dark. If this threw, the redeploy would fail and the previous
   // deployment, door open, would keep serving through the incident.
@@ -89,11 +116,11 @@ describe("checkProductionGdmDoor — no gate opens by accident", () => {
       /"ideas" needs gate S1.*Not started/
     );
     const s4Open = gates({ S1: "Signed", S2: "Signed", S3: "Signed", S4: "Not started" });
-    expect(checkProductionGdmDoor("organiser,ideas", "1", ALL_APPROVED, s4Open, ROWS).errors).toEqual([]);
+    expect(checkProductionGdmDoor("landing,organiser,ideas", "1", ALL_APPROVED, s4Open, ROWS).errors).toEqual([]);
     expect(checkProductionGdmDoor("organiser,read", "1", ALL_APPROVED, s4Open, ROWS).errors.join()).toMatch(
       /"read" needs gate S4/
     );
-    expect(checkProductionGdmDoor("organiser,ideas,read", "1", ALL_APPROVED, ALL_SIGNED, ROWS).errors).toEqual([]);
+    expect(checkProductionGdmDoor("landing,organiser,ideas,read", "1", ALL_APPROVED, ALL_SIGNED, ROWS).errors).toEqual([]);
   });
 
   it("a missing or unreadable gates file fails closed", () => {

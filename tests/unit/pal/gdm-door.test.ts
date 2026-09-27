@@ -40,4 +40,12 @@ describe("gdmDoorEnabled — the one GDM-door flag (PRD §9 Step 2; §9.2's reve
     expect(GDM_SURFACE_GATES.ideas).toEqual(["S1", "S2", "S3"]);
     expect(GDM_SURFACE_GATES.read).toEqual(["S1", "S2", "S3", "S4"]);
   });
+
+  // Final review F1: every /gdm/* page's layout renders gdm-landing-hero in its
+  // <meta description> and og:description, and sign-out, erase and delete all
+  // land on /gdm. Both belong to `landing`, so `organiser` cannot open without it.
+  it("the organiser needs the landing: its pages carry the landing's line and send her back to /gdm", () => {
+    expect(GDM_SURFACE_REQUIRES.organiser).toEqual(["landing"]);
+    expect(GDM_SURFACE_REQUIRES.landing).toBeUndefined();
+  });
 });
