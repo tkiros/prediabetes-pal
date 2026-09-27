@@ -53,6 +53,16 @@ export function cardFrom(payload: unknown): AskCard | null {
   return { route: route as ClinicalRoute, routeCopy };
 }
 
+/**
+ * The body a row's Save sends (PATCH). Her text and note go back unchanged
+ * (R48: never edited here). What they said is kept whether or not Asked is
+ * ticked: unticking Asked only hides the answer field, it never discards her
+ * words. Trimmed; empty is null (AskBodySchema).
+ */
+export function savedAskBody(parked: AskBody, asked: boolean, answer: string): AskBody {
+  return { text: parked.text, note: parked.note, asked, answer: answer.trim() || null };
+}
+
 /** G-14: "try again in a moment" is untrue for a full list; everything else is the save-failed line. */
 export function parkFailure(status: number): string {
   return status === 409 ? LIST_FULL : SAVE_FAILED;
@@ -364,9 +374,10 @@ export function AskList() {
 }
 
 /**
- * One parked question: her words, her note, then Asked, what they said (once
- * asked), Save and Delete. Her text is never edited here (R48), so a save
- * never needs the clinical router again. Delete takes two presses (G-76).
+ * One parked question: her words, her note, then Asked, what they said (shown
+ * while Asked is ticked, kept when it is not), Save and Delete. Her text is
+ * never edited here (R48), so a save never needs the clinical router again.
+ * Delete takes two presses (G-76).
  */
 function AskRow({
   item,
@@ -393,8 +404,7 @@ function AskRow({
     if (saving || removing) return;
     setSaving(true);
     setFailure(null);
-    const next: AskBody = { text: body.text, note: body.note, asked, answer: asked ? answer.trim() || null : null };
-    const saved = await onSave(id, next);
+    const saved = await onSave(id, savedAskBody(body, asked, answer));
     if (!saved) setFailure(SAVE_FAILED);
     // Save was disabled in flight, and saving an asked question moves the row
     // below the open ones: focus goes back to Save, wherever it now sits.

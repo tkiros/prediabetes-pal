@@ -111,6 +111,19 @@ describe("My questions — the list's own rules (components/gdm/ask-list.tsx)", 
     expect(focusAfterRemove(["a"], "a")).toBe(ASK_FIELD_ID);
   });
 
+  it("a row's Save never throws away what they said: unticking Asked only hides the answer (fix round 1)", async () => {
+    const { savedAskBody } = await import("../../../components/gdm/ask-list");
+    const parked = { text: "Which sheet stands?", note: "night shift", asked: true, answer: "The newer one." };
+    // Unticked with an answer on record: the answer is kept, and the body still parses.
+    const unticked = savedAskBody(parked, false, "The newer one.");
+    expect(unticked).toEqual({ text: "Which sheet stands?", note: "night shift", asked: false, answer: "The newer one." });
+    expect(AskBodySchema.safeParse(unticked).success).toBe(true);
+    // Her text and note are never edited here (R48); the answer is trimmed, and empty is null.
+    expect(savedAskBody(parked, true, "  They said wait.  ")).toEqual({ ...parked, answer: "They said wait." });
+    expect(savedAskBody(parked, true, "   ")).toEqual({ ...parked, answer: null });
+    expect(savedAskBody({ ...parked, answer: null }, false, "")).toEqual({ ...parked, asked: false, answer: null });
+  });
+
   it("every field's maxLength is its zod bound, so a 400 is unreachable in normal use (G-14)", async () => {
     const { ASK_MAX_LENGTH } = await import("../../../components/gdm/ask-list");
     expect(ASK_MAX_LENGTH).toEqual({
