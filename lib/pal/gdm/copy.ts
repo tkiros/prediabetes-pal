@@ -85,7 +85,9 @@ export const GDM_COPY = {
     line: "That did not save just now. Try again in a moment."
   },
   // G-05: `eraseWarn` says what DELETE /api/account/health-data really erases —
-  // the whole account's health data, the first door's included.
+  // the whole account's health data, the first door's included. R41:
+  // `deleteBlocked` is the shared delete route's 409 (an active Google Play
+  // subscription), where "try again in a moment" could never work.
   "gdm-data-controls": {
     title: "Your data",
     download: "Download my data",
@@ -94,6 +96,8 @@ export const GDM_COPY = {
       "This erases all the health data in your account, including everything you have kept here. It cannot be undone.",
     eraseGo: "Erase",
     deleteAccount: "Delete my account",
+    deleteBlocked:
+      "Your account was not deleted. Cancel your Google Play subscription first, then delete your account.",
     signOut: "Sign out",
     cancel: "Cancel"
   },
@@ -115,7 +119,7 @@ export const GDM_COPY = {
     removed: "Removed.",
     loading: "Loading"
   },
-  // G-15: app/gdm/error.tsx, so a database hiccup never shows Next's raw error page.
+  // G-15: app/gdm/(door)/error.tsx, so a database hiccup never shows Next's raw error page.
   "gdm-load-failed": {
     line: "That did not load just now.",
     retry: "Try again."

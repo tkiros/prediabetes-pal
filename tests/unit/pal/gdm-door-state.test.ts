@@ -1,4 +1,7 @@
 // tests/unit/pal/gdm-door-state.test.ts
+import fs from "node:fs";
+import path from "node:path";
+
 import type { ReactElement, ReactNode } from "react";
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -146,7 +149,7 @@ describe("the organiser's public pieces: the privacy notice, the footer links, t
   });
 
   it("error.tsx says it did not load and retries (G-15); with the organiser off it rethrows, so a Pending row never shows", async () => {
-    const { default: GdmError } = await import("../../../app/gdm/error");
+    const { default: GdmError } = await import("../../../app/gdm/(door)/error");
     const failure = Object.assign(new Error("db hiccup"), { digest: "x" });
     const retry = vi.fn();
     const tree = GdmError({ error: failure, retry });
@@ -159,5 +162,34 @@ describe("the organiser's public pieces: the privacy notice, the footer links, t
 
     vi.stubEnv("NEXT_PUBLIC_GDM_DOOR", "landing");
     expect(() => GdmError({ error: failure, retry })).toThrow(failure);
+  });
+
+  // R43: a client module that imports the bank ships the WHOLE bank in a public
+  // chunk to every page that loads it. Measured on production builds: at
+  // app/gdm/error.tsx the boundary put the organiser's Pending rows on the
+  // landing of a landing-only build. The landing's own client modules, and any
+  // client special file at the app/gdm root, must stay off the bank.
+  it("no client module the landing loads imports the bank (R43)", () => {
+    const root = process.cwd();
+    const read = (rel: string) => fs.readFileSync(path.join(root, rel), "utf8");
+    const isClient = (text: string) => /^\s*["']use client["']/.test(text);
+    const importsBank = (text: string) => /from\s+["'][^"']*\/pal\/gdm\/copy["']/.test(text);
+
+    const rootFiles = fs
+      .readdirSync(path.join(root, "app/gdm"), { withFileTypes: true })
+      .filter((entry) => entry.isFile() && /\.tsx?$/.test(entry.name))
+      .map((entry) => path.join("app/gdm", entry.name));
+    const imported = ["app/gdm/page.tsx", "app/gdm/layout.tsx"].flatMap((rel) =>
+      [...read(rel).matchAll(/from\s+["'](\.[^"']+)["']/g)]
+        .map((match) => path.join(path.dirname(rel), match[1]))
+        .flatMap((base) => [`${base}.tsx`, `${base}.ts`])
+        .filter((candidate) => fs.existsSync(path.join(root, candidate)))
+    );
+    const offenders = [...new Set([...rootFiles, ...imported])].filter((rel) => {
+      const text = read(rel);
+      return isClient(text) && importsBank(text);
+    });
+    expect(offenders).toEqual([]);
+    expect(fs.existsSync(path.join(root, "app/gdm/error.tsx"))).toBe(false);
   });
 });

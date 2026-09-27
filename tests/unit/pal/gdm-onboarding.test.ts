@@ -79,6 +79,28 @@ describe("clearGdmDeviceKeys", () => {
   });
 });
 
+// R41: the shared delete route answers 409 while a Google Play subscription is
+// active (app/api/account/delete/route.ts). "Try again in a moment" can never
+// fix that, so that one refusal says why; every other failure stays generic.
+describe("Your data — which failure line", () => {
+  it("a 409 from the account deletion says why; every other failure keeps the save-failed line", async () => {
+    const { dataControlsFailure } = await import("../../../components/gdm/data-controls");
+    const { GDM_COPY } = await import("../../../lib/pal/gdm/copy");
+    expect(dataControlsFailure("delete", 409)).toBe(GDM_COPY["gdm-data-controls"].deleteBlocked);
+    const others: Array<["erase" | "delete", number]> = [
+      ["delete", 0],
+      ["delete", 400],
+      ["delete", 503],
+      ["erase", 409],
+      ["erase", 503],
+      ["erase", 0]
+    ];
+    for (const [action, status] of others) {
+      expect(dataControlsFailure(action, status), `${action} ${status}`).toBe(GDM_COPY["gdm-save-failed"].line);
+    }
+  });
+});
+
 // G-14: one wrapper, JSON in and out, never throws; an expired session goes to
 // sign-in instead of coming back as a "try again in a moment" that cannot work.
 describe("gdmFetch", () => {

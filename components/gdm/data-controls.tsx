@@ -14,6 +14,18 @@ const SAVE_FAILED = GDM_COPY["gdm-save-failed"].line;
 type Destructive = "erase" | "delete";
 
 /**
+ * R41: the failure line for an erase or a deletion that did not complete. The
+ * shared delete route answers 409 while a Google Play subscription is active
+ * (app/api/account/delete/route.ts), and "try again in a moment" could never
+ * fix that, so that one refusal says why. Every other failure keeps the
+ * generic line. (A 401 never gets here: gdmFetch sends it to sign-in.)
+ */
+export function dataControlsFailure(action: Destructive, status: number): string {
+  if (action === "delete" && status === 409) return COPY.deleteBlocked;
+  return SAVE_FAILED;
+}
+
+/**
  * Your data (G-77), in this order and weight: Download my data · Sign out ·
  * then, set apart and never in the filled accent, Erase my health data and
  * Delete my account, each behind a second press. The shared account routes do
@@ -24,7 +36,7 @@ export function GdmDataControls() {
   const [confirming, setConfirming] = useState<Destructive | null>(null);
   const [busy, setBusy] = useState(false);
   const [removed, setRemoved] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
   const eraseRef = useRef<HTMLButtonElement>(null);
   const deleteRef = useRef<HTMLButtonElement>(null);
@@ -43,14 +55,14 @@ export function GdmDataControls() {
   async function run(action: Destructive) {
     if (busy) return;
     setBusy(true);
-    setFailed(false);
+    setFailure(null);
     const result =
       action === "erase"
         ? await gdmFetch("/api/account/health-data", { method: "DELETE" })
         : await gdmFetch("/api/account/delete", { method: "POST" });
     if (!result.ok) {
       setBusy(false);
-      setFailed(true);
+      setFailure(dataControlsFailure(action, result.status));
       return;
     }
     clearGdmDeviceKeys();
@@ -61,14 +73,14 @@ export function GdmDataControls() {
   async function leave() {
     if (busy) return;
     setBusy(true);
-    setFailed(false);
+    setFailure(null);
     // Her unsent draft goes before the session does.
     clearGdmDeviceKeys();
     try {
       await signOut({ callbackUrl: GDM_ROUTES.landing });
     } catch {
       setBusy(false);
-      setFailed(true);
+      setFailure(SAVE_FAILED);
     }
   }
 
@@ -136,9 +148,9 @@ export function GdmDataControls() {
         )}
       </div>
 
-      {failed ? (
+      {failure ? (
         <p className="field-error" role="alert">
-          {SAVE_FAILED}
+          {failure}
         </p>
       ) : null}
       <p className="field-hint gdm-status" aria-live="polite">
