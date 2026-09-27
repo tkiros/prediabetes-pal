@@ -134,8 +134,11 @@ object ownership during this change.
 
 ## Migration sequence
 
-The current source journal ends at `0019_profile-orientation.sql`
-(20 journal entries; applied to production 2026-09-17). Migrations `0014`
+The current source journal ends at `0020_gdm-door.sql` (21 journal entries).
+`0019_profile-orientation.sql` was applied to production 2026-09-17;
+`0020_gdm-door.sql` is **not yet applied** — applying it
+(`npm run db:migrate:production`, then `npm run db:governance:check`) is the
+owner's step before PR-1 merges (plan G-10). Migrations `0014`
 through `0019` are additive. Migration `0017` adds only bounded operational
 attempt/lease metadata to `push_subscriptions`; existing rows receive
 `nudge_attempt_count = 0` and require no data backfill. Migration `0019` adds
