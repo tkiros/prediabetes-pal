@@ -5280,11 +5280,12 @@ button.inline-link {
   line-height: 1.55;
 }
 
+/* Keeps the UA's `display: list-item`, so the disclosure marker still shows
+   that it opens; the 44px target comes from padding, not flex. */
 .gdm-notice summary {
-  display: flex;
-  align-items: center;
-  min-height: 44px;
   width: fit-content;
+  padding: 10px 0;
+  line-height: 24px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -5306,6 +5307,13 @@ button.inline-link {
   gap: 12px;
   padding-top: 16px;
   border-top: 1px solid var(--border-soft);
+}
+
+/* .danger-button has no disabled state of its own; while an erase or a
+   deletion is in flight the confirm must not look live. */
+.gdm-danger-zone .danger-button:disabled {
+  opacity: 0.6;
+  cursor: progress;
 }
 
 .gdm-retry {
