@@ -6,7 +6,7 @@ import { gdmFetch } from "../../lib/client/gdm-api";
 import { useFocusAfterRender } from "../../lib/client/gdm-focus";
 import { preparePhoto } from "../../lib/client/gdm-photo";
 import { GDM_COPY } from "../../lib/pal/gdm/copy";
-import { PLAN_PHOTO_CAP } from "../../lib/pal/gdm/plan-photo";
+import { PLAN_PHOTO_CAP, PLAN_PHOTO_PATH, planPhotoPath } from "../../lib/pal/gdm/plan-photo";
 
 const CONTROLS = GDM_COPY["gdm-plan-controls"];
 const STATUS = GDM_COPY["gdm-status"];
@@ -14,13 +14,12 @@ const LOAD_FAILED = GDM_COPY["gdm-load-failed"];
 const CANCEL = GDM_COPY["gdm-data-controls"].cancel;
 const SAVE_FAILED = GDM_COPY["gdm-save-failed"].line;
 
-const PHOTO_PATH = "/api/gdm/plan-photo";
 export const PHOTO_ADD_ID = "gdm-plan-photo-add";
 export const photoRemoveId = (id: string) => `gdm-plan-photo-${id}-remove`;
 export const photoCancelId = (id: string) => `gdm-plan-photo-${id}-cancel`;
 
 /** Where one of her photos is shown from: the photo route, to her only, never cached. */
-export const planPhotoSrc = (id: string) => `${PHOTO_PATH}?id=${id}`;
+export const planPhotoSrc = planPhotoPath;
 
 /** G-20: the add control is offered only below the cap, so the route's refusal is never reached from the page. */
 export const canAddPhoto = (held: number) => held < PLAN_PHOTO_CAP;
@@ -41,7 +40,7 @@ function usePlanPhotoIds(): {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const result = await gdmFetch<{ items: Array<{ id: string }> }>(PHOTO_PATH);
+      const result = await gdmFetch<{ items: Array<{ id: string }> }>(PLAN_PHOTO_PATH);
       if (cancelled) return;
       if (result.ok) setIds(result.data.items.map((item) => item.id));
       setState(result.ok ? "ready" : "failed");
@@ -156,15 +155,17 @@ async function upload(file: File): Promise<string | null> {
   } catch {
     return null;
   }
-  const result = await gdmFetch<{ id: string }>(PHOTO_PATH, { method: "POST", body: photo });
+  const result = await gdmFetch<{ id: string }>(PLAN_PHOTO_PATH, { method: "POST", body: photo });
   return result.ok ? result.data.id : null;
 }
 
 /**
  * A photo of her sheet on My plan (Task 3.3), kept as a photo: the device
  * makes it smaller and sends it; the route encrypts and keeps it; nothing
- * reads it. The add control opens the camera or a file through a hidden file
- * input. A file the device cannot open (a HEIC on some browsers), or any
+ * reads it. The add control opens the device's own chooser through a hidden
+ * file input: a photo she already has, or the camera. R56: no `capture`
+ * attribute, which on iOS Safari and Android Chrome skips the chooser and
+ * opens only the camera. A file the device cannot open (a HEIC on some browsers), or any
  * failed save, shows the save-failed line and clears the input (G-20). Status
  * goes through the page's one polite live region (G-36), via `onStatus`.
  */
@@ -215,7 +216,7 @@ export function PlanPhotos({ onStatus }: { onStatus: (line: string | null) => vo
     if (busy) return;
     setRemoving(true);
     setFailure(null);
-    const result = await gdmFetch(`${PHOTO_PATH}?id=${id}`, { method: "DELETE" });
+    const result = await gdmFetch(planPhotoPath(id), { method: "DELETE" });
     if (result.ok || result.status === 404) {
       // A 404 is a photo already gone (another tab): gone either way.
       setIds(ids.filter((kept) => kept !== id));
@@ -244,7 +245,7 @@ export function PlanPhotos({ onStatus }: { onStatus: (line: string | null) => vo
         onCancel={cancel}
       />
       {canAddPhoto(ids.length) ? (
-        <input ref={input} type="file" accept="image/*" capture="environment" hidden onChange={() => void add()} />
+        <input ref={input} type="file" accept="image/*" hidden onChange={() => void add()} />
       ) : null}
       {failure ? (
         <p className="field-error" role="alert">

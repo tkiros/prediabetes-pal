@@ -12,7 +12,7 @@ import {
   PLAN_PHOTO_MAX_REQUEST_BYTES,
   planPhotoForExport
 } from "../../../lib/pal/gdm/plan-photo";
-import { UNREADABLE_PLACEHOLDER } from "../../../lib/server/crypto";
+import { encryptField, UNREADABLE_PLACEHOLDER } from "../../../lib/server/crypto";
 import { schema } from "../../../lib/server/db";
 import { createTestDb } from "../../helpers/test-db";
 
@@ -75,20 +75,48 @@ const rows = async () =>
 const added = async (userId = her) => ((await (await as(userId).POST(post(photo()))).json()) as { id: string }).id;
 
 describe("/api/gdm/plan-photo — a photo of her sheet, stored as a photo", () => {
-  it("is inert while the door is closed, needs a session, and needs consent — every method", async () => {
+  it("POST, DELETE and the id list are inert while the door is closed, need a session, and need consent", async () => {
     const id = await added();
     vi.stubEnv("GDM_DOOR_ENABLED", "0");
     expect((await as(her).POST(post(photo()))).status).toBe(404);
-    expect((await as(her).GET(get(`?id=${id}`))).status).toBe(404);
+    expect((await as(her).GET(get())).status).toBe(404);
     expect((await as(her).DELETE(del(id))).status).toBe(404);
     vi.stubEnv("GDM_DOOR_ENABLED", "1");
     expect((await as(null).POST(post(photo()))).status).toBe(401);
+    expect((await as(null).GET(get())).status).toBe(401);
     expect((await as(null).GET(get(`?id=${id}`))).status).toBe(401);
     expect((await as(null).DELETE(del(id))).status).toBe(401);
     expect((await as(stranger).POST(post(photo()))).status).toBe(403);
     expect((await as(stranger).GET(get())).status).toBe(403);
     expect((await as(stranger).DELETE(del(id))).status).toBe(403);
     expect(await rows()).toHaveLength(1);
+  });
+
+  it("R55: with the door closed, her own photo still downloads — exact bytes, private, never sniffed; signed out 401, another user's 404", async () => {
+    const id = await added();
+    vi.stubEnv("GDM_DOOR_ENABLED", "0");
+    vi.stubEnv("NEXT_PUBLIC_GDM_DOOR", "");
+    const shown = await as(her).GET(get(`?id=${id}`));
+    expect(shown.status).toBe(200);
+    expect(shown.headers.get("content-type")).toBe("image/png");
+    expect(shown.headers.get("cache-control")).toBe("private, no-store");
+    expect(shown.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(Buffer.from(await shown.arrayBuffer()).equals(Buffer.from(PNG, "base64"))).toBe(true);
+    expect((await as(null).GET(get(`?id=${id}`))).status).toBe(401);
+    expect((await as(other).GET(get(`?id=${id}`))).status).toBe(404);
+  });
+
+  it("R55: reading back her own photo has no consent gate — an account without a consented profile still gets its own photo, and only its own", async () => {
+    const [{ id }] = (
+      await testDb.raw.query<{ id: string }>(
+        "INSERT INTO gdm_items (user_id, kind, body_ciphertext) VALUES ($1, 'plan_photo', $2) RETURNING id",
+        [stranger, encryptField(JSON.stringify(photo()))]
+      )
+    ).rows;
+    const shown = await as(stranger).GET(get(`?id=${id}`));
+    expect(shown.status).toBe(200);
+    expect(Buffer.from(await shown.arrayBuffer()).equals(Buffer.from(PNG, "base64"))).toBe(true);
+    expect((await as(her).GET(get(`?id=${id}`))).status).toBe(404);
   });
 
   it("a 1×1 PNG round-trips byte-for-byte, private and never sniffed (G-20)", async () => {
@@ -100,6 +128,8 @@ describe("/api/gdm/plan-photo — a photo of her sheet, stored as a photo", () =
     expect(shown.headers.get("content-type")).toBe("image/png");
     expect(shown.headers.get("cache-control")).toBe("private, no-store");
     expect(shown.headers.get("x-content-type-options")).toBe("nosniff");
+    // Opened or saved from a pasted path, it keeps a sensible name.
+    expect(shown.headers.get("content-disposition")).toBe('inline; filename="sheet-photo.png"');
     expect(Buffer.from(await shown.arrayBuffer()).equals(Buffer.from(PNG, "base64"))).toBe(true);
   });
 
@@ -225,16 +255,18 @@ describe("/api/gdm/plan-photo — a photo of her sheet, stored as a photo", () =
     expect((await as(her).GET(get(`?id=${id}`))).status).toBe(200);
   });
 
-  it("G-62: the export form of a photo never carries its bytes — not even for a body that has drifted from the schema", () => {
+  it("G-62, R55: the export form of a photo never carries its bytes — not even for a body that has drifted from the schema — and names where it downloads", () => {
     const size = Buffer.from(PNG, "base64").length;
-    expect(planPhotoForExport({ mime: "image/png", dataBase64: PNG })).toEqual({ mime: "image/png", sizeBytes: size });
-    expect(planPhotoForExport({ mime: "image/heic", dataBase64: PNG, caption: "x" })).toEqual({
+    const download = "/api/gdm/plan-photo?id=p1";
+    expect(planPhotoForExport({ mime: "image/png", dataBase64: PNG }, "p1")).toEqual({ mime: "image/png", sizeBytes: size, download });
+    expect(planPhotoForExport({ mime: "image/heic", dataBase64: PNG, caption: "x" }, "p1")).toEqual({
       mime: "image/heic",
       caption: "x",
-      sizeBytes: size
+      sizeBytes: size,
+      download
     });
-    expect(planPhotoForExport({ mime: "image/png", dataBase64: 7 })).toEqual({ mime: "image/png" });
-    expect(planPhotoForExport(UNREADABLE_PLACEHOLDER)).toBe(UNREADABLE_PLACEHOLDER);
+    expect(planPhotoForExport({ mime: "image/png", dataBase64: 7 }, "p1")).toEqual({ mime: "image/png", download });
+    expect(planPhotoForExport(UNREADABLE_PLACEHOLDER, "p1")).toBe(UNREADABLE_PLACEHOLDER);
   });
 
   it("photo bodies never ride the list endpoint: GET /api/gdm/items?kind=plan_photo → 400", async () => {

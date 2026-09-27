@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import {
   PLAN_PHOTO_CAP,
+  PLAN_PHOTO_FILE_EXTENSION,
   PLAN_PHOTO_MAX_REQUEST_BYTES,
   PlanPhotoBodySchema,
   type PlanPhotoBody
@@ -69,11 +70,17 @@ export function createGdmPlanPhotoHandlers(deps: GdmRouteDeps = {}) {
     and(eq(schema.gdmItems.id, id), eq(schema.gdmItems.userId, userId), eq(schema.gdmItems.kind, KIND));
 
   return {
-    /** With `?id=`: that photo's bytes, to her only. Without: her photo ids, oldest first, never their bytes. */
+    /**
+     * With `?id=`: that photo's bytes, to her only. R55: this read needs her
+     * session and nothing else (no door, no consent), so what she stored stays
+     * downloadable with the door closed, as the account export does; the row
+     * is still looked up by her userId. Without an id: her photo ids, oldest
+     * first, never their bytes, behind the whole guard like every other method.
+     */
     async GET(request: Request) {
-      const gate = await gdmRouteGuard(deps);
-      if (gate instanceof Response) return gate;
       const rawId = new URL(request.url).searchParams.get("id");
+      const gate = await gdmRouteGuard(deps, { sessionOnly: rawId !== null });
+      if (gate instanceof Response) return gate;
       if (rawId === null) {
         const items = await db()
           .select({ id: schema.gdmItems.id })
@@ -97,7 +104,9 @@ export function createGdmPlanPhotoHandlers(deps: GdmRouteDeps = {}) {
           "content-type": photo.mime,
           // A shared phone keeps no copy, and the type is never guessed from the bytes (G-20).
           "cache-control": "private, no-store",
-          "x-content-type-options": "nosniff"
+          "x-content-type-options": "nosniff",
+          // Opened or saved from a pasted path (the export names it), it keeps a sensible name.
+          "content-disposition": `inline; filename="sheet-photo.${PLAN_PHOTO_FILE_EXTENSION[photo.mime]}"`
         }
       });
     },

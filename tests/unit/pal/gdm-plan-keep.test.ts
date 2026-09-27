@@ -439,9 +439,12 @@ describe("a photo of her sheet, kept as a photo (Task 3.3)", () => {
     expect(buttons(shown).every((el) => props(el).disabled === true)).toBe(true);
   });
 
-  it("the page: a hidden file input for the camera or a file, cleared after every attempt, and nothing kept on the device", () => {
+  it("the page: a hidden file input for an image, cleared after every attempt, and nothing kept on the device", () => {
     const source = fs.readFileSync(path.join(ROOT, "components/gdm/plan-photos.tsx"), "utf8");
-    expect(source).toMatch(/<input[^>]*type="file"[^>]*accept="image\/\*"[^>]*capture="environment"[^>]*hidden/);
+    expect(source).toMatch(/<input[^>]*type="file"[^>]*accept="image\/\*"[^>]*hidden/);
+    // R56: no `capture`, which skips the chooser and opens the camera on iOS Safari and Android Chrome, so she
+    // could not pick a photo of her sheet she already has; the chooser still offers the camera.
+    expect(source).not.toMatch(/\bcapture=/);
     expect(source).toMatch(/\.value = ""/);
     expect(source).toContain("preparePhoto(");
     expect(source).not.toMatch(/localStorage|sessionStorage|pal\.gdm\./);

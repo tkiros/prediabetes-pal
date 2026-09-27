@@ -13,6 +13,17 @@ export type PlanPhotoMime = (typeof PLAN_PHOTO_MIMES)[number];
 /** Photos kept per account. At the cap the add control is not rendered (G-20). */
 export const PLAN_PHOTO_CAP = 3;
 
+/** Where one photo is read back from: to her session only, door open or closed (R55). */
+export const PLAN_PHOTO_PATH = "/api/gdm/plan-photo";
+export const planPhotoPath = (id: string) => `${PLAN_PHOTO_PATH}?id=${id}`;
+
+/** The file name a photo is served under (`Content-Disposition`), by its type. */
+export const PLAN_PHOTO_FILE_EXTENSION: Record<PlanPhotoMime, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp"
+};
+
 /** The longest `dataBase64` the route stores: about 2 MB of image. */
 export const PLAN_PHOTO_MAX_BASE64 = 2_800_000;
 
@@ -40,15 +51,17 @@ export type PlanPhotoBody = z.infer<typeof PlanPhotoBodySchema>;
  * its type and its size. Measured on 2026-09-27: three photos at the length
  * bound make an 8.4 MB export, over the platform's 4.5 MB response cap, so
  * the export would fail for everything else she keeps. Each photo downloads
- * on its own from Your data. Keyed on the field, not the schema, so a body
- * that ever drifts from PlanPhotoBodySchema still sheds its bytes. A body
- * with no bytes is returned as it is (an unreadable row exports as its
- * placeholder, like any other item).
+ * on its own, from Your data or from the `download` path the export names
+ * (R55: that path answers her session even with the door closed). Keyed on
+ * the field, not the schema, so a body that ever drifts from
+ * PlanPhotoBodySchema still sheds its bytes. A body with no bytes is returned
+ * as it is (an unreadable row exports as its placeholder, like any other item).
  */
-export function planPhotoForExport(body: unknown): unknown {
+export function planPhotoForExport(body: unknown, id: string): unknown {
   if (typeof body !== "object" || body === null || !("dataBase64" in body)) return body;
   const { dataBase64, ...rest } = body as Record<string, unknown>;
-  if (typeof dataBase64 !== "string") return rest;
+  const download = planPhotoPath(id);
+  if (typeof dataBase64 !== "string") return { ...rest, download };
   const padding = dataBase64.endsWith("==") ? 2 : dataBase64.endsWith("=") ? 1 : 0;
-  return { ...rest, sizeBytes: Math.floor((dataBase64.length * 3) / 4) - padding };
+  return { ...rest, sizeBytes: Math.floor((dataBase64.length * 3) / 4) - padding, download };
 }
