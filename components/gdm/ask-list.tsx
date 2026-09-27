@@ -88,6 +88,12 @@ export function focusAfterRemove(orderedIds: readonly string[], removedId: strin
 // and deletion clear it with the rest (clearGdmDeviceKeys). It holds what she
 // has typed and not yet parked — never a parked question — and is cleared on a
 // 200, so a dropped connection or an expired session loses nothing.
+//
+// Final review F11: it is tagged with its owner, the signed-in user's opaque id
+// (never an email), and read back only for that account. The prediabetes
+// door's sign-out and erase do not clear `pal.gdm.*` (R42's reverse), so on a
+// shared device another account's draft, or a legacy one with no tag, is
+// dropped — removed from the device, and never shown.
 
 type AskDraft = { text: string; note: string };
 type DraftStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -104,20 +110,26 @@ function deviceStorage(): DraftStorage | null {
 }
 
 export const askDraft = {
-  read(storage: DraftStorage | null = deviceStorage()): AskDraft {
+  read(owner: string, storage: DraftStorage | null = deviceStorage()): AskDraft {
     try {
       const raw = storage?.getItem(DRAFT_KEY);
-      const parsed = raw ? (JSON.parse(raw) as { text?: unknown; note?: unknown }) : null;
-      if (typeof parsed?.text !== "string" || typeof parsed.note !== "string") return EMPTY_DRAFT;
+      const parsed = raw ? (JSON.parse(raw) as { owner?: unknown; text?: unknown; note?: unknown }) : null;
+      if (!parsed) return EMPTY_DRAFT;
+      if (parsed.owner !== owner) {
+        // Another account's, or from before the tag: not hers to see.
+        askDraft.clear(storage);
+        return EMPTY_DRAFT;
+      }
+      if (typeof parsed.text !== "string" || typeof parsed.note !== "string") return EMPTY_DRAFT;
       return { text: parsed.text, note: parsed.note };
     } catch {
       return EMPTY_DRAFT;
     }
   },
-  write(draft: AskDraft, storage: DraftStorage | null = deviceStorage()): void {
+  write(owner: string, draft: AskDraft, storage: DraftStorage | null = deviceStorage()): void {
     try {
       if (draft.text === "" && draft.note === "") storage?.removeItem(DRAFT_KEY);
-      else storage?.setItem(DRAFT_KEY, JSON.stringify(draft));
+      else storage?.setItem(DRAFT_KEY, JSON.stringify({ owner, text: draft.text, note: draft.note }));
     } catch {
       // Storage refused: the field still holds what she typed.
     }
@@ -136,9 +148,11 @@ export const askDraft = {
  * tick it once asked, keep what they said. Top to bottom: the heading, the one
  * fixed line, the add form, the page's polite status line, the clinical card
  * when a park raised one, then the list. No model reads her words; the items
- * API's clinical router is the only thing that does.
+ * API's clinical router is the only thing that does. `ownerId` is the
+ * signed-in user's opaque id, from the server page: the unsent draft is kept
+ * for that account only (F11).
  */
-export function AskList() {
+export function AskList({ ownerId }: { ownerId: string }) {
   const hydrated = useHydrated();
   // The list loads after the first commit (the form is usable at once) and
   // carries the page's polite status line: shared with My meals.
@@ -154,7 +168,7 @@ export function AskList() {
 
   // Until she types, the field shows the draft this device kept (read only
   // once hydrated, so the server render and hydration agree).
-  const current = draft ?? (hydrated ? askDraft.read() : EMPTY_DRAFT);
+  const current = draft ?? (hydrated ? askDraft.read(ownerId) : EMPTY_DRAFT);
   const ordered = orderAsks(items);
 
   useEffect(() => {
@@ -169,7 +183,7 @@ export function AskList() {
   function edit(field: keyof AskDraft, text: string) {
     const next = { ...current, [field]: text };
     setDraft(next);
-    askDraft.write(next);
+    askDraft.write(ownerId, next);
   }
 
   async function park(event: FormEvent<HTMLFormElement>) {
