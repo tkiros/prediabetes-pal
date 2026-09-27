@@ -38,7 +38,9 @@ export default function GdmLayout({ children }: Readonly<{ children: ReactNode }
   if (!gdmDoorEnabled("landing") && !gdmDoorEnabled("organiser")) return <>{children}</>;
   return (
     <>
-      <a href="#gdm-content" className="app-skip">
+      {/* gdm-no-print: parked above the page at top: -64px, the link's shadow
+          still reached the printed summary as a grey smudge (Task 6.4's walk). */}
+      <a href="#gdm-content" className="app-skip gdm-no-print">
         {GDM_COPY["gdm-door-name"].skip}
       </a>
       <main className="page-shell gdm-door">

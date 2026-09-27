@@ -67,4 +67,14 @@ describe("summary builder (PRD §6.2 F-SUMMARY; §7.4 deep module 2)", () => {
     expect(page).toMatch(/gdm-disclaimer/); // rendered INSIDE the page body: the print sheet hides <footer>
     expect(page).not.toMatch(/reading|glucose/i);
   });
+
+  it("the frame's skip link stays off the printed page (Task 6.4's walk: its shadow reached the paper)", async () => {
+    const fs = await import("node:fs");
+    // .app-skip sits at top: -64px with an 18px-offset, 40px-blur shadow, so the
+    // shadow printed as a grey smudge in the page's top-left corner, background
+    // graphics on or off. The print sheet's .gdm-no-print hides it.
+    expect(fs.readFileSync("app/gdm/layout.tsx", "utf8")).toMatch(/href="#gdm-content" className="app-skip gdm-no-print"/);
+    const printBlock = fs.readFileSync("app/globals.css", "utf8").split("@media print {")[1] ?? "";
+    expect(printBlock.slice(0, printBlock.indexOf("}"))).toMatch(/\.gdm-no-print,/);
+  });
 });
