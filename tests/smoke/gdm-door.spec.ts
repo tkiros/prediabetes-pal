@@ -17,7 +17,16 @@ import { GDM_ROUTES } from "../../lib/pal/gdm/routes";
 import { loadSafetyContract } from "../../lib/pal/safety-contract";
 import { doorSurfaceOn } from "./gdm-door";
 
-const DARK_PATHS = ["/gdm", "/gdm/start", "/gdm/home", "/gdm/questions", "/gdm/plan", "/gdm/data", "/gdm/privacy"] as const;
+const DARK_PATHS = [
+  "/gdm",
+  "/gdm/start",
+  "/gdm/home",
+  "/gdm/questions",
+  "/gdm/plan",
+  "/gdm/meals",
+  "/gdm/data",
+  "/gdm/privacy"
+] as const;
 
 const TOLD = GDM_COPY["gdm-onboarding-told"];
 const DATE = GDM_COPY["gdm-onboarding-date"];
@@ -32,6 +41,7 @@ const DIFFER = GDM_COPY["gdm-plan-differ"];
 const WAIT = GDM_COPY["gdm-wait-controls"];
 const STRUCTURE = GDM_COPY["gdm-wait-structure"];
 const CHECKLIST = GDM_COPY["gdm-wait-checklist"];
+const MEALS = GDM_COPY["gdm-meals-controls"];
 const SAVE_FAILED = GDM_COPY["gdm-save-failed"].line;
 /** A real 1×1 PNG: the sheet photo the device downscales, re-encodes and sends (Task 3.3). */
 const PNG_1X1 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
@@ -153,7 +163,10 @@ test.describe("GDM door — organiser", () => {
 // day count), then a plain checklist with nothing to tick and ACOG's line;
 // her date changes there; once a plan is entered, Home shows it on the plan
 // page's card, the waiting content is gone, and the appointment still leads.
-// Gated on the organiser surface via /api/health (this file's rule
+// PR-5's My meals runs as its own test too: one add form with no readings
+// field, a meal saved under its occasion brings that occasion's heading and
+// no other, her Include in my summary tick is kept, and Delete takes two
+// presses. Gated on the organiser surface via /api/health (this file's rule
 // throughout) — never the Playwright env.
 
 /** A day `offset` days from today on the BROWSER's clock, as YYYY-MM-DD, and the words Home shows for it (formatIsoDate's own recipe). */
@@ -569,6 +582,100 @@ test.describe("GDM door — organiser, signed in", () => {
     await expect(field).toHaveValue(later.iso);
     expect(await leads(page, ".gdm-appointment", ".gdm-home-plan")).toBe(true);
     expect(hydrationErrors).toEqual([]);
+
+    await erase(page);
+  });
+
+  // PR-5, My meals (F-MYMEALS; Task 5.2 folded into 5.1 — R12, R35, G-03).
+  test("My meals: one add form with no readings field; a meal saved under its occasion brings only that heading; her summary tick is kept; Delete takes two presses", async ({
+    page
+  }) => {
+    // Onboarding's quick path: told, no date, consent.
+    await signUp(page);
+    await page.getByRole("button", { name: TOLD.yes }).click();
+    await page.getByRole("button", { name: DATE.skip }).click();
+    await page.getByRole("checkbox", { name: CONSENT.agree }).check();
+    await page.getByRole("button", { name: CONSENT.go }).click();
+    await expect(page).toHaveURL(new RegExp(`${GDM_ROUTES.home}$`));
+
+    // Row two of the nav reaches it.
+    await page.locator(".gdm-nav-links").getByRole("link", { name: NAV.meals }).click();
+    await expect(page).toHaveURL(new RegExp(`${GDM_ROUTES.meals}$`));
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(MEALS.title);
+    await expect(page.locator(".gdm-nav-links").getByRole("link", { name: NAV.meals })).toHaveAttribute("aria-current", "page");
+
+    // G-25: with no meal at all, one page-level line and no occasion heading.
+    const main = page.locator("main");
+    const status = page.locator(".gdm-status");
+    await expect(page.getByText(MEALS.empty)).toBeVisible();
+    await expect(main.getByRole("heading", { level: 2 })).toHaveCount(0);
+
+    // G-70: one add form — her words, which occasion (six, in the order of her
+    // day), Save. No readings field anywhere near it (PRD §6.2 acceptance).
+    const field = page.getByLabel(MEALS.field, { exact: true });
+    const occasion = page.getByLabel(MEALS.occasion, { exact: true });
+    const save = page.getByRole("button", { name: MEALS.save, exact: true });
+    await expect(main.locator("form")).toHaveCount(1);
+    await expect(occasion.locator("option")).toHaveText(Object.values(OCCASIONS));
+    await expect(main.locator("input")).toHaveCount(0);
+    await expect(main.locator('[inputmode="numeric"], [inputmode="decimal"]')).toHaveCount(0);
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+    // A meal saved under the bedtime snack: announced, and that occasion's
+    // heading appears with her words under it — no other heading, no empty line.
+    const bedtime = "toast and peanut butter";
+    await occasion.selectOption("snack_bedtime");
+    await field.fill(bedtime);
+    await save.click();
+    await expect(status).toHaveText(STATUS.saved);
+    await expect(field).toHaveValue("");
+    await expect(field).toBeFocused();
+    await expect(main.getByRole("heading", { level: 2 })).toHaveText([OCCASIONS.snack_bedtime]);
+    await expect(page.locator(".gdm-meal-section", { hasText: OCCASIONS.snack_bedtime })).toContainText(bedtime);
+    await expect(page.getByText(MEALS.empty)).toHaveCount(0);
+
+    // A second, at lunch: its heading comes before the bedtime snack, in the order of her day.
+    const lunch = "dal and rice";
+    await occasion.selectOption("lunch");
+    await field.fill(lunch);
+    await save.click();
+    await expect(main.getByRole("heading", { level: 2 })).toHaveText([OCCASIONS.lunch, OCCASIONS.snack_bedtime]);
+    const lunchMeal = page.locator("li.gdm-meal", { hasText: lunch });
+    const bedtimeMeal = page.locator("li.gdm-meal", { hasText: bedtime });
+    expect(await leads(page, "#gdm-meals-lunch", "#gdm-meals-snack_bedtime")).toBe(true);
+
+    // Include in my summary saves the moment it changes (G-36), and comes back as she left it.
+    await bedtimeMeal.getByRole("checkbox", { name: MEALS.inSummary }).check();
+    await expect(status).toHaveText(STATUS.saved);
+    await expect(bedtimeMeal.getByRole("checkbox", { name: MEALS.inSummary })).toBeFocused();
+    await page.reload();
+    await expect(bedtimeMeal.getByRole("checkbox", { name: MEALS.inSummary })).toBeChecked();
+    await expect(lunchMeal.getByRole("checkbox", { name: MEALS.inSummary })).not.toBeChecked();
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+    // G-76: deleting her own words takes two presses. The first only asks,
+    // with focus on Cancel; the second deletes, its heading goes with it, and
+    // focus moves to the next meal's first control (G-39).
+    await lunchMeal.getByRole("button", { name: MEALS.remove }).click();
+    await expect(lunchMeal.getByRole("button", { name: DATA_CONTROLS.cancel })).toBeFocused();
+    await expect(page.locator("li.gdm-meal")).toHaveCount(2);
+    await lunchMeal.getByRole("button", { name: MEALS.remove }).click();
+    await expect(page.locator("li.gdm-meal")).toHaveCount(1);
+    await expect(status).toHaveText(STATUS.removed);
+    await expect(main.getByRole("heading", { level: 2 })).toHaveText([OCCASIONS.snack_bedtime]);
+    await expect(bedtimeMeal.getByRole("checkbox", { name: MEALS.inSummary })).toBeFocused();
+
+    // The last one: gone, the empty line back, focus on the add field.
+    await bedtimeMeal.getByRole("button", { name: MEALS.remove }).click();
+    await bedtimeMeal.getByRole("button", { name: MEALS.remove }).click();
+    await expect(page.locator("li.gdm-meal")).toHaveCount(0);
+    await expect(page.getByText(MEALS.empty)).toBeVisible();
+    await expect(field).toBeFocused();
+
+    // What was deleted stays deleted.
+    await page.reload();
+    await expect(page.getByText(MEALS.empty)).toBeVisible();
+    await expect(page.locator("li.gdm-meal")).toHaveCount(0);
 
     await erase(page);
   });
