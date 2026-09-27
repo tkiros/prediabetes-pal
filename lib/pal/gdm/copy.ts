@@ -41,5 +41,83 @@ export const GDM_COPY = {
   },
   "gdm-consent-required": {
     line: "Keeping your plan, meals and questions needs your explicit health-data consent."
+  },
+  // Task 1.4. G-34: `home` is the wordmark's destination; `plan`, `meals`,
+  // `asks`, `summary` and `add` render as each later task adds its surface;
+  // `data` sits in the frame's footer; `label` names the <nav>.
+  "gdm-nav": {
+    home: "Home",
+    plan: "My plan",
+    meals: "My meals",
+    asks: "My questions",
+    summary: "Summary",
+    data: "Your data",
+    add: "Add a question",
+    label: "Organiser"
+  },
+  "gdm-onboarding-told": {
+    ask: "Have you been told you have gestational diabetes?",
+    yes: "Yes",
+    notYet: "Not yet"
+  },
+  // PRD §7.2: who the door is for, and where questions about testing go —
+  // nothing about tests, thresholds or what a result means.
+  "gdm-onboarding-not-told": {
+    line: "This organiser is built for people who have been told they have gestational diabetes. For questions about testing, your care team is the place to ask.",
+    back: "Back"
+  },
+  // G-27: every step after the first can go back, so each has a `back` string.
+  "gdm-onboarding-date": {
+    ask: "When is your appointment?",
+    hint: "Optional. It stays with your notes.",
+    next: "Continue",
+    skip: "Skip",
+    back: "Back"
+  },
+  "gdm-onboarding-consent": {
+    what: "What you keep here is health data. It is stored encrypted, only for you, and you can erase it at any time from Your data.",
+    agree: "I agree to Gestational Diabetes Organiser storing the health data I enter.",
+    go: "Agree and continue",
+    notice: "How your data is handled",
+    back: "Back"
+  },
+  "gdm-save-failed": {
+    line: "That did not save just now. Try again in a moment."
+  },
+  // G-05: `eraseWarn` says what DELETE /api/account/health-data really erases —
+  // the whole account's health data, the first door's included.
+  "gdm-data-controls": {
+    title: "Your data",
+    download: "Download my data",
+    erase: "Erase my health data",
+    eraseWarn:
+      "This erases all the health data in your account, including everything you have kept here. It cannot be undone.",
+    eraseGo: "Erase",
+    deleteAccount: "Delete my account",
+    signOut: "Sign out",
+    cancel: "Cancel"
+  },
+  // Counsel reads this row before `organiser` goes live (plan §1).
+  "gdm-privacy-notice": {
+    title: "How your data is handled",
+    what: "What this organiser stores: that you have signed up here, your appointment date if you add one, and the plan, meals and questions you type or photograph.",
+    how: "How it is stored: encrypted, tied to your account, and used only to show it back to you.",
+    never:
+      "What is never done with it: your words are not sent to an analytics service, and they are not used to build a profile of you.",
+    choices:
+      "Your choices: download it or erase it at any time from Your data. Erasing removes it from our database."
+  },
+  // G-36: the one polite live region each page carries. R40: the two
+  // in-progress states take no full stop.
+  "gdm-status": {
+    saving: "Saving",
+    saved: "Saved.",
+    removed: "Removed.",
+    loading: "Loading"
+  },
+  // G-15: app/gdm/error.tsx, so a database hiccup never shows Next's raw error page.
+  "gdm-load-failed": {
+    line: "That did not load just now.",
+    retry: "Try again."
   }
 } as const satisfies Record<string, Record<string, string>>;

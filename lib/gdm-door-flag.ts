@@ -46,7 +46,22 @@ export const GDM_SURFACE_ROWS: Record<GdmSurface, readonly string[]> = {
     "gdm-disclaimer",
     "gdm-maker"
   ],
-  organiser: ["gdm-door-name", "gdm-disclaimer", "gdm-maker", "gdm-consent-required"],
+  organiser: [
+    "gdm-door-name",
+    "gdm-disclaimer",
+    "gdm-maker",
+    "gdm-consent-required",
+    "gdm-nav",
+    "gdm-onboarding-told",
+    "gdm-onboarding-not-told",
+    "gdm-onboarding-date",
+    "gdm-onboarding-consent",
+    "gdm-save-failed",
+    "gdm-data-controls",
+    "gdm-privacy-notice",
+    "gdm-status",
+    "gdm-load-failed"
+  ],
   ideas: [],
   read: []
 };

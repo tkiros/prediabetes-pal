@@ -6,6 +6,7 @@
 // exists — whether or not Next wraps a not-found boundary in this layout.
 // Task L.2's smoke spec pins it rather than trusting that reasoning.
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { gdmDoorEnabled } from "../../lib/gdm-door-flag";
@@ -43,9 +44,27 @@ export default function GdmLayout({ children }: Readonly<{ children: ReactNode }
       <main className="page-shell">
         <div className="page-frame" id="gdm-content" tabIndex={-1}>
           {/* G-38: no wordmark here. The landing's h1 IS the name; door pages get
-              <GdmWordmark /> from (door)/layout.tsx, and start/privacy render it themselves. */}
+              <GdmWordmark /> as the Home link in (door)/layout.tsx's nav (G-34), and
+              start/privacy render it themselves. */}
           {children}
           <footer className="surface-card legal-card">
+            {/* G-34: Your data and the privacy notice, on every page. Both rows
+                belong to the organiser surface, so the links render only with it
+                on: the same build-flag condition as app/gdm/privacy/page.tsx. */}
+            {gdmDoorEnabled("organiser") ? (
+              <ul className="gdm-footer-links" role="list">
+                <li>
+                  <Link className="inline-link" href={GDM_ROUTES.data}>
+                    {GDM_COPY["gdm-nav"].data}
+                  </Link>
+                </li>
+                <li>
+                  <Link className="inline-link" href={GDM_ROUTES.privacy}>
+                    {GDM_COPY["gdm-privacy-notice"].title}
+                  </Link>
+                </li>
+              </ul>
+            ) : null}
             <p>{GDM_COPY["gdm-disclaimer"].line}</p>
             {/* G-48 (owner): the maker, once, so the shared sign-in page is no surprise. */}
             <p>{GDM_COPY["gdm-maker"].line}</p>
