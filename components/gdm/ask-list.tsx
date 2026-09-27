@@ -329,7 +329,7 @@ export function AskList() {
         <section
           key={card.key}
           role="alert"
-          className="result-card gdm-ask-card"
+          className="result-card"
           data-kind={CLINICAL_KIND}
           data-route={card.route}
           aria-labelledby={CARD_TITLE_ID}

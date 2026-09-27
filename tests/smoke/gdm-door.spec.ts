@@ -14,14 +14,18 @@ import { expect, test } from "@playwright/test";
 
 import { GDM_COPY } from "../../lib/pal/gdm/copy";
 import { GDM_ROUTES } from "../../lib/pal/gdm/routes";
+import { loadSafetyContract } from "../../lib/pal/safety-contract";
 import { doorSurfaceOn } from "./gdm-door";
 
-const DARK_PATHS = ["/gdm", "/gdm/start", "/gdm/home", "/gdm/data", "/gdm/privacy"] as const;
+const DARK_PATHS = ["/gdm", "/gdm/start", "/gdm/home", "/gdm/questions", "/gdm/data", "/gdm/privacy"] as const;
 
 const TOLD = GDM_COPY["gdm-onboarding-told"];
 const DATE = GDM_COPY["gdm-onboarding-date"];
 const CONSENT = GDM_COPY["gdm-onboarding-consent"];
 const DATA_CONTROLS = GDM_COPY["gdm-data-controls"];
+const NAV = GDM_COPY["gdm-nav"];
+const ASKS = GDM_COPY["gdm-asklist-controls"];
+const STATUS = GDM_COPY["gdm-status"];
 
 test.describe("GDM door — dark", () => {
   test.beforeEach(async () => {
@@ -128,14 +132,17 @@ test.describe("GDM door — organiser", () => {
 // provider: tests/smoke/auth.spec.ts's disk-mailbox pattern), then PR-1's own
 // legs: onboarding with no A1C, an unticked consent box that explains itself
 // and sends nothing before it lets her through, and an erase that returns her
-// to onboarding rather than Home. Gated on the organiser surface via
-// /api/health (this file's rule throughout) — never the Playwright env.
+// to onboarding rather than Home. PR-2 adds My questions between consent and
+// erase: park a question, a shaky one raises the approved clinical card above
+// the list, a number-shaped worry raises nothing. Gated on the organiser
+// surface via /api/health (this file's rule throughout) — never the
+// Playwright env.
 test.describe("GDM door — organiser, signed in", () => {
   test.beforeEach(async () => {
     test.skip(!(await doorSurfaceOn("organiser")), "organiser surface off in this build");
   });
 
-  test("no A1C onboarding, an unticked consent explains itself, erase returns her to onboarding", async ({
+  test("no A1C onboarding, an unticked consent explains itself, questions park and only a clinical one raises the card, erase returns her to onboarding", async ({
     page
   }) => {
     const stubDir = process.env.AUTH_EMAIL_STUB_DIR;
@@ -215,6 +222,105 @@ test.describe("GDM door — organiser, signed in", () => {
     // A profile now exists: /gdm/start redirects straight to Home.
     await page.goto(GDM_ROUTES.start);
     await expect(page).toHaveURL(new RegExp(`${GDM_ROUTES.home}$`));
+
+    // PR-2, My questions (F-ASKLIST). G-34: from Home, the nav's one filled
+    // action lands on the questions form, the field ready for her words.
+    await page.getByRole("link", { name: NAV.add }).click();
+    await expect(page).toHaveURL(new RegExp(`${GDM_ROUTES.quickAdd}$`));
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(ASKS.title);
+    const field = page.getByLabel(ASKS.field, { exact: true });
+    await expect(field).toBeFocused();
+    // ...and it is not rendered on the questions page, where the form is first.
+    await expect(page.getByRole("link", { name: NAV.add })).toHaveCount(0);
+    await expect(page.getByText(ASKS.empty)).toBeVisible(); // G-25
+
+    const addButton = page.getByRole("button", { name: ASKS.add, exact: true });
+    const list = page.locator("ul.gdm-asks");
+    const card = page.locator('[data-kind="clinical"]');
+
+    // Park an ordinary question: listed, the field cleared and focused again (G-39).
+    const sheets = "Which of my two sheets should I follow?";
+    await field.fill(sheets);
+    await addButton.click();
+    await expect(list.getByText(sheets)).toBeVisible();
+    await expect(field).toHaveValue("");
+    await expect(field).toBeFocused();
+    await expect(card).toHaveCount(0);
+
+    // A shaky, clammy question: the Approved possible-hypoglycaemia copy,
+    // served by the items API verbatim, in an alert above the list whose
+    // heading takes focus (G-46). The question is still parked. Located by
+    // data-kind, not role=alert: Next's route announcer is also role="alert".
+    const shaky = "feeling shaky and clammy";
+    await field.fill(shaky);
+    await addButton.click();
+    await expect(card).toHaveAttribute("role", "alert");
+    await expect(card).toHaveAttribute("data-route", "possible_hypoglycemia");
+    await expect(card.getByRole("heading", { level: 2 })).toHaveText(ASKS.cardTitle);
+    await expect(card.locator(".result-copy")).toHaveText(
+      loadSafetyContract().copy.clinicalRoutes.possible_hypoglycemia
+    );
+    await expect(card.getByRole("heading", { level: 2 })).toBeFocused();
+    await expect(list.getByText(shaky)).toBeVisible();
+    expect(
+      await page.evaluate(() => {
+        const alert = document.querySelector('[data-kind="clinical"]');
+        const asks = document.querySelector("ul.gdm-asks");
+        return Boolean(alert && asks && alert.compareDocumentPosition(asks) & Node.DOCUMENT_POSITION_FOLLOWING);
+      })
+    ).toBe(true);
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+    // A number-shaped worry: NO card, and no product sentence about it — the
+    // page's own words, outside her list and the status line, do not change.
+    await page.reload();
+    await expect(list.getByText(sheets)).toBeVisible();
+    const productText = () =>
+      page.evaluate(() => {
+        const main = document.querySelector("main")!.cloneNode(true) as HTMLElement;
+        main.querySelectorAll("ul.gdm-asks, .gdm-status").forEach((node) => node.remove());
+        return main.textContent;
+      });
+    const before = await productText();
+    const fasting = "why was my fasting high";
+    await field.fill(fasting);
+    await addButton.click();
+    await expect(list.getByText(fasting)).toBeVisible();
+    await expect(page.locator(".gdm-status")).toHaveText(STATUS.saved);
+    await expect(card).toHaveCount(0);
+    expect(await productText()).toBe(before);
+    const pageText = await page.locator("body").innerText();
+    for (const routeCopy of Object.values(loadSafetyContract().copy.clinicalRoutes)) {
+      expect(pageText).not.toContain(routeCopy);
+    }
+
+    // Asked, and what they said: saved and announced (G-36); an asked
+    // question sorts below the open ones, and focus stays on its Save.
+    const sheetsRow = list.locator("li", { hasText: sheets });
+    await sheetsRow.getByRole("checkbox", { name: ASKS.asked }).check();
+    await sheetsRow.getByLabel(ASKS.answer).fill("The newer one stands.");
+    await sheetsRow.getByRole("button", { name: ASKS.save }).click();
+    await expect(page.locator(".gdm-status")).toHaveText(STATUS.saved);
+    await expect(list.locator("li").last()).toContainText(sheets);
+    await expect(sheetsRow.getByRole("button", { name: ASKS.save })).toBeFocused();
+
+    // G-76: deleting her own words takes two presses. The first only asks,
+    // with focus on Cancel; the second deletes, and focus moves to the next
+    // question's first control (G-39).
+    const fastingRow = list.locator("li", { hasText: fasting });
+    await fastingRow.getByRole("button", { name: ASKS.remove }).click();
+    await expect(fastingRow.getByRole("button", { name: DATA_CONTROLS.cancel })).toBeFocused();
+    await expect(list.locator("li")).toHaveCount(3);
+    await fastingRow.getByRole("button", { name: ASKS.remove }).click();
+    await expect(list.locator("li")).toHaveCount(2);
+    await expect(page.locator(".gdm-status")).toHaveText(STATUS.removed);
+    await expect(list.locator("li", { hasText: shaky }).getByRole("checkbox", { name: ASKS.asked })).toBeFocused();
+
+    // What was saved is what comes back.
+    await page.reload();
+    await expect(list.locator("li")).toHaveCount(2);
+    await expect(list.locator("li", { hasText: sheets }).getByRole("checkbox", { name: ASKS.asked })).toBeChecked();
+    await expect(list.locator("li", { hasText: sheets }).getByLabel(ASKS.answer)).toHaveValue("The newer one stands.");
 
     // Your data: erase, behind a second press.
     await page.goto(GDM_ROUTES.data);

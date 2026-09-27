@@ -5218,9 +5218,11 @@ button.inline-link {
   gap: 8px;
 }
 
+/* One row even at 375px (G-34: two rows, about 100px): the wordmark wraps
+   inside its own 44px line rather than pushing "Add a question" below it. */
 .gdm-nav-top {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -5342,8 +5344,10 @@ button.inline-link {
    the questions page. A 44px target, a little shorter than a page CTA so the
    two nav rows stay compact at 375px. */
 .gdm-nav-add {
+  flex-shrink: 0;
   min-height: 44px;
   padding: 8px 18px;
+  white-space: nowrap;
 }
 
 .gdm-ask-head {
@@ -5416,12 +5420,15 @@ button.inline-link {
   gap: 10px;
 }
 
+/* One accent (DESIGN.md §1): a ticked box is the door's teal, not the
+   browser's default blue. */
 .gdm-ask-check input[type="checkbox"] {
   width: 20px;
   height: 20px;
   min-height: 0;
   margin: 0;
   flex-shrink: 0;
+  accent-color: var(--accent);
 }
 
 .gdm-ask-check label {
