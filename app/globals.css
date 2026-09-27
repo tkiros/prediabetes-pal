@@ -5585,3 +5585,44 @@ button.inline-link {
   opacity: 0.6;
   cursor: progress;
 }
+
+/* Task 3.3 — a photo of her sheet, kept as a photo: one column, each photo
+   at the card's width (the door's frame is 480px), then the add control. */
+.gdm-plan-photos,
+.gdm-plan-photo-list {
+  display: grid;
+  gap: 12px;
+}
+
+.gdm-plan-photo-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gdm-plan-photo {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.gdm-plan-photo-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 480px;
+  border-radius: 14px;
+  background: var(--surface-muted);
+  object-fit: contain;
+}
+
+/* "Saving" on its own row while a photo is on its way; announced through the
+   page's one live region, shown here in body text, never --text-soft. */
+.gdm-plan-photo-saving {
+  color: var(--text-body);
+  font-size: 16px;
+}
+
+.gdm-plan-photo-add {
+  justify-self: start;
+}

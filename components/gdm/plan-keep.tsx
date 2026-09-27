@@ -21,6 +21,7 @@ import {
   type StoredPlan
 } from "../../lib/pal/gdm/plan-record";
 import { PlanCard, planEnteredId, planOccasionId } from "./plan-card";
+import { PlanPhotos } from "./plan-photos";
 
 const CONTROLS = GDM_COPY["gdm-plan-controls"];
 const OCCASIONS = GDM_COPY["gdm-occasions"];
@@ -183,8 +184,9 @@ type PlanItem = { id: string; body: GdmPlan };
  * current plan cards in one column (R51: the door's frame is 480px), each
  * with "Replace this plan", which opens the form filled with that plan
  * (G-75), then "Add another plan", which opens a blank form whose plan
- * stands beside hers (R50: a second sheet from a second clinician). Replaced
- * plans follow, kept and dated. Two current plans that differ for an
+ * stands beside hers (R50: a second sheet from a second clinician). A photo
+ * of her sheet comes next (Task 3.3, components/gdm/plan-photos.tsx), then
+ * replaced plans, kept and dated. Two current plans that differ for an
  * occasion are both flagged, and neither is picked.
  *
  * G-26: the plan is never drafted on the device (a figure is health data).
@@ -501,6 +503,9 @@ export function PlanKeep() {
             {planForm}
           </>
         )}
+
+        {/* Task 3.3: a photo of her sheet, kept as a photo, below her plan and above the plans it replaced. */}
+        {loading || loadFailed ? null : <PlanPhotos onStatus={setStatus} />}
 
         {replaced.length > 0 ? (
           <ul className="gdm-plan-replaced" role="list">

@@ -356,3 +356,122 @@ describe("the plan page and its place in the nav", () => {
     expect(hrefs()[0]["aria-current"]).toBe("page");
   });
 });
+
+// ── A photo of her sheet (Task 3.3): components/gdm/plan-photos.tsx, lib/client/gdm-photo.ts ──
+
+describe("a photo of her sheet, kept as a photo (Task 3.3)", () => {
+  const noop = () => undefined;
+  const list = async (over: Partial<import("../../../components/gdm/plan-photos").PlanPhotoListProps> = {}) => {
+    const { PlanPhotoList } = await import("../../../components/gdm/plan-photos");
+    return PlanPhotoList({
+      ids: [],
+      adding: false,
+      confirming: null,
+      busy: false,
+      onAdd: noop,
+      onAskRemove: noop,
+      onRemove: noop,
+      onCancel: noop,
+      ...over
+    });
+  };
+  const props = (el: ReactElement) => el.props as Record<string, unknown>;
+  const buttons = (node: ReactNode) => elements(node).filter((el) => el.type === "button");
+  const buttonText = (node: ReactNode) => buttons(node).map((el) => props(el).children);
+
+  it("R54: the photo is named by its own words, not by the action that adds it", () => {
+    expect(CONTROLS.photoAlt).toBe("Photo of your sheet");
+    expect(CONTROLS.photoAlt).not.toBe(CONTROLS.photoAdd);
+  });
+
+  it("is made smaller on the device: the longest edge at most 1600px, never enlarged", async () => {
+    const { PHOTO_MAX_EDGE, scaledSize } = await import("../../../lib/client/gdm-photo");
+    expect(PHOTO_MAX_EDGE).toBe(1600);
+    expect(scaledSize(4000, 3000)).toEqual({ width: 1600, height: 1200 });
+    expect(scaledSize(1200, 3000)).toEqual({ width: 640, height: 1600 });
+    expect(scaledSize(800, 600)).toEqual({ width: 800, height: 600 });
+    expect(scaledSize(1, 10000)).toEqual({ width: 1, height: 1600 });
+  });
+
+  it("with no photo, the add control is all there is", async () => {
+    const shown = await list();
+    expect(elements(shown).filter((el) => el.type === "img")).toEqual([]);
+    expect(buttonText(shown)).toEqual([CONTROLS.photoAdd]);
+  });
+
+  it("each photo is a lazy image of hers, named photoAlt, served by the photo route (G-20, R54)", async () => {
+    const { planPhotoSrc } = await import("../../../components/gdm/plan-photos");
+    const shown = await list({ ids: ["a", "b"] });
+    const images = elements(shown).filter((el) => el.type === "img").map(props);
+    expect(images).toEqual([
+      expect.objectContaining({ src: planPhotoSrc("a"), alt: CONTROLS.photoAlt, loading: "lazy" }),
+      expect.objectContaining({ src: planPhotoSrc("b"), alt: CONTROLS.photoAlt, loading: "lazy" })
+    ]);
+    expect(planPhotoSrc("a")).toBe("/api/gdm/plan-photo?id=a");
+    expect(buttonText(shown)).toEqual([CONTROLS.photoRemove, CONTROLS.photoRemove, CONTROLS.photoAdd]);
+  });
+
+  it("at three photos the add control is not rendered, so the route's refusal is unreachable (G-20)", async () => {
+    const { PLAN_PHOTO_CAP } = await import("../../../lib/pal/gdm/plan-photo");
+    const ids = Array.from({ length: PLAN_PHOTO_CAP }, (_, i) => `p${i}`);
+    expect(buttonText(await list({ ids }))).not.toContain(CONTROLS.photoAdd);
+    expect(buttonText(await list({ ids: ids.slice(1) }))).toContain(CONTROLS.photoAdd);
+  });
+
+  it("removing takes two presses: the first shows Remove photo beside Cancel, on that photo only (G-76)", async () => {
+    const { photoCancelId, photoRemoveId } = await import("../../../components/gdm/plan-photos");
+    const shown = await list({ ids: ["a", "b"], confirming: "a" });
+    expect(buttonText(shown)).toEqual([
+      CONTROLS.photoRemove,
+      GDM_COPY["gdm-data-controls"].cancel,
+      CONTROLS.photoRemove,
+      CONTROLS.photoAdd
+    ]);
+    const [confirm, cancel, other] = buttons(shown).map(props);
+    expect(confirm).toMatchObject({ id: photoRemoveId("a"), className: "danger-button" });
+    expect(cancel).toMatchObject({ id: photoCancelId("a") });
+    expect(other).toMatchObject({ id: photoRemoveId("b"), className: "secondary-button" });
+  });
+
+  it("a photo on its way shows Saving on its own row, and every control waits while one is in flight", async () => {
+    const shown = await list({ ids: ["a"], adding: true, busy: true });
+    expect(texts(shown)).toContain(GDM_COPY["gdm-status"].saving);
+    expect(buttons(shown).every((el) => props(el).disabled === true)).toBe(true);
+  });
+
+  it("the page: a hidden file input for the camera or a file, cleared after every attempt, and nothing kept on the device", () => {
+    const source = fs.readFileSync(path.join(ROOT, "components/gdm/plan-photos.tsx"), "utf8");
+    expect(source).toMatch(/<input[^>]*type="file"[^>]*accept="image\/\*"[^>]*capture="environment"[^>]*hidden/);
+    expect(source).toMatch(/\.value = ""/);
+    expect(source).toContain("preparePhoto(");
+    expect(source).not.toMatch(/localStorage|sessionStorage|pal\.gdm\./);
+    expect(source).not.toMatch(/parseFloat|parseInt|Number\(|Math\./);
+  });
+
+  it("the device re-encodes a JPEG at 0.8 from createImageBitmap; a file it cannot open rejects, and the page shows save-failed (G-20)", () => {
+    const helper = fs.readFileSync(path.join(ROOT, "lib/client/gdm-photo.ts"), "utf8");
+    expect(helper).toContain("createImageBitmap(file)");
+    expect(helper).toMatch(/toBlob\(resolve, "image\/jpeg", 0\.8\)/);
+    const source = fs.readFileSync(path.join(ROOT, "components/gdm/plan-photos.tsx"), "utf8");
+    expect(source).toMatch(/setFailure\(SAVE_FAILED\)/);
+  });
+
+  it("My plan renders the photos, and the read-only card (also on Home) holds none of them (G-37)", () => {
+    const keep = fs.readFileSync(path.join(ROOT, "components/gdm/plan-keep.tsx"), "utf8");
+    expect(keep).toContain("<PlanPhotos onStatus={setStatus} />");
+    const card = fs.readFileSync(path.join(ROOT, "components/gdm/plan-card.tsx"), "utf8");
+    expect(card).not.toMatch(/plan-photo|<img/);
+  });
+
+  it("G-62: Your data links each photo for download, since the export lists photos without their bytes", async () => {
+    const { PhotoDownloadLinks, planPhotoSrc } = await import("../../../components/gdm/plan-photos");
+    const links = elements(PhotoDownloadLinks({ ids: ["a", "b"] })).filter((el) => el.type === "a").map(props);
+    expect(links).toEqual([
+      expect.objectContaining({ href: planPhotoSrc("a"), download: true, children: CONTROLS.photoAlt }),
+      expect.objectContaining({ href: planPhotoSrc("b"), download: true, children: CONTROLS.photoAlt })
+    ]);
+    expect(elements(PhotoDownloadLinks({ ids: [] })).filter((el) => el.type === "a")).toEqual([]);
+    const data = fs.readFileSync(path.join(ROOT, "components/gdm/data-controls.tsx"), "utf8");
+    expect(data).toContain("<PlanPhotoDownloads />");
+  });
+});

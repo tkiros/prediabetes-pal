@@ -163,8 +163,9 @@ export const GDM_COPY = {
   },
   // `counts` labels how her clinic counts, not "Unit" (a word in the copy
   // test's medication family). `grams`, `choices`, `servings` and `none` are
-  // its four options, keyed by GDM_UNITS. `photoAdd` and `photoRemove` render
-  // with the sheet photo (Task 3.3). G-25: `empty` is the drafted empty state.
+  // its four options, keyed by GDM_UNITS. `photoAdd` and `photoRemove` are the
+  // sheet photo's controls (Task 3.3); R54: `photoAlt` names the photo itself,
+  // since `photoAdd` names an action. G-25: `empty` is the drafted empty state.
   // R50: `addAnother` keeps a second sheet beside the first, never in its place.
   "gdm-plan-controls": {
     title: "My plan",
@@ -186,6 +187,7 @@ export const GDM_COPY = {
     enteredOn: "Entered on",
     photoAdd: "Add a photo of your sheet",
     photoRemove: "Remove photo",
+    photoAlt: "Photo of your sheet",
     empty: "No plan here yet. When your care team gives you one, add it above."
   },
   // PRD §6.1 row 12: two current entries that differ are shown side by side and
