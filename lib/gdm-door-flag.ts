@@ -70,7 +70,8 @@ export const GDM_SURFACE_ROWS: Record<GdmSurface, readonly string[]> = {
     "gdm-wait-structure",
     "gdm-wait-checklist",
     "gdm-wait-controls",
-    "gdm-meals-controls"
+    "gdm-meals-controls",
+    "gdm-summary-headings"
   ],
   ideas: [],
   read: []

@@ -245,5 +245,15 @@ export const GDM_COPY = {
     inSummary: "Include in my summary",
     remove: "Delete",
     empty: "No meals yet. Start with one you already eat."
+  },
+  // Task 6.1, F-SUMMARY. The summary organiser's headings for the three
+  // sections: plan, meals, asks. Renders as app/gdm/(door)/summary/page.tsx.
+  "gdm-summary-headings": {
+    title: "For my appointment",
+    plan: "My plan, as I understand it",
+    meals: "What I usually eat",
+    asks: "My questions",
+    print: "Print",
+    empty: "Nothing to print yet. Your plan, meals and questions appear here as you add them."
   }
 } as const satisfies Record<string, Record<string, string>>;
