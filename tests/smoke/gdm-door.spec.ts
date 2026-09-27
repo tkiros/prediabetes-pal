@@ -154,17 +154,20 @@ test.describe("GDM door — organiser, signed in", () => {
     const { url } = JSON.parse(fs.readFileSync(mailboxFile, "utf8")) as { url: string };
 
     // Follow the verification link, then navigate to /gdm/start explicitly.
-    // Verified directly (curl -D-, not guessed): this e2e server's auth
-    // callback issues `location: http://localhost:3100` and sets
-    // `authjs.callback-url=...localhost...` regardless of the request's own
-    // Host (127.0.0.1) or the matching, correctly-formed callbackUrl this
-    // flow sent it — an AUTH_URL/NEXTAUTH_URL-blanked (e2e-runtime-env.ts)
-    // artifact of the shared auth.ts, not something these files can fix.
-    // The session cookie itself IS set against 127.0.0.1 (the host that
-    // actually served the 302), so the explicit re-navigation below carries
-    // it correctly — confirmed by the rest of this test succeeding.
-    // tests/smoke/auth.spec.ts sidesteps the same thing by never asserting
-    // where the link itself lands and re-navigating to a known path next.
+    // Verified directly (curl -D-, not guessed): even though the mailbox
+    // link and its embedded callbackUrl are both correctly 127.0.0.1:3100,
+    // this e2e server's auth callback issues `location: http://localhost:3100`
+    // and sets `authjs.callback-url=...localhost...` — most likely Auth.js's
+    // default `redirect` callback computing its trusted origin as `localhost`
+    // (a common default) while AUTH_URL/NEXTAUTH_URL sit blanked here
+    // (scripts/e2e-runtime-env.ts) for provider isolation; the exact "why"
+    // inside Auth.js was not isolated further, and this is shared auth.ts
+    // infrastructure outside the door's own files either way. The session
+    // cookie itself IS set against 127.0.0.1 (the host that actually served
+    // the 302), so the explicit re-navigation below carries it correctly —
+    // confirmed by the rest of this test succeeding. tests/smoke/auth.spec.ts
+    // sidesteps the same thing by never asserting where the link itself
+    // lands and re-navigating to a known path next.
     await page.goto(url);
     await page.goto(GDM_ROUTES.start);
 
