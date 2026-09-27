@@ -311,6 +311,39 @@ describe("/api/gdm/items", () => {
     expect(await rawRows()).toEqual(before);
   });
 
+  it("F-MYMEALS: a meal is kept under its occasion, encrypted; its summary tick changes by PATCH; DELETE removes it", async () => {
+    const body = { occasion: "snack_bedtime", text: "toast and peanut butter", inSummary: false };
+    const response = await as(her).POST(req("POST", { kind: "meal", body }));
+    expect(response.status).toBe(200);
+    const { id, route, routeCopy } = await response.json();
+    // The clinical router reads a question, never a meal.
+    expect({ route, routeCopy }).toEqual({ route: null, routeCopy: null });
+    const [row] = await rawRows();
+    expect(row.body_ciphertext).toMatch(/^v\d+:/);
+    expect(row.body_ciphertext).not.toContain("peanut");
+
+    expect((await as(her).PATCH(req("PATCH", { id, body: { ...body, inSummary: true } }))).status).toBe(200);
+    const mine = await (await as(her).GET(req("GET", undefined, "?kind=meal"))).json();
+    expect(mine.items.map((item: { body: unknown }) => item.body)).toEqual([{ ...body, inSummary: true }]);
+    expect(await (await as(her).GET(req("GET", undefined, "?kind=ask"))).json()).toEqual({ items: [] });
+
+    expect((await as(her).DELETE(req("DELETE", undefined, `?id=${id}`))).status).toBe(200);
+    expect(await rawRows()).toHaveLength(0);
+  });
+
+  it("F-MYMEALS: a meal with a reading, or under an occasion that is not one of hers, is refused, and none can be slipped in later", async () => {
+    const body = { occasion: "lunch", text: "dal and rice", inSummary: false };
+    expect((await as(her).POST(req("POST", { kind: "meal", body: { ...body, reading: "128" } }))).status).toBe(400);
+    expect((await as(her).POST(req("POST", { kind: "meal", body: { ...body, occasion: "after_walk" } }))).status).toBe(400);
+    expect(await rawRows()).toHaveLength(0);
+    const kept = await as(her).POST(req("POST", { kind: "meal", body }));
+    expect(kept.status).toBe(200);
+    const { id } = await kept.json();
+    const before = await rawRows();
+    expect((await as(her).PATCH(req("PATCH", { id, body: { ...body, reading: "128" } }))).status).toBe(400);
+    expect(await rawRows()).toEqual(before);
+  });
+
   it("no model call on this path (PRD §6.2 acceptance)", () => {
     const source = fs.readFileSync(path.join(process.cwd(), "app/api/gdm/items/route.ts"), "utf8");
     expect(source).not.toMatch(/openai|model-id|\/pal\/service|generate\(/);

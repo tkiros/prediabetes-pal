@@ -28,7 +28,7 @@ import {
 export const runtime = "nodejs";
 
 // What she keeps on the door: questions for her appointment (F-ASKLIST), her
-// plan (F-PLANKEEP), and later her meals. No model call on this path (PRD §6.2): the one
+// plan (F-PLANKEEP), and her meals (F-MYMEALS). No model call on this path (PRD §6.2): the one
 // thing that reads her words is the existing clinical router, over an ask.
 
 const Kind = z.enum(GDM_ITEM_KINDS);
