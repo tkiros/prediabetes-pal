@@ -9,7 +9,7 @@ import { formatIsoDate, localIsoDate } from "../../lib/client/gdm-date";
 import { useFocusAfterRender } from "../../lib/client/gdm-focus";
 import { useHydrated } from "../../lib/client/use-hydrated";
 import { GDM_COPY } from "../../lib/pal/gdm/copy";
-import { detectConflicts, type StoredPlan } from "../../lib/pal/gdm/plan-record";
+import { detectConflicts, differingOccasions, type StoredPlan } from "../../lib/pal/gdm/plan-record";
 import { GDM_ROUTES } from "../../lib/pal/gdm/routes";
 import {
   appointmentPhrase,
@@ -21,7 +21,6 @@ import {
   type WaitingState
 } from "../../lib/pal/gdm/waiting";
 import { PlanCard } from "./plan-card";
-import { differingOccasions } from "./plan-keep";
 
 const WAIT = GDM_COPY["gdm-wait-controls"];
 const STRUCTURE = GDM_COPY["gdm-wait-structure"];

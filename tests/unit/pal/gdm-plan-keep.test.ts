@@ -221,13 +221,22 @@ describe("These differ — both entries kept, neither picked (PRD §6.2 story 3;
   });
 
   it("each card is told which of its occasions differ — the same occasions on both cards", async () => {
-    const { differingOccasions } = await import("../../../components/gdm/plan-keep");
+    const { differingOccasions } = await import("../../../lib/pal/gdm/plan-record");
     const a = stored("a", { unit: "grams", figures: { lunch: "45 g", dinner: "45 g" } });
     const b = stored("b", { unit: "grams", figures: { lunch: "30 g", dinner: "45 g" } });
     const conflicts = detectConflicts([a, b]);
     expect(differingOccasions(conflicts, "a")).toEqual(["lunch"]);
     expect(differingOccasions(conflicts, "b")).toEqual(["lunch"]);
     expect(differingOccasions(conflicts, "c")).toEqual([]);
+  });
+
+  it("both pages take it from the plan record, so Home never pulls in the plan form and its photo module", () => {
+    for (const file of ["components/gdm/plan-keep.tsx", "components/gdm/waiting-mode.tsx"]) {
+      const source = fs.readFileSync(path.join(ROOT, file), "utf8");
+      expect(source, file).not.toMatch(/export function differingOccasions/);
+      expect(source, file).toMatch(/differingOccasions[\s\S]*from "\.\.\/\.\.\/lib\/pal\/gdm\/plan-record"/);
+    }
+    expect(fs.readFileSync(path.join(ROOT, "components/gdm/waiting-mode.tsx"), "utf8")).not.toMatch(/from "\.\/plan-keep"/);
   });
 
   it("the chip is neutral: --border-strong on --surface-muted, and no verdict colour (G-40)", () => {

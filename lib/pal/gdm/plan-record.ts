@@ -83,3 +83,14 @@ export function detectConflicts(plans: StoredPlan[]): PlanConflict[] {
   }
   return conflicts;
 }
+
+/**
+ * A card's differing occasions, in the order of her day. Both cards of a pair
+ * get the same ones. Here, beside detectConflicts, so Home and My plan share
+ * it without Home importing the plan form (and its photo module).
+ */
+export function differingOccasions(conflicts: readonly PlanConflict[], planId: string): GdmOccasion[] {
+  return GDM_OCCASIONS.filter((occasion) =>
+    conflicts.some((conflict) => conflict.occasion === occasion && conflict.planIds.includes(planId))
+  );
+}

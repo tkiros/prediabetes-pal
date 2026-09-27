@@ -11,13 +11,13 @@ import type { AskBody } from "../../lib/pal/gdm/items";
 import {
   currentPlans,
   detectConflicts,
+  differingOccasions,
   GDM_OCCASIONS,
   GDM_UNITS,
   isEmptyPlan,
   type GdmOccasion,
   type GdmPlan,
   type GdmUnit,
-  type PlanConflict,
   type StoredPlan
 } from "../../lib/pal/gdm/plan-record";
 import { PlanCard, planEnteredId, planOccasionId } from "./plan-card";
@@ -164,13 +164,6 @@ export function withSavedPlan(plans: readonly StoredPlan[], saved: StoredPlan, r
 /** The question "Add to my questions" parks: askText, its {occasion} filled by that occasion's heading. */
 export function parkedAskText(occasion: GdmOccasion): string {
   return DIFFER.askText.replace("{occasion}", OCCASIONS[occasion]);
-}
-
-/** A card's differing occasions, in the order of her day. Both cards of a pair get the same ones. */
-export function differingOccasions(conflicts: readonly PlanConflict[], planId: string): GdmOccasion[] {
-  return GDM_OCCASIONS.filter((occasion) =>
-    conflicts.some((conflict) => conflict.occasion === occasion && conflict.planIds.includes(planId))
-  );
 }
 
 const unitFrom = (value: string): GdmUnit => GDM_UNITS.find((unit) => unit === value) ?? "none";
