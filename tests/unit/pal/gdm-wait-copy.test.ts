@@ -21,9 +21,10 @@ vi.mock("next/link", async () => {
 });
 
 // The Home page's server-only reads, stood in for so the page can be called here.
+type ServerItem = { id: string; createdAt: string; updatedAt: string; body: unknown };
 const server = vi.hoisted(() => ({
   appointmentDate: "2026-10-08" as string | null,
-  items: [] as Array<{ id: string; createdAt: string; updatedAt: string; body: unknown }>,
+  items: { plan: [], meal: [], ask: [] } as Record<string, ServerItem[]>,
   calls: [] as string[]
 }));
 vi.mock("../../../lib/server/gdm-door", () => ({
@@ -35,7 +36,7 @@ vi.mock("../../../lib/server/gdm-door", () => ({
 vi.mock("../../../lib/server/gdm-items", () => ({
   listGdmItems: async (_db: unknown, userId: string, kind: string) => {
     server.calls.push(`listGdmItems:${userId}:${kind}`);
-    return server.items;
+    return server.items[kind] ?? [];
   }
 }));
 vi.mock("../../../lib/server/db", () => ({ getDb: () => ({}) }));
@@ -127,6 +128,7 @@ async function view(over: ViewInput = {}): Promise<ReactElement> {
     today: "2026-10-01",
     appointmentDate: "2026-10-12",
     hasCurrentPlan: false,
+    summaryReady: true,
     plans: [],
     draft: "2026-10-12",
     saving: false,
@@ -141,13 +143,13 @@ async function view(over: ViewInput = {}): Promise<ReactElement> {
 describe("Home's state, from her own date and her device's day (G-44)", () => {
   it("before hydration nothing depends on the day: no phrase, no offer, no prompt — only whether a plan exists", async () => {
     const { homeView } = await import("../../../components/gdm/waiting-mode");
-    expect(homeView({ hasCurrentPlan: false, appointmentDate: "2026-09-20", today: null })).toEqual({
+    expect(homeView({ hasCurrentPlan: false, appointmentDate: "2026-09-20", today: null, summaryReady: true })).toEqual({
       state: "waiting",
       parts: { structure: true, checklist: true, prompt: false, plan: false },
       phrase: "none",
       offer: false
     });
-    expect(homeView({ hasCurrentPlan: true, appointmentDate: "2026-10-08", today: null })).toMatchObject({
+    expect(homeView({ hasCurrentPlan: true, appointmentDate: "2026-10-08", today: null, summaryReady: true })).toMatchObject({
       state: "ended",
       phrase: "none",
       offer: false
@@ -156,22 +158,34 @@ describe("Home's state, from her own date and her device's day (G-44)", () => {
 
   it("once the day is known: the phrase, the offer the day before, and the one prompt once the date has passed", async () => {
     const { homeView } = await import("../../../components/gdm/waiting-mode");
-    expect(homeView({ hasCurrentPlan: false, appointmentDate: "2026-10-08", today: "2026-10-07" })).toMatchObject({
+    expect(homeView({ hasCurrentPlan: false, appointmentDate: "2026-10-08", today: "2026-10-07", summaryReady: true })).toMatchObject({
       state: "waiting",
       phrase: "tomorrow",
       offer: true
     });
-    expect(homeView({ hasCurrentPlan: false, appointmentDate: "2026-10-08", today: "2026-10-09" })).toMatchObject({
+    expect(homeView({ hasCurrentPlan: false, appointmentDate: "2026-10-08", today: "2026-10-09", summaryReady: true })).toMatchObject({
       state: "after_appointment",
       parts: { prompt: true },
       phrase: "none",
       offer: false
     });
-    expect(homeView({ hasCurrentPlan: true, appointmentDate: "2026-10-08", today: "2026-10-08" })).toMatchObject({
+    expect(homeView({ hasCurrentPlan: true, appointmentDate: "2026-10-08", today: "2026-10-08", summaryReady: true })).toMatchObject({
       state: "ended",
       phrase: "today",
       offer: true
     });
+  });
+
+  // Final review F8: "Your summary is ready to print" on a summary with nothing
+  // to print led to a page with no Print button (G-41).
+  it("the summary offer needs something to print as well as the day: due but empty is no offer", async () => {
+    const { homeView } = await import("../../../components/gdm/waiting-mode");
+    for (const today of ["2026-10-07", "2026-10-08"]) {
+      expect(homeView({ hasCurrentPlan: false, appointmentDate: "2026-10-08", today, summaryReady: false }).offer).toBe(false);
+      expect(homeView({ hasCurrentPlan: false, appointmentDate: "2026-10-08", today, summaryReady: true }).offer).toBe(true);
+    }
+    // Something to print but not the day before or the day: still no offer.
+    expect(homeView({ hasCurrentPlan: true, appointmentDate: "2026-10-08", today: "2026-10-01", summaryReady: true }).offer).toBe(false);
   });
 
   it("clearing the date sends null; a date sends itself, as typed", async () => {
@@ -240,7 +254,7 @@ describe("Home leads with her appointment, in every state (G-32, G-69)", () => {
   it("a date that will not read shows no date, no phrase, and is not put in the field", async () => {
     const { WaitingMode } = await import("../../../components/gdm/waiting-mode");
     const html = renderToStaticMarkup(
-      createElement(WaitingMode, { appointmentDate: "(unreadable entry)", hasCurrentPlan: false, plans: [] })
+      createElement(WaitingMode, { appointmentDate: "(unreadable entry)", hasCurrentPlan: false, summaryReady: false, plans: [] })
     );
     expect(html).not.toContain("unreadable");
     expect(html).toMatch(/<input[^>]*type="date"[^>]*value=""/);
@@ -279,6 +293,8 @@ describe("the appointment block: a phrase and her own date, never a count (F-CAL
       expect(elements(offer).find((el) => props(el).href !== undefined)).toMatchObject({ props: { href: GDM_ROUTES.summary } });
     }
     expect(byClass(await view({ today: "2026-10-09" }), "gdm-summary-offer")).toEqual([]);
+    // F8: due, but nothing to print — no offer that leads to an empty page.
+    expect(byClass(await view({ today: "2026-10-11", summaryReady: false }), "gdm-summary-offer")).toEqual([]);
   });
 
   it("changing the date: one native date field and Save, which waits while it saves", async () => {
@@ -352,7 +368,7 @@ describe("Home renders the same server HTML whatever her timezone or locale (hyd
     const plan = stored("a", { figures: { lunch: "45 g" } });
     for (const hasCurrentPlan of [false, true]) {
       const html = renderToStaticMarkup(
-        createElement(WaitingMode, { appointmentDate: "2026-10-08", hasCurrentPlan, plans: hasCurrentPlan ? [plan] : [] })
+        createElement(WaitingMode, { appointmentDate: "2026-10-08", hasCurrentPlan, summaryReady: true, plans: hasCurrentPlan ? [plan] : [] })
       );
       expect(html).toContain(WAIT.appointment);
       for (const phrase of [WAIT.today, WAIT.tomorrow, WAIT.thisWeek, WAIT.nextWeek, WAIT.later, WAIT.summaryOffer, WAIT.after]) {
@@ -375,7 +391,7 @@ describe("Home renders the same server HTML whatever her timezone or locale (hyd
 });
 
 describe("the Home page (app/gdm/(door)/home/page.tsx)", () => {
-  it("guards first, then reads her plans, and hands Home only the current ones, with her date", async () => {
+  it("guards first, then reads her plans, meals and questions together, and hands Home only the current plans, her date, and whether the summary has anything to print", async () => {
     const { default: GdmHomePage } = await import("../../../app/gdm/(door)/home/page");
     const { WaitingMode } = await import("../../../components/gdm/waiting-mode");
     const body = (over: Partial<StoredPlan>) => {
@@ -384,23 +400,49 @@ describe("the Home page (app/gdm/(door)/home/page.tsx)", () => {
     };
     server.calls.length = 0;
     server.appointmentDate = "2026-10-08";
-    server.items = [
-      { id: "new", createdAt: "", updatedAt: "", body: body({ figures: { lunch: "45 g" } }) },
-      { id: "old", createdAt: "", updatedAt: "", body: body({ replacedOn: "2026-10-02" }) }
-    ];
+    server.items = {
+      plan: [
+        { id: "new", createdAt: "", updatedAt: "", body: body({ figures: { lunch: "45 g" } }) },
+        { id: "old", createdAt: "", updatedAt: "", body: body({ replacedOn: "2026-10-02" }) }
+      ],
+      meal: [],
+      ask: []
+    };
     const page = (await GdmHomePage()) as ReactElement;
-    expect(server.calls).toEqual(["requireGdmDoor", "listGdmItems:user-1:plan"]);
+    expect(server.calls).toEqual(["requireGdmDoor", "listGdmItems:user-1:plan", "listGdmItems:user-1:meal", "listGdmItems:user-1:ask"]);
     const home = elements(page).find((el) => el.type === WaitingMode)!;
     expect(props(home)).toEqual({
       appointmentDate: "2026-10-08",
       hasCurrentPlan: true,
+      summaryReady: true,
       plans: [{ ...body({ figures: { lunch: "45 g" } }), id: "new" }]
     });
     expect(texts(page)).toEqual([NAV.home]);
 
-    server.items = [];
+    // F8: only a replaced plan, a meal she did not mark and a question she asked: nothing to print.
+    server.items = {
+      plan: [{ id: "old", createdAt: "", updatedAt: "", body: body({ replacedOn: "2026-10-02" }) }],
+      meal: [{ id: "m", createdAt: "", updatedAt: "", body: { occasion: "lunch", text: "dal", inSummary: false } }],
+      ask: [{ id: "q", createdAt: "", updatedAt: "", body: { text: "q", note: null, asked: true, answer: "a" } }]
+    };
     server.appointmentDate = null;
     const empty = elements((await GdmHomePage()) as ReactElement).find((el) => el.type === WaitingMode)!;
-    expect(props(empty)).toEqual({ appointmentDate: null, hasCurrentPlan: false, plans: [] });
+    expect(props(empty)).toEqual({ appointmentDate: null, hasCurrentPlan: false, summaryReady: false, plans: [] });
+
+    // An open question alone is something to print, with no plan at all.
+    server.items = {
+      plan: [],
+      meal: [],
+      ask: [{ id: "q", createdAt: "", updatedAt: "", body: { text: "q", note: null, asked: false, answer: null } }]
+    };
+    const asking = elements((await GdmHomePage()) as ReactElement).find((el) => el.type === WaitingMode)!;
+    expect(props(asking)).toMatchObject({ hasCurrentPlan: false, summaryReady: true });
+    server.items = { plan: [], meal: [], ask: [] };
+  });
+
+  it("reads the three lists together, not one after another (the summary page's Promise.all)", () => {
+    const source = fs.readFileSync(path.join(ROOT, "app/gdm/(door)/home/page.tsx"), "utf8");
+    expect(source).toMatch(/await Promise\.all\(\[/);
+    expect(source).toMatch(/summaryHasContent\(/);
   });
 });

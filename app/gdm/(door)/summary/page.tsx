@@ -12,7 +12,7 @@ import { GDM_COPY } from "../../../../lib/pal/gdm/copy";
 import type { AskBody, MealBody } from "../../../../lib/pal/gdm/items";
 import type { GdmPlan } from "../../../../lib/pal/gdm/plan-record";
 import { GDM_ROUTES } from "../../../../lib/pal/gdm/routes";
-import { buildSummary, type SummaryLabels } from "../../../../lib/pal/gdm/summary";
+import { buildSummary, summaryHasContent, type SummaryLabels } from "../../../../lib/pal/gdm/summary";
 import { getDb } from "../../../../lib/server/db";
 import { requireGdmDoor } from "../../../../lib/server/gdm-door";
 import { listGdmItems } from "../../../../lib/server/gdm-items";
@@ -49,15 +49,14 @@ export default async function GdmSummaryPage() {
     }
   };
 
-  const doc = buildSummary(
-    // `id` last, so nothing in a stored body can stand in for the row's id (the Home pattern).
-    { plans: plans.map((plan) => ({ ...plan.body, id: plan.id })), meals, asks },
-    labels
-  );
+  // `id` last, so nothing in a stored body can stand in for the row's id (the Home pattern).
+  const input = { plans: plans.map((plan) => ({ ...plan.body, id: plan.id })), meals, asks };
+  const doc = buildSummary(input, labels);
 
   // G-41: nothing entered at all reads as ONE empty line and the three lists,
   // not three separately-empty sections — printing a blank page is a dead end.
-  const allEmpty = doc.sections.every((section) => section.lines.length === 0);
+  // The same rule decides Home's summary offer (final review F8).
+  const allEmpty = !summaryHasContent(input);
 
   return (
     <>
@@ -96,7 +95,9 @@ export default async function GdmSummaryPage() {
                 ))}
               </ul>
             ) : (
-              <p>{doc.emptyLine}</p>
+              // F9: a screen instruction ("…appear here as you add them") stays
+              // off the paper; the section's heading still prints.
+              <p className="gdm-no-print">{doc.emptyLine}</p>
             )}
           </section>
         ))

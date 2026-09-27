@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSummary, type SummaryLabels } from "../../../lib/pal/gdm/summary";
+import { buildSummary, summaryHasContent, type SummaryLabels } from "../../../lib/pal/gdm/summary";
 
 const labels: SummaryLabels = {
   title: "T", plan: "P", meals: "M", asks: "A", empty: "E", differ: "D",
@@ -50,6 +50,78 @@ describe("summary builder (PRD §6.2 F-SUMMARY; §7.4 deep module 2)", () => {
     expect(text).toContain("45 g");
     expect(text).toContain("30 g");
     expect(text).toContain("D: Ol");
+  });
+
+  // Final review F5: unticking Asked keeps her answer (Task 2.2's ruling), so
+  // "open" is `asked === false` alone — as My questions shows it.
+  it("a reopened question (Asked unticked, her answer kept) is open, so it prints — without the kept answer", () => {
+    const doc = buildSummary(
+      { plans: [], meals: [], asks: [{ body: { text: "reopened one", note: "its note", asked: false, answer: "kept answer" } }] },
+      labels
+    );
+    const asks = doc.sections[2].lines;
+    expect(asks).toEqual(["reopened one", "its note"]);
+    expect(JSON.stringify(doc)).not.toContain("kept answer");
+  });
+
+  // F6: `none` is the form's starting value, not something she wrote; the plan card hides it, and so does the page.
+  it("prints no counts line for a plan whose clinic count was never chosen (`none`), as the plan card shows none", () => {
+    const plan = (id: string, unit: "none" | "servings") =>
+      ({ id, givenBy: "the dietitian", note: null, perDay: null, unit, choiceMeans: null, figures: {}, enteredOn: "2026-10-01", replacedOn: null });
+    const none = buildSummary({ plans: [plan("a", "none")], meals: [], asks: [] }, labels).sections[0].lines;
+    expect(none).toEqual(["Fg: the dietitian", "Fe: 2026-10-01"]);
+    expect(none.join()).not.toContain("Fc");
+    expect(none.join()).not.toContain("Un");
+    const servings = buildSummary({ plans: [plan("a", "servings")], meals: [], asks: [] }, labels).sections[0].lines;
+    expect(servings).toContain("Fc: Us");
+  });
+
+  // F7: one line per occasion, in the order of her day, however many plans differ there.
+  it("says where entries differ once per occasion, in the order of her day, with three or more current plans", () => {
+    const plan = (id: string, lunch: string, dinner: string) =>
+      ({ id, givenBy: null, note: null, perDay: null, unit: "grams" as const, choiceMeans: null, figures: { lunch, dinner }, enteredOn: "2026-10-01", replacedOn: null });
+    const lines = buildSummary(
+      { plans: [plan("a", "45 g", "60 g"), plan("b", "30 g", "45 g"), plan("c", "15 g", "45 g")], meals: [], asks: [] },
+      labels
+    ).sections[0].lines;
+    expect(lines.filter((line) => line.startsWith("D: "))).toEqual(["D: Ol", "D: Od"]);
+  });
+
+  // F8: one rule for "there is something to print", shared by the summary page (G-41's all-empty
+  // screen) and Home's summary offer — pinned to the builder so the two cannot drift.
+  it("summaryHasContent is exactly: a current plan, a meal she marked, or an open question — the builder's own verdict", () => {
+    const plan = (over: Partial<import("../../../lib/pal/gdm/plan-record").StoredPlan> = {}) => ({
+      id: "a", givenBy: null, note: null, perDay: null, unit: "none" as const, choiceMeans: null, figures: {}, enteredOn: "2026-10-01", replacedOn: null, ...over
+    });
+    const cases: Array<[string, Parameters<typeof buildSummary>[0], boolean]> = [
+      ["nothing at all", { plans: [], meals: [], asks: [] }, false],
+      ["a current plan that holds only `none`", { plans: [plan()], meals: [], asks: [] }, true],
+      ["only a replaced plan", { plans: [plan({ replacedOn: "2026-10-02" })], meals: [], asks: [] }, false],
+      ["only a meal she did not mark", { plans: [], meals: [{ body: { occasion: "lunch", text: "dal", inSummary: false } }], asks: [] }, false],
+      ["a meal she marked", { plans: [], meals: [{ body: { occasion: "lunch", text: "dal", inSummary: true } }], asks: [] }, true],
+      ["only a question she has asked", { plans: [], meals: [], asks: [{ body: { text: "q", note: null, asked: true, answer: "a" } }] }, false],
+      ["a reopened question", { plans: [], meals: [], asks: [{ body: { text: "q", note: null, asked: false, answer: "a" } }] }, true]
+    ];
+    for (const [label, input, expected] of cases) {
+      expect(summaryHasContent(input), label).toBe(expected);
+      expect(buildSummary(input, labels).sections.some((s) => s.lines.length > 0), label).toBe(expected);
+    }
+  });
+
+  it("the summary page decides its all-empty screen with that one helper", async () => {
+    const fs = await import("node:fs");
+    const page = fs.readFileSync("app/gdm/(door)/summary/page.tsx", "utf8");
+    expect(page).toMatch(/const allEmpty = !summaryHasContent\(/);
+  });
+
+  // F9 (owner copy mitigation, no new string): in the mixed state a section's
+  // empty line is a screen instruction — it stays on screen and off the paper;
+  // the section's heading still prints.
+  it("an empty section's line is screen-only (gdm-no-print); its heading still prints", async () => {
+    const fs = await import("node:fs");
+    const page = fs.readFileSync("app/gdm/(door)/summary/page.tsx", "utf8");
+    expect(page).toMatch(/<p className="gdm-no-print">\{doc\.emptyLine\}<\/p>/);
+    expect(page).toMatch(/<h2>\{section\.heading\}<\/h2>/);
   });
 
   it("an empty organiser builds three empty sections", () => {

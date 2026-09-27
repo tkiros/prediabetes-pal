@@ -60,10 +60,17 @@ export type HomeViewState = {
  * the page has hydrated: the server cannot know her timezone (G-44), so until
  * then nothing that depends on the day is decided — no phrase, no summary
  * offer, no after-appointment prompt — and only whether a plan exists shapes
- * the page. The first client render after hydration fills them in.
+ * the page. The first client render after hydration fills them in. The
+ * summary offer also needs `summaryReady` (final review F8): offered on a
+ * summary with nothing to print, it led to a page with no Print button (G-41).
  */
-export function homeView(input: { hasCurrentPlan: boolean; appointmentDate: string | null; today: string | null }): HomeViewState {
-  const { hasCurrentPlan, appointmentDate, today } = input;
+export function homeView(input: {
+  hasCurrentPlan: boolean;
+  appointmentDate: string | null;
+  today: string | null;
+  summaryReady: boolean;
+}): HomeViewState {
+  const { hasCurrentPlan, appointmentDate, today, summaryReady } = input;
   if (today === null) {
     const state: WaitingState = hasCurrentPlan ? "ended" : "waiting";
     return { state, parts: homeParts(state), phrase: "none", offer: false };
@@ -73,7 +80,7 @@ export function homeView(input: { hasCurrentPlan: boolean; appointmentDate: stri
     state,
     parts: homeParts(state),
     phrase: appointmentPhrase(appointmentDate, today),
-    offer: summaryOfferDue(appointmentDate, today)
+    offer: summaryReady && summaryOfferDue(appointmentDate, today)
   };
 }
 
@@ -88,6 +95,8 @@ export type HomeViewProps = {
   /** Her date as the server holds it. */
   appointmentDate: string | null;
   hasCurrentPlan: boolean;
+  /** The summary has something to print (`summaryHasContent`): the offer needs it (F8). */
+  summaryReady: boolean;
   /** Her current plans (G-37). */
   plans: readonly StoredPlan[];
   /** The date field's value, as she left it. */
@@ -104,7 +113,8 @@ export type HomeViewProps = {
  *
  * - (c) the appointment block, always (G-32): the phrase for her date, never a
  *   count of days; her date in the device's words (G-44); the summary offer
- *   the day before and on the day; the field that adds or changes her date.
+ *   the day before and on the day, when it has something to print (F8); the
+ *   field that adds or changes her date.
  * - after the date has passed with no plan: the one prompt and Open My plan.
  * - while she waits: the waiting content, (b) the checklist as a plain list
  *   (no box to tick, no progress), then (a) ACOG's line, quoted and
@@ -117,8 +127,8 @@ export type HomeViewProps = {
  * never conditional on it. Pure: WaitingMode holds the state.
  */
 export function HomeView(props: HomeViewProps) {
-  const { today, appointmentDate, hasCurrentPlan, plans, draft, saving, status, failure, onDraft, onSave } = props;
-  const { parts, phrase, offer } = homeView({ hasCurrentPlan, appointmentDate, today });
+  const { today, appointmentDate, hasCurrentPlan, summaryReady, plans, draft, saving, status, failure, onDraft, onSave } = props;
+  const { parts, phrase, offer } = homeView({ hasCurrentPlan, appointmentDate, today, summaryReady });
   const date = readableDate(appointmentDate);
   // Her date in words only once the day is known, i.e. after hydration: the
   // server's HTML never carries a locale's words for it.
@@ -235,6 +245,8 @@ export function HomeView(props: HomeViewProps) {
 export type WaitingModeProps = {
   appointmentDate: string | null;
   hasCurrentPlan: boolean;
+  /** Whether the summary has anything to print, from the server (F8). */
+  summaryReady: boolean;
   /** Her current plans, from the server (G-37). */
   plans: readonly StoredPlan[];
 };
@@ -245,7 +257,7 @@ export type WaitingModeProps = {
  * with localIsoDate() and only once hydrated (G-44), so the server never
  * guesses her timezone and the client never uses UTC.
  */
-export function WaitingMode({ appointmentDate, hasCurrentPlan, plans }: WaitingModeProps) {
+export function WaitingMode({ appointmentDate, hasCurrentPlan, summaryReady, plans }: WaitingModeProps) {
   const hydrated = useHydrated();
   const today = hydrated ? localIsoDate() : null;
   const [saved, setSaved] = useState(appointmentDate);
@@ -257,7 +269,7 @@ export function WaitingMode({ appointmentDate, hasCurrentPlan, plans }: WaitingM
   const focusLater = useFocusAfterRender();
   // Waiting mode shows (waiting, or after the date) whenever she has no plan:
   // that does not depend on the day, so the count is right before hydration too.
-  const waiting = homeView({ hasCurrentPlan, appointmentDate: saved, today }).parts.structure;
+  const waiting = homeView({ hasCurrentPlan, appointmentDate: saved, today, summaryReady }).parts.structure;
 
   useEffect(() => {
     // Once per visit; the ref keeps a StrictMode double effect from counting it twice.
@@ -305,6 +317,7 @@ export function WaitingMode({ appointmentDate, hasCurrentPlan, plans }: WaitingM
       today={today}
       appointmentDate={saved}
       hasCurrentPlan={hasCurrentPlan}
+      summaryReady={summaryReady}
       plans={plans}
       draft={draft}
       saving={saving}
