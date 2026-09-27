@@ -153,11 +153,18 @@ test.describe("GDM door — organiser, signed in", () => {
     await expect.poll(() => fs.existsSync(mailboxFile), { timeout: 10_000 }).toBe(true);
     const { url } = JSON.parse(fs.readFileSync(mailboxFile, "utf8")) as { url: string };
 
-    // Follow the verification link, then navigate to /gdm/start explicitly —
-    // tests/smoke/auth.spec.ts's own established pattern (it re-navigates to
-    // /welcome rather than asserting where the link itself lands), because the
-    // magic-link verification hop can resolve to a different address than the
-    // baseURL Playwright is anchored to.
+    // Follow the verification link, then navigate to /gdm/start explicitly.
+    // Verified directly (curl -D-, not guessed): this e2e server's auth
+    // callback issues `location: http://localhost:3100` and sets
+    // `authjs.callback-url=...localhost...` regardless of the request's own
+    // Host (127.0.0.1) or the matching, correctly-formed callbackUrl this
+    // flow sent it — an AUTH_URL/NEXTAUTH_URL-blanked (e2e-runtime-env.ts)
+    // artifact of the shared auth.ts, not something these files can fix.
+    // The session cookie itself IS set against 127.0.0.1 (the host that
+    // actually served the 302), so the explicit re-navigation below carries
+    // it correctly — confirmed by the rest of this test succeeding.
+    // tests/smoke/auth.spec.ts sidesteps the same thing by never asserting
+    // where the link itself lands and re-navigating to a known path next.
     await page.goto(url);
     await page.goto(GDM_ROUTES.start);
 
@@ -179,6 +186,13 @@ test.describe("GDM door — organiser, signed in", () => {
     // in-place details/summary notice, and (below) a live error line.
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
+    // Task 1.4's carry note: an unticked press must send NOTHING, not just
+    // "no navigation" — watch the wire, not only the URL.
+    const profileRequests: string[] = [];
+    page.on("request", (request) => {
+      if (request.url().includes("/api/gdm/profile")) profileRequests.push(request.method());
+    });
+
     // G-35: a press while unticked explains itself and sends nothing — the
     // URL does not change.
     await page.getByRole("button", { name: CONSENT.go }).click();
@@ -186,10 +200,14 @@ test.describe("GDM door — organiser, signed in", () => {
     // announcer is also role="alert" and would make that locator ambiguous.
     await expect(page.locator("#gdm-consent-required")).toHaveText(GDM_COPY["gdm-consent-required"].line);
     await expect(page).toHaveURL(new RegExp(`${GDM_ROUTES.start}$`));
+    expect(profileRequests).toEqual([]);
 
     await checkbox.check();
     await page.getByRole("button", { name: CONSENT.go }).click();
     await expect(page).toHaveURL(new RegExp(`${GDM_ROUTES.home}$`));
+    // Positive control: the listener above is wired to something real — the
+    // ticked press really does POST /api/gdm/profile.
+    expect(profileRequests).toEqual(["POST"]);
 
     // A profile now exists: /gdm/start redirects straight to Home.
     await page.goto(GDM_ROUTES.start);
