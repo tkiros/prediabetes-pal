@@ -155,7 +155,9 @@ test.describe("GDM door — organiser", () => {
 // and sends nothing before it lets her through, and an erase that returns her
 // to onboarding rather than Home. PR-2 adds My questions between consent and
 // erase: park a question, a shaky one raises the approved clinical card above
-// the list, a number-shaped worry raises nothing. PR-3's My plan runs as its
+// the list, a number-shaped worry raises nothing; before the erase, the shared
+// /account page serves her, an account made only through this door, its
+// export and its erase control (final review F4). PR-3's My plan runs as its
 // own test (its own time budget, its own account): two plans that differ at
 // Lunch both carry the "These differ" chip and park the differ question into
 // My questions; a sheet photo the device cannot open fails cleanly, one it
@@ -397,6 +399,25 @@ test.describe("GDM door — organiser, signed in", () => {
     await expect(list.locator("li")).toHaveCount(2);
     await expect(list.locator("li", { hasText: sheets }).getByRole("checkbox", { name: ASKS.asked })).toBeChecked();
     await expect(list.locator("li", { hasText: sheets }).getByLabel(ASKS.answer)).toHaveValue("The newer one stands.");
+
+    // Final review F4 (R60): with the door closed /gdm/data is a 404, so the
+    // incident lever's fallback is the shared /account page. An account that
+    // has only ever come through this door opens it: the export link is there,
+    // the export is a 200 carrying her GDM profile and questions, and the erase
+    // control is present. Nothing under app/(app)/ changes for this.
+    await page.goto("/account");
+    await expect(page.getByTestId("account-export-link")).toHaveAttribute("href", "/api/account/export");
+    const exported = await page.request.get("/api/account/export");
+    expect(exported.status()).toBe(200);
+    const file = (await exported.json()) as {
+      gdmProfile: { appointmentDate: string | null } | null;
+      gdmItems: Array<{ kind: string; body: { text?: string } }>;
+    };
+    expect(file.gdmProfile).toMatchObject({ appointmentDate: "2026-10-08" });
+    expect(file.gdmItems.filter((item) => item.kind === "ask").map((item) => item.body.text)).toEqual(
+      expect.arrayContaining([sheets, shaky])
+    );
+    await expect(page.getByTestId("withdraw-health-data-consent")).toBeVisible();
 
     // Your data: erase, behind a second press.
     await erase(page);
