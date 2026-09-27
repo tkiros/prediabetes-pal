@@ -75,6 +75,21 @@ const allStrings = GDM_BANKS.flatMap((bank) =>
  */
 const HAS_LETTER_OR_DIGIT = /[\p{L}\p{N}]/u;
 
+/**
+ * Ruling R38 (controller): a string-initialised attribute on a COMPONENT
+ * element — a capitalised JSX tag (`<Button>`) or a property-access tag
+ * (`<Foo.Bar>`) — is exempt from the literal-copy guard when its value is a
+ * closed-enum token: lowercase, digits and underscores only, starting with a
+ * letter. A DOM (lowercase) element is unchanged: `<input placeholder="Type
+ * here" />` still flags. This lets a call site write `<GdmDoorShown
+ * surface="landing" />` directly instead of routing every closed-enum prop
+ * through a lookup-object indirection (Task L.1's `GDM_DOOR_SURFACE`
+ * workaround, reverted in L.2) — the guard cannot otherwise tell a technical
+ * enum from user-visible copy, but a bare lowercase token never is copy
+ * (product strings are sentence case).
+ */
+const CLOSED_ENUM_TOKEN = /^[a-z][a-z0-9_]*$/;
+
 /** The plan's 14, plus the attributes named in R5 that are never copy. */
 const ATTRIBUTE_ALLOWLIST = new Set([
   "className",
@@ -111,6 +126,25 @@ function attributeName(attr: ts.JsxAttribute): string {
 
 function isAllowlistedAttribute(name: string): boolean {
   return ATTRIBUTE_ALLOWLIST.has(name) || name.startsWith("on");
+}
+
+/** The tag name of the JSX element a given attribute sits on, if any. */
+function enclosingTagName(attr: ts.JsxAttribute): ts.JsxTagNameExpression | undefined {
+  const attributes = attr.parent;
+  if (!attributes || !ts.isJsxAttributes(attributes)) return undefined;
+  const element = attributes.parent;
+  if (element && (ts.isJsxOpeningElement(element) || ts.isJsxSelfClosingElement(element))) {
+    return element.tagName;
+  }
+  return undefined;
+}
+
+/** R38: a capitalised identifier (`Button`) or a property-access tag (`Foo.Bar`) is a component; anything else (a lowercase identifier, a namespaced name) is a DOM element. */
+function isComponentTagName(tagName: ts.JsxTagNameExpression | undefined): boolean {
+  if (!tagName) return false;
+  if (ts.isPropertyAccessExpression(tagName)) return true;
+  if (ts.isIdentifier(tagName)) return /^[A-Z]/.test(tagName.text);
+  return false;
 }
 
 /**
@@ -185,8 +219,11 @@ function findLiteralCopyOffenders(sourceText: string, fileLabel: string): string
       const allowed = isAllowlistedAttribute(name);
       if (node.initializer) {
         if (ts.isStringLiteral(node.initializer)) {
-          if (!allowed && HAS_LETTER_OR_DIGIT.test(node.initializer.text)) {
-            offenders.push(`${fileLabel}: attribute "${name}"="${node.initializer.text}"`);
+          const text = node.initializer.text;
+          const exemptEnumProp =
+            isComponentTagName(enclosingTagName(node)) && CLOSED_ENUM_TOKEN.test(text);
+          if (!allowed && !exemptEnumProp && HAS_LETTER_OR_DIGIT.test(text)) {
+            offenders.push(`${fileLabel}: attribute "${name}"="${text}"`);
           }
         } else if (ts.isJsxExpression(node.initializer) && !allowed) {
           scanExpressionForLiteralCopy(node.initializer.expression, (text) =>
@@ -213,6 +250,8 @@ const LITERAL_KNOWN_BAD: Record<string, { snippet: string; expectedFlags: string
   "attribute-expression-string": { snippet: "<button aria-label={'Close'} />", expectedFlags: ["Close"] },
   "template-literal": { snippet: "<p>{`Hello ${name}`}</p>", expectedFlags: ["Hello"] },
   "attribute-string-literal": { snippet: '<input placeholder="Type here" />', expectedFlags: ["Type here"] },
+  "component-attribute-not-enum-shaped": { snippet: '<Button label="Save" />', expectedFlags: ["Save"] },
+  "component-attribute-multiword": { snippet: '<Button label="save now" />', expectedFlags: ["save now"] },
   "template-substitution": {
     snippet: '<p>{`${saving ? "Saving" : "Saved"}`}</p>',
     expectedFlags: ["Saving", "Saved"]
@@ -227,7 +266,8 @@ const LITERAL_KNOWN_GOOD: Record<string, string> = {
   "element-access-bank-lookup": '<p>{GDM_COPY["gdm-door-name"].name}</p>',
   "template-of-identifiers": "<p>{`${label} · ${value}`}</p>",
   "allowlisted-href-and-classname": '<a href="/gdm" className="primary-button">{label}</a>',
-  "punctuation-jsx-text": "<p>{label}: {value}</p>"
+  "punctuation-jsx-text": "<p>{label}: {value}</p>",
+  "component-enum-prop": '<GdmDoorShown surface="landing" />'
 };
 
 describe("GDM copy banks — one test over every product-authored string (PRD §9.3)", () => {

@@ -5169,7 +5169,7 @@ button.inline-link {
 }
 
 /* G-68 (owner): the no-food-guidance line sits above Sign up and must not
-   read as a footnote — same weight as the hero line, not muted. Selector
+   read as a footnote — bolder than the hero line, not muted. Selector
    matches `.gdm-hero p`'s specificity so it need not fight it with !important. */
 .gdm-hero p.gdm-scope {
   font-weight: 600;

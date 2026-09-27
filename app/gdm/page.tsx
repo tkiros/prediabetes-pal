@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { GDM_DOOR_SURFACE, GdmDoorShown } from "../../components/gdm/door-shown";
+import { GdmDoorShown } from "../../components/gdm/door-shown";
 import { gdmDoorEnabled } from "../../lib/gdm-door-flag";
 import { GDM_COPY } from "../../lib/pal/gdm/copy";
 import { GDM_ROUTES } from "../../lib/pal/gdm/routes";
@@ -11,7 +11,7 @@ export default function GdmLandingPage() {
   const points = GDM_COPY["gdm-landing-points"];
   return (
     <>
-      <GdmDoorShown surface={GDM_DOOR_SURFACE.landing} />
+      <GdmDoorShown surface="landing" />
       {/* G-38: no card around a hero (DESIGN.md §11), and a marketing CTA is 56px high
           (rails 9 and 15): give .gdm-cta a 56px min-height in the GDM block of globals.css. */}
       <section className="gdm-hero">
