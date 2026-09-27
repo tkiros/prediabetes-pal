@@ -167,6 +167,8 @@ export const GDM_COPY = {
   // sheet photo's controls (Task 3.3); R54: `photoAlt` names the photo itself,
   // since `photoAdd` names an action. G-25: `empty` is the drafted empty state.
   // R50: `addAnother` keeps a second sheet beside the first, never in its place.
+  // Final review F2: `retire` dates one of two or more current plans, so two
+  // can go back to one; it never removes a plan and never picks one for her.
   "gdm-plan-controls": {
     title: "My plan",
     sub: "In your care team's words.",
@@ -183,6 +185,7 @@ export const GDM_COPY = {
     save: "Save",
     replace: "Replace this plan",
     addAnother: "Add another plan",
+    retire: "This one no longer stands",
     replacedOn: "Replaced on",
     enteredOn: "Entered on",
     photoAdd: "Add a photo of your sheet",

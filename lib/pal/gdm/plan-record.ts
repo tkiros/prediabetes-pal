@@ -15,7 +15,8 @@ export type GdmOccasion = (typeof GDM_OCCASIONS)[number];
 export const GDM_UNITS = ["grams", "choices", "servings", "none"] as const;
 export type GdmUnit = (typeof GDM_UNITS)[number];
 
-const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+/** A YYYY-MM-DD her device wrote (G-44). Shared with the route that retires a plan. */
+export const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const words = (max: number) => z.string().trim().min(1).max(max);
 
 /**

@@ -284,6 +284,114 @@ describe("/api/gdm/items", () => {
     expect(detectConflicts(plans).map((c) => c.occasion)).toEqual(["lunch"]);
   });
 
+  // Final review F2: R50 lets a second current plan stand beside the first, and
+  // replace always leaves one current; without this, two current plans could
+  // never go back to one. `retire` dates ONE plan with HER device's day.
+  const retire = (id: string, replacedOn = "2026-10-22") => ({ id, retire: { replacedOn } });
+
+  it("F2: with two current plans, retiring one leaves one current — the retired one dated with the client's date, as she entered it otherwise", async () => {
+    const { id: first } = await (await as(her).POST(req("POST", plan()))).json();
+    const { id: second } = await (await as(her).POST(req("POST", plan({ givenBy: "the clinic nurse", figures: { lunch: "30 g" } })))).json();
+    expect(detectConflicts(await storedPlans(her)).map((c) => c.occasion)).toEqual(["lunch"]);
+    const response = await as(her).PATCH(req("PATCH", retire(second, "2026-10-22")));
+    expect(response.status).toBe(200);
+    const plans = await storedPlans(her);
+    expect(currentPlans(plans).map((p) => p.id)).toEqual([first]);
+    expect(plans.find((p) => p.id === second)).toEqual({
+      id: second,
+      ...planBody({ givenBy: "the clinic nurse", figures: { lunch: "30 g" } }),
+      replacedOn: "2026-10-22"
+    });
+    expect(detectConflicts(plans)).toEqual([]);
+    // Still encrypted at rest after the rewrite.
+    for (const row of await rawRows()) expect(row.body_ciphertext).not.toContain("nurse");
+  });
+
+  it("F2: her last current plan cannot be retired — 409, nothing changed (she is never left with none)", async () => {
+    const { id: only } = await (await as(her).POST(req("POST", plan()))).json();
+    const before = await rawRows();
+    expect((await as(her).PATCH(req("PATCH", retire(only)))).status).toBe(409);
+    expect(await rawRows()).toEqual(before);
+    // A replaced plan beside it does not count as a second current one.
+    const { id: next } = await (await as(her).POST(req("POST", plan({ enteredOn: "2026-10-20" }, only)))).json();
+    const afterReplace = await rawRows();
+    expect((await as(her).PATCH(req("PATCH", retire(next)))).status).toBe(409);
+    expect(await rawRows()).toEqual(afterReplace);
+    expect(currentPlans(await storedPlans(her)).map((p) => p.id)).toEqual([next]);
+  });
+
+  it("F2: a plan she cannot see (it will not decrypt) does not count as the one left standing — 409, nothing changed", async () => {
+    const { id: seen } = await (await as(her).POST(req("POST", plan()))).json();
+    await testDb.raw.query("INSERT INTO gdm_items (user_id, kind, body_ciphertext) VALUES ($1, 'plan', 'v1:x')", [her]);
+    const before = await rawRows();
+    expect((await as(her).PATCH(req("PATCH", retire(seen)))).status).toBe(409);
+    expect(await rawRows()).toEqual(before);
+  });
+
+  it("F2: a plan already dated is not retired again — 409, nothing changed", async () => {
+    const { id: first } = await (await as(her).POST(req("POST", plan()))).json();
+    await as(her).POST(req("POST", plan({ givenBy: "the clinic nurse" })));
+    await as(her).POST(req("POST", plan({ givenBy: "the midwife" })));
+    expect((await as(her).PATCH(req("PATCH", retire(first, "2026-10-22")))).status).toBe(200);
+    const before = await rawRows();
+    expect((await as(her).PATCH(req("PATCH", retire(first, "2026-10-23")))).status).toBe(409);
+    expect(await rawRows()).toEqual(before);
+    expect((await storedPlans(her)).find((p) => p.id === first)?.replacedOn).toBe("2026-10-22");
+  });
+
+  it("F2: another user's plan id, or an id that does not exist, is a 404 — nothing changed", async () => {
+    await testDb.db.insert(schema.gdmProfiles).values({ userId: other, consentedAt: new Date() });
+    try {
+      const { id: theirs } = await (await as(other).POST(req("POST", plan()))).json();
+      await as(other).POST(req("POST", plan({ givenBy: "the clinic nurse" })));
+      await as(her).POST(req("POST", plan()));
+      await as(her).POST(req("POST", plan({ givenBy: "the clinic nurse" })));
+      const before = await rawRows();
+      expect((await as(her).PATCH(req("PATCH", retire(theirs)))).status).toBe(404);
+      expect((await as(her).PATCH(req("PATCH", retire("8c3f6a52-4f0e-4a8e-9d57-2d2f1b8e6c11")))).status).toBe(404);
+      expect(await rawRows()).toEqual(before);
+      expect(currentPlans(await storedPlans(other))).toHaveLength(2);
+    } finally {
+      await testDb.raw.query("DELETE FROM gdm_profiles WHERE user_id = $1", [other]);
+    }
+  });
+
+  it("F2: retire is for a plan only — on a question or a meal it is a 400, nothing changed", async () => {
+    const { id: askId } = await (await as(her).POST(req("POST", ask("Which sheet stands?")))).json();
+    const { id: mealId } = await (await as(her).POST(req("POST", { kind: "meal", body: { occasion: "lunch", text: "dal and rice", inSummary: false } }))).json();
+    const before = await rawRows();
+    expect((await as(her).PATCH(req("PATCH", retire(askId)))).status).toBe(400);
+    expect((await as(her).PATCH(req("PATCH", retire(mealId)))).status).toBe(400);
+    expect(await rawRows()).toEqual(before);
+  });
+
+  it.each([
+    ["a body beside retire", (id: string) => ({ ...retire(id), body: planBody() })],
+    ["an extra key inside retire", (id: string) => ({ id, retire: { replacedOn: "2026-10-22", note: "the nurse's stands" } })],
+    ["an extra key beside retire", (id: string) => ({ ...retire(id), why: "the nurse's stands" })],
+    ["no date", (id: string) => ({ id, retire: {} })],
+    ["a date that is not YYYY-MM-DD", (id: string) => retire(id, "22/10/2026")],
+    ["a null date (the route never makes one up)", (id: string) => ({ id, retire: { replacedOn: null } })]
+  ])("F2: a malformed retire — %s — is a 400, nothing changed", async (_label, body) => {
+    const { id } = await (await as(her).POST(req("POST", plan()))).json();
+    await as(her).POST(req("POST", plan({ givenBy: "the clinic nurse" })));
+    const before = await rawRows();
+    expect((await as(her).PATCH(req("PATCH", body(id)))).status).toBe(400);
+    expect(await rawRows()).toEqual(before);
+  });
+
+  it("F2: retire goes through the whole guard — closed door 404, no session 401, no consent 403", async () => {
+    const { id } = await (await as(her).POST(req("POST", plan()))).json();
+    await as(her).POST(req("POST", plan({ givenBy: "the clinic nurse" })));
+    const before = await rawRows();
+    vi.stubEnv("GDM_DOOR_ENABLED", "0");
+    expect((await as(her).PATCH(req("PATCH", retire(id)))).status).toBe(404);
+    vi.stubEnv("GDM_DOOR_ENABLED", "1");
+    expect((await as(null).PATCH(req("PATCH", retire(id)))).status).toBe(401);
+    expect((await as(other).PATCH(req("PATCH", retire(id)))).status).toBe(403);
+    expect(await rawRows()).toEqual(before);
+  });
+
   it("R47: a new plan is never stored already dated — a plain POST with a replacedOn is a 400, nothing inserted", async () => {
     expect((await as(her).POST(req("POST", plan({ replacedOn: "2026-10-20" })))).status).toBe(400);
     expect(await rawRows()).toHaveLength(0);

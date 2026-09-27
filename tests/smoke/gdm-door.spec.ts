@@ -160,7 +160,9 @@ test.describe("GDM door — organiser", () => {
 // Lunch both carry the "These differ" chip and park the differ question into
 // My questions; a sheet photo the device cannot open fails cleanly, one it
 // can is kept, shown, linked for download on Your data (G-62) and removed in
-// two presses. PR-4's Home runs as its own test too: with a date given at
+// two presses; then one of the two plans no longer stands (final review F2),
+// leaving one current plan, nothing flagged, and the other dated among her
+// replaced plans, on My plan and on Home. PR-4's Home runs as its own test too: with a date given at
 // consent, Home leads with the appointment (a phrase and her date, never a
 // day count), then a plain checklist with nothing to tick and ACOG's line;
 // her date changes there; once a plan is entered, Home shows it on the plan
@@ -502,6 +504,42 @@ test.describe("GDM door — organiser, signed in", () => {
     await expect(photo).toHaveCount(0);
     await expect(status).toHaveText(STATUS.removed);
     await expect(page.getByRole("button", { name: PLAN.photoAdd })).toBeFocused();
+
+    // Final review F2: two current plans go back to one. "This one no longer
+    // stands" sits on each current card while there are two; it takes two
+    // presses (G-76), dates that plan with her device's day and moves it to her
+    // replaced plans, and These differ is worked out again from what stands.
+    await expect(cards).toHaveCount(2);
+    const nurse = cards.filter({ hasText: "the clinic nurse" });
+    await nurse.getByRole("button", { name: PLAN.retire }).click();
+    await expect(nurse.getByRole("button", { name: DATA_CONTROLS.cancel })).toBeFocused();
+    await expect(cards).toHaveCount(2);
+    await nurse.getByRole("button", { name: PLAN.retire }).click();
+    await expect(cards).toHaveCount(1);
+    await expect(status).toHaveText(STATUS.saved);
+    await expect(cards.nth(0)).toContainText("the dietitian");
+    await expect(page.locator(".gdm-differ-chip")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: PLAN.retire })).toHaveCount(0);
+    await expect(cards.nth(0).getByRole("button", { name: PLAN.replace })).toBeFocused();
+    const replacedPlans = page.locator("ul.gdm-plan-replaced > li");
+    const retiredOn = replacedPlans.locator(".gdm-plan-date", { hasText: PLAN.replacedOn }).locator("time");
+    await expect(replacedPlans).toHaveCount(1);
+    await expect(replacedPlans).toContainText("the clinic nurse");
+    await expect(replacedPlans).toContainText("30 g");
+    await expect(retiredOn).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}$/);
+    await expect(retiredOn).not.toBeEmpty();
+    // What the server holds is what comes back.
+    await page.reload();
+    await expect(cards).toHaveCount(1);
+    await expect(replacedPlans).toHaveCount(1);
+    await expect(page.locator(".gdm-differ-chip")).toHaveCount(0);
+
+    // Home reads the same current plans, so it follows with no change of its own.
+    await page.goto(GDM_ROUTES.home);
+    const homeCards = page.locator(".gdm-home-plan .gdm-plan-card");
+    await expect(homeCards).toHaveCount(1);
+    await expect(homeCards).toContainText("the dietitian");
+    await expect(page.locator(".gdm-differ-chip")).toHaveCount(0);
 
     await erase(page);
   });
