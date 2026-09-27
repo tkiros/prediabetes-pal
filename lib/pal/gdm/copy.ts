@@ -38,5 +38,8 @@ export const GDM_COPY = {
   },
   "gdm-maker": {
     line: "From the makers of Prediabetes Pal."
+  },
+  "gdm-consent-required": {
+    line: "Keeping your plan, meals and questions needs your explicit health-data consent."
   }
 } as const satisfies Record<string, Record<string, string>>;

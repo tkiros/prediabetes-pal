@@ -83,6 +83,16 @@ describe("DELETE /api/account/health-data", () => {
       status: "active",
       currentPeriodEnd: new Date("2026-08-12T00:00:00Z")
     });
+    await testDb.db.insert(schema.gdmProfiles).values({
+      userId: user.id,
+      consentedAt: new Date(),
+      appointmentCiphertext: encryptField("2026-10-08")
+    });
+    await testDb.db.insert(schema.gdmItems).values({
+      userId: user.id,
+      kind: "ask",
+      bodyCiphertext: encryptField(JSON.stringify({ text: "a parked question" }))
+    });
 
     const DELETE = createHealthDataDeleteHandler({
       db: () => testDb.db,
@@ -108,7 +118,9 @@ describe("DELETE /api/account/health-data", () => {
       "checks",
       "meal_memories",
       "bai_weekly",
-      "push_subscriptions"
+      "push_subscriptions",
+      "gdm_profiles",
+      "gdm_items"
     ]) {
       const result = await testDb.raw.query(
         `SELECT count(*)::int AS n FROM ${table} WHERE user_id = '${user.id}'`
