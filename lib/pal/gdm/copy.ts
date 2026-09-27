@@ -123,5 +123,10 @@ export const GDM_COPY = {
   "gdm-load-failed": {
     line: "That did not load just now.",
     retry: "Try again."
+  },
+  // G-14: the 409 body of POST /api/gdm/items at the per-kind cap, where
+  // `gdm-save-failed`'s "try again in a moment" would be untrue.
+  "gdm-list-full": {
+    line: "This list is full. Delete an entry to add another."
   }
 } as const satisfies Record<string, Record<string, string>>;
