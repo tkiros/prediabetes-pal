@@ -114,7 +114,7 @@ describe("My plan — the form's own rules (components/gdm/plan-keep.tsx)", () =
     expect(GdmPlanSchema.safeParse(body).success).toBe(true);
   });
 
-  it("what one choice is travels only with Choices, so a hidden field never raises a difference she cannot see", async () => {
+  it("what one choice is travels only with Choices, so a value in a hidden field is never stored", async () => {
     const { EMPTY_PLAN_FORM, planBodyFrom } = await import("../../../components/gdm/plan-keep");
     const form = { ...EMPTY_PLAN_FORM, unit: "grams" as const, choiceMeans: "15 g", figures: { ...EMPTY_PLAN_FORM.figures, lunch: "45 g" } };
     const grams = planBodyFrom(form, "2026-10-08");
@@ -151,6 +151,28 @@ describe("My plan — the form's own rules (components/gdm/plan-keep.tsx)", () =
     expect(form.figures.lunch).toBe("");
     const { id: _id, ...body } = hers;
     expect(planBodyFrom(form, hers.enteredOn)).toEqual(body);
+  });
+
+  it("R50: Add another plan starts from the empty form and sends no `replaces` — the new plan stands beside hers", async () => {
+    const { EMPTY_PLAN_FORM, formFor, planRequest, replacesFor, withSavedPlan } = await import("../../../components/gdm/plan-keep");
+    const hers = stored("hers", { unit: "grams", figures: { lunch: "45 g" } });
+    const add = { kind: "add" } as const;
+    expect(formFor(add)).toEqual(EMPTY_PLAN_FORM);
+    expect(replacesFor(add)).toBeNull();
+    const request = planRequest({ ...formFor(add), unit: "grams", figures: { ...EMPTY_PLAN_FORM.figures, lunch: "30 g" } }, "2026-10-20", replacesFor(add));
+    expect(request).not.toHaveProperty("replaces");
+    const after = withSavedPlan([hers], { id: "second", ...request.body }, replacesFor(add));
+    expect(currentPlans(after).map((p) => p.id)).toEqual(["second", "hers"]);
+    expect(detectConflicts(after)).toEqual([{ occasion: "lunch", planIds: ["second", "hers"] }]);
+  });
+
+  it("Replace starts from her stored plan and names it in `replaces` (G-13, G-75)", async () => {
+    const { formFor, planFormFrom, replacesFor } = await import("../../../components/gdm/plan-keep");
+    const hers = stored("hers", { unit: "grams", figures: { lunch: "45 g" } });
+    const replace = { kind: "replace", plan: hers } as const;
+    expect(formFor(replace)).toEqual(planFormFrom(hers));
+    expect(replacesFor(replace)).toBe("hers");
+    expect(replacesFor(null)).toBeNull();
   });
 
   it("an empty plan is recognised as empty — the form sends nothing for it, and a card shows the empty line", async () => {
@@ -300,6 +322,14 @@ describe("the plan page and its place in the nav", () => {
     const guard = page.indexOf("await requireGdmDoor()");
     expect(guard).toBeGreaterThan(-1);
     expect(guard).toBeLessThan(page.indexOf("<PlanKeep"));
+  });
+
+  it("R50/R51: Add another plan is on the page, and no two-column rule stacks the cards side by side in the 480px frame", () => {
+    const source = fs.readFileSync(path.join(ROOT, "components/gdm/plan-keep.tsx"), "utf8");
+    expect(source).toMatch(/onClick=\{\(\) => open\(\{ kind: "add" \}\)\}/);
+    expect(source).toContain("{CONTROLS.addAnother}");
+    const css = fs.readFileSync(path.join(ROOT, "app/globals.css"), "utf8");
+    expect(css).not.toMatch(/\.gdm-plan-current\s*\{[^}]*grid-template-columns/);
   });
 
   it("figures are text inputs, never number fields: '30–45 g' and '3 to 4 choices' are figures", () => {

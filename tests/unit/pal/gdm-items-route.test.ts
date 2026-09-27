@@ -15,7 +15,7 @@ vi.mock("@sentry/node", () => ({
 import { createGdmItemsHandlers } from "../../../app/api/gdm/items/route";
 import { GDM_COPY } from "../../../lib/pal/gdm/copy";
 import { GDM_ITEM_CAP } from "../../../lib/pal/gdm/items";
-import { currentPlans, type GdmPlan, type StoredPlan } from "../../../lib/pal/gdm/plan-record";
+import { currentPlans, detectConflicts, type GdmPlan, type StoredPlan } from "../../../lib/pal/gdm/plan-record";
 import { loadSafetyContract } from "../../../lib/pal/safety-contract";
 import { schema } from "../../../lib/server/db";
 import { listGdmItems } from "../../../lib/server/gdm-items";
@@ -274,6 +274,41 @@ describe("/api/gdm/items", () => {
     expect((await as(her).PATCH(req("PATCH", { id, body: dated }))).status).toBe(400);
     expect((await as(her).PATCH(req("PATCH", { id, body: planBody({ givenBy: "someone else" }) }))).status).toBe(400);
     expect(await storedPlans(her)).toEqual([{ id, ...planBody() }]);
+  });
+
+  it("R50: a second plan without `replaces` stands beside the first — two current plans, their difference flagged", async () => {
+    const { id: first } = await (await as(her).POST(req("POST", plan()))).json();
+    const { id: second } = await (await as(her).POST(req("POST", plan({ givenBy: "the clinic nurse", figures: { lunch: "30 g" } })))).json();
+    const plans = await storedPlans(her);
+    expect(currentPlans(plans).map((p) => p.id).sort()).toEqual([first, second].sort());
+    expect(detectConflicts(plans).map((c) => c.occasion)).toEqual(["lunch"]);
+  });
+
+  it("R47: a new plan is never stored already dated — a plain POST with a replacedOn is a 400, nothing inserted", async () => {
+    expect((await as(her).POST(req("POST", plan({ replacedOn: "2026-10-20" })))).status).toBe(400);
+    expect(await rawRows()).toHaveLength(0);
+  });
+
+  it("R47: a replace whose new plan is dated is a 400 — she is never left with no current plan", async () => {
+    const { id: oldId } = await (await as(her).POST(req("POST", plan()))).json();
+    const before = await rawRows();
+    expect((await as(her).POST(req("POST", plan({ enteredOn: "2026-10-20", replacedOn: "2026-10-20" }, oldId)))).status).toBe(400);
+    expect(await rawRows()).toEqual(before);
+    expect(currentPlans(await storedPlans(her)).map((p) => p.id)).toEqual([oldId]);
+  });
+
+  it("R52: DELETE removes only questions and meals — a plan or a sheet photo is a 404 and the row stays", async () => {
+    const { id: planId } = await (await as(her).POST(req("POST", plan()))).json();
+    const {
+      rows: [photo]
+    } = await testDb.raw.query<{ id: string }>(
+      "INSERT INTO gdm_items (user_id, kind, body_ciphertext) VALUES ($1, 'plan_photo', 'v1:x') RETURNING id",
+      [her]
+    );
+    const before = await rawRows();
+    expect((await as(her).DELETE(req("DELETE", undefined, `?id=${planId}`))).status).toBe(404);
+    expect((await as(her).DELETE(req("DELETE", undefined, `?id=${photo.id}`))).status).toBe(404);
+    expect(await rawRows()).toEqual(before);
   });
 
   it("no model call on this path (PRD §6.2 acceptance)", () => {

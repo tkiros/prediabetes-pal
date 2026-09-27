@@ -165,6 +165,7 @@ export const GDM_COPY = {
   // test's medication family). `grams`, `choices`, `servings` and `none` are
   // its four options, keyed by GDM_UNITS. `photoAdd` and `photoRemove` render
   // with the sheet photo (Task 3.3). G-25: `empty` is the drafted empty state.
+  // R50: `addAnother` keeps a second sheet beside the first, never in its place.
   "gdm-plan-controls": {
     title: "My plan",
     sub: "In your care team's words.",
@@ -180,6 +181,7 @@ export const GDM_COPY = {
     figure: "Figure for this occasion, exactly as written",
     save: "Save",
     replace: "Replace this plan",
+    addAnother: "Add another plan",
     replacedOn: "Replaced on",
     enteredOn: "Entered on",
     photoAdd: "Add a photo of your sheet",

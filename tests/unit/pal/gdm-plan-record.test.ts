@@ -71,6 +71,15 @@ describe("plan record (PRD §6.2 F-PLANKEEP; §7.4 deep module 1)", () => {
     expect(detectConflicts([a, b])).toEqual([]);
   });
 
+  it("R53: what one choice is is compared only between two Choices plans — a stray value under grams raises nothing", () => {
+    const a = plan("a", { unit: "grams", choiceMeans: "15 g", figures: { lunch: "45 g" } });
+    const b = plan("b", { unit: "grams", choiceMeans: null, figures: { lunch: "45 g" } });
+    expect(detectConflicts([a, b])).toEqual([]);
+    // A unit difference is still flagged by the unit compare.
+    const c = plan("c", { unit: "choices", choiceMeans: "15 g", figures: { lunch: "45 g" } });
+    expect(detectConflicts([b, c])).toEqual([{ occasion: "lunch", planIds: ["b", "c"] }]);
+  });
+
   it("the module does no arithmetic on a figure", () => {
     const source = fs.readFileSync(path.join(process.cwd(), "lib/pal/gdm/plan-record.ts"), "utf8");
     expect(source).not.toMatch(/parseFloat|parseInt|Number\(|Math\./);

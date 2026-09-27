@@ -41,6 +41,7 @@ const FIELD_ID = {
   choiceMeans: "gdm-plan-choice-means"
 } as const;
 const SAVE_ID = "gdm-plan-save";
+const ADD_ANOTHER_ID = "gdm-plan-add-another";
 const figureId = (occasion: GdmOccasion) => `gdm-plan-figure-${occasion}`;
 const replaceId = (planId: string) => `gdm-plan-${planId}-replace`;
 const parkId = (planId: string, occasion: GdmOccasion) => `gdm-plan-${planId}-${occasion}-park`;
@@ -98,9 +99,9 @@ const orNull = (text: string) => text.trim() || null;
  * The body a save sends (GdmPlanSchema, strict): trimmed, a blank field is
  * null, a blank figure is left out. Every figure goes as she wrote it, a
  * string: nothing is parsed, converted or compared. What one choice is
- * travels only with Choices: kept in a hidden field it would raise "These
- * differ" over something she cannot see (detectConflicts compares it). Built
- * field by field, so a stored plan's `id` never reaches the strict schema.
+ * travels only with Choices: a value left in the hidden field (she typed it,
+ * then chose another way of counting) is not stored where she cannot see it.
+ * Built field by field, so a stored plan's `id` never reaches the strict schema.
  */
 export function planBodyFrom(form: PlanForm, enteredOn: string): GdmPlan {
   const figures: GdmPlan["figures"] = {};
@@ -130,6 +131,23 @@ export type PlanRequest = { kind: "plan"; body: GdmPlan; replaces?: string };
 export function planRequest(form: PlanForm, enteredOn: string, replaces: string | null): PlanRequest {
   const body = planBodyFrom(form, enteredOn);
   return replaces === null ? { kind: "plan", body } : { kind: "plan", body, replaces };
+}
+
+/**
+ * Which form is open once she has a plan: a blank one for another plan beside
+ * hers (R50), or one replacing a plan (G-75). With no current plan the blank
+ * form is simply open, with no mode.
+ */
+export type FormMode = { kind: "add" } | { kind: "replace"; plan: StoredPlan };
+
+/** The form a mode opens with: blank for another plan (R50); her own stored plan for a replace (G-75). */
+export function formFor(mode: FormMode): PlanForm {
+  return mode.kind === "add" ? EMPTY_PLAN_FORM : planFormFrom(mode.plan);
+}
+
+/** The plan a save replaces: the open plan's id when replacing (G-13); none for a new plan or another one beside hers (R50). */
+export function replacesFor(mode: FormMode | null): string | null {
+  return mode?.kind === "replace" ? mode.plan.id : null;
 }
 
 /** R47: a full list has its own line (G-14); every other failure, "Already replaced" included, is the save-failed line. A server string is never shown. */
@@ -162,10 +180,12 @@ type PlanItem = { id: string; body: GdmPlan };
  * My plan (PRD §6.2 F-PLANKEEP): her plan in her care team's words. Top to
  * bottom: the heading and its one line, the page's polite status line, then
  * either the form (no plan yet, G-39) with the empty line below it, or her
- * current plan cards (side by side from 720px), each with "Replace this
- * plan", which opens the form filled with that plan (G-75). Replaced plans
- * follow, kept and dated. Two current plans that differ for an occasion are
- * both flagged, and neither is picked.
+ * current plan cards in one column (R51: the door's frame is 480px), each
+ * with "Replace this plan", which opens the form filled with that plan
+ * (G-75), then "Add another plan", which opens a blank form whose plan
+ * stands beside hers (R50: a second sheet from a second clinician). Replaced
+ * plans follow, kept and dated. Two current plans that differ for an
+ * occasion are both flagged, and neither is picked.
  *
  * G-26: the plan is never drafted on the device (a figure is health data).
  * Instead the form keeps every value on screen through a failed save. It
@@ -178,7 +198,7 @@ export function PlanKeep() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [attempt, setAttempt] = useState(0); // a retry after a failed load is the next attempt
   const [status, setStatus] = useState<string | null>(null);
-  const [replacing, setReplacing] = useState<string | null>(null);
+  const [mode, setMode] = useState<FormMode | null>(null);
   const [form, setForm] = useState<PlanForm>(EMPTY_PLAN_FORM);
   const [saving, setSaving] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -189,7 +209,7 @@ export function PlanKeep() {
   const current = currentPlans(plans);
   const replaced = plans.filter((plan) => plan.replacedOn !== null);
   const conflicts = detectConflicts(plans);
-  const formOpen = !loading && !loadFailed && (current.length === 0 || replacing !== null);
+  const formOpen = !loading && !loadFailed && (current.length === 0 || mode !== null);
 
   useEffect(() => {
     let cancelled = false;
@@ -216,7 +236,8 @@ export function PlanKeep() {
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (saving) return;
-    const request = planRequest(form, localIsoDate(), replacing);
+    const replaces = replacesFor(mode);
+    const request = planRequest(form, localIsoDate(), replaces);
     if (isEmptyPlan(request.body)) {
       // Nothing written: nothing is sent. A plan can be replaced but never
       // removed, so a stray Save must not leave an empty one behind.
@@ -232,8 +253,8 @@ export function PlanKeep() {
       const hasFigure = Object.keys(request.body.figures).length > 0;
       track({ name: "gdm_plan_entered", props: { unit, has_figure: hasFigure } });
       const saved: StoredPlan = { ...request.body, id: result.data.id };
-      setPlans((shown) => withSavedPlan(shown, saved, replacing));
-      setReplacing(null);
+      setPlans((shown) => withSavedPlan(shown, saved, replaces));
+      setMode(null);
       setForm(EMPTY_PLAN_FORM);
       setStatus(STATUS.saved);
       focusLater(replaceId(saved.id));
@@ -246,21 +267,22 @@ export function PlanKeep() {
     setSaving(false);
   }
 
-  function openReplace(plan: StoredPlan) {
-    setReplacing(plan.id);
-    setForm(planFormFrom(plan));
+  /** Replace (G-75) or Add another plan (R50): the form opens below her plans, focus on its first field. */
+  function open(next: FormMode) {
+    setMode(next);
+    setForm(formFor(next));
     setFailure(null);
     setStatus(null);
     focusLater(FIELD_ID.givenBy);
   }
 
-  /** G-75: Cancel closes the form and changes nothing. */
+  /** G-75, R50: Cancel closes the form, sends nothing, and returns focus to the control that opened it. */
   function cancel() {
-    const id = replacing;
-    setReplacing(null);
+    if (!mode) return;
+    setMode(null);
     setForm(EMPTY_PLAN_FORM);
     setFailure(null);
-    if (id) focusLater(replaceId(id));
+    focusLater(mode.kind === "add" ? ADD_ANOTHER_ID : replaceId(mode.plan.id));
   }
 
   async function park(planId: string, occasion: GdmOccasion) {
@@ -397,7 +419,7 @@ export function PlanKeep() {
         <button id={SAVE_ID} type="submit" className="secondary-button" disabled={saving}>
           {CONTROLS.save}
         </button>
-        {replacing === null ? null : (
+        {mode === null ? null : (
           <button type="button" className="secondary-button" disabled={saving} onClick={cancel}>
             {CANCEL}
           </button>
@@ -446,13 +468,13 @@ export function PlanKeep() {
                     differs={differingOccasions(conflicts, plan.id)}
                     renderDiffer={(occasion) => parkButton(plan.id, occasion)}
                   />
-                  {replacing === null ? (
+                  {mode === null ? (
                     <button
                       id={replaceId(plan.id)}
                       type="button"
                       className="secondary-button gdm-plan-replace"
                       aria-describedby={planEnteredId(plan.id)}
-                      onClick={() => openReplace(plan)}
+                      onClick={() => open({ kind: "replace", plan })}
                     >
                       {CONTROLS.replace}
                     </button>
@@ -460,6 +482,17 @@ export function PlanKeep() {
                 </li>
               ))}
             </ul>
+            {/* R50: a second sheet from a second clinician is kept beside the first, never in its place. */}
+            {mode === null ? (
+              <button
+                id={ADD_ANOTHER_ID}
+                type="button"
+                className="secondary-button gdm-plan-add"
+                onClick={() => open({ kind: "add" })}
+              >
+                {CONTROLS.addAnother}
+              </button>
+            ) : null}
             {parkFailed ? (
               <p className="field-error" role="alert">
                 {parkFailed}

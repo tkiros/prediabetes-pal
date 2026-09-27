@@ -5496,6 +5496,8 @@ button.inline-link {
   font-weight: 600;
 }
 
+/* R51: one column at every width. The door's frame is 480px, so two current
+   plans stack, each card at full width, the same flag on both. */
 .gdm-plan-current,
 .gdm-plan-replaced {
   display: grid;
@@ -5511,20 +5513,9 @@ button.inline-link {
   gap: 10px;
 }
 
-.gdm-plan-replace {
+.gdm-plan-replace,
+.gdm-plan-add {
   justify-self: start;
-}
-
-/* Two current plans side by side from 720px, stacked below; one plan keeps
-   the full width. */
-@media (min-width: 720px) {
-  .gdm-plan-current {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .gdm-plan-current > .gdm-plan-slot:only-child {
-    grid-column: 1 / -1;
-  }
 }
 
 .gdm-plan-card {
