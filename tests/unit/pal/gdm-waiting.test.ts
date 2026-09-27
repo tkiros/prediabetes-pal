@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { appointmentPhrase, isoDayNumber, summaryOfferDue, waitingState } from "../../../lib/pal/gdm/waiting";
+import { appointmentPhrase, homeParts, isoDayNumber, summaryOfferDue, waitingState } from "../../../lib/pal/gdm/waiting";
 
 describe("waiting mode (PRD §6.2 F-WAIT)", () => {
   it("ends on its own when a plan is entered", () => {
@@ -31,6 +31,12 @@ describe("waiting mode (PRD §6.2 F-WAIT)", () => {
     expect(summaryOfferDue("2026-10-08", "2026-10-08")).toBe(true);
     expect(summaryOfferDue("2026-10-08", "2026-10-06")).toBe(false);
     expect(summaryOfferDue(null, "2026-10-06")).toBe(false);
+  });
+
+  it("when a plan arrives the waiting content ends, and her plan takes its place (G-32, G-37)", () => {
+    expect(homeParts("waiting")).toEqual({ structure: true, checklist: true, prompt: false, plan: false });
+    expect(homeParts("after_appointment")).toMatchObject({ prompt: true, plan: false });
+    expect(homeParts("ended")).toEqual({ structure: false, checklist: false, prompt: false, plan: true });
   });
 
   it("validates dates: garbage and null return null, valid YYYY-MM-DD returns whole days since epoch", () => {

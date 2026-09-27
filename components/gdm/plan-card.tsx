@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { formatIsoDate } from "../../lib/client/gdm-date";
 import { GDM_COPY } from "../../lib/pal/gdm/copy";
 import { GDM_OCCASIONS, isEmptyPlan, type GdmOccasion, type StoredPlan } from "../../lib/pal/gdm/plan-record";
+import { LocalDate } from "./local-date";
 
 const CONTROLS = GDM_COPY["gdm-plan-controls"];
 const OCCASIONS = GDM_COPY["gdm-occasions"];
@@ -25,13 +26,20 @@ export type PlanCardProps = {
   renderDiffer?: (occasion: GdmOccasion) => ReactNode;
 };
 
-/** A labelled date ("Entered on Thursday, October 8"), or nothing for a date that will not read. G-44: formatIsoDate, never new Date(iso). */
+/**
+ * A labelled date ("Entered on Thursday, October 8"), or nothing for a date
+ * that will not read. G-44: formatIsoDate, never new Date(iso). The words come
+ * from LocalDate, after hydration: Home server-renders this card, and the
+ * server cannot know her locale (Task 4.2).
+ */
 function dateLine(label: string, iso: string | null, id?: string) {
-  const shown = formatIsoDate(iso);
-  if (!iso || !shown) return null;
+  if (!iso || !formatIsoDate(iso)) return null;
   return (
     <p id={id} className="gdm-plan-date">
-      {label} <time dateTime={iso}>{shown}</time>
+      {label}{" "}
+      <time dateTime={iso}>
+        <LocalDate iso={iso} />
+      </time>
     </p>
   );
 }

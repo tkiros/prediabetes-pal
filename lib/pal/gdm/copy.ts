@@ -198,5 +198,36 @@ export const GDM_COPY = {
     flag: "These differ",
     park: "Add to my questions",
     askText: "Two entries in my plan differ for {occasion}. Which one stands?"
+  },
+  // Task 4.2, F-WAIT. `quote` is ACOG's sentence, word for word, as PRD §6.2
+  // pins it; the source sentence ends with a full stop that the pinned text
+  // leaves out (G-24, for the safety owner). No quantity of any kind. Still
+  // open under D5: if the safety owner refuses it, Home drops this part only.
+  "gdm-wait-structure": {
+    quote: "Often, three meals and two to three snacks per day are recommended",
+    source: "American College of Obstetricians and Gynecologists (ACOG), patient FAQ on gestational diabetes"
+  },
+  // A plain list of organisational steps: never ticked, never counted.
+  "gdm-wait-checklist": {
+    book: "Book your diabetes educator or dietitian appointment.",
+    cancellations: "Ask whether there is a cancellation list.",
+    list: "Start a list of the meals you already eat.",
+    asks: "Write your questions down as they come."
+  },
+  // Home's own words (G-32, G-37, G-69). The five phrases speak her date in
+  // words, never as a count of days; `planTitle` heads her plan on Home.
+  "gdm-wait-controls": {
+    title: "While you wait",
+    appointment: "Your appointment",
+    today: "Today",
+    tomorrow: "Tomorrow",
+    thisWeek: "This week",
+    nextWeek: "Next week",
+    later: "Later on",
+    changeDate: "Add or change the date",
+    after: "Add what your care team gave you.",
+    openPlan: "Open My plan",
+    summaryOffer: "Your summary is ready to print.",
+    planTitle: "My plan"
   }
 } as const satisfies Record<string, Record<string, string>>;

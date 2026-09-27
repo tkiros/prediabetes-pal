@@ -49,3 +49,9 @@ export function summaryOfferDue(appointmentDate: string | null, today: string): 
   const days = daysUntil(appointmentDate, today);
   return days === 0 || days === 1;
 }
+
+/** What Home renders in each state. The appointment block is not here on purpose: it is ALWAYS rendered (G-32). */
+export function homeParts(state: WaitingState): { structure: boolean; checklist: boolean; prompt: boolean; plan: boolean } {
+  if (state === "ended") return { structure: false, checklist: false, prompt: false, plan: true };
+  return { structure: true, checklist: true, prompt: state === "after_appointment", plan: false };
+}
