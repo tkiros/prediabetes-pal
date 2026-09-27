@@ -57,4 +57,14 @@ describe("summary builder (PRD §6.2 F-SUMMARY; §7.4 deep module 2)", () => {
     expect(doc.sections.every((s) => s.lines.length === 0)).toBe(true);
     expect(doc.emptyLine).toBe("E");
   });
+
+  it("prints with the browser: no PDF dependency, and the disclaimer prints with the page", async () => {
+    const fs = await import("node:fs");
+    const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+    expect(Object.keys({ ...pkg.dependencies, ...pkg.devDependencies }).filter((d) => /pdf/i.test(d))).toEqual([]);
+    expect(fs.readFileSync("components/gdm/summary-print.tsx", "utf8")).toMatch(/window\.print\(\)/);
+    const page = fs.readFileSync("app/gdm/(door)/summary/page.tsx", "utf8");
+    expect(page).toMatch(/gdm-disclaimer/); // rendered INSIDE the page body: the print sheet hides <footer>
+    expect(page).not.toMatch(/reading|glucose/i);
+  });
 });

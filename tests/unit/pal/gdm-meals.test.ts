@@ -182,7 +182,12 @@ describe("the meals page and its place in the nav", () => {
       elements(GdmNav())
         .map((el) => el.props as { href?: unknown; className?: string; "aria-current"?: string; children?: ReactNode })
         .filter((props) => typeof props.href === "string" && /\bselectable-chip\b/.test(props.className ?? ""));
-    expect(rowTwo().map((link) => link.href)).toEqual([GDM_ROUTES.questions, GDM_ROUTES.plan, GDM_ROUTES.meals]);
+    expect(rowTwo().map((link) => link.href)).toEqual([
+      GDM_ROUTES.questions,
+      GDM_ROUTES.plan,
+      GDM_ROUTES.meals,
+      GDM_ROUTES.summary
+    ]);
     const meals = () => rowTwo().find((link) => link.href === GDM_ROUTES.meals)!;
     expect(meals().children).toBe(GDM_COPY["gdm-nav"].meals);
     expect(meals()["aria-current"]).toBeUndefined();

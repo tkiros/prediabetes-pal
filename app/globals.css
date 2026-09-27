@@ -3898,6 +3898,7 @@ button.inline-link {
 @media print {
   .report-actions,
   .paywall-card,
+  .gdm-no-print,
   nav,
   footer {
     display: none !important;
@@ -3910,7 +3911,8 @@ button.inline-link {
     box-shadow: none !important;
     border: none !important;
   }
-  .report-item {
+  .report-item,
+  .gdm-summary-row {
     break-inside: avoid;
   }
 }
