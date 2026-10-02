@@ -682,3 +682,102 @@ something to be read off the dashboard, and not a step in this runbook.
 (`lib/pal/guide-ideas.ts`) every line the eval does not label SAFE at all
 three bands, in the next PR. The eval is what can name the line; the
 production event is only what tells you to run it again.
+
+## 14. The GDM door's reads (PRD GDM v1.1 §9.1, §9.2)
+
+**First-cohort source (owner; plan §1 "First-cohort source", review G-33):** not yet recorded — the owner names where the first fifty door users come from, and the date, before `organiser` flips.
+
+One place to read the GDM door's numbers from. Every event named here is a typed
+event in `lib/client/analytics.ts` (closed enums only; the no-PII source scan
+enforces it). Umami is cookieless and carries no identity; nothing here joins the
+GDM profile to a person. **Nothing here measures glucose, weight, medication,
+delivery or any pregnancy outcome, and nothing will.** Retention is not a goal:
+this audience leaves by design within months.
+
+All thresholds are **[A]** — chosen without a baseline. The owner rules on a fired
+line; nothing reverts automatically.
+
+**Sample floor for every line: 50 door users.** A door user is a `gdm_profiles`
+row (exact): `select count(*) from gdm_profiles where created_at >= :live;`
+Analytics proxy: unique visitors with `gdm_onboarding_step` where `step = done`.
+Below 50 the line is unread — it has neither fired nor been survived.
+
+**The clock** starts the day the `organiser` surface is live in production
+(`GET /api/health` → `gdmDoor.organiser = "on"`), not the day the code merged.
+
+### 14.1 KL-T1 — is the door used as an organiser? (four weeks after `organiser` is live)
+
+Fires when **A < 25% AND B < 25%**, read at 50 door users or more.
+
+- **A — parked anything.** Numerator: unique visitors with `gdm_ask_parked`.
+  Denominator: unique visitors with `gdm_asklist_opened`.
+- **B — entered a plan or saved a meal.** Numerator: unique visitors with
+  `gdm_plan_entered` or `gdm_meal_saved`. Denominator: door users
+  (`gdm_onboarding_step`, `step = done`).
+- **Exact cross-check for B and for A's numerator** (coarse plaintext columns
+  only; nothing is decrypted):
+  `select kind, count(distinct user_id) from gdm_items where created_at >= :live group by kind;`
+  and `select count(distinct user_id) from gdm_items where kind in ('plan','meal') and created_at >= :live;`
+  each over `select count(*) from gdm_profiles where created_at >= :live;`.
+  If Umami and the database disagree on B by more than ten points, assume
+  analytics is blind (the 2026-07-22 CSP blackout precedent) and read the database.
+- **Fires ⇒** Tier 2 work pauses and the door is re-read (PRD §9.2).
+  **Revert lever:** unset `GDM_DOOR_ENABLED` and redeploy. The production guard
+  treats a missing twin as a closed door and never fails that build, so this one
+  variable darkens every GDM surface. Unset `NEXT_PUBLIC_GDM_DOOR` afterwards.
+  Stored data stays exportable and erasable with the door closed.
+- **The exact floor for A.** Everyone who opened the list is a door user, so
+  (distinct users with an `ask` row) over (door users) can only *understate* A.
+  If that exact figure is 25% or more, A has not fired, whatever Umami says.
+  Umami's visitor is a hash that includes the IP, so one phone moving between
+  Wi-Fi and mobile data is several visitors, most of whom open the list without
+  parking: the Umami ratio reads low. Use it only when the exact floor is under 25%.
+- **Unread is a finding too.** If a line is still unread eight weeks after
+  `organiser` went live, fewer than 50 door users arrived. That is a distribution
+  result, not a neutral one: no Tier 2 module (plan §5) starts until KL-T1 has
+  been *read*, and the owner re-reads the first-cohort source row in the plan's §1.
+- **Before reading any line as "nobody used it":** check Sentry for `/api/gdm/`
+  errors, and check the funnel in §14.4. A sign-up that never reaches onboarding
+  is more often a lost magic link than a lost interest.
+
+**Umami view:** Events → `gdm_ask_parked`, `gdm_asklist_opened`, `gdm_plan_entered`,
+`gdm_meal_saved`, `gdm_onboarding_step` (filter `step = done`), unique visitors,
+date range = the four weeks.
+
+### 14.2 D7 — the spending trigger
+
+KL-T1 read at 50 door users or more **and not fired** = "the four-week Tier 1
+line is survived". Numerator and Denominator: KL-T1's. Until then: no domain, no
+store listing, no trademark work (PRD §3). A line left unread because fewer
+than 50 door users arrived is **not** survival.
+
+### 14.3 KL-D1 — does anyone hold a figure? (D1(a)'s own line)
+
+Fires when **fewer than 25%** of door users have entered a figure, read at 50
+door users or more, four weeks after `organiser` is live.
+
+- Numerator: unique visitors with `gdm_plan_entered` where `has_figure = true`.
+- Denominator: door users (`gdm_onboarding_step`, `step = done`).
+- **Fires ⇒** D1 goes back to the owner with the count: F-PLANREAD reaches
+  almost nobody. There is no exact cross-check — whether a plan holds a figure
+  is inside the encrypted body, on purpose.
+
+**Umami view:** Events → `gdm_plan_entered`, filter `has_figure = true`, unique
+visitors, beside the same view unfiltered (the `unit` breakdown is §9.1's
+"unit chosen").
+
+### 14.4 The other §9.1 reads (directions, not targets)
+
+`gdm_waiting_opened` in a visitor's first session · `gdm_ask_parked` per active
+visitor in week one · `gdm_plan_entered` by `unit` · `gdm_meal_saved` by day
+seven, by `occasion` · `gdm_summary_printed` by `before_appointment` ·
+`gdm_onboarding_step` where `step = not_told_exit` (counted, not chased) ·
+`clinical_route` (which existing route fired; shared with the prediabetes door).
+
+**The sign-up funnel.** Unique visitors with `gdm_door_shown` where
+`surface = landing`, against unique visitors with `gdm_onboarding_step` where
+`step = told`. Between those two events she leaves this door for a sign-in page
+and an email that carry the first door's name, and a magic link that opens in
+the device's default browser, which is not the in-app browser most first
+visitors arrive in. A poor ratio here means "check that path first", not
+"nobody wants it". Read it beside KL-T1, never instead of it.

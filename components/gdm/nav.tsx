@@ -19,7 +19,8 @@ type GdmNavItem = { href: string; label: string };
 const NAV: readonly GdmNavItem[] = [
   { href: GDM_ROUTES.questions, label: GDM_COPY["gdm-nav"].asks },
   { href: GDM_ROUTES.plan, label: GDM_COPY["gdm-nav"].plan },
-  { href: GDM_ROUTES.meals, label: GDM_COPY["gdm-nav"].meals }
+  { href: GDM_ROUTES.meals, label: GDM_COPY["gdm-nav"].meals },
+  { href: GDM_ROUTES.summary, label: GDM_COPY["gdm-nav"].summary }
 ];
 
 /**

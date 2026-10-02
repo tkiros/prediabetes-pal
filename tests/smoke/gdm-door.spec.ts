@@ -24,6 +24,7 @@ const DARK_PATHS = [
   "/gdm/questions",
   "/gdm/plan",
   "/gdm/meals",
+  "/gdm/summary",
   "/gdm/data",
   "/gdm/privacy"
 ] as const;
@@ -42,6 +43,7 @@ const WAIT = GDM_COPY["gdm-wait-controls"];
 const STRUCTURE = GDM_COPY["gdm-wait-structure"];
 const CHECKLIST = GDM_COPY["gdm-wait-checklist"];
 const MEALS = GDM_COPY["gdm-meals-controls"];
+const SUMMARY = GDM_COPY["gdm-summary-headings"];
 const SAVE_FAILED = GDM_COPY["gdm-save-failed"].line;
 /** A real 1×1 PNG: the sheet photo the device downscales, re-encodes and sends (Task 3.3). */
 const PNG_1X1 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
@@ -676,6 +678,116 @@ test.describe("GDM door — organiser, signed in", () => {
     await page.reload();
     await expect(page.getByText(MEALS.empty)).toBeVisible();
     await expect(page.locator("li.gdm-meal")).toHaveCount(0);
+
+    await erase(page);
+  });
+
+  // PR-6, the printable page (F-SUMMARY; Task 6.2). Nothing entered shows the
+  // empty line and the three links, and no Print button; once a plan, a
+  // marked meal and an open question exist, they carry into the three
+  // headings verbatim, the disclaimer prints with the page, and Print is
+  // there and calls window.print() (browser print, no PDF library — G-18).
+  test("Summary: nothing entered shows the empty line and three links with no Print button; entered items carry into the three headings, the disclaimer is in the body, and Print calls window.print()", async ({
+    page
+  }) => {
+    // Onboarding's quick path: told, no date, consent.
+    await signUp(page);
+    await page.getByRole("button", { name: TOLD.yes }).click();
+    await page.getByRole("button", { name: DATE.skip }).click();
+    await page.getByRole("checkbox", { name: CONSENT.agree }).check();
+    await page.getByRole("button", { name: CONSENT.go }).click();
+    await expect(page).toHaveURL(new RegExp(`${GDM_ROUTES.home}$`));
+
+    // Row two of the nav reaches it.
+    await page.locator(".gdm-nav-links").getByRole("link", { name: NAV.summary }).click();
+    await expect(page).toHaveURL(new RegExp(`${GDM_ROUTES.summary}$`));
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(SUMMARY.title);
+    await expect(page.locator(".gdm-nav-links").getByRole("link", { name: NAV.summary })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+
+    // G-41: with nothing entered at all, one empty line, links to the three
+    // lists, and no Print button — printing a blank page is a dead end.
+    await expect(page.getByText(SUMMARY.empty)).toBeVisible();
+    const links = page.locator(".gdm-summary-links");
+    await expect(links.getByRole("link", { name: NAV.plan })).toHaveAttribute("href", GDM_ROUTES.plan);
+    await expect(links.getByRole("link", { name: NAV.meals })).toHaveAttribute("href", GDM_ROUTES.meals);
+    await expect(links.getByRole("link", { name: NAV.asks })).toHaveAttribute("href", GDM_ROUTES.questions);
+    await expect(page.getByRole("button", { name: SUMMARY.print })).toHaveCount(0);
+    await expect(page.locator("body")).toContainText(GDM_COPY["gdm-disclaimer"].line);
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+    // Enter a plan, a meal marked for the summary, and an open question.
+    const dietitian = "the dietitian";
+    const lunchFigure = "45 g";
+    await page.goto(GDM_ROUTES.plan);
+    await page.getByLabel(PLAN.givenBy, { exact: true }).fill(dietitian);
+    await page.getByLabel(PLAN.counts, { exact: true }).selectOption("grams");
+    await page.getByLabel(OCCASIONS.lunch, { exact: true }).fill(lunchFigure);
+    await page.getByRole("button", { name: PLAN.save, exact: true }).click();
+    await expect(page.locator(".gdm-status")).toHaveText(STATUS.saved);
+
+    // G-41's other branch: a plan entered but meals and asks still empty
+    // shows each empty section's OWN heading and the empty line — not the
+    // all-empty screen's single line and three links — and Print IS present.
+    await page.goto(GDM_ROUTES.summary);
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText([SUMMARY.plan, SUMMARY.meals, SUMMARY.asks]);
+    await expect(page.locator('[data-gdm-summary="plan"]')).toContainText(dietitian);
+    await expect(page.locator('[data-gdm-summary="meals"]')).toContainText(SUMMARY.empty);
+    await expect(page.locator('[data-gdm-summary="asks"]')).toContainText(SUMMARY.empty);
+    await expect(page.getByRole("button", { name: SUMMARY.print })).toBeVisible();
+
+    const mealText = "dal and rice";
+    await page.goto(GDM_ROUTES.meals);
+    await page.getByLabel(MEALS.occasion, { exact: true }).selectOption("lunch");
+    await page.getByLabel(MEALS.field, { exact: true }).fill(mealText);
+    await page.getByRole("button", { name: MEALS.save, exact: true }).click();
+    await expect(page.locator(".gdm-status")).toHaveText(STATUS.saved);
+    const mealRow = page.locator("li.gdm-meal", { hasText: mealText });
+    const inSummaryBox = mealRow.getByRole("checkbox", { name: MEALS.inSummary });
+    await inSummaryBox.check();
+    // The status line already read "saved" from the meal save above, so it is
+    // not proof this second save resolved — focus landing back on the
+    // checkbox is (cc88e48's pattern), and it guards the next navigation
+    // against a race with the still-in-flight PATCH.
+    await expect(inSummaryBox).toBeFocused();
+
+    const askText = "why was it higher";
+    await page.goto(GDM_ROUTES.quickAdd);
+    await page.getByLabel(ASKS.field, { exact: true }).fill(askText);
+    await page.getByRole("button", { name: ASKS.add, exact: true }).click();
+    await expect(page.locator(".gdm-status")).toHaveText(STATUS.saved);
+
+    // Stub window.print BEFORE navigating to the summary, so the click below
+    // never opens a real print sheet. addInitScript is page-scoped and runs
+    // on every subsequent navigation of this page.
+    await page.addInitScript(() => {
+      (window as unknown as { __printed: number }).__printed = 0;
+      window.print = () => {
+        (window as unknown as { __printed: number }).__printed += 1;
+      };
+    });
+
+    await page.goto(GDM_ROUTES.summary);
+    await expect(page.getByText(SUMMARY.empty)).toHaveCount(0);
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText([SUMMARY.plan, SUMMARY.meals, SUMMARY.asks]);
+    const planSection = page.locator('[data-gdm-summary="plan"]');
+    const mealsSection = page.locator('[data-gdm-summary="meals"]');
+    const asksSection = page.locator('[data-gdm-summary="asks"]');
+    await expect(planSection).toContainText(dietitian);
+    await expect(planSection).toContainText(lunchFigure);
+    await expect(mealsSection).toContainText(mealText);
+    await expect(asksSection).toContainText(askText);
+    await expect(page.locator("body")).toContainText(GDM_COPY["gdm-disclaimer"].line);
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+    // Print is present now that something is entered, and it really calls
+    // window.print() — never a PDF library.
+    const printButton = page.getByRole("button", { name: SUMMARY.print, exact: true });
+    await expect(printButton).toBeVisible();
+    await printButton.click();
+    expect(await page.evaluate(() => (window as unknown as { __printed: number }).__printed)).toBe(1);
 
     await erase(page);
   });
