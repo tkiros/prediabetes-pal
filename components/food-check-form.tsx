@@ -20,6 +20,7 @@ import { tasterStore } from "../lib/client/taster-store";
 import { daypartOfHour, type Daypart } from "../lib/coach/insights";
 import { guideDoorEnabled } from "../lib/guide-door-flag";
 import { routeA1C } from "../lib/pal/a1c";
+import { classifyClinicalRisk } from "../lib/pal/clinical-risk";
 import {
   type CheckUiState,
   isSlowThresholdReached,
@@ -56,12 +57,20 @@ export type TasterStatus = "available" | "exhausted" | "expired";
 // aged out their free checks, and NEVER for an entitled session (AUD-009: the
 // server says this user is Premium/trialing — the device meter must not send
 // them to /subscribe). Legacy mode never gates (fail-open by shape).
+// FIX1 / HS-1: clinical text is never walled — it goes to the server, whose
+// clinical router answers with the "see a person" card at zero model cost.
 export function shouldGateSubmit(
   mode: PaywallMode,
   status: TasterStatus,
-  entitled = false
+  entitled = false,
+  food = ""
 ): boolean {
-  return !entitled && mode === "trial" && status !== "available";
+  return (
+    !entitled &&
+    mode === "trial" &&
+    status !== "available" &&
+    classifyClinicalRisk(food) === null
+  );
 }
 
 // Record: only trial mode meters, and only for anonymous tasters — an entitled
@@ -273,7 +282,7 @@ export function FoodCheckForm() {
     // Day-1 taster gate (trial mode only): an anonymous user who has spent or
     // aged out their free checks goes to the wall — no /api/check spend here.
     // An entitled session is never gated (AUD-009).
-    if (shouldGateSubmit(mode, tasterStore.status(), entitled)) {
+    if (shouldGateSubmit(mode, tasterStore.status(), entitled, input.food)) {
       window.location.assign("/subscribe");
       return;
     }

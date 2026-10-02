@@ -3,6 +3,7 @@ import path from "node:path";
 
 import type { NextConfig } from "next";
 
+import { GDM_GATES_PATH, checkProductionGdmDoor } from "./lib/gdm-door-guard";
 import {
   COPY_LEDGER_PATH,
   IDEA_LABELS_PATH,
@@ -72,6 +73,13 @@ if (process.env.VERCEL_ENV === "production") {
   }
 }
 
+// Shared by the guide-door and GDM-door guards below: both read files off
+// disk (relative to this config file) only inside a production build.
+const readIfPresent = (relative: string): string | null => {
+  const file = path.join(__dirname, relative);
+  return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null;
+};
+
 // Production door guard (Task 1.11; A-94, A-100, A-101). NEXT_PUBLIC_GUIDE_DOOR
 // has no server twin, so the production value is checked against the copy
 // ledger instead: never `1`, known surfaces only, requirements met, every row
@@ -86,10 +94,6 @@ if (process.env.VERCEL_ENV === "production") {
 // waives it.
 const guideDoorEnv: { NEXT_PUBLIC_GUIDE_DOOR?: string } = {};
 if (process.env.VERCEL_ENV === "production") {
-  const readIfPresent = (relative: string): string | null => {
-    const file = path.join(__dirname, relative);
-    return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null;
-  };
   let labels: IdeaLabelsFile | null = null;
   try {
     const text = readIfPresent(IDEA_LABELS_PATH);
@@ -120,6 +124,28 @@ if (process.env.VERCEL_ENV === "production") {
   guideDoorEnv.NEXT_PUBLIC_GUIDE_DOOR = door.effective;
 }
 
+// GDM door guard (PRD GDM v1.1 §9.2): never `1`, server twin set, every row a
+// listed surface renders Approved, every gate it needs Signed — or the build
+// throws. Same waiver posture as the guards above: PAL_ALLOW_NO_MEASUREMENT
+// never waives it.
+const gdmDoorEnv: { NEXT_PUBLIC_GDM_DOOR?: string } = {};
+if (process.env.VERCEL_ENV === "production") {
+  const gdmDoor = checkProductionGdmDoor(
+    process.env.NEXT_PUBLIC_GDM_DOOR,
+    process.env.GDM_DOOR_ENABLED,
+    readIfPresent(COPY_LEDGER_PATH) ?? "",
+    readIfPresent(GDM_GATES_PATH) ?? ""
+  );
+  if (gdmDoor.errors.length > 0) {
+    throw new Error(
+      "NEXT_PUBLIC_GDM_DOOR refused by the production door guard:\n- " + gdmDoor.errors.join("\n- ")
+    );
+  }
+  // G-09: a missing twin is a closed door, not a failed build. Say so in the log.
+  for (const warning of gdmDoor.warnings ?? []) console.warn(`[gdm-door] ${warning}`);
+  gdmDoorEnv.NEXT_PUBLIC_GDM_DOOR = gdmDoor.effective;
+}
+
 const nextConfig: NextConfig = {
   // E2E builds the legacy and trial deployments into isolated ignored
   // directories, then starts both optimized servers together. Normal builds
@@ -136,7 +162,8 @@ const nextConfig: NextConfig = {
         process.env.NEXT_PUBLIC_SENTRY_RELEASE
       ) ?? "",
     // Production only: the door guard's effective surface list (see above).
-    ...guideDoorEnv
+    ...guideDoorEnv,
+    ...gdmDoorEnv
   },
   // C7 four-jobs restructure (2026-07-21): old bookmarks and deep links keep
   // working. /memory folded into /meals as its "Saved meals" section.

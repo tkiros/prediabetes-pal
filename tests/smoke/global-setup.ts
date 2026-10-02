@@ -6,6 +6,10 @@ import {
 } from "@playwright/test";
 
 import {
+  assertE2EGdmDoorOpened,
+  gdmDoorStates
+} from "./gdm-door";
+import {
   E2E_BASE_URL,
   assertE2EDoorOpened,
   guideDoorStates
@@ -109,6 +113,12 @@ export default async function globalSetup(): Promise<void> {
     const doorOptIn = process.env.PAL_E2E_GUIDE_DOOR ?? "";
     if (doorOptIn !== "") {
       assertE2EDoorOpened(doorOptIn, await guideDoorStates(E2E_BASE_URL));
+    }
+    // Task 0.3 (ruling R33): same reasoning for the GDM door — otherwise a
+    // GDM-door leg would go green with every GDM door smoke spec skipped.
+    const gdmDoorOptIn = process.env.PAL_E2E_GDM_DOOR ?? "";
+    if (gdmDoorOptIn !== "") {
+      assertE2EGdmDoorOpened(gdmDoorOptIn, await gdmDoorStates(E2E_BASE_URL));
     }
     const page = await browser.newPage({
       baseURL: E2E_BASE_URL,

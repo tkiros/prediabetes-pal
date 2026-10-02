@@ -5175,3 +5175,51 @@ button.inline-link {
 .a1c-locked {
   margin: 0;
 }
+
+/* GDM door */
+/* G-38 (DESIGN.md §11): the hero is deliberately NOT a .surface-card — a card
+   in a hero is banned there. Plain grid, no border, no shadow. */
+.gdm-hero {
+  display: grid;
+  gap: 12px;
+}
+
+.gdm-hero h1 {
+  margin: 0;
+  font-size: clamp(2rem, 7vw, 2.6rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--text-strong);
+}
+
+.gdm-hero p {
+  margin: 0;
+  color: var(--text-body);
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+/* G-68 (owner): the no-food-guidance line sits above Sign up and must not
+   read as a footnote — bolder than the hero line, not muted. Selector
+   matches `.gdm-hero p`'s specificity so it need not fight it with !important. */
+.gdm-hero p.gdm-scope {
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+/* Rails 9 and 15: a marketing CTA is 56px, not the app's 52px .primary-button
+   floor. */
+.gdm-cta {
+  min-height: 56px;
+}
+
+/* G-38: the small brand mark GdmWordmark prints above a heading that is a
+   DIFFERENT name than the door's own — never doubling the landing's h1. */
+.gdm-wordmark {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

@@ -268,7 +268,11 @@ export function ResultCard({
             </div>
           </div>
         ) : null}
-        <Link className="result-how" href="/how-it-works">
+        {/* FIX10 (feature map 2026-09-24 §3.0): this pointed at
+            /how-it-works, which is about the weekly recap. Retargeted, not
+            reworded (a new string needs a ledger row): /about#guidance says
+            what every signal is built on and how its words are bounded. */}
+        <Link className="result-how" href="/about#guidance">
           How Prediabetes Pal chooses a signal
           <IconArrowRight size={15} />
         </Link>

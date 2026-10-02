@@ -6,6 +6,30 @@
 > **done**. What remains is the Tally slug and a cosmetic Neon project label.
 > (The handoff's filename is stale — Stage D is done.)
 
+## 🟡 2026-10-02 — the "hourly" crons were not hourly (interim fix shipped)
+
+**Before** (`gh run list --workflow hourly-crons.yml --event schedule`, 40 runs,
+2026-09-24 15:32 → 2026-10-02 01:08 UTC): 5.4 runs a day, gap between runs
+min 2.1 h, **median 4.4 h**, max 8.6 h, every run successful. The schedule was
+one `"0 * * * *"` line; GitHub delays and drops scheduled runs under load,
+worst at the top of the hour. Effects: `/api/health` read all four hourly
+crons `stale` (2 h window) most of the day and returned 503; a user's daily
+nudge fired only when a run fell inside their chosen hour (roughly one day in
+five); pre-charge emails, the Stripe reconcile and the pantry sweep ran hours
+late; the pantry stuck-order alert window (2–3 h) mostly missed.
+
+**Interim:** the schedule is now `"7,27,47 * * * *"` — three chances an hour,
+off the top of the hour. Every job is idempotent and `concurrency` serialises
+runs, so overlap is safe.
+
+**After:** _fill in from the same command once the change has run on `main`
+for a day — runs/day and median gap._
+
+**Durable fix (owner):** Vercel Pro, then move `nudge`, `pantry-sweep`,
+`trial-precharge`, `stripe-reconcile` into `vercel.json` crons and delete
+`hourly-crons.yml`. Do not delete the workflow before that lands. Hobby's
+fair-use terms also need checking against a paid product.
+
 ## ✅ 2026-08-11 — the domain switch, done by the agent via the Vercel REST API
 
 The rename is complete. `vercel project ls` reports
