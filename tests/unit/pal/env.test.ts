@@ -110,14 +110,16 @@ describe("GET /api/health", () => {
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
     // Hermetic against a local shell exporting the kill switch.
     delete process.env.LEGAL_TERMS_FINAL;
-    // Same reason, for the four flag twins reported below.
+    // Same reason, for the flag twins reported below.
     delete process.env.PHOTO_INPUT_ENABLED;
     delete process.env.LONGITUDINAL_INSIGHTS_ENABLED;
     delete process.env.MEAL_MEMORY_ENABLED;
     delete process.env.LEARNING_JOURNEY_ENABLED;
-    // Same hygiene as the four twins above: the guide-door flag also has no
+    delete process.env.GDM_DOOR_ENABLED;
+    // Same hygiene as the twins above: the guide-door flag also has no
     // server twin, so it must be hermetic against a local shell export.
     delete process.env.NEXT_PUBLIC_GUIDE_DOOR;
+    delete process.env.NEXT_PUBLIC_GDM_DOOR;
 
     const response = await GET();
     const payload = await response.json();
@@ -142,7 +144,8 @@ describe("GET /api/health", () => {
       // (owner WTP decision 2026-07-17, commit 8c30265 — kill switch inverted)
       checkoutGate: "open",
       // Runtime state of the four kill switches next.config.ts pairs at build
-      // time. Deleted above, so all four read off — the fail-closed default.
+      // time, plus gdmDoor (GDM_DOOR_ENABLED), whose own guard fails closed
+      // instead. Deleted above, so every one of the five reads off.
       // ⚠️ This is a whole-payload toEqual precisely so a new key cannot reach
       // the response without someone reading it against "without exposing
       // secrets" in the title. These are booleans by name, never values.
@@ -151,6 +154,7 @@ describe("GET /api/health", () => {
         longitudinalInsights: "off",
         mealMemory: "off",
         learningJourney: "off",
+        gdmDoor: "off",
       },
       // A-11: guideDoor is the only runtime probe for the client-only door
       // flag (no server twin) — same "booleans by name, never values" rule.
@@ -167,6 +171,14 @@ describe("GET /api/health", () => {
         doctor: "off",
         plan: "off",
         guide: "off",
+      },
+      // Task 0.3: gdmDoor is the runtime probe for the GDM door — it HAS a
+      // server twin, so unset client + unset twin both read off here.
+      gdmDoor: {
+        landing: "off",
+        organiser: "off",
+        ideas: "off",
+        read: "off",
       },
       db: "unconfigured",
       crons: {
@@ -195,7 +207,9 @@ describe("GET /api/health", () => {
     delete process.env.LONGITUDINAL_INSIGHTS_ENABLED;
     delete process.env.MEAL_MEMORY_ENABLED;
     delete process.env.LEARNING_JOURNEY_ENABLED;
+    delete process.env.GDM_DOOR_ENABLED;
     delete process.env.NEXT_PUBLIC_GUIDE_DOOR;
+    delete process.env.NEXT_PUBLIC_GDM_DOOR;
 
     const response = await GET();
     const payload = await response.json();
@@ -219,6 +233,7 @@ describe("GET /api/health", () => {
         longitudinalInsights: "off",
         mealMemory: "off",
         learningJourney: "off",
+        gdmDoor: "off",
       },
       // Same reasoning as flagTwins above — the early-return path must
       // report guideDoor too, not only the ready path.
@@ -235,6 +250,13 @@ describe("GET /api/health", () => {
         doctor: "off",
         plan: "off",
         guide: "off",
+      },
+      // Same reasoning again — gdmDoor must report on the early-return path.
+      gdmDoor: {
+        landing: "off",
+        organiser: "off",
+        ideas: "off",
+        read: "off",
       },
       db: "unconfigured",
       crons: {
