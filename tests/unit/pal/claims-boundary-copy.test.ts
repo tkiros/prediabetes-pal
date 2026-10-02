@@ -338,7 +338,10 @@ const EXTRA_SOURCES = [
   // this JSON is nothing BUT slide strings and captions. Off-site assets are
   // the one public surface no audit reached before — the same gap as F-25,
   // where a rejected line survived in the brief because nobody scans a brief.
-  "marketing/carousels/posts.json"
+  "marketing/carousels/posts.json",
+  // GDM door Tier 1 copy bank (PRD GDM v1.1 §7.4): lives in lib/, not app/ or
+  // components/, so the glob above never reaches it.
+  "lib/pal/gdm/copy.ts"
 ];
 
 /**

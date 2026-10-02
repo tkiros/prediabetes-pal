@@ -152,6 +152,44 @@ describe("E2E production-build selection", () => {
     expect(listed.PAL_E2E_GUIDE_DOOR).toBe("ideas,source");
   });
 
+  // Task 0.3: same isolation as the guide door above, but the GDM door also
+  // has a server twin (GDM_DOOR_ENABLED) that must be blanked with it.
+  it("blanks an ambient GDM door flag and its server twin unless the e2e opt-in names one", () => {
+    const ambient = isolatedE2ERuntimeEnv({
+      NEXT_PUBLIC_GDM_DOOR: "1",
+      GDM_DOOR_ENABLED: "1"
+    });
+    expect(ambient.NEXT_PUBLIC_GDM_DOOR).toBe("");
+    expect(ambient.GDM_DOOR_ENABLED).toBe("");
+
+    expect(isolatedE2ERuntimeEnv({}).NEXT_PUBLIC_GDM_DOOR).toBe("");
+    expect(isolatedE2ERuntimeEnv({}).GDM_DOOR_ENABLED).toBe("");
+
+    // CI's flag-off matrix leg sets the opt-in to an empty string.
+    expect(
+      isolatedE2ERuntimeEnv({
+        NEXT_PUBLIC_GDM_DOOR: "landing",
+        GDM_DOOR_ENABLED: "1",
+        PAL_E2E_GDM_DOOR: ""
+      }).NEXT_PUBLIC_GDM_DOOR
+    ).toBe("");
+  });
+
+  it("passes PAL_E2E_GDM_DOOR through verbatim and turns the server twin on with it", () => {
+    const opened = isolatedE2ERuntimeEnv({ PAL_E2E_GDM_DOOR: "1" });
+    expect(opened.NEXT_PUBLIC_GDM_DOOR).toBe("1");
+    expect(opened.GDM_DOOR_ENABLED).toBe("1");
+
+    const listed = isolatedE2ERuntimeEnv({
+      NEXT_PUBLIC_GDM_DOOR: "1",
+      PAL_E2E_GDM_DOOR: "landing"
+    });
+    expect(listed.NEXT_PUBLIC_GDM_DOOR).toBe("landing");
+    expect(listed.GDM_DOOR_ENABLED).toBe("1");
+    // Smoke global setup reads the opt-in back from the Playwright process.
+    expect(listed.PAL_E2E_GDM_DOOR).toBe("landing");
+  });
+
   it("refuses a remote database even when the caller provides it", () => {
     expect(() =>
       isolatedE2ERuntimeEnv({
