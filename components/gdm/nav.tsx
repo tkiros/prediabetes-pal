@@ -11,17 +11,19 @@ type GdmNavItem = { href: string; label: string };
 
 /**
  * Row two (G-34): the door's working surfaces, in one wrapping `.chip-row`.
- * It starts empty; PR-2, PR-3, PR-5 and PR-6 each append their surface
- * (questions, plan, meals, summary) with its `gdm-nav` label. Your data and
- * the privacy notice are not here: they sit in the frame's footer
- * (app/gdm/layout.tsx), on every page.
+ * PR-2, PR-3, PR-5 and PR-6 each append their surface (questions, plan,
+ * meals, summary) with its `gdm-nav` label. Your data and the privacy notice
+ * are not here: they sit in the frame's footer (app/gdm/layout.tsx), on every
+ * page.
  */
-const NAV: readonly GdmNavItem[] = [];
+const NAV: readonly GdmNavItem[] = [{ href: GDM_ROUTES.questions, label: GDM_COPY["gdm-nav"].asks }];
 
 /**
  * The door's nav, in two rows (G-34, owner decision). Row one: the wordmark,
- * which is the Home link, and the slot for "Add a question", the door's one
- * filled action. Row two: the working surfaces.
+ * which is the Home link, and "Add a question", the door's one filled action
+ * (F-ASKLIST story 2: "within one tap of every screen"). It is not rendered on
+ * the questions page, where the form is already first. Row two: the working
+ * surfaces.
  */
 export function GdmNav() {
   const pathname = usePathname();
@@ -29,9 +31,11 @@ export function GdmNav() {
     <nav className="gdm-nav" aria-label={GDM_COPY["gdm-nav"].label}>
       <div className="gdm-nav-top">
         <GdmWordmark href={GDM_ROUTES.home} current={pathname === GDM_ROUTES.home} />
-        {/* Slot: "Add a question" (gdm-nav.add, F-ASKLIST story 2) arrives in
-            Task 2.2 as the one filled action here, never rendered on the
-            questions page itself. */}
+        {pathname === GDM_ROUTES.questions ? null : (
+          <Link className="primary-button link-button gdm-nav-add" href={GDM_ROUTES.quickAdd}>
+            {GDM_COPY["gdm-nav"].add}
+          </Link>
+        )}
       </div>
       {NAV.length > 0 ? (
         <ul className="chip-row gdm-nav-links" role="list">

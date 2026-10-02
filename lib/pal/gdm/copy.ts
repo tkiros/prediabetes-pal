@@ -123,5 +123,31 @@ export const GDM_COPY = {
   "gdm-load-failed": {
     line: "That did not load just now.",
     retry: "Try again."
+  },
+  // G-14: the 409 body of POST /api/gdm/items at the per-kind cap, where
+  // `gdm-save-failed`'s "try again in a moment" would be untrue.
+  "gdm-list-full": {
+    line: "This list is full. Delete an entry to add another."
+  },
+  // Task 2.2, F-ASKLIST. PRD §6.2: "The fixed line names the care team; it
+  // says nothing else" — one sentence, nothing about what she asked.
+  "gdm-asklist-lead": {
+    line: "Your care team is the place these questions get answered."
+  },
+  // G-25: `empty` is the drafted empty state (warmth, one action, context),
+  // not "Nothing here yet.". `cardTitle` heads the approved clinical copy the
+  // items API returns for the four routes above the list; `remove` takes two
+  // presses, the second beside `gdm-data-controls.cancel` (G-76).
+  "gdm-asklist-controls": {
+    title: "My questions",
+    field: "Write your question",
+    add: "Add",
+    note: "Add a note about what you ate or what happened",
+    asked: "Asked",
+    answer: "What they said",
+    save: "Save",
+    remove: "Delete",
+    empty: "No questions yet. Add one above whenever it comes to you.",
+    cardTitle: "Before anything else"
   }
 } as const satisfies Record<string, Record<string, string>>;

@@ -132,23 +132,32 @@ describe("gdmFetch", () => {
     expect(new Headers(init.headers).get("content-type")).toBe("application/json");
   });
 
-  it("returns the status and the server's error line on a refusal", async () => {
+  it("returns the status, the server's error line and the whole refusal body (R46: a 409 can carry a card)", async () => {
     const { gdmFetch } = await import("../../../lib/client/gdm-api");
     const { GDM_COPY } = await import("../../../lib/pal/gdm/copy");
     stubFetch(json({ error: GDM_COPY["gdm-consent-required"].line }, 400));
     expect(await gdmFetch("/api/gdm/profile", { method: "POST", body: {} })).toEqual({
       ok: false,
       status: 400,
-      error: GDM_COPY["gdm-consent-required"].line
+      error: GDM_COPY["gdm-consent-required"].line,
+      payload: { error: GDM_COPY["gdm-consent-required"].line }
+    });
+    const full = { error: GDM_COPY["gdm-list-full"].line, route: "possible_hypoglycemia", routeCopy: "approved copy" };
+    stubFetch(json(full, 409));
+    expect(await gdmFetch("/api/gdm/items", { method: "POST", body: {} })).toEqual({
+      ok: false,
+      status: 409,
+      error: GDM_COPY["gdm-list-full"].line,
+      payload: full
     });
   });
 
   it("never throws: a dropped connection or a body that is not JSON is a plain failure", async () => {
     const { gdmFetch } = await import("../../../lib/client/gdm-api");
     stubFetch(new TypeError("Failed to fetch"));
-    expect(await gdmFetch("/api/gdm/profile")).toEqual({ ok: false, status: 0, error: "" });
+    expect(await gdmFetch("/api/gdm/profile")).toEqual({ ok: false, status: 0, error: "", payload: null });
     stubFetch(new Response("<html>Bad gateway</html>", { status: 502 }));
-    expect(await gdmFetch("/api/gdm/profile")).toEqual({ ok: false, status: 502, error: "" });
+    expect(await gdmFetch("/api/gdm/profile")).toEqual({ ok: false, status: 502, error: "", payload: null });
   });
 
   it("a 401 goes to sign-in and is never handed back to the caller", async () => {

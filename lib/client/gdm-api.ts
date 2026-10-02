@@ -4,8 +4,14 @@ import { GDM_ROUTES } from "../pal/gdm/routes";
  * The GDM door's one client wrapper for its own routes and the shared account
  * routes. JSON in and out, and it never throws: a dropped connection is
  * `{ ok: false, status: 0 }`, a body that is not JSON reads as no body.
+ *
+ * A refusal also hands back its whole parsed body as `payload` (null when
+ * there is none): R46, a 409 from a full questions list still carries the
+ * clinical card (`route`, `routeCopy`), and the list must be able to show it.
  */
-export type GdmFetchResult<T> = { ok: true; data: T } | { ok: false; status: number; error: string };
+export type GdmFetchResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; status: number; error: string; payload: unknown };
 
 export type GdmFetchInit = { method?: "GET" | "POST" | "PATCH" | "DELETE"; body?: unknown };
 
@@ -42,7 +48,7 @@ export async function gdmFetch<T>(path: string, init: GdmFetchInit = {}): Promis
       body: hasBody ? JSON.stringify(init.body) : undefined
     });
   } catch {
-    return { ok: false, status: 0, error: "" };
+    return { ok: false, status: 0, error: "", payload: null };
   }
 
   if (response.status === 401) {
@@ -56,7 +62,7 @@ export async function gdmFetch<T>(path: string, init: GdmFetchInit = {}): Promis
 
   const payload = await readJson(response);
   if (response.ok) return { ok: true, data: payload as T };
-  return { ok: false, status: response.status, error: errorLine(payload) };
+  return { ok: false, status: response.status, error: errorLine(payload), payload };
 }
 
 type DeviceStorage = Pick<Storage, "length" | "key" | "removeItem">;
