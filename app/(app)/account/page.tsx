@@ -13,6 +13,7 @@ import {
 } from "../../../lib/client/nudge-settings";
 import { profileStore } from "../../../lib/client/profile-store";
 import { useHydrated } from "../../../lib/client/use-hydrated";
+import { enableReminder, pushSupported } from "../../../components/nudge-opt-in";
 import { SupportCaseForm } from "../../../components/support-case-form";
 
 type EntitlementInfo = {
@@ -66,6 +67,7 @@ export default function AccountPage() {
   const [nudge, setNudge] = useState<NudgeSettings | null>(null);
   const [nudgeSaved, setNudgeSaved] = useState(false);
   const [nudgeError, setNudgeError] = useState(false);
+  const [turningOn, setTurningOn] = useState(false);
   const [canceled, setCanceled] = useState<{ accessUntil: string } | null>(
     null
   );
@@ -350,6 +352,21 @@ export default function AccountPage() {
     }
   }
 
+  async function turnOnNudges() {
+    if (!nudge) {
+      return;
+    }
+    setTurningOn(true);
+    setNudgeError(false);
+    const ok = await enableReminder();
+    setTurningOn(false);
+    if (ok) {
+      setNudge({ ...nudge, optIn: true });
+    } else {
+      setNudgeError(true);
+    }
+  }
+
   async function cancelSubscription() {
     setError(null);
     setCanceling(true);
@@ -570,10 +587,33 @@ export default function AccountPage() {
                 <div className="account-section" data-testid="nudge-settings">
                   <h2 className="section-title">Daily reminder</h2>
                   <p className="page-copy">
+                    {/* FIX2a: the off state used to point at "the home page", where
+                        no card lives; that sentence is deleted (no ledger row
+                        needed) and the way back on is the button below. */}
                     {nudge.optIn
                       ? "One gentle reminder a day, at the hour you pick."
-                      : "The reminder is off. Turn it on from the home page after your next check-in."}
+                      : "The reminder is off."}
                   </p>
+                  {!nudge.optIn &&
+                  entitlement?.tier === "premium" &&
+                  pushSupported() ? (
+                    <>
+                      <button
+                        type="button"
+                        className="recheck-button"
+                        data-testid="nudge-turn-on"
+                        disabled={turningOn}
+                        onClick={turnOnNudges}
+                      >
+                        {turningOn ? "Asking your browser…" : "Turn on the reminder"}
+                      </button>
+                      {nudgeError ? (
+                        <p className="field-error" role="alert">
+                          Couldn&apos;t save — try again.
+                        </p>
+                      ) : null}
+                    </>
+                  ) : null}
                   {nudge.optIn ? (
                     <div className="field-stack">
                       <label htmlFor="nudge-hour" className="field-label">

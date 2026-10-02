@@ -57,3 +57,35 @@ real:
   `tests/unit/pal/prompt-leak-guard.test.ts` now enforces this.
 - `owned-domains.test.ts` hardcodes the path `lib/pal/contact.ts` to exempt that
   one file from its scan. Move the file and update the literal.
+
+## Architecture
+
+**`docs/architecture.md`** is the map: system diagram, the check path, data
+model, API surface, features and their flags, background jobs, safety
+architecture, known ceilings. Read it before touching anything outside one
+component. Decisions live in **`docs/adr/`** (stack, hosting-hybrid, billing,
+analytics-umami, launch-scope). Read those before touching infrastructure,
+auth, billing, or data storage. `hosting-hybrid.md` opens with a superseded
+note — the database is **Neon** and the hourly crons run from
+**`.github/workflows/hourly-crons.yml`** since the 2026-08-10 Railway outage;
+read the note, not just the body. `docs/ops/env-reference.md` is the live
+source of truth for connection variables — trust it over an ADR when they
+disagree. Code is the source of truth for everything else:
+`lib/server/db/schema.ts` for the data model, `app/api/**/route.ts` for the
+API surface, `proxy.ts` for request gating.
+
+These files are **historical and must not be used as a source of truth**:
+`.planning/research/ARCHITECTURE.md` (2026-05, describes a stateless no-auth
+MVP), `PRD/Revora_Technical_Specification_v2.md` (names GPT-4o; the code uses
+`lib/pal/model-id.ts`), `.planning/PROJECT.md` and `.planning/STATE.md`
+(describe a phase that is finished).
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

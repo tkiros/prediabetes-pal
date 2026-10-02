@@ -12,15 +12,16 @@ export type Db = Pick<
 let db: Db | null = null;
 
 /**
- * Production DB handle (node-postgres — plain TCP driver, Railway Postgres
- * compatible; docs/adr/hosting-hybrid.md). Tests inject a PGlite-backed
- * drizzle instance through the same Db type, so data-access code never knows
- * which driver it runs on.
+ * Production DB handle (node-postgres — plain TCP driver; Neon Postgres via
+ * its pooled endpoint since 2026-08-10, see the superseded note in
+ * docs/adr/hosting-hybrid.md). Tests inject a PGlite-backed drizzle instance
+ * through the same Db type, so data-access code never knows which driver it
+ * runs on.
  *
  * Pool stays small (max 3) because each Vercel function instance gets its
- * own pool — see the ADR for the pgbouncer/pooling revisit trigger. TLS
- * turns on for every host except localhost (Railway requires it; local dev
- * Postgres typically doesn't have a cert to offer).
+ * own pool and Neon's pooler multiplexes them — see the ADR for the pooling
+ * revisit trigger. TLS turns on for every host except localhost (Neon
+ * requires it; local dev Postgres typically doesn't have a cert to offer).
  */
 export function getDb(): Db {
   if (!db) {
