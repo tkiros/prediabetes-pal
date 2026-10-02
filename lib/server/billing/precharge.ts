@@ -1,6 +1,7 @@
 import { and, eq, gt, isNull, lte } from "drizzle-orm";
 
 import { schema, type Db } from "../db";
+import { recordHeartbeat } from "../heartbeat";
 import type { SendEmailInput, SendEmailResult } from "../email";
 import { priceVariantDisplay } from "../pricing";
 import { createCancelToken } from "./cancel-token";
@@ -39,9 +40,14 @@ export async function runPrechargeSweep(
   // yet had the pre-charge email stamped. current_period_end > now excludes
   // already-lapsed rows; <= now+48h excludes far-future ones.
   const due = await db
-    .select({ sub: schema.subscriptions, email: schema.users.email })
+    .select({
+      sub: schema.subscriptions,
+      email: schema.users.email,
+      timezone: schema.profiles.timezone
+    })
     .from(schema.subscriptions)
     .innerJoin(schema.users, eq(schema.subscriptions.userId, schema.users.id))
+    .leftJoin(schema.profiles, eq(schema.profiles.userId, schema.subscriptions.userId))
     .where(
       and(
         eq(schema.subscriptions.status, "trialing"),
@@ -54,7 +60,7 @@ export async function runPrechargeSweep(
       )
     );
 
-  for (const { sub, email } of due) {
+  for (const { sub, email, timezone } of due) {
     // RE-03/BC-10: claim-before-send. The old shape was stamp-after-send, so
     // two overlapping runs both read the unstamped row and both emailed
     // "you'll be charged". The atomic claim (same pattern as pantry/process)
@@ -74,9 +80,13 @@ export async function runPrechargeSweep(
     }
 
     const amountDisplay = priceVariantDisplay(sub.priceVariant);
+    // FIX6: the date in the user's own timezone. Without one the server's
+    // (UTC) day showed, a day late for an evening start in the Americas. No
+    // profile yet → the profiles column default.
     const chargeDateText = sub.currentPeriodEnd.toLocaleDateString("en-US", {
       month: "long",
-      day: "numeric"
+      day: "numeric",
+      timeZone: timezone ?? "America/New_York"
     });
     const cancelToken = createCancelToken(
       sub.id,
@@ -113,14 +123,8 @@ export async function runPrechargeSweep(
     }
   }
 
-  // Liveness heartbeat for /api/health (same shape as the pantry sweep).
-  await db
-    .insert(schema.cronHeartbeat)
-    .values({ name: "trial-precharge", lastRunAt: now })
-    .onConflictDoUpdate({
-      target: schema.cronHeartbeat.name,
-      set: { lastRunAt: now }
-    });
+  // Liveness heartbeat for /api/health.
+  await recordHeartbeat(db, "trial-precharge", now);
 
   return { sent };
 }
