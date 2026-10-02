@@ -1,4 +1,5 @@
 import type { ClinicalRoute } from "../pal/clinical-risk";
+import { URGENT_CARE_LINE } from "../pal/urgent-care";
 
 export type PalRisk = "SAFE" | "MODERATE" | "HIGH";
 
@@ -100,10 +101,11 @@ export function mapCheckFailure(failure: unknown) {
   switch (code) {
     case "timeout":
       return "This check took longer than expected. Please try again.";
+    // FIX1: both answer before the clinical router runs (lib/pal/urgent-care.ts).
     case "rate_limited":
-      return "Prediabetes Pal is helping a lot of people right now. Please try again in a moment.";
+      return `Prediabetes Pal is helping a lot of people right now. Please try again in a moment. ${URGENT_CARE_LINE}`;
     case "paused":
-      return "Prediabetes Pal checks are paused for maintenance right now. Please try again in a few minutes.";
+      return `Prediabetes Pal checks are paused for maintenance right now. Please try again in a few minutes. ${URGENT_CARE_LINE}`;
     case "network":
       return "We couldn't reach Prediabetes Pal just now. Please check your connection and try again.";
     case "retry":
