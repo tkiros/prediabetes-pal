@@ -32,9 +32,11 @@ import { DashboardView, type DashboardData } from "./dashboard-view";
  * /journey, where guests see the sign-in state.
  */
 
+// Mirrors GUEST_BOX in lib/server/plan-box.ts (a client file can't import the
+// value — that module pulls in the db). FIX4: no meta line for guests.
 const GUEST_PLAN_BOX: PlanBoxData = {
   planName: "Free plan",
-  meta: "The daily check is free.",
+  meta: "",
   isFree: true,
   signedIn: false,
   attention: false
