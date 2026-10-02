@@ -160,45 +160,77 @@ describe("My questions — the unsent draft (pal.gdm.ask.draft)", () => {
     }
   };
 
-  it("is kept under pal.gdm.ask.draft, read back as typed, and cleared", async () => {
+  const HER = "0b6c7a1e-5d2f-4c3b-9a8e-1f2d3c4b5a69";
+  const OTHER = "7e1d2c3b-4a59-4687-b7a6-958473625140";
+
+  it("is kept under pal.gdm.ask.draft, tagged with its owner, read back as typed, and cleared", async () => {
     const { askDraft } = await import("../../../components/gdm/ask-list");
     const storage = memoryStorage();
-    expect(askDraft.read(storage)).toEqual({ text: "", note: "" });
-    askDraft.write({ text: "Can I move my snack", note: "night shift" }, storage);
+    expect(askDraft.read(HER, storage)).toEqual({ text: "", note: "" });
+    askDraft.write(HER, { text: "Can I move my snack", note: "night shift" }, storage);
     expect([...storage.map.keys()]).toEqual(["pal.gdm.ask.draft"]);
-    expect(askDraft.read(storage)).toEqual({ text: "Can I move my snack", note: "night shift" });
+    expect(JSON.parse(storage.map.get("pal.gdm.ask.draft")!)).toEqual({ owner: HER, text: "Can I move my snack", note: "night shift" });
+    expect(askDraft.read(HER, storage)).toEqual({ text: "Can I move my snack", note: "night shift" });
     askDraft.clear(storage);
     expect(storage.map.size).toBe(0);
+  });
+
+  // Final review F11: the prediabetes door's sign-out and erase do not clear
+  // pal.gdm.* (R42's reverse), so on a shared device an unsent question could
+  // reach the next person who signs in. It is kept only for the account that typed it.
+  it("another account's draft, or a legacy draft with no owner, is dropped — never shown, and gone from the device", async () => {
+    const { askDraft } = await import("../../../components/gdm/ask-list");
+    const storage = memoryStorage();
+    askDraft.write(OTHER, { text: "not hers", note: "theirs" }, storage);
+    expect(askDraft.read(HER, storage)).toEqual({ text: "", note: "" });
+    expect(storage.map.size).toBe(0);
+    storage.setItem("pal.gdm.ask.draft", JSON.stringify({ text: "from before the tag", note: "" }));
+    expect(askDraft.read(HER, storage)).toEqual({ text: "", note: "" });
+    expect(storage.map.size).toBe(0);
+    // Her own draft survives her own reads.
+    askDraft.write(HER, { text: "hers", note: "" }, storage);
+    expect(askDraft.read(HER, storage)).toEqual({ text: "hers", note: "" });
+    expect(askDraft.read(HER, storage)).toEqual({ text: "hers", note: "" });
   });
 
   it("an emptied draft leaves no key behind, and a corrupt one reads as empty", async () => {
     const { askDraft } = await import("../../../components/gdm/ask-list");
     const storage = memoryStorage();
-    askDraft.write({ text: "a", note: "" }, storage);
-    askDraft.write({ text: "", note: "" }, storage);
+    askDraft.write(HER, { text: "a", note: "" }, storage);
+    askDraft.write(HER, { text: "", note: "" }, storage);
     expect(storage.map.size).toBe(0);
     storage.setItem("pal.gdm.ask.draft", "{not json");
-    expect(askDraft.read(storage)).toEqual({ text: "", note: "" });
-    storage.setItem("pal.gdm.ask.draft", JSON.stringify({ text: 7, note: ["x"] }));
-    expect(askDraft.read(storage)).toEqual({ text: "", note: "" });
+    expect(askDraft.read(HER, storage)).toEqual({ text: "", note: "" });
+    storage.setItem("pal.gdm.ask.draft", JSON.stringify({ owner: HER, text: 7, note: ["x"] }));
+    expect(askDraft.read(HER, storage)).toEqual({ text: "", note: "" });
   });
 
   it("a storage that throws (private mode, blocked) never throws into the page, and no storage at all is fine", async () => {
     const { askDraft } = await import("../../../components/gdm/ask-list");
-    expect(() => askDraft.write({ text: "a", note: "" }, throwing)).not.toThrow();
+    expect(() => askDraft.write(HER, { text: "a", note: "" }, throwing)).not.toThrow();
     expect(() => askDraft.clear(throwing)).not.toThrow();
-    expect(askDraft.read(throwing)).toEqual({ text: "", note: "" });
+    expect(askDraft.read(HER, throwing)).toEqual({ text: "", note: "" });
     // No window in this test: the default storage accessor is caught too.
-    expect(askDraft.read()).toEqual({ text: "", note: "" });
-    expect(() => askDraft.write({ text: "a", note: "" })).not.toThrow();
+    expect(askDraft.read(HER)).toEqual({ text: "", note: "" });
+    expect(() => askDraft.write(HER, { text: "a", note: "" })).not.toThrow();
+    // A mismatch whose removal throws still reads as empty.
+    const readsTheirs = { ...throwing, getItem: () => JSON.stringify({ owner: OTHER, text: "theirs", note: "" }) };
+    expect(askDraft.read(HER, readsTheirs)).toEqual({ text: "", note: "" });
   });
 
   it("sign-out, erase and deletion clear it with the door's other device keys", async () => {
     const { askDraft } = await import("../../../components/gdm/ask-list");
     const storage = memoryStorage();
-    askDraft.write({ text: "Can I move my snack", note: "" }, storage);
+    askDraft.write(HER, { text: "Can I move my snack", note: "" }, storage);
     clearGdmDeviceKeys([storage]);
-    expect(askDraft.read(storage)).toEqual({ text: "", note: "" });
+    expect(askDraft.read(HER, storage)).toEqual({ text: "", note: "" });
+  });
+
+  it("the questions page hands the list her opaque user id as the owner — never her email", () => {
+    const page = fs.readFileSync(path.join(ROOT, "app/gdm/(door)/questions/page.tsx"), "utf8");
+    expect(page).toMatch(/const \{ userId \} = await requireGdmDoor\(\);/);
+    expect(page).toMatch(/<AskList ownerId=\{userId\} \/>/);
+    expect(page).not.toMatch(/email/i);
   });
 });
 

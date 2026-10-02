@@ -15,7 +15,8 @@ export type GdmOccasion = (typeof GDM_OCCASIONS)[number];
 export const GDM_UNITS = ["grams", "choices", "servings", "none"] as const;
 export type GdmUnit = (typeof GDM_UNITS)[number];
 
-const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+/** A YYYY-MM-DD her device wrote (G-44). Shared with the route that retires a plan. */
+export const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const words = (max: number) => z.string().trim().min(1).max(max);
 
 /**
@@ -82,4 +83,15 @@ export function detectConflicts(plans: StoredPlan[]): PlanConflict[] {
     }
   }
   return conflicts;
+}
+
+/**
+ * A card's differing occasions, in the order of her day. Both cards of a pair
+ * get the same ones. Here, beside detectConflicts, so Home and My plan share
+ * it without Home importing the plan form (and its photo module).
+ */
+export function differingOccasions(conflicts: readonly PlanConflict[], planId: string): GdmOccasion[] {
+  return GDM_OCCASIONS.filter((occasion) =>
+    conflicts.some((conflict) => conflict.occasion === occasion && conflict.planIds.includes(planId))
+  );
 }

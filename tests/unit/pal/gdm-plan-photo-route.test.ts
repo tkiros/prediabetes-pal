@@ -201,6 +201,23 @@ describe("/api/gdm/plan-photo — a photo of her sheet, stored as a photo", () =
     expect((await as(other).POST(post(photo()))).status).toBe(200);
   });
 
+  // Final review F10: at the cap nothing she sends can be kept, so the route
+  // counts first and never reads (up to ~2.8 MB of) a body it will refuse.
+  it("at the cap a POST is refused on the count alone — 409 before its body is read", async () => {
+    await testDb.raw.query(
+      `INSERT INTO gdm_items (user_id, kind, body_ciphertext) SELECT $1, 'plan_photo', 'v1:x' FROM generate_series(1, ${PLAN_PHOTO_CAP})`,
+      [her]
+    );
+    const request = post(photo());
+    expect((await as(her).POST(request)).status).toBe(409);
+    expect(request.bodyUsed).toBe(false);
+    expect(await rows()).toHaveLength(PLAN_PHOTO_CAP);
+    // Below the cap the body is read as before.
+    const below = post(photo());
+    expect((await as(other).POST(below)).status).toBe(200);
+    expect(below.bodyUsed).toBe(true);
+  });
+
   it("another user's GET and DELETE of her id → 404, and her photo is untouched", async () => {
     const id = await added();
     expect((await as(other).GET(get(`?id=${id}`))).status).toBe(404);

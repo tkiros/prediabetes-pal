@@ -12,6 +12,7 @@ import {
   type AskBody,
   type GdmItemKind
 } from "../../../../lib/pal/gdm/items";
+import { IsoDate } from "../../../../lib/pal/gdm/plan-record";
 import { loadSafetyContract, type SafetyContract } from "../../../../lib/pal/safety-contract";
 import { captureServerError } from "../../../../lib/pal/sentry-capture";
 import { encryptField, safeDecrypt } from "../../../../lib/server/crypto";
@@ -34,7 +35,16 @@ export const runtime = "nodejs";
 const Kind = z.enum(GDM_ITEM_KINDS);
 const Id = z.string().uuid();
 const PostSchema = z.object({ kind: Kind, body: z.unknown(), replaces: Id.optional() }).strict();
-const PatchSchema = z.object({ id: Id, body: z.unknown() }).strict();
+/**
+ * A PATCH either rewrites an entry's whole body (a question or a meal), or,
+ * for a plan only, retires it (final review F2): `retire.replacedOn` is her
+ * device's day, never one the route makes up (G-44). Both are strict, so a
+ * body beside `retire`, or any other key at either level, is a 400.
+ */
+const PatchSchema = z.union([
+  z.object({ id: Id, body: z.unknown() }).strict(),
+  z.object({ id: Id, retire: z.object({ replacedOn: IsoDate }).strict() }).strict()
+]);
 
 type Deps = GdmRouteDeps & { loadContract?: () => SafetyContract };
 
@@ -130,10 +140,20 @@ export function createGdmItemsHandlers(deps: Deps = {}) {
       const hers = and(eq(schema.gdmItems.id, parsed.data.id), eq(schema.gdmItems.userId, gate.userId));
       const [row] = await db().select({ kind: schema.gdmItems.kind }).from(schema.gdmItems).where(hers);
       if (!row) return gdmNotFound();
+      if ("retire" in parsed.data) {
+        // F2: only a plan is retired; a question or a meal is deleted instead.
+        if (row.kind !== "plan") return gdmInvalid();
+        const retired = await retirePlan(db(), gate.userId, parsed.data.id, parsed.data.retire.replacedOn);
+        if (retired === "not_found") return gdmNotFound();
+        // Server strings the page never shows (R47): every failure there is gdm-save-failed.
+        if (retired === "already_replaced") return NextResponse.json({ error: "Already replaced." }, { status: 409 });
+        if (retired === "last_current") return NextResponse.json({ error: "Last current plan." }, { status: 409 });
+        return ok();
+      }
       // R47: a plan is never edited in place. It is only replaced (POST with
-      // `replaces`, whose new body must arrive with replacedOn null), so
-      // `replacedOn` is set inside that one transaction and nowhere else, and
-      // a plan's record stays as she entered it.
+      // `replaces`, whose new body must arrive with replacedOn null) or retired
+      // (above), so `replacedOn` is set inside one of those two transactions
+      // and nowhere else, and the rest of a plan's record stays as she entered it.
       if (row.kind === "plan") return gdmInvalid();
       const body = isItemKind(row.kind) ? GDM_ITEM_BODY[row.kind]?.safeParse(parsed.data.body) : undefined;
       if (!body?.success) return gdmInvalid();
@@ -199,6 +219,56 @@ async function replacePlan(db: Db, userId: string, oldId: string, next: PlanDate
       .set({ bodyCiphertext: seal({ ...oldBody, replacedOn: next.enteredOn }), updatedAt: new Date() })
       .where(and(eq(schema.gdmItems.id, oldId), eq(schema.gdmItems.userId, userId)));
     return { id: row.id };
+  });
+}
+
+/** A stored plan's two dates, or null when its body will not decrypt (safeDecrypt never throws) or parse. */
+function readPlanDates(ciphertext: string): PlanDates | null {
+  try {
+    return JSON.parse(safeDecrypt(ciphertext)) as PlanDates;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Final review F2: "this one no longer stands". R50 lets a second current
+ * plan stand beside the first and a replace always leaves one current, so
+ * without this two current plans could never go back to one. In one
+ * transaction:
+ *   1. lock every one of HER plan rows FOR UPDATE (whether a plan is current
+ *      lives inside its encrypted body, so it cannot be filtered in SQL; two
+ *      tabs retiring the last two plans: the second waits, then sees one left);
+ *   2. the target must be among them — absent → "not_found" (404) — and
+ *      current — already dated → "already_replaced" (409) — and at least one
+ *      OTHER current plan must remain — none → "last_current" (409): she is
+ *      never left with no current plan;
+ *   3. rewrite the target's body with replacedOn = her device's day, as sent
+ *      (the route never makes up a date — G-44), re-encrypted.
+ * Another plan that will not decrypt or parse is NOT counted as current:
+ * listGdmItems leaves it out of what she sees, so counting it could leave her
+ * with no plan on screen. A target that will not decrypt cannot be
+ * re-encrypted: JSON.parse throws and the whole transaction rolls back (500).
+ */
+async function retirePlan(db: Db, userId: string, id: string, replacedOn: string) {
+  return db.transaction(async (tx) => {
+    const plans = await tx
+      .select({ id: schema.gdmItems.id, bodyCiphertext: schema.gdmItems.bodyCiphertext })
+      .from(schema.gdmItems)
+      .where(and(eq(schema.gdmItems.userId, userId), eq(schema.gdmItems.kind, "plan")))
+      .for("update");
+    const target = plans.find((plan) => plan.id === id);
+    if (!target) return "not_found" as const;
+    const body = JSON.parse(safeDecrypt(target.bodyCiphertext)) as PlanDates;
+    if (body.replacedOn) return "already_replaced" as const;
+    const anotherStands = plans.some((plan) => plan.id !== id && readPlanDates(plan.bodyCiphertext)?.replacedOn === null);
+    if (!anotherStands) return "last_current" as const;
+
+    await tx
+      .update(schema.gdmItems)
+      .set({ bodyCiphertext: seal({ ...body, replacedOn }), updatedAt: new Date() })
+      .where(and(eq(schema.gdmItems.id, id), eq(schema.gdmItems.userId, userId)));
+    return "retired" as const;
   });
 }
 

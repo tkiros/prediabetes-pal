@@ -5,19 +5,19 @@ import { useEffect, useState, type FormEvent } from "react";
 import { track } from "../../lib/client/analytics";
 import { gdmFetch } from "../../lib/client/gdm-api";
 import { localIsoDate } from "../../lib/client/gdm-date";
-import { useFocusAfterRender } from "../../lib/client/gdm-focus";
+import { focusIdAfterRemove, useFocusAfterRender } from "../../lib/client/gdm-focus";
 import { GDM_COPY } from "../../lib/pal/gdm/copy";
 import type { AskBody } from "../../lib/pal/gdm/items";
 import {
   currentPlans,
   detectConflicts,
+  differingOccasions,
   GDM_OCCASIONS,
   GDM_UNITS,
   isEmptyPlan,
   type GdmOccasion,
   type GdmPlan,
   type GdmUnit,
-  type PlanConflict,
   type StoredPlan
 } from "../../lib/pal/gdm/plan-record";
 import { PlanCard, planEnteredId, planOccasionId } from "./plan-card";
@@ -44,7 +44,9 @@ const FIELD_ID = {
 const SAVE_ID = "gdm-plan-save";
 const ADD_ANOTHER_ID = "gdm-plan-add-another";
 const figureId = (occasion: GdmOccasion) => `gdm-plan-figure-${occasion}`;
-const replaceId = (planId: string) => `gdm-plan-${planId}-replace`;
+export const planReplaceId = (planId: string) => `gdm-plan-${planId}-replace`;
+export const planRetireId = (planId: string) => `gdm-plan-${planId}-retire`;
+export const planRetireCancelId = (planId: string) => `gdm-plan-${planId}-retire-cancel`;
 const parkId = (planId: string, occasion: GdmOccasion) => `gdm-plan-${planId}-${occasion}-park`;
 
 /** G-14: each field's maxLength is its bound in GdmPlanSchema (lib/pal/gdm/plan-record.ts), so a 400 is unreachable. */
@@ -161,16 +163,116 @@ export function withSavedPlan(plans: readonly StoredPlan[], saved: StoredPlan, r
   return [saved, ...plans.map((plan) => (plan.id === replacedId ? { ...plan, replacedOn: saved.enteredOn } : plan))];
 }
 
+/** Final review F2: "This one no longer stands" is offered only while she has two or more current plans, so she is never left with none. */
+export const canRetire = (currentCount: number) => currentCount >= 2;
+
+/** The PATCH that retires one plan: dated with her device's day, never one the server makes up (G-44). */
+export function retireRequest(id: string, replacedOn: string): { id: string; retire: { replacedOn: string } } {
+  return { id, retire: { replacedOn } };
+}
+
+/** The list after a retire, as the server now holds it: that one plan dated, the rest untouched. */
+export function withRetiredPlan(plans: readonly StoredPlan[], retiredId: string, replacedOn: string): StoredPlan[] {
+  return plans.map((plan) => (plan.id === retiredId ? { ...plan, replacedOn } : plan));
+}
+
+/** A current card's first control: the park beside its first differing occasion, or else its Replace. */
+const firstSlotControlId = (planId: string, differs: readonly GdmOccasion[]) =>
+  differs.length > 0 ? parkId(planId, differs[0]) : planReplaceId(planId);
+
+/**
+ * F2: after a retire, focus goes to the remaining current card's first control
+ * (the next card, or for the last one the card above it), worked out from the
+ * list as it will render: These differ recomputed from the plans that still
+ * stand, so with one plan left that control is its Replace.
+ */
+export function focusAfterRetire(plans: readonly StoredPlan[], retiredId: string, replacedOn: string): string {
+  const shown = currentPlans([...plans]).map((plan) => plan.id);
+  const conflicts = detectConflicts(withRetiredPlan(plans, retiredId, replacedOn));
+  return focusIdAfterRemove(shown, retiredId, (id) => firstSlotControlId(id, differingOccasions(conflicts, id)), ADD_ANOTHER_ID);
+}
+
+export type PlanSlotControlsProps = {
+  planId: string;
+  /** How many current plans she has: "This one no longer stands" needs two or more. */
+  currentCount: number;
+  /** A form is open (Replace or Add another plan): the slot offers nothing until it closes. */
+  formOpen: boolean;
+  /** "This one no longer stands" was pressed once on this plan (G-76). */
+  confirming: boolean;
+  /** A retire is in flight: its controls wait. */
+  busy: boolean;
+  failure: string | null;
+  onReplace: () => void;
+  onAskRetire: () => void;
+  onRetire: () => void;
+  onCancelRetire: () => void;
+};
+
+/**
+ * The controls under one current plan card, drawn from props alone: Replace
+ * (G-75), then, only while she has two or more current plans, "This one no
+ * longer stands" (F2), which takes two presses like Delete on My questions
+ * (G-76): the second shows the same string, as the danger fill, beside
+ * Cancel. Each names its plan by that card's Entered on line.
+ */
+export function PlanSlotControls(props: PlanSlotControlsProps) {
+  const { planId, currentCount, formOpen, confirming, busy, failure, onReplace, onAskRetire, onRetire, onCancelRetire } = props;
+  return (
+    <>
+      {formOpen ? null : (
+        <div className="gdm-actions">
+          <button
+            id={planReplaceId(planId)}
+            type="button"
+            className="secondary-button gdm-plan-replace"
+            aria-describedby={planEnteredId(planId)}
+            onClick={onReplace}
+          >
+            {CONTROLS.replace}
+          </button>
+          {!canRetire(currentCount) ? null : confirming ? (
+            <>
+              <button
+                id={planRetireId(planId)}
+                type="button"
+                className="danger-button"
+                disabled={busy}
+                aria-describedby={planEnteredId(planId)}
+                onClick={onRetire}
+              >
+                {CONTROLS.retire}
+              </button>
+              <button id={planRetireCancelId(planId)} type="button" className="secondary-button" disabled={busy} onClick={onCancelRetire}>
+                {CANCEL}
+              </button>
+            </>
+          ) : (
+            <button
+              id={planRetireId(planId)}
+              type="button"
+              className="secondary-button"
+              disabled={busy}
+              aria-describedby={planEnteredId(planId)}
+              onClick={onAskRetire}
+            >
+              {CONTROLS.retire}
+            </button>
+          )}
+        </div>
+      )}
+      {failure ? (
+        <p className="field-error" role="alert">
+          {failure}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
 /** The question "Add to my questions" parks: askText, its {occasion} filled by that occasion's heading. */
 export function parkedAskText(occasion: GdmOccasion): string {
   return DIFFER.askText.replace("{occasion}", OCCASIONS[occasion]);
-}
-
-/** A card's differing occasions, in the order of her day. Both cards of a pair get the same ones. */
-export function differingOccasions(conflicts: readonly PlanConflict[], planId: string): GdmOccasion[] {
-  return GDM_OCCASIONS.filter((occasion) =>
-    conflicts.some((conflict) => conflict.occasion === occasion && conflict.planIds.includes(planId))
-  );
 }
 
 const unitFrom = (value: string): GdmUnit => GDM_UNITS.find((unit) => unit === value) ?? "none";
@@ -183,7 +285,9 @@ type PlanItem = { id: string; body: GdmPlan };
  * either the form (no plan yet, G-39) with the empty line below it, or her
  * current plan cards in one column (R51: the door's frame is 480px), each
  * with "Replace this plan", which opens the form filled with that plan
- * (G-75), then "Add another plan", which opens a blank form whose plan
+ * (G-75), and, while she has two or more, "This one no longer stands",
+ * which dates that one and moves it to her replaced plans (final review F2),
+ * then "Add another plan", which opens a blank form whose plan
  * stands beside hers (R50: a second sheet from a second clinician). A photo
  * of her sheet comes next (Task 3.3, components/gdm/plan-photos.tsx), then
  * replaced plans, kept and dated. Two current plans that differ for an
@@ -206,6 +310,9 @@ export function PlanKeep() {
   const [failure, setFailure] = useState<string | null>(null);
   const [parking, setParking] = useState(false);
   const [parkFailed, setParkFailed] = useState<string | null>(null);
+  const [confirmingRetire, setConfirmingRetire] = useState<string | null>(null);
+  const [retiring, setRetiring] = useState(false);
+  const [retireFailed, setRetireFailed] = useState<{ planId: string; line: string } | null>(null);
   const focusLater = useFocusAfterRender();
 
   const current = currentPlans(plans);
@@ -259,7 +366,7 @@ export function PlanKeep() {
       setMode(null);
       setForm(EMPTY_PLAN_FORM);
       setStatus(STATUS.saved);
-      focusLater(replaceId(saved.id));
+      focusLater(planReplaceId(saved.id));
     } else {
       // G-26: the form stays as she filled it.
       setFailure(saveFailure(result.status, result.error));
@@ -275,6 +382,8 @@ export function PlanKeep() {
     setForm(formFor(next));
     setFailure(null);
     setStatus(null);
+    setConfirmingRetire(null);
+    setRetireFailed(null);
     focusLater(FIELD_ID.givenBy);
   }
 
@@ -284,7 +393,46 @@ export function PlanKeep() {
     setMode(null);
     setForm(EMPTY_PLAN_FORM);
     setFailure(null);
-    focusLater(mode.kind === "add" ? ADD_ANOTHER_ID : replaceId(mode.plan.id));
+    focusLater(mode.kind === "add" ? ADD_ANOTHER_ID : planReplaceId(mode.plan.id));
+  }
+
+  /** F2, G-76: the first press only asks, with focus on Cancel. */
+  function askRetire(planId: string) {
+    setConfirmingRetire(planId);
+    setRetireFailed(null);
+    focusLater(planRetireCancelId(planId));
+  }
+
+  function cancelRetire(planId: string) {
+    setConfirmingRetire(null);
+    setRetireFailed(null);
+    focusLater(planRetireId(planId));
+  }
+
+  /**
+   * F2, the second press: one PATCH dates that plan with her device's day. On
+   * success it moves to her replaced plans and These differ is worked out
+   * again; focus goes to the remaining current card's first control. On
+   * failure nothing moves: the save-failed line, on that card, focus on Cancel.
+   */
+  async function retire(planId: string) {
+    if (retiring) return;
+    const today = localIsoDate();
+    setRetiring(true);
+    setRetireFailed(null);
+    setStatus(STATUS.saving);
+    const result = await gdmFetch<{ ok: true }>(ITEMS_PATH, { method: "PATCH", body: retireRequest(planId, today) });
+    if (result.ok) {
+      focusLater(focusAfterRetire(plans, planId, today));
+      setPlans((shown) => withRetiredPlan(shown, planId, today));
+      setConfirmingRetire(null);
+      setStatus(STATUS.saved);
+    } else {
+      setRetireFailed({ planId, line: SAVE_FAILED });
+      setStatus(null);
+      focusLater(planRetireCancelId(planId));
+    }
+    setRetiring(false);
   }
 
   async function park(planId: string, occasion: GdmOccasion) {
@@ -470,17 +618,18 @@ export function PlanKeep() {
                     differs={differingOccasions(conflicts, plan.id)}
                     renderDiffer={(occasion) => parkButton(plan.id, occasion)}
                   />
-                  {mode === null ? (
-                    <button
-                      id={replaceId(plan.id)}
-                      type="button"
-                      className="secondary-button gdm-plan-replace"
-                      aria-describedby={planEnteredId(plan.id)}
-                      onClick={() => open({ kind: "replace", plan })}
-                    >
-                      {CONTROLS.replace}
-                    </button>
-                  ) : null}
+                  <PlanSlotControls
+                    planId={plan.id}
+                    currentCount={current.length}
+                    formOpen={mode !== null}
+                    confirming={confirmingRetire === plan.id}
+                    busy={retiring}
+                    failure={retireFailed?.planId === plan.id ? retireFailed.line : null}
+                    onReplace={() => open({ kind: "replace", plan })}
+                    onAskRetire={() => askRetire(plan.id)}
+                    onRetire={() => void retire(plan.id)}
+                    onCancelRetire={() => cancelRetire(plan.id)}
+                  />
                 </li>
               ))}
             </ul>

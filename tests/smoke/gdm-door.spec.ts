@@ -155,12 +155,16 @@ test.describe("GDM door — organiser", () => {
 // and sends nothing before it lets her through, and an erase that returns her
 // to onboarding rather than Home. PR-2 adds My questions between consent and
 // erase: park a question, a shaky one raises the approved clinical card above
-// the list, a number-shaped worry raises nothing. PR-3's My plan runs as its
+// the list, a number-shaped worry raises nothing; before the erase, the shared
+// /account page serves her, an account made only through this door, its
+// export and its erase control (final review F4). PR-3's My plan runs as its
 // own test (its own time budget, its own account): two plans that differ at
 // Lunch both carry the "These differ" chip and park the differ question into
 // My questions; a sheet photo the device cannot open fails cleanly, one it
 // can is kept, shown, linked for download on Your data (G-62) and removed in
-// two presses. PR-4's Home runs as its own test too: with a date given at
+// two presses; then one of the two plans no longer stands (final review F2),
+// leaving one current plan, nothing flagged, and the other dated among her
+// replaced plans, on My plan and on Home. PR-4's Home runs as its own test too: with a date given at
 // consent, Home leads with the appointment (a phrase and her date, never a
 // day count), then a plain checklist with nothing to tick and ACOG's line;
 // her date changes there; once a plan is entered, Home shows it on the plan
@@ -396,6 +400,25 @@ test.describe("GDM door — organiser, signed in", () => {
     await expect(list.locator("li", { hasText: sheets }).getByRole("checkbox", { name: ASKS.asked })).toBeChecked();
     await expect(list.locator("li", { hasText: sheets }).getByLabel(ASKS.answer)).toHaveValue("The newer one stands.");
 
+    // Final review F4 (R60): with the door closed /gdm/data is a 404, so the
+    // incident lever's fallback is the shared /account page. An account that
+    // has only ever come through this door opens it: the export link is there,
+    // the export is a 200 carrying her GDM profile and questions, and the erase
+    // control is present. Nothing under app/(app)/ changes for this.
+    await page.goto("/account");
+    await expect(page.getByTestId("account-export-link")).toHaveAttribute("href", "/api/account/export");
+    const exported = await page.request.get("/api/account/export");
+    expect(exported.status()).toBe(200);
+    const file = (await exported.json()) as {
+      gdmProfile: { appointmentDate: string | null } | null;
+      gdmItems: Array<{ kind: string; body: { text?: string } }>;
+    };
+    expect(file.gdmProfile).toMatchObject({ appointmentDate: "2026-10-08" });
+    expect(file.gdmItems.filter((item) => item.kind === "ask").map((item) => item.body.text)).toEqual(
+      expect.arrayContaining([sheets, shaky])
+    );
+    await expect(page.getByTestId("withdraw-health-data-consent")).toBeVisible();
+
     // Your data: erase, behind a second press.
     await erase(page);
 
@@ -502,6 +525,42 @@ test.describe("GDM door — organiser, signed in", () => {
     await expect(photo).toHaveCount(0);
     await expect(status).toHaveText(STATUS.removed);
     await expect(page.getByRole("button", { name: PLAN.photoAdd })).toBeFocused();
+
+    // Final review F2: two current plans go back to one. "This one no longer
+    // stands" sits on each current card while there are two; it takes two
+    // presses (G-76), dates that plan with her device's day and moves it to her
+    // replaced plans, and These differ is worked out again from what stands.
+    await expect(cards).toHaveCount(2);
+    const nurse = cards.filter({ hasText: "the clinic nurse" });
+    await nurse.getByRole("button", { name: PLAN.retire }).click();
+    await expect(nurse.getByRole("button", { name: DATA_CONTROLS.cancel })).toBeFocused();
+    await expect(cards).toHaveCount(2);
+    await nurse.getByRole("button", { name: PLAN.retire }).click();
+    await expect(cards).toHaveCount(1);
+    await expect(status).toHaveText(STATUS.saved);
+    await expect(cards.nth(0)).toContainText("the dietitian");
+    await expect(page.locator(".gdm-differ-chip")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: PLAN.retire })).toHaveCount(0);
+    await expect(cards.nth(0).getByRole("button", { name: PLAN.replace })).toBeFocused();
+    const replacedPlans = page.locator("ul.gdm-plan-replaced > li");
+    const retiredOn = replacedPlans.locator(".gdm-plan-date", { hasText: PLAN.replacedOn }).locator("time");
+    await expect(replacedPlans).toHaveCount(1);
+    await expect(replacedPlans).toContainText("the clinic nurse");
+    await expect(replacedPlans).toContainText("30 g");
+    await expect(retiredOn).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}$/);
+    await expect(retiredOn).not.toBeEmpty();
+    // What the server holds is what comes back.
+    await page.reload();
+    await expect(cards).toHaveCount(1);
+    await expect(replacedPlans).toHaveCount(1);
+    await expect(page.locator(".gdm-differ-chip")).toHaveCount(0);
+
+    // Home reads the same current plans, so it follows with no change of its own.
+    await page.goto(GDM_ROUTES.home);
+    const homeCards = page.locator(".gdm-home-plan .gdm-plan-card");
+    await expect(homeCards).toHaveCount(1);
+    await expect(homeCards).toContainText("the dietitian");
+    await expect(page.locator(".gdm-differ-chip")).toHaveCount(0);
 
     await erase(page);
   });
@@ -655,6 +714,26 @@ test.describe("GDM door — organiser, signed in", () => {
     await expect(lunchMeal.getByRole("checkbox", { name: MEALS.inSummary })).not.toBeChecked();
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
+    // A tick whose save fails (the PATCH answers 500): nothing changed on the
+    // server, so the box goes back to what is stored, the save-failed line
+    // shows, no "Saved." is announced, and focus stays on the box (Task 5.1's
+    // deferred check, committed by final review F12). `click`, not `check`:
+    // check() itself fails when the box does not stay ticked.
+    let refusedPatches = 0;
+    await page.route("**/api/gdm/items", (route) => {
+      if (route.request().method() !== "PATCH") return route.continue();
+      refusedPatches += 1;
+      return route.fulfill({ status: 500, contentType: "application/json", body: "{}" });
+    });
+    const lunchBox = lunchMeal.getByRole("checkbox", { name: MEALS.inSummary });
+    await lunchBox.click();
+    await expect(lunchMeal.getByText(SAVE_FAILED)).toBeVisible();
+    await expect(lunchBox).not.toBeChecked();
+    await expect(status).toHaveText("");
+    await expect(lunchBox).toBeFocused();
+    expect(refusedPatches).toBe(1);
+    await page.unroute("**/api/gdm/items");
+
     // G-76: deleting her own words takes two presses. The first only asks,
     // with focus on Cancel; the second deletes, its heading goes with it, and
     // focus moves to the next meal's first control (G-39).
@@ -715,7 +794,9 @@ test.describe("GDM door — organiser, signed in", () => {
     await expect(links.getByRole("link", { name: NAV.meals })).toHaveAttribute("href", GDM_ROUTES.meals);
     await expect(links.getByRole("link", { name: NAV.asks })).toHaveAttribute("href", GDM_ROUTES.questions);
     await expect(page.getByRole("button", { name: SUMMARY.print })).toHaveCount(0);
-    await expect(page.locator("body")).toContainText(GDM_COPY["gdm-disclaimer"].line);
+    await expect(page.getByRole("heading", { level: 2 })).toHaveCount(0);
+    // Twice, each as its own line: in the page body (it prints) and in the footer (it does not).
+    await expect(page.getByText(GDM_COPY["gdm-disclaimer"].line, { exact: true })).toHaveCount(2);
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
     // Enter a plan, a meal marked for the summary, and an open question.
@@ -779,7 +860,8 @@ test.describe("GDM door — organiser, signed in", () => {
     await expect(planSection).toContainText(lunchFigure);
     await expect(mealsSection).toContainText(mealText);
     await expect(asksSection).toContainText(askText);
-    await expect(page.locator("body")).toContainText(GDM_COPY["gdm-disclaimer"].line);
+    // In the body as well as the footer: the footer's copy alone would not pass (final review F12).
+    await expect(page.getByText(GDM_COPY["gdm-disclaimer"].line, { exact: true })).toHaveCount(2);
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
     // Print is present now that something is entered, and it really calls

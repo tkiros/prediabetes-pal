@@ -221,7 +221,7 @@ describe("These differ — both entries kept, neither picked (PRD §6.2 story 3;
   });
 
   it("each card is told which of its occasions differ — the same occasions on both cards", async () => {
-    const { differingOccasions } = await import("../../../components/gdm/plan-keep");
+    const { differingOccasions } = await import("../../../lib/pal/gdm/plan-record");
     const a = stored("a", { unit: "grams", figures: { lunch: "45 g", dinner: "45 g" } });
     const b = stored("b", { unit: "grams", figures: { lunch: "30 g", dinner: "45 g" } });
     const conflicts = detectConflicts([a, b]);
@@ -230,12 +230,110 @@ describe("These differ — both entries kept, neither picked (PRD §6.2 story 3;
     expect(differingOccasions(conflicts, "c")).toEqual([]);
   });
 
+  it("both pages take it from the plan record, so Home never pulls in the plan form and its photo module", () => {
+    for (const file of ["components/gdm/plan-keep.tsx", "components/gdm/waiting-mode.tsx"]) {
+      const source = fs.readFileSync(path.join(ROOT, file), "utf8");
+      expect(source, file).not.toMatch(/export function differingOccasions/);
+      expect(source, file).toMatch(/differingOccasions[\s\S]*from "\.\.\/\.\.\/lib\/pal\/gdm\/plan-record"/);
+    }
+    expect(fs.readFileSync(path.join(ROOT, "components/gdm/waiting-mode.tsx"), "utf8")).not.toMatch(/from "\.\/plan-keep"/);
+  });
+
   it("the chip is neutral: --border-strong on --surface-muted, and no verdict colour (G-40)", () => {
     const css = fs.readFileSync(path.join(ROOT, "app/globals.css"), "utf8");
     const rule = /\.gdm-differ-chip\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
     expect(rule).toMatch(/var\(--border-strong\)/);
     expect(rule).toMatch(/var\(--surface-muted\)/);
     expect(rule).not.toMatch(/--(?:safe|moderate|high|danger|accent)/);
+  });
+});
+
+// ── This one no longer stands (final review F2): two current plans can go back to one ──
+
+describe("This one no longer stands — two current plans can go back to one (final review F2)", () => {
+  const noop = () => undefined;
+  const slot = async (over: Partial<import("../../../components/gdm/plan-keep").PlanSlotControlsProps> = {}) => {
+    const { PlanSlotControls } = await import("../../../components/gdm/plan-keep");
+    return PlanSlotControls({
+      planId: "a",
+      currentCount: 2,
+      formOpen: false,
+      confirming: false,
+      busy: false,
+      failure: null,
+      onReplace: noop,
+      onAskRetire: noop,
+      onRetire: noop,
+      onCancelRetire: noop,
+      ...over
+    });
+  };
+  const buttons = (node: ReactNode) => elements(node).filter((el) => el.type === "button").map((el) => el.props as Record<string, unknown>);
+
+  it("the string is one line in the plan's own row, and says nothing about which plan is right", () => {
+    expect(CONTROLS.retire).toBe("This one no longer stands");
+  });
+
+  it("is offered on a current plan only while she has two or more — never on her last one", async () => {
+    const { canRetire, planReplaceId, planRetireId } = await import("../../../components/gdm/plan-keep");
+    expect([0, 1, 2, 3].map(canRetire)).toEqual([false, false, true, true]);
+    expect(buttons(await slot({ currentCount: 1 })).map((b) => [b.id, b.children])).toEqual([[planReplaceId("a"), CONTROLS.replace]]);
+    expect(buttons(await slot({ currentCount: 2 })).map((b) => [b.id, b.children, b.className])).toEqual([
+      [planReplaceId("a"), CONTROLS.replace, "secondary-button gdm-plan-replace"],
+      [planRetireId("a"), CONTROLS.retire, "secondary-button"]
+    ]);
+  });
+
+  it("takes two presses, like Delete on My questions: the second shows the same string beside Cancel (G-76)", async () => {
+    const { planRetireCancelId, planRetireId } = await import("../../../components/gdm/plan-keep");
+    const shown = buttons(await slot({ confirming: true }));
+    expect(shown.map((b) => b.children)).toEqual([CONTROLS.replace, CONTROLS.retire, GDM_COPY["gdm-data-controls"].cancel]);
+    expect(shown[1]).toMatchObject({ id: planRetireId("a"), className: "danger-button" });
+    expect(shown[2]).toMatchObject({ id: planRetireCancelId("a") });
+    // Each control names the plan it acts on, by that card's Entered on line.
+    for (const button of shown.slice(0, 2)) expect(button["aria-describedby"]).toBe("gdm-plan-a-entered");
+    const busy = buttons(await slot({ confirming: true, busy: true }));
+    expect(busy.slice(1).every((b) => b.disabled === true)).toBe(true);
+  });
+
+  it("offers nothing while a form is open, and a failure is the save-failed line, as an alert on that card", async () => {
+    expect(buttons(await slot({ formOpen: true }))).toEqual([]);
+    const failed = await slot({ confirming: true, failure: GDM_COPY["gdm-save-failed"].line });
+    expect(elements(failed).find((el) => (el.props as { role?: string }).role === "alert")).toMatchObject({
+      props: { children: GDM_COPY["gdm-save-failed"].line }
+    });
+  });
+
+  it("the request dates that one plan with her device's day, and the list moves it to her replaced plans", async () => {
+    const { retireRequest, withRetiredPlan } = await import("../../../components/gdm/plan-keep");
+    expect(retireRequest("b", "2026-10-22")).toEqual({ id: "b", retire: { replacedOn: "2026-10-22" } });
+    const a = stored("a", { unit: "grams", figures: { lunch: "45 g" } });
+    const b = stored("b", { unit: "grams", figures: { lunch: "30 g" } });
+    const after = withRetiredPlan([a, b], "b", "2026-10-22");
+    expect(after).toEqual([a, { ...b, replacedOn: "2026-10-22" }]);
+    expect(currentPlans(after).map((p) => p.id)).toEqual(["a"]);
+    // These differ recomputes from the list: with one current plan, nothing differs.
+    expect(detectConflicts([a, b])).toHaveLength(1);
+    expect(detectConflicts(after)).toEqual([]);
+  });
+
+  it("focus goes to the remaining current card's first control: its Replace once nothing differs, its first park while something still does", async () => {
+    const { focusAfterRetire, planReplaceId } = await import("../../../components/gdm/plan-keep");
+    const a = stored("a", { unit: "grams", figures: { lunch: "45 g" } });
+    const b = stored("b", { unit: "grams", figures: { lunch: "30 g" } });
+    expect(focusAfterRetire([a, b], "a", "2026-10-22")).toBe(planReplaceId("b"));
+    expect(focusAfterRetire([a, b], "b", "2026-10-22")).toBe(planReplaceId("a"));
+    // Three current, two still differing at dinner once `a` goes: the next card's first control is its park.
+    const c = stored("c", { unit: "grams", figures: { lunch: "45 g", dinner: "30 g" } });
+    const d = stored("d", { unit: "grams", figures: { lunch: "45 g", dinner: "45 g" } });
+    expect(focusAfterRetire([b, c, d], "b", "2026-10-22")).toBe("gdm-plan-c-dinner-park");
+  });
+
+  it("the page uses her device's day and renders the controls with the count of current plans", () => {
+    const source = fs.readFileSync(path.join(ROOT, "components/gdm/plan-keep.tsx"), "utf8");
+    expect(source).toMatch(/const today = localIsoDate\(\);/);
+    expect(source).toMatch(/retireRequest\(planId, today\)/);
+    expect(source).toMatch(/<PlanSlotControls[\s\S]*?currentCount=\{current\.length\}/);
   });
 });
 

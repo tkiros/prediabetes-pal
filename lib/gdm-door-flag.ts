@@ -77,7 +77,15 @@ export const GDM_SURFACE_ROWS: Record<GdmSurface, readonly string[]> = {
   read: []
 };
 
+/**
+ * A surface opens only with the surfaces it leans on (the guide door's
+ * "intake requires source and home" precedent). `organiser` needs `landing`:
+ * app/gdm/layout.tsx puts `gdm-landing-hero` in every /gdm/* page's meta
+ * description, a row only `landing` lists, and sign-out, erase and delete
+ * all land on /gdm (final review F1).
+ */
 export const GDM_SURFACE_REQUIRES: Partial<Record<GdmSurface, readonly GdmSurface[]>> = {
+  organiser: ["landing"],
   ideas: ["organiser"],
   read: ["organiser"]
 };
