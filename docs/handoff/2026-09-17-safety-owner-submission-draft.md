@@ -21,8 +21,8 @@ surface to the production flag value.
 Requested turnaround: **[turnaround: ____]**
 
 What we need from you: decisions on the copy rows below (Approved / not, and
-which variant), plus the callouts and questions in §3 and §3d, plus the
-design review in §4, plus the three questions in §5, plus the classification
+which variant), plus the callouts and questions in §3 and §3d, plus the three
+rows filed 2026-10-02 in §3e, plus the design review in §4, plus the three questions in §5, plus the classification
 question and the counsel question on `intake_ask` in §6.
 
 ---
@@ -301,6 +301,17 @@ relabelled, and is the `trust` line acceptable given it depends on `source`?
 
 ---
 
+## 3e. Filed 2026-10-02 — 3 rows
+
+Two are new copy that nothing renders yet (Active `No`); one is live copy that
+never had a row. Full Notes are in the ledger.
+
+| Copy ID | Copy | Class | What we need |
+|---|---|---|---|
+| `landing-hero-guide` | You were just told you have prediabetes. Here are meal ideas, calm first steps, and plain answers about what the words mean, in one place. Check any meal when you are unsure. | `product-role` | Guide-D6: the landing's line for the day `ideas,source` flips. It is PRD §3 verbatim, so it carries the §7.3 question in §3d (second person about the reader's clinical state), sharper on a public page. Approve only if the PRD owner amends §3 or §7.3; otherwise send back a landing variant. Not built until Approved. |
+| `signin-in-app-browser` | You opened this inside another app. Your sign-in link will open in your phone's own browser, not here, so open this page in your browser first and sign in there. | `product-role` | Shown on `/signin` only inside an in-app browser (Reddit, Instagram, Facebook), where the magic link otherwise opens elsewhere and the sign-up silently fails. Not built until Approved. |
+| `check-unavailable-urgent-line` | If you're feeling unwell right now — shaky, faint, confused, or worse — don't wait for an app: contact your doctor or your local emergency number. | `out-of-scope-routing` | **Live.** This is §5b's `URGENT_CARE_LINE`. Since 2026-10-02 (FIX1) it is also appended to the 429 and the launch-pause 503, and to the app's own rate-limited and paused messages, every response that answers before the clinical router can run. Same instruction as the Approved `clinical-urgent-symptoms` route. |
+
 ## 4. Calm-colour review (A-61 / Task 2.3)
 
 One production-facing (though currently dormant) change needs a design/safety
@@ -395,6 +406,10 @@ to still hand them to human care. `ABUSE_LIMIT_COPY` guards the
 trial-start/auth abuse routes and is deliberately generic (must not hint
 whether an address/account exists).
 
+**Update 2026-10-02:** `URGENT_CARE_LINE` now has a Pending row,
+`check-unavailable-urgent-line` (§3e), and is shown on more paths (FIX1).
+`RATE_LIMIT_COPY` and `ABUSE_LIMIT_COPY` still have none.
+
 **Question: should these three strings get ledger rows?** Under "Copy
 governance" in `CONSTRAINTS.md`, every user-facing string is supposed to be a
 ledger row; this gap predates the guide redesign work and was not part of its
@@ -433,9 +448,12 @@ generalization reads "Here is how clinicians read the middle band." Either
 way, the underlying page (`/guides/a1c-5-7-to-6-4`) needs a claim class before
 it can be linked from in-app surfaces addressing the reader's own number.
 
-**Consequence if unresolved:** if no claim class is assigned by "branch-read
-day" (the day the owner reads the concierge-test results (D5) and picks
-the food-first or number-first order), **F-NUMBERS is deferred** — the
+**Consequence if unresolved:** *(2026-10-02: the concierge test (D5) was
+skipped by owner ruling R-A, so there is no branch-read day; the food-first
+order stands. F-NUMBERS waits on this class alone.)* If no claim class is
+assigned by "branch-read day" (the day the owner reads the concierge-test
+results (D5) and picks the food-first or number-first order), **F-NUMBERS is
+deferred** — the
 "what these numbers mean, in general" feature does not ship, and any
 in-app link that would have pointed at this page's second-person sentence is
 held back per the plan's default.

@@ -78,7 +78,7 @@ for counsel, not a copy decision.
 | `--text-soft` | `#64748b` | **plane-restricted, §3.1** |
 | `--accent` · `--accent-strong` · `--accent-contrast` · `--accent-tint` | `#0d5f57` · `#0a4a44` · `#f8fafc` · `#e6f2ef` | the one brand colour. `-strong` is hover/pressed and link text; `-tint` is a selected or soft-brand fill |
 | `--ink` / `--danger` | `#0f172a` / `#b91c1c` | anything that must stay neutral-dark / destructive text |
-| `--safe-*` · `--moderate-*` · `--high-*` | `globals.css:16-27` | the three verdict sets: border, tint, text, badge |
+| `--safe-*` · `--moderate-*` · `--high-*` | `globals.css:17-28` | the three verdict sets: border, tint, text, badge |
 | `--dur-press` · `--dur-fast` · `--dur` · `--ease` | §6 | motion |
 | `--icon-sm` / `--icon` | `16px` / `20px` | icon sizes |
 

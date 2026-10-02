@@ -150,3 +150,12 @@ describe("showPantryEntry", () => {
     }
   });
 });
+
+describe("FIX10: the result card's signal link", () => {
+  it("points at the guidance section on /about, not the weekly-recap page", () => {
+    expect(RESULT_CARD_SOURCE).toMatch(/href="\/about#guidance"[^>]*>\s*How Prediabetes Pal chooses a signal/);
+    expect(RESULT_CARD_SOURCE).not.toContain('href="/how-it-works"');
+    const about = fs.readFileSync(path.join(process.cwd(), "app/about/page.tsx"), "utf8");
+    expect(about).toMatch(/<h2 id="guidance">What the guidance is built on<\/h2>/);
+  });
+});
