@@ -11,6 +11,7 @@ import type {
   PalRisk,
   PalUserResponse
 } from "./ui-state";
+import type { GdmOccasion, GdmUnit } from "../pal/gdm/plan-record";
 
 /**
  * Umami analytics (plan P7; docs/adr/analytics-umami.md). A typed, closed
@@ -234,6 +235,25 @@ export type AnalyticsEvent =
       name: "intake_ask";
       props: { pain_1: PainKey | "none"; pain_2: PainKey | "none"; pain_3: PainKey | "none"; win: WinKey | "skipped" };
     }
+  // PRD GDM v1.1 §7.4 / §9.1 — the second front door. Closed enums only: which
+  // surface, which step, which occasion, which way her clinic counts, whether
+  // a figure exists. Never the text she typed, never the figure, never a date.
+  // `gdm_ask_parked` is a count of parked asks (the word the scan forbids is
+  // deliberately not used here). docs/ops/launch-controls.md §14 reads these.
+  | { name: "gdm_door_shown"; props: { surface: "landing" | "home" } }
+  | {
+      name: "gdm_onboarding_step";
+      props: { step: "told" | "not_told_exit" | "date" | "consent" | "done" };
+    }
+  | { name: "gdm_waiting_opened" }
+  | { name: "gdm_asklist_opened" }
+  | { name: "gdm_ask_parked"; props: { from: "list" | "quick_add" | "plan_differ" } }
+  | {
+      name: "gdm_plan_entered";
+      props: { unit: GdmUnit; has_figure: boolean };
+    }
+  | { name: "gdm_meal_saved"; props: { occasion: GdmOccasion } }
+  | { name: "gdm_summary_printed"; props: { before_appointment: "yes" | "no" | "no_date" } }
   | { name: "photo_draft"; props: { items: number; uncertain: number } };
 
 // Runtime belt-over-type-belt guard: even if a caller bypasses the type
@@ -270,6 +290,14 @@ const ALLOWED_EVENT_NAMES: ReadonlySet<AnalyticsEvent["name"]> = new Set([
   "orientation_dismissed",
   "learn_opened",
   "intake_ask",
+  "gdm_door_shown",
+  "gdm_onboarding_step",
+  "gdm_waiting_opened",
+  "gdm_asklist_opened",
+  "gdm_ask_parked",
+  "gdm_plan_entered",
+  "gdm_meal_saved",
+  "gdm_summary_printed",
   "photo_draft",
   "result_feedback_submitted",
   "clarification_requested",

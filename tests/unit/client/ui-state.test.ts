@@ -5,6 +5,7 @@ import {
   isSlowThresholdReached,
   mapCheckFailure
 } from "../../../lib/client/ui-state";
+import { URGENT_CARE_LINE } from "../../../lib/pal/urgent-care";
 
 describe("CheckUiState", () => {
   it("supports idle to submitting to slow to done and error states", () => {
@@ -50,6 +51,9 @@ describe("mapCheckFailure", () => {
   it("maps timeout, 429, network failure, and fallback errors to friendly retry copy", () => {
     expect(mapCheckFailure({ code: "timeout" })).toContain("longer than expected");
     expect(mapCheckFailure({ code: "rate_limited" })).toContain("a lot of people");
+    // FIX1: both answer before the clinical router — each carries the urgent line.
+    expect(mapCheckFailure({ code: "rate_limited" })).toContain(URGENT_CARE_LINE);
+    expect(mapCheckFailure({ code: "paused" })).toContain(URGENT_CARE_LINE);
     expect(mapCheckFailure({ code: "network" })).toContain("reach Prediabetes Pal");
     expect(mapCheckFailure({ code: "retry" })).toContain("try again");
     expect(mapCheckFailure(new Error("server exploded"))).toContain("try again");

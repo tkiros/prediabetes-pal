@@ -10,6 +10,7 @@ export const DISALLOWED_PATHS = [
   "/admin",
   "/canceled",
   "/demo",
+  "/gdm/",
   "/history",
   "/home",
   "/journey",
