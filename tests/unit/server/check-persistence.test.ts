@@ -318,6 +318,13 @@ describe("trial-mode hard wall (4.4)", () => {
     expect(await testDb.db.select().from(schema.checks)).toHaveLength(10);
   });
 
+  it("trial mode, FIX11: a first-day account with no profile row is walled (its checks would never count)", async () => {
+    await setAccountCreatedAt(new Date());
+    await testDb.db.delete(schema.profiles);
+    const POST = createHandler({ sessionUserId: userId, paywallMode: () => "trial" });
+    expect((await POST(checkRequest())).status).toBe(402);
+  });
+
   it("trial mode, FIX11: a first-day read error fails toward the wall", async () => {
     await setAccountCreatedAt(new Date());
     // Entitlement reads subscriptions; the first-day read joins users — fail only that.

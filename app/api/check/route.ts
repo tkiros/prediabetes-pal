@@ -146,7 +146,10 @@ function getModelClient(model?: string) {
 // the wall then called them "yesterday's checks". On the account's first local
 // day a non-premium session keeps the taster: checks persisted today count
 // against it, migrated guest checks included (history-migrate keeps their
-// createdAt). Any read error fails toward the wall — no paid spend.
+// createdAt). No profile row ⇒ no taster: checks persist only for a consented
+// profile, so without one the count would stay 0 and day 1 would be
+// unlimited (a callbackUrl that skips /welcome; a GDM-only account). Any read
+// error fails toward the wall — no paid spend.
 // ponytail: counts persisted checks, so a fail-soft persistence miss
 // undercounts; bounded by the 200/day per-user spend cap.
 async function firstDayTasterLeft(database: Db, userId: string, at: Date): Promise<boolean> {
@@ -156,8 +159,8 @@ async function firstDayTasterLeft(database: Db, userId: string, at: Date): Promi
       .from(schema.users)
       .leftJoin(schema.profiles, eq(schema.profiles.userId, schema.users.id))
       .where(eq(schema.users.id, userId));
-    if (!row) return false;
-    const timezone = row.timezone ?? "America/New_York";
+    if (!row || row.timezone === null) return false;
+    const timezone = row.timezone;
     const dayKey = dayKeyInTimezone(timezone);
     if (dayKey(row.createdAt) !== dayKey(at)) return false;
     return (await countChecksToday(database, userId, timezone, at)) < TASTER_LIMIT;
