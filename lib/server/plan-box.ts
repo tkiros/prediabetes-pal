@@ -52,9 +52,12 @@ export function planBoxAttention(entitlement: {
   );
 }
 
+// FIX4 (feature map 2026-09-24 §3.0): the guest box said "The daily check is
+// free." — false after day 1 in trial mode. Deleted, not reworded: a
+// replacement sentence needs an Approved ledger row. Empty meta renders nothing.
 const GUEST_BOX: PlanBoxData = {
   planName: "Free plan",
-  meta: "The daily check is free.",
+  meta: "",
   isFree: true,
   signedIn: false,
   attention: false

@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 
 import {
+  GDM_SURFACES,
+  gdmDoorEnabled,
+  gdmDoorServerEnabled,
+  type GdmSurface,
+} from "../../../lib/gdm-door-flag";
+import {
   GUIDE_SURFACES,
   guideDoorEnabled,
   type GuideSurface,
@@ -94,6 +100,7 @@ export function createHealthHandler(deps: HealthDeps = {}) {
           billingWebhook,
           flagTwins: flagTwinStates(),
           guideDoor: guideDoorStates(),
+          gdmDoor: gdmDoorStates(),
           db,
           crons,
         },
@@ -139,13 +146,19 @@ export function createHealthHandler(deps: HealthDeps = {}) {
         // whether LEGAL_TERMS_FINAL is set. Same predicate as checkoutGate() in
         // app/api/billing/handlers.ts. Exposes no config values.
         checkoutGate: process.env.LEGAL_TERMS_FINAL === "0" ? "closed" : "open",
-        // Runtime state of the four kill switches. See flagTwinStates() — this
-        // is the only place any of them is observable after the build.
+        // Runtime state of the four kill switches next.config.ts pairs at
+        // build time, plus gdmDoor (a fifth, guarded differently — see
+        // flagTwinStates()'s own docstring). This is the only place any of
+        // them is observable after the build.
         flagTwins: flagTwinStates(),
         // A-11: the guide-door flag (lib/guide-door-flag.ts) is a client
         // build flag with no server twin — this is its ONLY runtime probe.
         // See guideDoorStates() below.
         guideDoor: guideDoorStates(),
+        // Task 0.3: the GDM door DOES have a server twin (GDM_DOOR_ENABLED),
+        // so this reports the door's EFFECTIVE state (client flag AND server
+        // twin), not just the client bundle's. See gdmDoorStates() below.
+        gdmDoor: gdmDoorStates(),
         // These bounded states contain no secrets, URLs, timestamps, or counts.
         // Unlike the process-liveness route, this endpoint is product readiness:
         // stateful features and scheduled recovery paths must actually work.
@@ -178,6 +191,12 @@ const NO_STORE_HEADERS = { "Cache-Control": "no-store" } as const;
  * value. ⛔ Deliberately NOT wired into `readinessIssues` — that drives
  * `ok:false` and a 503, and a flag being off is an intended operating state,
  * not an outage. Monitor these; do not page on them.
+ *
+ * `gdmDoor` (GDM_DOOR_ENABLED) is a fifth entry here for the same reason —
+ * a runtime probe for a kill switch — but it is not one of the four
+ * next.config.ts twinMismatch pairs above: `lib/gdm-door-guard.ts` fails
+ * that switch CLOSED at production build time rather than throwing (review
+ * G-09), so this route stays its only runtime observation.
  */
 function flagTwinStates() {
   return {
@@ -185,16 +204,24 @@ function flagTwinStates() {
     longitudinalInsights: longitudinalInsightsServerEnabled() ? "on" : "off",
     mealMemory: mealMemoryServerEnabled() ? "on" : "off",
     learningJourney: learningJourneyServerEnabled() ? "on" : "off",
+    gdmDoor: gdmDoorServerEnabled() ? "on" : "off",
   } as const;
 }
 
 /**
  * A-11: `NEXT_PUBLIC_GUIDE_DOOR` (lib/guide-door-flag.ts) is a client build
- * flag with no server twin — the door adds no server boundary, so there is
- * nothing for next.config.ts's build-time twin guard to pair it with. This
- * is therefore the ONLY runtime probe that says which guide surfaces a
- * given deploy renders; Task 1.12's e2e global setup reads
- * `guideDoor.ideas === "on"` here to decide whether door smoke specs run.
+ * flag with no server twin OF ITS OWN. (G-67: that is not because the door
+ * never adds a server boundary — the module docstring records that
+ * `orient` gates a real `PATCH /api/profile` op and a
+ * `profiles.orientation` column directly on `guideDoorEnabled("orient")`
+ * (A-111) — it is because there is no separate runtime kill switch for
+ * next.config.ts's build-time twin guard to pair against: turning a surface
+ * like `orient` off after it has shipped is a reviewed rebuild + redeploy,
+ * never an env flip, because the server's own check reads this same
+ * build-time flag.) This is therefore the ONLY runtime probe that says
+ * which guide surfaces a given deploy renders; Task 1.12's e2e global setup
+ * reads `guideDoor.ideas === "on"` here to decide whether door smoke specs
+ * run.
  *
  * Built from GUIDE_SURFACES so a surface added later shows up automatically
  * — never hand-enumerated. Same "booleans by name, never values" rule as
@@ -209,6 +236,28 @@ function guideDoorStates(): Record<GuideSurface, "on" | "off"> {
       guideDoorEnabled(surface) ? "on" : "off",
     ]),
   ) as Record<GuideSurface, "on" | "off">;
+}
+
+/**
+ * Task 0.3: the GDM door's EFFECTIVE state (lib/gdm-door-flag.ts). Unlike
+ * the guide door above, this one HAS a server twin (`GDM_DOOR_ENABLED`) —
+ * the door stores health data, a real server boundary — so a surface reads
+ * "on" only when the client build flag names it AND the server twin reads
+ * exactly "1". That mirrors the same AND the production guard
+ * (lib/gdm-door-guard.ts) enforces, so this probe always reports what the
+ * door actually does, not just what the client bundle alone would suggest.
+ *
+ * Built from GDM_SURFACES so a surface added later shows up automatically;
+ * same "booleans by name, never the raw value" rule as guideDoorStates().
+ */
+function gdmDoorStates(): Record<GdmSurface, "on" | "off"> {
+  const serverOn = gdmDoorServerEnabled();
+  return Object.fromEntries(
+    GDM_SURFACES.map((surface) => [
+      surface,
+      serverOn && gdmDoorEnabled(surface) ? "on" : "off",
+    ]),
+  ) as Record<GdmSurface, "on" | "off">;
 }
 
 function readinessIssues(input: {

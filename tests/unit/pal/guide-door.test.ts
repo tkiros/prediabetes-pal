@@ -36,7 +36,7 @@ vi.mock("../../../lib/server/session", () => ({
 vi.mock("../../../lib/server/plan-box", () => ({
   getPlanBox: async () => ({
     planName: "Free plan",
-    meta: "The daily check is free.",
+    meta: "",
     isFree: true,
     signedIn: true,
     attention: false
