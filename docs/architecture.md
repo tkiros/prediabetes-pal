@@ -1,6 +1,6 @@
 # Prediabetes Pal — architecture and feature map
 
-**As of:** 2026-10-01 (main at `7ad39eb` + uncommitted nudge/ADR fixes).
+**As of:** 2026-10-02 (main after #163–#170, #178, #180; GDM PR-1…PR-6 open as drafts #171–#177).
 **Read this first**, then `docs/adr/` for the *why* behind each choice and
 `docs/ops/env-reference.md` for the live configuration. Code is the source of
 truth for everything else; this file names where to look.
@@ -39,7 +39,7 @@ a PWA and packaged as an Android TWA, with magic-link accounts, a card-gated
 │                                                                     │
 │  lib/pal  — the judging engine (prompt, schemas, floors, contract)  │
 │  lib/server — db, crypto, email, entitlement, billing, pantry, nudge│
-│  app/gdm/** — second door on branch feat/gdm-door-tier1, not on main│
+│  app/gdm/** — second door: landing on main (dark); rest in #171–#177│
 └──┬──────────┬──────────┬───────────┬───────────┬───────────┬────────┘
    │          │          │           │           │           │
    ▼          ▼          ▼           ▼           ▼           ▼
@@ -125,7 +125,7 @@ Budgets: client aborts at 12 s, model timeout 10 s, `maxDuration = 15`.
 | Email | `email_delivery_attempts`, `email_suppressions` | Status machine from Resend webhooks; recipient stored as HMAC hash |
 | Pantry Review | `pantry_orders`, `pantry_photos`, `pantry_items` | Stripe session id unique (idempotency); claim token; sweep index on status |
 | Ops | `support_cases`, `deletion_log`, `cron_heartbeat` | Identity-free deletion audit; heartbeat read by `/api/health` |
-| GDM door (branch only) | `gdm_profiles`, `gdm_items` | Migration 0020 on `feat/gdm-door-tier1`, not on `main`; consent-gated, field-encrypted; see §8.2 |
+| GDM door (draft PR) | `gdm_profiles`, `gdm_items` | Migration 0020 in draft #171, not on `main` or in production; consent-gated, field-encrypted; see §8.2 |
 
 ## 5. API surface (`app/api/`)
 
@@ -159,7 +159,7 @@ Budgets: client aborts at 12 s, model timeout 10 s, `maxDuration = 15`.
 | Pantry Review | `/pantry`, `/pantry/intake`, `/pantry/thanks`, `/report/[id]` | $49 one-time product |
 | Admin | `/admin/feedback`, `/admin/pantry` | Founder-only tables |
 | Internal | `/video-engine` | Dashboard for §12 |
-| GDM door (branch only) | `/gdm`, `/gdm/start`, `/gdm/privacy`, `/gdm/{home, questions, plan, meals, summary, data}` | On `feat/gdm-door-tier1`, outside the `(app)` shell; see §8.2 |
+| GDM door | `/gdm`, `/gdm/start`, `/gdm/privacy`, `/gdm/{home, questions, plan, meals, summary, data}` | `/gdm` and the `/gdm/start` stub on `main` (404 while dark); the rest in drafts #171–#177; outside the `(app)` shell; see §8.2 |
 
 PWA: `public/manifest.webmanifest` (start `/home`), `public/sw.js` (offline page, build-id versioned cache, dev kill switch), TWA package `com.prediabetespal.twa` (`twa-manifest.json`).
 
@@ -186,14 +186,14 @@ PWA: `public/manifest.webmanifest` (start `/home`), `public/sw.js` (offline page
 | Result feedback | Feedback on a result with a bounded reason (too vague, wrong food, felt unsafe, confusing, other) and optional comment, linked to the persisted check; founder review queue | all | — | `lib/client/feedback.ts`, `result-feedback.tsx`, `/admin/feedback` |
 | Support cases | In-app help/refund request, emailed to the inbox | signed-in | — | `app/api/support/case`, `support-case-form.tsx` |
 | Data rights | One-file export; account delete (cancels Stripe, deletes Blob, cascades); withdraw health-data consent | signed-in | — | `app/api/account/*` |
-| Attribution | UTM source → closed channel enum, in-app-browser detection | all | — | `lib/client/attribution.ts` |
+| Attribution | UTM source → closed channel enum (no in-app-browser detection yet: `TODOS.md` top item, row `signin-in-app-browser`) | all | — | `lib/client/attribution.ts` |
 
 ## 8. Planned, dormant and gated features
 
 Two implementation plans extend the product. Both follow the same rule: code
 merges dark behind a surface-listed build flag, a production guard refuses any
 surface whose copy-ledger rows are not `Approved`, and a safety owner who is not
-the executor opens each gate. Status below is as of 2026-10-01.
+the executor opens each gate. Status below is as of 2026-10-02.
 
 ### 8.1 Guide redesign — `docs/superpowers/plans/2026-09-13-guide-redesign.md`
 
@@ -229,11 +229,12 @@ Gated modules, **not built**, each waiting on a decision that is not engineering
 ### 8.2 GDM door — `docs/superpowers/plans/2026-09-19-gdm-door.md`
 
 A second front door, on the same app, for a person told she has gestational
-diabetes and waiting for her dietitian. **Tier 1 is fully built and reviewed on
-branch `feat/gdm-door-tier1`** (58 commits ahead of `main`, eight stacked local
-refs `gdm/pr-0` … `gdm/pr-6`, none pushed, no PR; final checks green
-2026-09-27 — see the status update in the branch's copy of the plan). Nothing
-GDM is on `main`.
+diabetes and waiting for her dietitian. **Tier 1 is fully built and reviewed.** PR-0 (#169) and PR-L
+(#170) merged dark on 2026-10-02: the flag pair, the production guard, `gdmDoor`
+in `/api/health` (all four surfaces `off`), and `/gdm` (404 until `landing` is
+on). PR-1 … PR-6 and the review-fix tip are stacked draft PRs #171–#177
+(branches `gdm/pr-1` … `gdm/pr-6`, `feat/gdm-door-tier1`), held until migration
+0020 is applied to production.
 
 | PR | Feature | What it is | Where (branch) |
 |---|---|---|---|
@@ -273,7 +274,7 @@ F-EXPERIENCES, F-REMIND.
 
 | Job | Schedule | What it does | Heartbeat stale after |
 |---|---|---|---|
-| `nudge` | hourly (GitHub Actions) | Enumerate opted-in profiles, send due pushes, prune dead endpoints, bounded same-day retry | 2 h |
+| `nudge` | `7,27,47 * * * *` (GitHub Actions, #164) | Enumerate opted-in profiles, send due pushes, prune dead endpoints, bounded same-day retry | 2 h |
 | `pantry-sweep` | hourly | Resend unsent claim emails, resume stuck extractions, retry undelivered reports, alert on stuck orders | 2 h |
 | `trial-precharge` | hourly | Email trialing users whose charge lands within 48 h (claim-before-send) | 2 h |
 | `stripe-reconcile` | hourly | Reprocess failed inbox rows, heal stale subscription rows against Stripe, scan paid invoices without a row | 2 h |
@@ -282,7 +283,7 @@ F-EXPERIENCES, F-REMIND.
 
 All crons: bearer `CRON_SECRET`, constant-time compare, fail-soft per user, stamp `cron_heartbeat`. The runner `scripts/run-hourly-crons.mjs` pins `APP_URL` byte-for-byte to the canonical host.
 
-**Observed 2026-10-01:** GitHub fires the "hourly" schedule every 3–7 hours on this repo (20 scheduled runs over the previous 4.5 days, all successful). With a 2-hour staleness window, `/api/health` reads all four hourly crons `stale` most of the day and returns 503 — which is also the release gate `docs/adr/hosting-hybrid.md` names, so a deploy verified by the runbook reads red. A user's daily nudge fires only on days when a run lands inside their chosen hour: roughly one day in five at the observed cadence, and missed days do not catch up (`cadenceAllowsSend` treats each day independently). Trial pre-charge emails, the Stripe reconcile and the pantry sweep still run, hours late. This is a scheduler problem, not a code problem; see §13.
+**Observed 2026-10-01:** GitHub fires the "hourly" schedule every 3–7 hours on this repo (20 scheduled runs over the previous 4.5 days, all successful). With a 2-hour staleness window, `/api/health` reads all four hourly crons `stale` most of the day and returns 503 — which is also the release gate `docs/adr/hosting-hybrid.md` names, so a deploy verified by the runbook reads red. A user's daily nudge fires only on days when a run lands inside their chosen hour: roughly one day in five at the observed cadence, and missed days do not catch up (`cadenceAllowsSend` treats each day independently). Trial pre-charge emails, the Stripe reconcile and the pantry sweep still run, hours late. This is a scheduler problem, not a code problem; see §13. **2026-10-02:** #164 moved the schedule to three times an hour, off the top of the hour. In its first 8.5 hours on `main` GitHub fired one scheduled run (16:50 UTC), so the interim has not fixed the cadence yet; read it again ~24 h after the merge (`docs/ops/outstanding.md`). Vercel Pro is the durable fix.
 
 ## 10. Safety and privacy architecture
 
@@ -305,7 +306,7 @@ All crons: bearer `CRON_SECRET`, constant-time compare, fail-soft per user, stam
 | `PHOTO_INPUT_ENABLED`, `MEAL_MEMORY_ENABLED`, `LEARNING_JOURNEY_ENABLED`, `LONGITUDINAL_INSIGHTS_ENABLED` | runtime server twins | Kill the feature's API without a rebuild; the build fails if the matching `NEXT_PUBLIC_*` is on and the twin is off |
 | `NEXT_PUBLIC_GUIDE_DOOR` | build-time surface list | Opens guide-door surfaces; production is guarded by the copy ledger |
 | `NEXT_PUBLIC_PLAY_BILLING` | build-time | Play purchase UI (off) |
-| `NEXT_PUBLIC_GDM_DOOR` + `GDM_DOOR_ENABLED` (branch only) | build-time surface list + runtime twin | GDM door surfaces `landing`, `organiser`, `ideas`, `read`; the twin fails closed and is the revert lever (§8.2) |
+| `NEXT_PUBLIC_GDM_DOOR` + `GDM_DOOR_ENABLED` (on `main`, all surfaces off) | build-time surface list + runtime twin | GDM door surfaces `landing`, `organiser`, `ideas`, `read`; the twin fails closed and is the revert lever (§8.2) |
 | `PAL_MODEL` / `PAL_VISION_MODEL` / `OPENAI_BASE_URL` | runtime env | Model and provider switch; the fleet-wide outage fallback |
 
 `/api/health` reports every runtime switch as an `on`/`off` name, never a value.
