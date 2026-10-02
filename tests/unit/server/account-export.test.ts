@@ -275,7 +275,9 @@ describe("GET /api/account/export (PR-5)", () => {
       bai_weekly: { excludedAs: "internal behavioral index" },
       pantry_photos: { excludedAs: "pantry photos" },
       pantry_items: { excludedAs: "pantry photos" },
-      billing_event_inbox: { excludedAs: "provider-side billing" }
+      billing_event_inbox: { excludedAs: "provider-side billing" },
+      gdm_profiles: { key: "gdmProfile" },
+      gdm_items: { key: "gdmItems" }
     };
 
     const GET = createAccountExportHandler({

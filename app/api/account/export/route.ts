@@ -51,7 +51,9 @@ export function createAccountExportHandler(deps: Deps = {}) {
       memoryRows,
       feedbackRows,
       subscriptionRows,
-      [journey]
+      [journey],
+      [gdmProfile],
+      gdmItemRows
     ] = await Promise.all([
       db()
         .select({
@@ -112,7 +114,18 @@ export function createAccountExportHandler(deps: Deps = {}) {
       db()
         .select()
         .from(schema.learningJourneys)
-        .where(eq(schema.learningJourneys.userId, session.userId))
+        .where(eq(schema.learningJourneys.userId, session.userId)),
+      // GDM door: this route never reads the GDM flag (Task 1.3, §7.3) — a
+      // closed door still hands her data back.
+      db()
+        .select()
+        .from(schema.gdmProfiles)
+        .where(eq(schema.gdmProfiles.userId, session.userId)),
+      db()
+        .select()
+        .from(schema.gdmItems)
+        .where(eq(schema.gdmItems.userId, session.userId))
+        .orderBy(desc(schema.gdmItems.createdAt))
     ]);
 
     const exported = {
@@ -187,6 +200,24 @@ export function createAccountExportHandler(deps: Deps = {}) {
             maintenanceAt: journey.maintenanceAt
           }
         : null,
+      // GDM door (Task 1.3): a row's existence in gdmProfile IS the GDM
+      // profile flag; exported whether the door is open or closed.
+      gdmProfile: gdmProfile
+        ? {
+            consentedAt: gdmProfile.consentedAt.toISOString(),
+            appointmentDate: gdmProfile.appointmentCiphertext ? safeDecrypt(gdmProfile.appointmentCiphertext) : null
+          }
+        : null,
+      gdmItems: gdmItemRows.map((row) => {
+        const plain = safeDecrypt(row.bodyCiphertext);
+        let body: unknown = plain;
+        try {
+          body = JSON.parse(plain);
+        } catch {
+          // an unreadable entry exports as the placeholder string, never as a throw
+        }
+        return { id: row.id, kind: row.kind, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), body };
+      }),
       // AUD-012: the documented exclusion schedule. Every user-adjacent
       // dataset NOT inlined above is named here with its reason — the file
       // accounts for everything rather than silently omitting anything.

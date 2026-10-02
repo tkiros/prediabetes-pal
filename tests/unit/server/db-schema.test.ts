@@ -38,7 +38,9 @@ describe("database schema constraints", () => {
       "push_subscriptions",
       "subscriptions",
       "bai_weekly",
-      "deletion_log"
+      "deletion_log",
+      "gdm_profiles",
+      "gdm_items"
     ]) {
       expect(names).toContain(expected);
     }

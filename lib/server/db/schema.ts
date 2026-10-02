@@ -329,6 +329,43 @@ export const mealMemories = pgTable(
   ]
 );
 
+// ── GDM door (PRD GDM v1.1 §7.4) ─────────────────────────────────────────────
+// A row here IS the GDM profile flag — health data, written only after explicit
+// consent by POST /api/gdm/profile. No lab value is asked on this door, and no
+// medication field exists (owner decision D2): do not add one.
+export const gdmProfiles = pgTable("gdm_profiles", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  consentedAt: timestamp("consented_at", { withTimezone: true }).notNull(),
+  // Her appointment date ("YYYY-MM-DD"), encrypted. Null = not given.
+  appointmentCiphertext: text("appointment_ciphertext"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+// Everything she keeps: parked asks, plan entries, meals, a photo of her sheet.
+// `bodyCiphertext` is encryptField(JSON) validated per kind by lib/pal/gdm/items.ts.
+// `kind` is plaintext and coarse (the a1c_band posture). `userId` is on the row
+// itself — never reachable only through another GDM row — so the account export's
+// schema-derived denominator and the explicit erase both see it.
+export const gdmItems = pgTable(
+  "gdm_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: ["ask", "plan", "meal", "plan_photo"] }).notNull(),
+    bodyCiphertext: text("body_ciphertext").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    check("gdm_items_kind_check", sql`${table.kind} IN ('ask','plan','meal','plan_photo')`),
+    index("gdm_items_user_kind").on(table.userId, table.kind, table.createdAt)
+  ]
+);
+
 // 90-day Learning Journey (plan §P4.1, §8 entity `learning_journeys`:
 // "Explicit state machine; no hidden reset"). ONE row per user (`user_id`
 // UNIQUE) — the journey is a singleton per account. There is NO stage column:

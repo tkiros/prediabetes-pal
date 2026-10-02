@@ -46,6 +46,10 @@ Revora now has two data postures:
 | `bai_weekly` | behavioral scores | derived, qualitative-banded |
 | `pantry_orders` | buyer email (plaintext), Stripe refs, order status | email is the Stripe checkout address, used to send the intake link + report; no payment instruments |
 | `deletion_log` | sha256(user id), timestamps | retains no identity |
+| `gdm_profiles` | appointment date | **ciphertext only** (`appointment_ciphertext`) |
+| `gdm_profiles` | row existence (= told she has gestational diabetes), consent timestamp | plaintext (coarse); written only after explicit consent |
+| `gdm_items` | parked questions, plan entries, meals, a photo of her sheet | **ciphertext only** (`body_ciphertext`, JSON) |
+| `gdm_items` | kind, timestamps | plaintext (coarse) |
 
 **Never stored anywhere:** plaintext food, plaintext exact A1C, prompt text,
 full model output, audio (voice is transcribed on-device/in-browser; servers

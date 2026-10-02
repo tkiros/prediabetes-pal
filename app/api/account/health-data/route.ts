@@ -88,6 +88,12 @@ export function createHealthDataDeleteHandler(
       await tx
         .delete(schema.mealMemories)
         .where(eq(schema.mealMemories.userId, userId));
+      // GDM door: what she kept, then the profile row that is the flag itself.
+      // Neither shared route reads the GDM flag (§7.3: a kill line closes the
+      // door, but what she stored must still be erasable) so this runs whether
+      // the door is open or closed.
+      await tx.delete(schema.gdmItems).where(eq(schema.gdmItems.userId, userId));
+      await tx.delete(schema.gdmProfiles).where(eq(schema.gdmProfiles.userId, userId));
       await tx
         .delete(schema.checks)
         .where(eq(schema.checks.userId, userId));

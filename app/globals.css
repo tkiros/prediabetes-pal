@@ -5223,3 +5223,146 @@ button.inline-link {
   text-transform: uppercase;
   color: var(--text-muted);
 }
+
+/* Task 1.4 — the signed-in door. */
+
+/* G-34: in the nav the wordmark is the Home link; a 44px target. */
+.gdm-wordmark-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: none;
+}
+
+.gdm-wordmark-link:hover {
+  color: var(--accent-strong);
+}
+
+.gdm-wordmark-link[aria-current="page"] {
+  color: var(--text-strong);
+}
+
+/* G-34: two rows — the wordmark (and, from Task 2.2, "Add a question"), then
+   the working surfaces in one wrapping .chip-row. */
+.gdm-nav {
+  display: grid;
+  gap: 8px;
+}
+
+.gdm-nav-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gdm-nav-links {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gdm-nav-links .selectable-chip {
+  text-decoration: none;
+}
+
+/* A pressed-state tint, never the accent fill: "Add a question" is the nav's
+   one filled action (G-34). */
+.gdm-nav-links .selectable-chip[aria-current="page"] {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+  color: var(--text-strong);
+}
+
+/* Door headings. Some are a full sentence (the consent and not-told steps),
+   so they sit well below the landing's hero size. */
+.gdm-title {
+  margin: 0;
+  font-size: 1.4rem;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+}
+
+.gdm-step {
+  display: grid;
+  gap: 16px;
+}
+
+.gdm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.gdm-back {
+  min-height: 44px;
+  width: fit-content;
+}
+
+/* G-47: the notice opens in place on the consent step. */
+.gdm-notice {
+  display: grid;
+  gap: 8px;
+  color: var(--text-body);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+/* Keeps the UA's `display: list-item`, so the disclosure marker still shows
+   that it opens; the 44px target comes from padding, not flex. */
+.gdm-notice summary {
+  width: fit-content;
+  padding: 10px 0;
+  line-height: 24px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gdm-notice p {
+  margin: 0;
+}
+
+/* G-36: the page's one polite live region; it holds its line so the layout
+   does not jump when a status appears. */
+.gdm-status {
+  min-height: 1.55em;
+}
+
+/* G-77: the two destructive actions, set apart from Download and Sign out. */
+.gdm-danger-zone {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-soft);
+}
+
+/* .danger-button has no disabled state of its own; while an erase or a
+   deletion is in flight the confirm must not look live. */
+.gdm-danger-zone .danger-button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.gdm-retry {
+  width: fit-content;
+}
+
+/* G-34: Your data and the privacy notice, in the frame's footer. */
+.legal-card .gdm-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gdm-footer-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
