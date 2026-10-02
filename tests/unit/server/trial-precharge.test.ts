@@ -56,6 +56,24 @@ function makeDeps(email = { send: vi.fn().mockResolvedValue({ ok: true }) }) {
 }
 
 describe("runPrechargeSweep", () => {
+  it("dates the charge in the user's own timezone (FIX6)", async () => {
+    // 16:00 UTC on July 9 is already July 10 in Tokyo — and still July 9 in
+    // UTC and New York, so the server's own zone can never pass this.
+    const row = await seedTrial("sub_tz", { currentPeriodEnd: new Date("2026-07-09T16:00:00.000Z") });
+    await testDb.db.insert(schema.profiles).values({
+      userId: row.userId,
+      a1cCiphertext: "cipher",
+      a1cBand: "prediabetes_60_62",
+      timezone: "Asia/Tokyo",
+      consentedAt: NOW
+    });
+    const deps = makeDeps();
+    await runPrechargeSweep(deps);
+    const { text } = deps.email.send.mock.calls[0][0];
+    expect(text).toContain("July 10");
+    expect(text).not.toContain("July 9");
+  });
+
   it("emails exactly the trialing rows ending within 48h that were not yet emailed, then stamps them", async () => {
     await seedTrial("sub_A", { currentPeriodEnd: hoursFromNow(36) }); // target
     await seedTrial("sub_B", { currentPeriodEnd: hoursFromNow(120) }); // 5d — skip

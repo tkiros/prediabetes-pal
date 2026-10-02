@@ -5,6 +5,7 @@ import { schema } from "../db";
 import { generateClaimToken } from "./claims";
 import { intakeEmailText } from "./emails";
 import { supportInbox } from "../email";
+import { recordHeartbeat } from "../heartbeat";
 import {
   deliverReport,
   processPantryOrder,
@@ -14,15 +15,18 @@ import {
 /**
  * Self-healing pass (locked decision 9). Runs hourly; every action is
  * idempotent, so overlapping runs are merely wasteful, never wrong.
- * Founder alerting uses a window check (2h..3h stuck) instead of an
- * alerted_at column — with an hourly cron each order alerts exactly once.
- * ponytail: window-based alert-once; add an alerted_at column if the cron
- * cadence ever changes.
+ * Founder alerting is one email per stuck order, keyed by the order id: the
+ * durable email idempotency (email_delivery_attempts) makes each order alert
+ * exactly once at any cron cadence (FIX7 — the old 2h..3h window missed most
+ * orders when runs landed 3-7 h apart).
+ * ponytail: the 7-day lookback must stay inside EMAIL_DELIVERY_RETENTION_MS
+ * (30 days), or an order stuck past retention would alert again; an
+ * alerted_at column is the upgrade if alerts ever need their own record.
  */
 
 const EXTRACT_DEAD_MS = 15 * 60 * 1000;
 const STUCK_MS = 2 * 60 * 60 * 1000;
-const ALERT_WINDOW_MS = 60 * 60 * 1000; // one cron interval
+const ALERT_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
 const RESUME_BUDGET_MS = 240_000;
 // PR-4: unclaimed paid orders (buyer email + Stripe IDs, no user FK) are
 // erased after this window; the claim link stops binding at the same age.
@@ -169,7 +173,7 @@ export async function runPantrySweep(deps: SweepDeps): Promise<{
     deps.deleteBlobs
   );
 
-  // 6. Founder alert for anything stuck >2h (once, via the window check).
+  // 6. Founder alert for anything stuck >2h (once per order, via its key).
   const stuck = await deps.db
     .select()
     .from(schema.pantryOrders)
@@ -184,31 +188,23 @@ export async function runPantrySweep(deps: SweepDeps): Promise<{
         lt(schema.pantryOrders.updatedAt, new Date(now.getTime() - STUCK_MS)),
         gte(
           schema.pantryOrders.updatedAt,
-          new Date(now.getTime() - STUCK_MS - ALERT_WINDOW_MS)
+          new Date(now.getTime() - ALERT_LOOKBACK_MS)
         )
       )
     );
-  if (stuck.length > 0) {
+  for (const order of stuck) {
     await deps.email.send({
       to: supportInbox(),
-      subject: `Pantry orders stuck >2h: ${stuck.length}`,
-      text: stuck
-        .map((order) => `${order.id} — ${order.status} since ${order.updatedAt.toISOString()}`)
-        .join("\n") + "\n\nHandle via /admin/pantry.",
+      subject: `Pantry order stuck >2h: ${order.id}`,
+      text: `${order.id} — ${order.status} since ${order.updatedAt.toISOString()}\n\nHandle via /admin/pantry.`,
       category: "pantry_alert",
-      idempotencyKey: `pantry-stuck/${stuck.map((order) => order.id).sort().join(",")}`
+      idempotencyKey: `pantry-stuck/${order.id}`
     });
-    alerted = stuck.length;
+    alerted += 1;
   }
 
   // 7. Liveness heartbeat for /api/health.
-  await deps.db
-    .insert(schema.cronHeartbeat)
-    .values({ name: "pantry-sweep", lastRunAt: now })
-    .onConflictDoUpdate({
-      target: schema.cronHeartbeat.name,
-      set: { lastRunAt: now }
-    });
+  await recordHeartbeat(deps.db, "pantry-sweep", now);
 
   return {
     intakeResent,
