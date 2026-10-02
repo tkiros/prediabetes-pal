@@ -53,6 +53,18 @@ describe("food-check-form taster gate helpers", () => {
     });
   });
 
+  describe("FIX1 / HS-1: clinical text is never walled", () => {
+    it("lets a spent or aged-out taster send clinical text to the router", () => {
+      const symptoms = "shaky, sweating and confused, should i eat this donut?";
+      expect(shouldGateSubmit("trial", "exhausted", false, symptoms)).toBe(false);
+      expect(shouldGateSubmit("trial", "expired", false, symptoms)).toBe(false);
+    });
+
+    it("still walls an ordinary meal", () => {
+      expect(shouldGateSubmit("trial", "exhausted", false, "white rice and beans")).toBe(true);
+    });
+  });
+
   describe("AUD-009: an entitled session is never gated or metered", () => {
     it("does not gate an entitled session even with an exhausted/expired store", () => {
       expect(shouldGateSubmit("trial", "exhausted", true)).toBe(false);

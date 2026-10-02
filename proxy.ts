@@ -34,16 +34,15 @@ import {
   type RateLimitDeps
 } from "./lib/pal/rate-limit";
 import { emitSafeEvent } from "./lib/pal/telemetry";
+import { URGENT_CARE_LINE } from "./lib/pal/urgent-care";
 
 const DEFAULT_PAUSE_DISCLAIMER = "Not medical advice.";
 const RATE_LIMIT_COPY =
   "Prediabetes Pal is helping a lot of people right now. Please try again in a moment.";
-// NEW-003: the fail-closed check 503 fires BEFORE the deterministic clinical
-// router can run, so a user describing acute symptoms during a limiter outage
-// would otherwise see only "try again". The abuse gate is not weakened — the
-// copy carries the human-care boundary the clinical route would have given.
-const URGENT_CARE_LINE =
-  "If you're feeling unwell right now — shaky, faint, confused, or worse — don't wait for an app: contact your doctor or your local emergency number.";
+// NEW-003 / FIX1: every check response here fires BEFORE the deterministic
+// clinical router can run — the pause 503, the fail-closed 503 and the 429 —
+// so each carries the human-care line (lib/pal/urgent-care.ts). The gates are
+// not weakened; the copy carries the boundary the clinical route would give.
 const CHECK_UNAVAILABLE_COPY = `${RATE_LIMIT_COPY} ${URGENT_CARE_LINE}`;
 // Abuse-route copy is deliberately plain: these responses go to a form, not the
 // check UI, and must not hint at whether the address/account exists.
@@ -123,7 +122,7 @@ export async function proxy(request: NextRequest) {
   if (route.kind === "check") {
     const evaluation = await evaluateLaunchMode();
     if (!evaluation.ok) {
-      return pause503(evaluation.message);
+      return pause503(`${evaluation.message} ${URGENT_CARE_LINE}`);
     }
   }
 
@@ -174,7 +173,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.json(
       {
         kind: "retry",
-        message: RATE_LIMIT_COPY,
+        message: CHECK_UNAVAILABLE_COPY,
         disclaimer: DEFAULT_PAUSE_DISCLAIMER
       },
       {
