@@ -6,8 +6,8 @@ import { expect, test, type Page } from "@playwright/test";
  * yes — and that fresh users never see the prompt.
  */
 
-async function mockPushEnvironment(page: Page) {
-  await page.addInitScript(() => {
+async function mockPushEnvironment(page: Page, subscribed = false) {
+  await page.addInitScript((alreadySubscribed) => {
     const fakeSubscription = {
       toJSON: () => ({
         endpoint: "https://push.example/e2e",
@@ -16,7 +16,7 @@ async function mockPushEnvironment(page: Page) {
       unsubscribe: async () => true
     };
     const pushManager = {
-      getSubscription: async () => null,
+      getSubscription: async () => (alreadySubscribed ? fakeSubscription : null),
       subscribe: async () => fakeSubscription
     };
     Object.defineProperty(navigator, "serviceWorker", {
@@ -33,7 +33,29 @@ async function mockPushEnvironment(page: Page) {
       permission: "default",
       requestPermission: async () => "granted"
     };
-  });
+  }, subscribed);
+}
+
+async function mockPremiumOptedOut(page: Page) {
+  await page.route("**/api/entitlement", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ tier: "premium", source: "stripe", checksToday: 0, freeDailyLimit: 5 })
+    })
+  );
+  // "Turn off" on /account PATCHes nudgeOptIn:false and leaves the browser's
+  // push subscription in place.
+  await page.route("**/api/profile", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ hasProfile: true, nudgeOptIn: false, nudgeHour: 11, nudgeCadence: "daily" })
+    })
+  );
+  await page.route("**/api/history**", (route) =>
+    route.fulfill({ status: 401, contentType: "application/json", body: "{}" })
+  );
 }
 
 async function seedPriorDayHistory(page: Page) {
@@ -121,4 +143,36 @@ test("fresh users and guests never see the nudge ask", async ({ page }) => {
 
   await expect(page.getByTestId("daily-loop-empty")).toBeVisible();
   await expect(page.getByTestId("nudge-opt-in")).toHaveCount(0);
+});
+
+test("FIX2a: after Turn off, the ask comes back on /check even with a browser subscription", async ({
+  page
+}) => {
+  await mockPushEnvironment(page, true);
+  await seedPriorDayHistory(page);
+  await mockPremiumOptedOut(page);
+
+  await page.goto("/check");
+  await expect(page.getByTestId("nudge-opt-in")).toBeVisible();
+});
+
+test("FIX2a: /account turns a reminder back on in-app, and never points at the home page", async ({
+  page
+}) => {
+  await mockPushEnvironment(page, true);
+  await mockPremiumOptedOut(page);
+  let subscribeCalls = 0;
+  await page.route("**/api/push/subscribe", (route) => {
+    subscribeCalls += 1;
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+  });
+
+  await page.goto("/account");
+  const section = page.getByTestId("nudge-settings");
+  await expect(section).toContainText("The reminder is off.");
+  await expect(section).not.toContainText("home page");
+
+  await page.getByTestId("nudge-turn-on").click();
+  await expect(section).toContainText("One gentle reminder a day, at the hour you pick.");
+  expect(subscribeCalls).toBe(1);
 });
