@@ -9,7 +9,7 @@ export function PlanBox({ data }: { data: PlanBoxData }) {
     <div className="plan-box">
       <div className="plan-box-label">Your plan</div>
       <div className="plan-box-name">{data.planName}</div>
-      <div className="plan-box-meta">{data.meta}</div>
+      {data.meta ? <div className="plan-box-meta">{data.meta}</div> : null}
       {data.isFree ? (
         <Link className="plan-box-link" href="/subscribe">
           See what Premium includes

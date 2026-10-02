@@ -72,7 +72,9 @@ describe("sitemap", () => {
       "/welcome",
       "/demo",
       "/admin/pantry",
-      "/video-engine"
+      "/video-engine",
+      "/gdm/start",
+      "/gdm/home"
     ]) {
       expect(PUBLIC_MARKETING_PATHS).not.toContain(priv);
     }
