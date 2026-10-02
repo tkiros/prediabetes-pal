@@ -17,6 +17,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 import { proxy as middleware } from "../../proxy";
+import { URGENT_CARE_LINE } from "../../lib/pal/urgent-care";
 
 function post(path: string, method = "POST"): NextRequest {
   return new NextRequest(new URL(`http://localhost${path}`), { method });
@@ -76,6 +77,8 @@ describe("middleware", () => {
     const body = await response.json();
     expect(body.kind).toBe("retry");
     expect(typeof body.message).toBe("string");
+    // FIX1: the pause answers before the clinical router.
+    expect(body.message).toContain(URGENT_CARE_LINE);
   });
 });
 

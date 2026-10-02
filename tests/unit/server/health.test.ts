@@ -91,7 +91,9 @@ describe("createHealthHandler — db + cron probes (P7)", () => {
     vi.unstubAllEnvs();
   });
 
-  // ⚠️ This is the ONLY runtime observation of the four kill switches.
+  // ⚠️ This is the ONLY runtime observation of these kill switches (four
+  // next.config.ts twinMismatch pairs, plus GDM_DOOR_ENABLED — guarded
+  // differently, by lib/gdm-door-guard.ts, but observed here the same way).
   // next.config.ts fails a production build on a client-on/server-off pair,
   // which proves the twin at BUILD time; these are read per request, so a
   // later env edit diverges silently. LONGITUDINAL_INSIGHTS_ENABLED had no
@@ -106,13 +108,14 @@ describe("createHealthHandler — db + cron probes (P7)", () => {
       ["LONGITUDINAL_INSIGHTS_ENABLED", "longitudinalInsights"],
       ["MEAL_MEMORY_ENABLED", "mealMemory"],
       ["LEARNING_JOURNEY_ENABLED", "learningJourney"],
+      ["GDM_DOOR_ENABLED", "gdmDoor"],
     ] as const;
 
-    // Each twin must be read from its OWN variable. Reported together, four
-    // states wired to one env read would look identical to four correct ones
-    // for as long as they happen to agree — so every case pins all four at
-    // once: the one under test, and the other three held explicitly at "0".
-    // ⚠️ Stub all four every time rather than relying on unstub to clear
+    // Each twin must be read from its OWN variable. Reported together, five
+    // states wired to one env read would look identical to five correct ones
+    // for as long as they happen to agree — so every case pins all five at
+    // once: the one under test, and the other four held explicitly at "0".
+    // ⚠️ Stub all five every time rather than relying on unstub to clear
     // them. This suite replaces `process.env` wholesale in beforeEach, and a
     // first draft that leaned on `vi.unstubAllEnvs()` read a stale "on".
     for (const [env, key] of twins) {
@@ -155,13 +158,14 @@ describe("createHealthHandler — db + cron probes (P7)", () => {
       "LONGITUDINAL_INSIGHTS_ENABLED",
       "MEAL_MEMORY_ENABLED",
       "LEARNING_JOURNEY_ENABLED",
+      "GDM_DOOR_ENABLED",
     ]) {
       vi.stubEnv(env, "0");
       const payload = await (await GET()).json();
       expect(
         payload.issues.join(","),
         `${env}=0 leaked into readiness issues`,
-      ).not.toMatch(/flag|twin|photo|insight|memory|journey/i);
+      ).not.toMatch(/flag|twin|photo|insight|memory|journey|gdm/i);
       vi.unstubAllEnvs();
     }
   });
@@ -222,6 +226,29 @@ describe("createHealthHandler — db + cron probes (P7)", () => {
     // the payload — only the derived "on"/"off" booleans by surface name.
     expect(JSON.stringify(payload)).not.toContain("ideas,source");
     vi.unstubAllEnvs();
+  });
+
+  // Task 0.3: gdmDoor is the runtime probe for the GDM door — unlike the
+  // guide door it HAS a server twin (GDM_DOOR_ENABLED), so a surface reads
+  // "on" only when the client flag names it AND the twin is on. That is the
+  // effective state door smoke guards need (mirrors A-11's guideDoor above).
+  it("reports gdmDoor surface states — on only when the flag names the surface AND the server twin is on; raw value never leaked", async () => {
+    const createHealthHandler = await importHandler();
+    const GET = createHealthHandler({ db: () => testDb.db, now: () => NOW });
+    const ALL_OFF = { landing: "off", organiser: "off", ideas: "off", read: "off" } as const;
+
+    delete process.env.NEXT_PUBLIC_GDM_DOOR;
+    vi.stubEnv("GDM_DOOR_ENABLED", "1");
+    expect((await (await GET()).json()).gdmDoor).toEqual(ALL_OFF);
+
+    vi.stubEnv("NEXT_PUBLIC_GDM_DOOR", "landing,organiser");
+    let payload = await (await GET()).json();
+    expect(payload.gdmDoor).toEqual({ ...ALL_OFF, landing: "on", organiser: "on" });
+    expect(JSON.stringify(payload)).not.toContain("landing,organiser");
+
+    vi.stubEnv("GDM_DOOR_ENABLED", "0"); // the kill switch closes every surface
+    payload = await (await GET()).json();
+    expect(payload.gdmDoor).toEqual(ALL_OFF);
   });
 
   it("reports crons:ok when all five heartbeats are fresh", async () => {

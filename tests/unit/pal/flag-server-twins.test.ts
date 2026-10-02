@@ -439,7 +439,9 @@ describe("next.config.ts door guard wiring (Task 1.11)", () => {
       "NEXT_PUBLIC_PHOTO_INPUT",
       "NEXT_PUBLIC_LONGITUDINAL_INSIGHTS",
       "NEXT_PUBLIC_MEAL_MEMORY",
-      "NEXT_PUBLIC_LEARNING_JOURNEY"
+      "NEXT_PUBLIC_LEARNING_JOURNEY",
+      "NEXT_PUBLIC_GDM_DOOR",
+      "GDM_DOOR_ENABLED"
     ])
       vi.stubEnv(flag, "");
     for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
@@ -461,5 +463,15 @@ describe("next.config.ts door guard wiring (Task 1.11)", () => {
   it("inlines the effective value in production", async () => {
     const config = await loadConfig({ VERCEL_ENV: "production", NEXT_PUBLIC_GUIDE_DOOR: "calm" });
     expect(config.env).toMatchObject({ NEXT_PUBLIC_GUIDE_DOOR: "calm" });
+  });
+
+  it("GDM door: with the twin off the inlined value is empty, so every surface is dark (G-09)", async () => {
+    const config = await loadConfig({ VERCEL_ENV: "production", NEXT_PUBLIC_GDM_DOOR: "landing,organiser", GDM_DOOR_ENABLED: "" });
+    expect(config.env).toMatchObject({ NEXT_PUBLIC_GDM_DOOR: "" });
+  });
+
+  it("GDM door: outside production any value passes through untouched", async () => {
+    const config = await loadConfig({ VERCEL_ENV: "preview", NEXT_PUBLIC_GDM_DOOR: "1" });
+    expect(config.env).not.toHaveProperty("NEXT_PUBLIC_GDM_DOOR");
   });
 });
