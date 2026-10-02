@@ -5,6 +5,7 @@ import path from "node:path";
 import type { ReactElement, ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { LocalDate } from "../../../components/gdm/local-date";
 import { formatIsoDate } from "../../../lib/client/gdm-date";
 import { askListCardRoute } from "../../../lib/pal/gdm/asklist";
 import { GDM_COPY } from "../../../lib/pal/gdm/copy";
@@ -252,9 +253,14 @@ const elements = (node: ReactNode, out: ReactElement[] = []): ReactElement[] => 
   elements((element.props as { children?: ReactNode }).children, out);
   return out;
 };
-/** Every string rendered anywhere in the tree, in order. */
+/**
+ * Every string rendered anywhere in the tree, in order, as the page shows it
+ * once hydrated: a card's date is a LocalDate leaf (Task 4.2), read here as the
+ * words it renders on the client.
+ */
 const texts = (node: ReactNode): string[] =>
   elements(node).flatMap((el) => {
+    if (el.type === LocalDate) return [formatIsoDate((el.props as { iso: string }).iso)!];
     const children = (el.props as { children?: ReactNode }).children;
     const list = Array.isArray(children) ? children : [children];
     return list.filter((child): child is string => typeof child === "string" && child.trim() !== "");

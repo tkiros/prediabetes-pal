@@ -29,6 +29,9 @@ const STATUS = GDM_COPY["gdm-status"];
 const PLAN = GDM_COPY["gdm-plan-controls"];
 const OCCASIONS = GDM_COPY["gdm-occasions"];
 const DIFFER = GDM_COPY["gdm-plan-differ"];
+const WAIT = GDM_COPY["gdm-wait-controls"];
+const STRUCTURE = GDM_COPY["gdm-wait-structure"];
+const CHECKLIST = GDM_COPY["gdm-wait-checklist"];
 const SAVE_FAILED = GDM_COPY["gdm-save-failed"].line;
 /** A real 1×1 PNG: the sheet photo the device downscales, re-encodes and sends (Task 3.3). */
 const PNG_1X1 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
@@ -145,8 +148,38 @@ test.describe("GDM door — organiser", () => {
 // Lunch both carry the "These differ" chip and park the differ question into
 // My questions; a sheet photo the device cannot open fails cleanly, one it
 // can is kept, shown, linked for download on Your data (G-62) and removed in
-// two presses. Gated on the organiser surface via /api/health (this file's
-// rule throughout) — never the Playwright env.
+// two presses. PR-4's Home runs as its own test too: with a date given at
+// consent, Home leads with the appointment (a phrase and her date, never a
+// day count), then a plain checklist with nothing to tick and ACOG's line;
+// her date changes there; once a plan is entered, Home shows it on the plan
+// page's card, the waiting content is gone, and the appointment still leads.
+// Gated on the organiser surface via /api/health (this file's rule
+// throughout) — never the Playwright env.
+
+/** A day `offset` days from today on the BROWSER's clock, as YYYY-MM-DD, and the words Home shows for it (formatIsoDate's own recipe). */
+async function deviceDay(page: Page, offset: number): Promise<{ iso: string; shown: string }> {
+  return page.evaluate((days) => {
+    const day = new Date();
+    day.setDate(day.getDate() + days);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const iso = `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
+    const local = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+    const shown = new Intl.DateTimeFormat(undefined, { weekday: "long", day: "numeric", month: "long" }).format(local);
+    return { iso, shown };
+  }, offset);
+}
+
+/** The first element appears before the second in document order. */
+async function leads(page: Page, first: string, second: string): Promise<boolean> {
+  return page.evaluate(
+    ([a, b]) => {
+      const one = document.querySelector(a);
+      const two = document.querySelector(b);
+      return Boolean(one && two && one.compareDocumentPosition(two) & Node.DOCUMENT_POSITION_FOLLOWING);
+    },
+    [first, second] as const
+  );
+}
 
 /**
  * Signs a fresh account up through the app's own magic-link flow (the disk
@@ -454,6 +487,88 @@ test.describe("GDM door — organiser, signed in", () => {
     await expect(photo).toHaveCount(0);
     await expect(status).toHaveText(STATUS.removed);
     await expect(page.getByRole("button", { name: PLAN.photoAdd })).toBeFocused();
+
+    await erase(page);
+  });
+
+  // PR-4, Home (F-WAIT; Task 4.3 folded into 4.2 — R12, R35, G-03).
+  test("Home leads with her appointment in words and her date, a checklist with nothing to tick; once a plan is entered it shows her plan and keeps the appointment", async ({
+    page
+  }) => {
+    // Hydration: Home server-renders, and nothing on it may differ between the
+    // server's HTML and the first client render (React's #418/#423/#425).
+    const hydrationErrors: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error" && /hydrat|#418|#423|#425/i.test(message.text())) hydrationErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => {
+      if (/hydrat|#418|#423|#425/i.test(error.message)) hydrationErrors.push(error.message);
+    });
+
+    await signUp(page);
+    await page.getByRole("button", { name: TOLD.yes }).click();
+    // Ten days ahead on her own device: Next week, and still Next week if the run crosses midnight.
+    const first = await deviceDay(page, 10);
+    await page.locator("#gdm-appointment").fill(first.iso);
+    await page.getByRole("button", { name: DATE.next }).click();
+    await page.getByRole("checkbox", { name: CONSENT.agree }).check();
+    await page.getByRole("button", { name: CONSENT.go }).click();
+    await expect(page).toHaveURL(new RegExp(`${GDM_ROUTES.home}$`));
+
+    // G-69: the appointment block leads — a phrase, then her date in her device's words, never a count of days.
+    const block = page.locator(".gdm-appointment");
+    const when = block.locator(".gdm-appointment-when");
+    await expect(block.getByRole("heading", { level: 2 })).toHaveText(WAIT.appointment);
+    await expect(when).toHaveText(WAIT.nextWeek);
+    await expect(block.locator(`time[datetime="${first.iso}"]`)).toHaveText(first.shown);
+    await expect(block).not.toContainText(/\bdays?\b/i);
+    const field = block.getByLabel(WAIT.changeDate);
+    await expect(field).toHaveValue(first.iso);
+
+    // Then the waiting content: four plain steps, nothing to tick anywhere on Home, and ACOG's line, attributed.
+    await expect(page.getByRole("heading", { level: 2, name: WAIT.title })).toBeVisible();
+    await expect(page.locator("ul.gdm-checklist > li")).toHaveText(Object.values(CHECKLIST));
+    await expect(page.getByRole("checkbox")).toHaveCount(0);
+    await expect(page.locator(".gdm-structure blockquote")).toHaveText(STRUCTURE.quote);
+    await expect(page.locator(".gdm-structure cite")).toHaveText(STRUCTURE.source);
+    expect(await leads(page, ".gdm-appointment", "ul.gdm-checklist")).toBe(true);
+    expect(await leads(page, "ul.gdm-checklist", ".gdm-structure")).toBe(true);
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+    // Her date changes here, the one place on the door that does it (G-32): saved, announced, and spoken again.
+    const later = await deviceDay(page, 20);
+    await field.fill(later.iso);
+    await block.getByRole("button", { name: PLAN.save, exact: true }).click();
+    await expect(block.locator(".gdm-status")).toHaveText(STATUS.saved);
+    await expect(block.getByRole("button", { name: PLAN.save, exact: true })).toBeFocused();
+    await expect(when).toHaveText(WAIT.later);
+    await expect(block.locator(`time[datetime="${later.iso}"]`)).toHaveText(later.shown);
+
+    // A plan entered on My plan ends the waiting content (G-37: her plan, not a link to it).
+    await page.goto(GDM_ROUTES.plan);
+    await page.getByLabel(PLAN.givenBy, { exact: true }).fill("the dietitian");
+    await page.getByLabel(OCCASIONS.lunch, { exact: true }).fill("45 g");
+    await page.getByRole("button", { name: PLAN.save, exact: true }).click();
+    await expect(page.locator(".gdm-status")).toHaveText(STATUS.saved);
+
+    await page.goto(GDM_ROUTES.home);
+    const plan = page.locator(".gdm-home-plan");
+    await expect(plan.getByRole("heading", { level: 2 })).toHaveText(WAIT.planTitle);
+    const card = plan.locator(".gdm-plan-card");
+    await expect(card).toHaveCount(1);
+    await expect(card.locator(".gdm-plan-row", { hasText: OCCASIONS.lunch })).toContainText("45 g");
+    await expect(card.locator(".gdm-plan-date time")).not.toBeEmpty();
+    await expect(card.getByRole("button")).toHaveCount(0);
+    await expect(page.locator("ul.gdm-checklist")).toHaveCount(0);
+    await expect(page.locator(".gdm-structure")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: WAIT.title })).toHaveCount(0);
+
+    // G-32: the appointment stays, and still leads.
+    await expect(when).toHaveText(WAIT.later);
+    await expect(block.locator(`time[datetime="${later.iso}"]`)).toHaveText(later.shown);
+    await expect(field).toHaveValue(later.iso);
+    expect(await leads(page, ".gdm-appointment", ".gdm-home-plan")).toBe(true);
+    expect(hydrationErrors).toEqual([]);
 
     await erase(page);
   });

@@ -5657,3 +5657,119 @@ button.inline-link {
 .gdm-plan-photo-add {
   justify-self: start;
 }
+
+/* Task 4.2 — Home (F-WAIT; G-32, G-37, G-69): her appointment first in every
+   state, then the waiting content or her plan, then the links. */
+.gdm-home {
+  display: grid;
+  gap: 16px;
+}
+
+.gdm-appointment,
+.gdm-after,
+.gdm-wait {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+}
+
+.gdm-section-title {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.35;
+  color: var(--text-strong);
+}
+
+/* The phrase leads and her own date follows: words, never a count of days,
+   and never in --text-soft (it is her information). */
+.gdm-appointment-when {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text-strong);
+}
+
+.gdm-appointment-date {
+  margin: 0;
+  color: var(--text-body);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.gdm-summary-offer {
+  margin: 0;
+}
+
+/* A link in a sentence still gets the 44px target. */
+.gdm-summary-offer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.gdm-appointment-form {
+  display: grid;
+  gap: 8px;
+}
+
+.gdm-appointment-save,
+.gdm-after .link-button {
+  justify-self: start;
+}
+
+/* A plain list, markers kept: nothing here is ticked, counted or done. */
+.gdm-checklist {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--text-body);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* ACOG's line, quoted and attributed. A neutral rule, never the accent. */
+.gdm-structure {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.gdm-structure blockquote {
+  margin: 0;
+  padding: 2px 0 2px 16px;
+  border-left: 4px solid var(--border-strong);
+  color: var(--text-strong);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.gdm-structure blockquote p {
+  margin: 0;
+}
+
+.gdm-structure figcaption {
+  padding-left: 20px;
+  color: var(--text-body);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.gdm-structure cite {
+  font-style: normal;
+}
+
+.gdm-home-plan {
+  display: grid;
+  gap: 12px;
+}
+
+.gdm-home-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
