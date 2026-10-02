@@ -96,6 +96,10 @@ export function isolatedE2ERuntimeEnv(
     // opt-in and passes through verbatim (`1` or a surface list); CI runs the
     // suite once per value (the e2e matrix in .github/workflows/ci.yml).
     NEXT_PUBLIC_GUIDE_DOOR: base.PAL_E2E_GUIDE_DOOR ?? "",
+    // GDM door: blanked like every client flag; PAL_E2E_GDM_DOOR is the e2e
+    // opt-in, and it turns the server twin on with it so the door's routes run.
+    NEXT_PUBLIC_GDM_DOOR: base.PAL_E2E_GDM_DOOR ?? "",
+    GDM_DOOR_ENABLED: base.PAL_E2E_GDM_DOOR ? "1" : "",
     NEXT_PUBLIC_PHOTO_INPUT: "",
     NEXT_PUBLIC_PLAY_BILLING: "",
     NEXT_PUBLIC_REVIEWER_MODE: "",

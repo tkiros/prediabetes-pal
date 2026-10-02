@@ -23,6 +23,11 @@ function stubBase() {
   // An ambient guide-door `1` would trip the production door guard (Task 1.11)
   // before the twin guard under test could.
   vi.stubEnv("NEXT_PUBLIC_GUIDE_DOOR", "");
+  // Same for the GDM door (Task 0.2) — an unset pair must load ("unset loads"
+  // below on any machine whose .env.local sets them), not trip a guard other
+  // tests here don't intend to exercise.
+  vi.stubEnv("NEXT_PUBLIC_GDM_DOOR", "");
+  vi.stubEnv("GDM_DOOR_ENABLED", "");
   for (const [client, server] of PAIRS) {
     vi.stubEnv(client, "");
     vi.stubEnv(server, "");
@@ -70,5 +75,18 @@ describe("next.config production twin guard (AUD-002)", () => {
     stubBase();
     vi.stubEnv("NEXT_PUBLIC_MEAL_MEMORY", "1");
     await expect(importConfig()).rejects.toThrow("MEAL_MEMORY_ENABLED");
+  });
+
+  // G-09: this is the incident revert, and it must LOAD. (As first planned this
+  // case asserted the opposite, and so pinned a kill switch that could not be pulled.)
+  it("GDM door: a listed surface without GDM_DOOR_ENABLED=1 loads in production", async () => {
+    stubBase();
+    vi.stubEnv("NEXT_PUBLIC_GDM_DOOR", "landing,organiser");
+    await expect(importConfig()).resolves.toBeUndefined();
+  });
+
+  it("GDM door: unset loads", async () => {
+    stubBase();
+    await expect(importConfig()).resolves.toBeUndefined();
   });
 });

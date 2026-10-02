@@ -103,6 +103,11 @@ jobs:
     # global setup if a surface it names (ideas above all) did not open, so it
     # cannot pass by skipping. PAL_E2E_GUIDE_DOOR reaches `next build` through
     # scripts/e2e-runtime-env.ts; an ambient NEXT_PUBLIC_GUIDE_DOOR never does.
+    #
+    # Task 0.3 (ruling R33): one more leg, `gdm door 1`, does the same for the
+    # GDM door — PAL_E2E_GDM_DOOR, tests/smoke/gdm-door.ts, and global setup's
+    # matching flag-on gate so that leg cannot pass green with every GDM door
+    # spec skipped either.
     name: ${{ matrix.name }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -113,13 +118,20 @@ jobs:
         include:
           - name: playwright (incl. axe a11y)
             guide_door: ""
+            gdm_door: ""
             report: playwright-report
           - name: playwright (incl. axe a11y) · guide door 1
             guide_door: "1"
+            gdm_door: ""
             report: playwright-report-guide-door-1
           - name: playwright (incl. axe a11y) · guide door ideas,source
             guide_door: "ideas,source"
+            gdm_door: ""
             report: playwright-report-guide-door-ideas-source
+          - name: playwright (incl. axe a11y) · gdm door 1
+            guide_door: ""
+            gdm_door: "1"
+            report: playwright-report-gdm-door-1
 
     # Both `next start` servers in playwright.config.ts inherit DATABASE_URL
     # from the environment, and auth.ts:21 only constructs the Auth.js adapter
@@ -143,6 +155,7 @@ jobs:
       HEALTH_DATA_KEY: ${{ secrets.CI_HEALTH_DATA_KEY || 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=' }}
       # Empty on the flag-off leg, which builds exactly as before.
       PAL_E2E_GUIDE_DOOR: ${{ matrix.guide_door }}
+      PAL_E2E_GDM_DOOR: ${{ matrix.gdm_door }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
