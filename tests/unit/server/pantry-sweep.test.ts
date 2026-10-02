@@ -108,15 +108,24 @@ describe("runPantrySweep", () => {
     expect(deps.email.send).toHaveBeenCalled();
   });
 
-  it("alerts the founder exactly in the hour an order crosses 2h stuck", async () => {
-    await makeOrder({ status: "submitted", updatedAt: hoursAgo(2.5) });
-    const inWindow = await runPantrySweep(makeDeps());
-    expect(inWindow.alerted).toBe(1);
+  it("alerts once per stuck order, keyed by the order, whatever the cron cadence (FIX7)", async () => {
+    // The old 2h..3h window missed the 6h order when runs landed hours apart.
+    const justStuck = await makeOrder({ status: "submitted", updatedAt: hoursAgo(2.5) });
+    const longStuck = await makeOrder({ status: "awaiting_confirm", updatedAt: hoursAgo(6) });
+    await makeOrder({ status: "submitted", updatedAt: hoursAgo(1) }); // not stuck yet
+    await makeOrder({ status: "submitted", updatedAt: hoursAgo(24 * 8) }); // past the lookback
+    const deps = makeDeps();
 
-    await testDb.db.delete(schema.pantryOrders);
-    await makeOrder({ status: "submitted", updatedAt: hoursAgo(6) });
-    const outOfWindow = await runPantrySweep(makeDeps());
-    expect(outOfWindow.alerted).toBe(0);
+    const result = await runPantrySweep(deps);
+
+    expect(result.alerted).toBe(2);
+    const keys = deps.email.send.mock.calls
+      .map(([message]) => message)
+      .filter((message) => message.category === "pantry_alert")
+      .map((message) => message.idempotencyKey)
+      .sort();
+    // Durable email idempotency turns each key into exactly one email.
+    expect(keys).toEqual([`pantry-stuck/${justStuck.id}`, `pantry-stuck/${longStuck.id}`].sort());
   });
 
   /**

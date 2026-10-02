@@ -352,7 +352,8 @@ textarea.text-input {
 }
 
 .today-list,
-.history-list {
+.history-list,
+.memory-list {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -361,7 +362,8 @@ textarea.text-input {
 }
 
 .today-item,
-.history-item {
+.history-item,
+.memory-item {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -377,30 +379,36 @@ textarea.text-input {
   gap: 10px;
 }
 
-.today-food {
+.today-food,
+.memory-food {
   font-size: 15px;
   overflow-wrap: anywhere;
 }
 
-.today-risk {
+.today-risk,
+.risk-chip {
   font-size: 14px;
   font-weight: 700;
   white-space: nowrap;
 }
 
-.today-risk[data-risk="SAFE"] {
+.today-risk[data-risk="SAFE"],
+.risk-chip[data-risk="SAFE"] {
   color: var(--safe-text);
 }
 
-.today-risk[data-risk="MODERATE"] {
+.today-risk[data-risk="MODERATE"],
+.risk-chip[data-risk="MODERATE"] {
   color: var(--moderate-text);
 }
 
-.today-risk[data-risk="HIGH"] {
+.today-risk[data-risk="HIGH"],
+.risk-chip[data-risk="HIGH"] {
   color: var(--high-text);
 }
 
-.history-item-main {
+.history-item-main,
+.memory-item-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -415,15 +423,38 @@ textarea.text-input {
   flex-wrap: wrap;
 }
 
-.history-item-buttons {
+.history-item-buttons,
+.memory-item-buttons,
+.memory-controls {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.history-time {
+.history-time,
+.memory-date {
+  margin: 0;
   font-size: 13px;
   color: var(--text-muted);
+}
+
+/* FIX5 (feature map 2026-09-24 §3.0): /meals saved meals had no rules at
+   all; they reuse the history list's above, plus these few. */
+.memory-field {
+  margin: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.memory-edit {
+  display: grid;
+  gap: 10px;
+}
+
+.field-label--inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* Full-history search + date-range controls (Task 9 / P2.3). */
