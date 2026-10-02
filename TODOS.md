@@ -1,5 +1,41 @@
 # TODOS
 
+## Sign-in from an in-app browser loses the person (app-wide; bites the GDM door first)
+- **What:** When `/signin` is opened inside an in-app browser (Reddit, Instagram, Facebook), the emailed magic link opens in the device's default browser, so the session lands somewhere other than where the person was. Detect the in-app browser on `/signin` and say so before the email is sent ("open this page in your browser first"), or offer a code typed back into the same window instead of a link.
+- **Why:** The GDM door's launch plan is one social post, so most first visitors arrive in exactly this state, sign up, tap the link, and see nothing happen. It is indistinguishable in analytics from "did not want it", and KL-T1 and the 50-user floor are both read through it. `window.print()` is also a no-op in several in-app browsers, which is the door's peak moment.
+- **Pros:** Fixes a silent funnel loss for both doors; makes the landing-to-onboarding ratio (review G-04) mean what it says.
+- **Cons:** `app/(app)/signin/` is never-edited by the GDM plan, so this is its own change with its own claims-audited copy. User-agent sniffing for in-app browsers is a moving target; a typed code is sturdier and is more work.
+- **Context:** Deferred by the 2026-09-20 `/autoplan` review of `docs/superpowers/plans/2026-09-19-gdm-door.md` (decision G-18). Today the only in-app-browser code is `lib/client/attribution.ts`. Start by opening `/gdm` from a Reddit post on iOS and Android and writing down what happens; the review's test plan lists it as an edge case. The measurement half of G-18 is in the plan (`launch-controls.md` §14.4).
+- **Effort estimate:** M (human ~2 days → CC ~1 hour) for detect-and-tell; L for a typed code. **Priority:** P2, P1 the week `organiser` goes live.
+- **Depends on / blocked by:** Nothing to start. A ledger row for the new sentence.
+
+## GDM door: delete what she kept, on a schedule she is told about
+- **What:** Erase a GDM profile and its items after a stated period of inactivity (for example twelve months), and say so in the privacy notice and at consent. One cron on the `scripts/run-hourly-crons.mjs` pattern, one route, the existing explicit-delete transaction.
+- **Why:** The door stores pregnancy-related health data for an audience that, by the PRD's own words, "leaves by design within months". Nothing in the plan ever removes it. For a small company, not holding the data is a stronger posture than protecting it, and several US state laws on consumer and reproductive health data make the retention period a question counsel will ask anyway.
+- **Pros:** Shrinks the worst-case breach to recent users; gives the privacy notice a concrete, true sentence; nobody has to remember to erase.
+- **Cons:** A new cron is new infrastructure and a new way to delete the wrong thing; needs a warning path (she has no email preference on this door) or a generous window; the period is counsel's call, not engineering's.
+- **Context:** Deferred by the 2026-09-20 `/autoplan` review (decision G-08) because a cron is outside the plan's blast radius. **Put the question to counsel with the privacy-notice gate (plan §1): how long is GDM data kept, and must the notice say?** `app/api/account/health-data/route.ts` already has the transaction to reuse.
+- **Effort estimate:** M (human ~1 day → CC ~1 hour). **Priority:** P2.
+- **Depends on / blocked by:** Counsel's answer; GDM PR-1 merged.
+
+## GDM door: tell a landing-only sign-up when the organiser opens
+- **What:** A single opt-in on the holding page ("email me once when this opens") and a one-time send when `organiser` goes live. One boolean, one template, one script.
+- **Why:** The plan can release the landing before the organiser. Someone who signs up then is told "the organiser opens here soon" and can never be reached again. This audience's whole window is about ten weeks, so a sign-up that waits three of them is mostly lost.
+- **Pros:** Turns the landing-first release into a real demand test with a way back to the people who took it.
+- **Cons:** A second email template under a brand question that is still open (D7, plan §8 item 10); an opt-in is another consent line for the safety owner; a preference to store for someone with no GDM profile yet.
+- **Context:** Deferred by the 2026-09-20 `/autoplan` review (decision G-06). The copy half shipped into the plan: the holding line now says what happens next. If the owner decides never to release landing-only, skip this.
+- **Effort estimate:** S (human ~1 day → CC ~30 min). **Priority:** P3, P1 if a landing-only release is chosen.
+- **Depends on / blocked by:** The owner's release order; the `gdm-organiser` class; D7.
+
+## GDM door: the printed summary is the only thing a clinician ever sees
+- **What:** Let the one-page appointment summary carry the door's name and where to find it, tastefully, at the foot of the page.
+- **Why:** Every other surface of the door is seen by one person. The printed page is put in front of a dietitian or educator who meets dozens of newly diagnosed women a month. It is the door's one organic channel to the people who could hand it out, and today it carries a wordmark and no address.
+- **Pros:** Distribution that costs nothing and asks nobody for anything; fits D7's "spend nothing".
+- **Cons:** The address today is `prediabetespal.com/gdm`, which puts the first door's name on a pregnant woman's clinical paperwork. Needs D7 (name, domain) settled first, and a ledger row.
+- **Context:** Deferred by the 2026-09-20 `/autoplan` review (decision G-07; Phase 1's note on who already serves her: every incumbent is built around the glucose log, none around the appointment). Revisit when D7's spending trigger is met.
+- **Effort estimate:** S (human ~2 hours → CC ~10 min). **Priority:** P3.
+- **Depends on / blocked by:** D7 resolved; KL-T1 read and survived.
+
 ## "One of today's ideas" note on the result card after a tapped idea (guide door)
 - **What:** When a check completes from an idea chip (`pal.recheck.source === "idea"`, the same rule `shouldCountIdeaCheck` uses for `idea_check_completed`), the result card shows one quiet line — e.g. "This was one of today's ideas." — above the Meal row. One component branch, one `product-role` ledger row.
 - **Why:** Closes the loop the guide door opens: the person tapped an idea, and the card should say so instead of reading like a typed check. Also makes the idea → label pairing visible on the surface where trust is built.
