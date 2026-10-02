@@ -14,15 +14,22 @@ export type GdmRouteDeps = { db?: () => Db; getSession?: () => Promise<SessionIn
  * looked at; no session is a 401; and a signed-in session is not consent, so
  * without a gdm_profiles row the answer is a 403 in approved words. Only the
  * route that records consent passes `{ consent: false }`.
+ *
+ * R55: `{ sessionOnly: true }` is for reading back what she already stored
+ * (one photo of her sheet, by id): it needs her session and nothing else, so
+ * her data stays downloadable with the door closed and whatever became of her
+ * consent, as the account export does. The route still scopes the read to
+ * her own row. Nothing that writes, deletes or lists passes it.
  */
 export async function gdmRouteGuard(
   deps: GdmRouteDeps,
-  options: { consent?: boolean } = {}
+  options: { consent?: boolean; sessionOnly?: boolean } = {}
 ): Promise<{ userId: string } | Response> {
-  if (!(gdmDoorServerEnabled() && gdmDoorEnabled("organiser"))) return gdmNotFound();
+  const sessionOnly = options.sessionOnly === true;
+  if (!sessionOnly && !(gdmDoorServerEnabled() && gdmDoorEnabled("organiser"))) return gdmNotFound();
   const session = await (deps.getSession ?? getSessionInfo)();
   if (!session) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
-  if (options.consent !== false) {
+  if (!sessionOnly && options.consent !== false) {
     const [profile] = await (deps.db ?? getDb)()
       .select({ consentedAt: schema.gdmProfiles.consentedAt })
       .from(schema.gdmProfiles)

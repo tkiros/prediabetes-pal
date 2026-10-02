@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { clearGdmDeviceKeys, gdmFetch } from "../../lib/client/gdm-api";
 import { GDM_COPY } from "../../lib/pal/gdm/copy";
 import { GDM_ROUTES } from "../../lib/pal/gdm/routes";
+import { PlanPhotoDownloads } from "./plan-photos";
 
 const COPY = GDM_COPY["gdm-data-controls"];
 const STATUS = GDM_COPY["gdm-status"];
@@ -26,7 +27,8 @@ export function dataControlsFailure(action: Destructive, status: number): string
 }
 
 /**
- * Your data (G-77), in this order and weight: Download my data · Sign out ·
+ * Your data (G-77), in this order and weight: Download my data (and beside
+ * it each photo of her sheet, G-62) · Sign out ·
  * then, set apart and never in the filled accent, Erase my health data and
  * Delete my account, each behind a second press. The shared account routes do
  * the work; this door adds no server code for them. Every path that ends her
@@ -111,6 +113,8 @@ export function GdmDataControls() {
         <a className="secondary-button link-button" href="/api/account/export" download>
           {COPY.download}
         </a>
+        {/* G-62: the export lists a sheet photo without its bytes, so each photo downloads here. */}
+        <PlanPhotoDownloads />
         <button type="button" className="secondary-button" disabled={busy} onClick={() => void leave()}>
           {COPY.signOut}
         </button>

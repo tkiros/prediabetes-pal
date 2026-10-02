@@ -63,7 +63,10 @@ export const GDM_SURFACE_ROWS: Record<GdmSurface, readonly string[]> = {
     "gdm-load-failed",
     "gdm-list-full",
     "gdm-asklist-lead",
-    "gdm-asklist-controls"
+    "gdm-asklist-controls",
+    "gdm-occasions",
+    "gdm-plan-controls",
+    "gdm-plan-differ"
   ],
   ideas: [],
   read: []

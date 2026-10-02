@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { toResponseCheck } from "../../history/handlers";
 import { mapMemoryRow, memorySelectColumns } from "../../memory/handlers";
 import { guideDoorEnabled } from "../../../../lib/guide-door-flag";
+import { planPhotoForExport } from "../../../../lib/pal/gdm/plan-photo";
 import { safeDecrypt } from "../../../../lib/server/crypto";
 import { getDb, schema, type Db } from "../../../../lib/server/db";
 import {
@@ -216,6 +217,10 @@ export function createAccountExportHandler(deps: Deps = {}) {
         } catch {
           // an unreadable entry exports as the placeholder string, never as a throw
         }
+        // G-62: a sheet photo is listed by its type, size and download path,
+        // not its bytes (three at the bound would pass the platform's response
+        // cap); R55: that path answers her session even with the door closed.
+        if (row.kind === "plan_photo") body = planPhotoForExport(body, row.id);
         return { id: row.id, kind: row.kind, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), body };
       }),
       // AUD-012: the documented exclusion schedule. Every user-adjacent

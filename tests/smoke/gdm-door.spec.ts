@@ -10,14 +10,14 @@ import fs from "node:fs";
 import path from "node:path";
 
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { GDM_COPY } from "../../lib/pal/gdm/copy";
 import { GDM_ROUTES } from "../../lib/pal/gdm/routes";
 import { loadSafetyContract } from "../../lib/pal/safety-contract";
 import { doorSurfaceOn } from "./gdm-door";
 
-const DARK_PATHS = ["/gdm", "/gdm/start", "/gdm/home", "/gdm/questions", "/gdm/data", "/gdm/privacy"] as const;
+const DARK_PATHS = ["/gdm", "/gdm/start", "/gdm/home", "/gdm/questions", "/gdm/plan", "/gdm/data", "/gdm/privacy"] as const;
 
 const TOLD = GDM_COPY["gdm-onboarding-told"];
 const DATE = GDM_COPY["gdm-onboarding-date"];
@@ -26,6 +26,12 @@ const DATA_CONTROLS = GDM_COPY["gdm-data-controls"];
 const NAV = GDM_COPY["gdm-nav"];
 const ASKS = GDM_COPY["gdm-asklist-controls"];
 const STATUS = GDM_COPY["gdm-status"];
+const PLAN = GDM_COPY["gdm-plan-controls"];
+const OCCASIONS = GDM_COPY["gdm-occasions"];
+const DIFFER = GDM_COPY["gdm-plan-differ"];
+const SAVE_FAILED = GDM_COPY["gdm-save-failed"].line;
+/** A real 1×1 PNG: the sheet photo the device downscales, re-encodes and sends (Task 3.3). */
+const PNG_1X1 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
 
 test.describe("GDM door — dark", () => {
   test.beforeEach(async () => {
@@ -134,9 +140,60 @@ test.describe("GDM door — organiser", () => {
 // and sends nothing before it lets her through, and an erase that returns her
 // to onboarding rather than Home. PR-2 adds My questions between consent and
 // erase: park a question, a shaky one raises the approved clinical card above
-// the list, a number-shaped worry raises nothing. Gated on the organiser
-// surface via /api/health (this file's rule throughout) — never the
-// Playwright env.
+// the list, a number-shaped worry raises nothing. PR-3's My plan runs as its
+// own test (its own time budget, its own account): two plans that differ at
+// Lunch both carry the "These differ" chip and park the differ question into
+// My questions; a sheet photo the device cannot open fails cleanly, one it
+// can is kept, shown, linked for download on Your data (G-62) and removed in
+// two presses. Gated on the organiser surface via /api/health (this file's
+// rule throughout) — never the Playwright env.
+
+/**
+ * Signs a fresh account up through the app's own magic-link flow (the disk
+ * mailbox) and lands on /gdm/start. A fresh, unique email per run: reruns of
+ * this spec share the disposable e2e database, and a repeated address would
+ * collide with an earlier run's (erased, but possibly still in-flight) profile.
+ */
+async function signUp(page: Page): Promise<void> {
+  const stubDir = process.env.AUTH_EMAIL_STUB_DIR;
+  const email = `gdm-e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@pal.test`;
+
+  await page.goto(GDM_ROUTES.signup);
+  await page.getByLabel("Email address").fill(email);
+  await page.getByRole("button", { name: /email me a sign-in link/i }).click();
+  await expect(page).toHaveURL(/check-email/);
+
+  const mailboxFile = path.join(stubDir!, `${email.replace(/[^a-z0-9@.]/gi, "_")}.json`);
+  await expect.poll(() => fs.existsSync(mailboxFile), { timeout: 10_000 }).toBe(true);
+  const { url } = JSON.parse(fs.readFileSync(mailboxFile, "utf8")) as { url: string };
+
+  // Follow the verification link, then navigate to /gdm/start explicitly.
+  // Verified directly (curl -D-, not guessed): even though the mailbox
+  // link and its embedded callbackUrl are both correctly 127.0.0.1:3100,
+  // this e2e server's auth callback issues `location: http://localhost:3100`
+  // and sets `authjs.callback-url=...localhost...` — most likely Auth.js's
+  // default `redirect` callback computing its trusted origin as `localhost`
+  // (a common default) while AUTH_URL/NEXTAUTH_URL sit blanked here
+  // (scripts/e2e-runtime-env.ts) for provider isolation; the exact "why"
+  // inside Auth.js was not isolated further, and this is shared auth.ts
+  // infrastructure outside the door's own files either way. The session
+  // cookie itself IS set against 127.0.0.1 (the host that actually served
+  // the 302), so the explicit re-navigation below carries it correctly —
+  // confirmed by the tests that use this succeeding. tests/smoke/auth.spec.ts
+  // sidesteps the same thing by never asserting where the link itself
+  // lands and re-navigating to a known path next.
+  await page.goto(url);
+  await page.goto(GDM_ROUTES.start);
+}
+
+/** Your data: erase, behind a second press; the landing follows. */
+async function erase(page: Page): Promise<void> {
+  await page.goto(GDM_ROUTES.data);
+  await page.getByRole("button", { name: DATA_CONTROLS.erase }).click();
+  await page.getByRole("button", { name: DATA_CONTROLS.eraseGo }).click();
+  await expect(page).toHaveURL(new RegExp(`${GDM_ROUTES.landing}$`));
+}
+
 test.describe("GDM door — organiser, signed in", () => {
   test.beforeEach(async () => {
     test.skip(!(await doorSurfaceOn("organiser")), "organiser surface off in this build");
@@ -145,38 +202,7 @@ test.describe("GDM door — organiser, signed in", () => {
   test("no A1C onboarding, an unticked consent explains itself, questions park and only a clinical one raises the card, erase returns her to onboarding", async ({
     page
   }) => {
-    const stubDir = process.env.AUTH_EMAIL_STUB_DIR;
-    // A fresh, unique email per run: reruns of this spec share the disposable
-    // e2e database, and a repeated address would collide with the earlier
-    // run's (erased, but possibly still in-flight) profile.
-    const email = `gdm-e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@pal.test`;
-
-    await page.goto(GDM_ROUTES.signup);
-    await page.getByLabel("Email address").fill(email);
-    await page.getByRole("button", { name: /email me a sign-in link/i }).click();
-    await expect(page).toHaveURL(/check-email/);
-
-    const mailboxFile = path.join(stubDir!, `${email.replace(/[^a-z0-9@.]/gi, "_")}.json`);
-    await expect.poll(() => fs.existsSync(mailboxFile), { timeout: 10_000 }).toBe(true);
-    const { url } = JSON.parse(fs.readFileSync(mailboxFile, "utf8")) as { url: string };
-
-    // Follow the verification link, then navigate to /gdm/start explicitly.
-    // Verified directly (curl -D-, not guessed): even though the mailbox
-    // link and its embedded callbackUrl are both correctly 127.0.0.1:3100,
-    // this e2e server's auth callback issues `location: http://localhost:3100`
-    // and sets `authjs.callback-url=...localhost...` — most likely Auth.js's
-    // default `redirect` callback computing its trusted origin as `localhost`
-    // (a common default) while AUTH_URL/NEXTAUTH_URL sit blanked here
-    // (scripts/e2e-runtime-env.ts) for provider isolation; the exact "why"
-    // inside Auth.js was not isolated further, and this is shared auth.ts
-    // infrastructure outside the door's own files either way. The session
-    // cookie itself IS set against 127.0.0.1 (the host that actually served
-    // the 302), so the explicit re-navigation below carries it correctly —
-    // confirmed by the rest of this test succeeding. tests/smoke/auth.spec.ts
-    // sidesteps the same thing by never asserting where the link itself
-    // lands and re-navigating to a known path next.
-    await page.goto(url);
-    await page.goto(GDM_ROUTES.start);
+    await signUp(page);
 
     // Step 1: told?
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(TOLD.ask);
@@ -323,13 +349,112 @@ test.describe("GDM door — organiser, signed in", () => {
     await expect(list.locator("li", { hasText: sheets }).getByLabel(ASKS.answer)).toHaveValue("The newer one stands.");
 
     // Your data: erase, behind a second press.
-    await page.goto(GDM_ROUTES.data);
-    await page.getByRole("button", { name: DATA_CONTROLS.erase }).click();
-    await page.getByRole("button", { name: DATA_CONTROLS.eraseGo }).click();
-    await expect(page).toHaveURL(new RegExp(`${GDM_ROUTES.landing}$`));
+    await erase(page);
 
     // The erased profile means onboarding again, never Home.
     await page.goto(GDM_ROUTES.start);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(TOLD.ask);
+  });
+
+  // PR-3, My plan (F-PLANKEEP; Task 3.4 folded into 3.3 — R12, R35, G-03).
+  test("My plan: two plans that differ at Lunch are both flagged and park their question; a sheet photo is kept as a photo", async ({
+    page
+  }) => {
+    // Onboarding's quick path: told, no date, consent.
+    await signUp(page);
+    await page.getByRole("button", { name: TOLD.yes }).click();
+    await page.getByRole("button", { name: DATE.skip }).click();
+    await page.getByRole("checkbox", { name: CONSENT.agree }).check();
+    await page.getByRole("button", { name: CONSENT.go }).click();
+    await expect(page).toHaveURL(new RegExp(`${GDM_ROUTES.home}$`));
+
+    // The empty plan renders empty: the form first, no card, the drafted empty line.
+    await page.goto(GDM_ROUTES.plan);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(PLAN.title);
+    await expect(page.getByText(PLAN.empty)).toBeVisible();
+    const cards = page.locator("ul.gdm-plan-current > li");
+    await expect(cards).toHaveCount(0);
+    const status = page.locator(".gdm-status");
+
+    const enterPlan = async (givenBy: string, lunch: string) => {
+      await page.getByLabel(PLAN.givenBy, { exact: true }).fill(givenBy);
+      await page.getByLabel(PLAN.counts, { exact: true }).selectOption("grams");
+      await page.getByLabel(OCCASIONS.lunch, { exact: true }).fill(lunch);
+      await page.getByRole("button", { name: PLAN.save, exact: true }).click();
+      await expect(status).toHaveText(STATUS.saved);
+    };
+    await enterPlan("the dietitian", "45 g");
+    await expect(cards).toHaveCount(1);
+    // R50: a second clinician's sheet stands beside the first, never in its place.
+    await page.getByRole("button", { name: PLAN.addAnother }).click();
+    await expect(page.getByLabel(PLAN.givenBy, { exact: true })).toBeFocused();
+    await enterPlan("the clinic nurse", "30 g");
+    await expect(cards).toHaveCount(2);
+
+    // Two entries that differ at Lunch: both shown, both carrying the same
+    // neutral chip at Lunch and nowhere else, neither picked (§6.1 row 12).
+    await expect(cards.nth(0)).toContainText("30 g");
+    await expect(cards.nth(1)).toContainText("45 g");
+    for (const card of [cards.nth(0), cards.nth(1)]) {
+      await expect(card.locator(".gdm-plan-row", { hasText: OCCASIONS.lunch }).locator(".gdm-differ-chip")).toHaveText(
+        DIFFER.flag
+      );
+    }
+    await expect(page.locator(".gdm-differ-chip")).toHaveCount(2);
+
+    // "Add to my questions" parks the differ question in her list.
+    const parkPost = page.waitForResponse(
+      (response) => response.url().endsWith("/api/gdm/items") && response.request().method() === "POST"
+    );
+    await cards.nth(0).getByRole("button", { name: DIFFER.park }).click();
+    expect((await parkPost).status()).toBe(200);
+    await expect(status).toHaveText(STATUS.saved);
+    await page.goto(GDM_ROUTES.questions);
+    await expect(page.locator("ul.gdm-asks").getByText(DIFFER.askText.replace("{occasion}", OCCASIONS.lunch))).toBeVisible();
+
+    // Task 3.3: a photo of her sheet, kept as a photo. A file the device
+    // cannot open shows the save-failed line and clears the input (G-20).
+    await page.goto(GDM_ROUTES.plan);
+    await expect(page.getByRole("button", { name: PLAN.photoAdd })).toBeVisible();
+    const fileInput = page.locator('input[type="file"]');
+    const photo = page.getByRole("img", { name: PLAN.photoAlt });
+    await fileInput.setInputFiles({ name: "sheet.heic", mimeType: "image/heic", buffer: Buffer.from("not a picture") });
+    await expect(page.getByText(SAVE_FAILED)).toBeVisible();
+    await expect(fileInput).toHaveValue("");
+    await expect(photo).toHaveCount(0);
+
+    // A picture the device can open is downscaled, sent, and shown back: a
+    // lazy image whose bytes this browser decodes.
+    await fileInput.setInputFiles({ name: "sheet.png", mimeType: "image/png", buffer: Buffer.from(PNG_1X1, "base64") });
+    await expect(photo).toHaveCount(1);
+    await expect(status).toHaveText(STATUS.saved);
+    await expect(page.getByText(SAVE_FAILED)).toHaveCount(0);
+    await expect(photo).toHaveAttribute("loading", "lazy");
+    await photo.scrollIntoViewIfNeeded();
+    await expect.poll(() => photo.evaluate((img) => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+
+    // G-62: the export lists a photo without its bytes, so Your data links it
+    // for download, served privately and never sniffed.
+    await page.goto(GDM_ROUTES.data);
+    const photoLink = page.getByRole("link", { name: PLAN.photoAlt });
+    await expect(photoLink).toHaveCount(1);
+    const served = await page.request.get((await photoLink.getAttribute("href"))!);
+    expect(served.status()).toBe(200);
+    expect(served.headers()["content-type"]).toBe("image/jpeg");
+    expect(served.headers()["cache-control"]).toBe("private, no-store");
+    expect(served.headers()["x-content-type-options"]).toBe("nosniff");
+
+    // Removing her photo takes two presses (G-76): the first only asks, with focus on Cancel.
+    await page.goto(GDM_ROUTES.plan);
+    await expect(photo).toHaveCount(1);
+    await page.getByRole("button", { name: PLAN.photoRemove }).click();
+    await expect(page.getByRole("button", { name: DATA_CONTROLS.cancel })).toBeFocused();
+    await expect(photo).toHaveCount(1);
+    await page.getByRole("button", { name: PLAN.photoRemove }).click();
+    await expect(photo).toHaveCount(0);
+    await expect(status).toHaveText(STATUS.removed);
+    await expect(page.getByRole("button", { name: PLAN.photoAdd })).toBeFocused();
+
+    await erase(page);
   });
 });

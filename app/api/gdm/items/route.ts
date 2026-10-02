@@ -1,4 +1,4 @@
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -27,8 +27,8 @@ import {
 
 export const runtime = "nodejs";
 
-// What she keeps on the door: questions for her appointment (F-ASKLIST), and
-// later her plan and her meals. No model call on this path (PRD §6.2): the one
+// What she keeps on the door: questions for her appointment (F-ASKLIST), her
+// plan (F-PLANKEEP), and later her meals. No model call on this path (PRD §6.2): the one
 // thing that reads her words is the existing clinical router, over an ask.
 
 const Kind = z.enum(GDM_ITEM_KINDS);
@@ -40,6 +40,9 @@ type Deps = GdmRouteDeps & { loadContract?: () => SafetyContract };
 
 /** The two plan fields a replace reads and writes. GdmPlanSchema (Task 3.2) carries both. */
 type PlanDates = { enteredOn: string; replacedOn: string | null };
+
+/** R52: the kinds DELETE removes. */
+const DELETABLE_KINDS: GdmItemKind[] = ["ask", "meal"];
 
 const seal = (body: unknown) => encryptField(JSON.stringify(body));
 const isItemKind = (kind: string): kind is GdmItemKind => (GDM_ITEM_KINDS as readonly string[]).includes(kind);
@@ -67,6 +70,11 @@ export function createGdmItemsHandlers(deps: Deps = {}) {
       if (replaces !== undefined && kind !== "plan") return gdmInvalid();
       const body = GDM_ITEM_BODY[kind]?.safeParse(parsed.data.body);
       if (!body?.success) return gdmInvalid();
+      // R47: a plan arrives current. Only the replace transaction below dates a
+      // plan, so a plain POST can never store one already replaced, and a
+      // replace can never leave her with no current plan. (Here, not in the
+      // schema: a stored body carries its replacedOn once it is replaced.)
+      if (kind === "plan" && (body.data as PlanDates).replacedOn !== null) return gdmInvalid();
 
       // G-11: the card is decided BEFORE anything is stored, and the contract is
       // read on EVERY ask — not first on the rarest, most serious question. A
@@ -122,6 +130,11 @@ export function createGdmItemsHandlers(deps: Deps = {}) {
       const hers = and(eq(schema.gdmItems.id, parsed.data.id), eq(schema.gdmItems.userId, gate.userId));
       const [row] = await db().select({ kind: schema.gdmItems.kind }).from(schema.gdmItems).where(hers);
       if (!row) return gdmNotFound();
+      // R47: a plan is never edited in place. It is only replaced (POST with
+      // `replaces`, whose new body must arrive with replacedOn null), so
+      // `replacedOn` is set inside that one transaction and nowhere else, and
+      // a plan's record stays as she entered it.
+      if (row.kind === "plan") return gdmInvalid();
       const body = isItemKind(row.kind) ? GDM_ITEM_BODY[row.kind]?.safeParse(parsed.data.body) : undefined;
       if (!body?.success) return gdmInvalid();
       const updated = await db()
@@ -137,9 +150,17 @@ export function createGdmItemsHandlers(deps: Deps = {}) {
       if (gate instanceof Response) return gate;
       const id = Id.safeParse(new URL(request.url).searchParams.get("id"));
       if (!id.success) return gdmInvalid();
+      // R52: only a question or a meal is deleted here. A plan is kept and
+      // only ever replaced (R47), and a photo of her sheet has its own route.
       const deleted = await db()
         .delete(schema.gdmItems)
-        .where(and(eq(schema.gdmItems.id, id.data), eq(schema.gdmItems.userId, gate.userId)))
+        .where(
+          and(
+            eq(schema.gdmItems.id, id.data),
+            eq(schema.gdmItems.userId, gate.userId),
+            inArray(schema.gdmItems.kind, DELETABLE_KINDS)
+          )
+        )
         .returning({ id: schema.gdmItems.id });
       return deleted.length === 0 ? gdmNotFound() : ok();
     }
@@ -155,8 +176,8 @@ export function createGdmItemsHandlers(deps: Deps = {}) {
  *   2. insert the new plan;
  *   3. rewrite the old body with replacedOn = the new plan's enteredOn.
  * An old body that will not decrypt or parse throws, and the whole transaction
- * rolls back. Reachable once Task 3.2 registers the plan body schema; its
- * tests cover these three outcomes (ruling R28).
+ * rolls back. tests/unit/pal/gdm-items-route.test.ts covers these three
+ * outcomes (ruling R28).
  */
 async function replacePlan(db: Db, userId: string, oldId: string, next: PlanDates) {
   return db.transaction(async (tx) => {

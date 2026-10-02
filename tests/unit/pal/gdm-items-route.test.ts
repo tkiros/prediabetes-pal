@@ -15,6 +15,7 @@ vi.mock("@sentry/node", () => ({
 import { createGdmItemsHandlers } from "../../../app/api/gdm/items/route";
 import { GDM_COPY } from "../../../lib/pal/gdm/copy";
 import { GDM_ITEM_CAP } from "../../../lib/pal/gdm/items";
+import { currentPlans, detectConflicts, type GdmPlan, type StoredPlan } from "../../../lib/pal/gdm/plan-record";
 import { loadSafetyContract } from "../../../lib/pal/safety-contract";
 import { schema } from "../../../lib/server/db";
 import { listGdmItems } from "../../../lib/server/gdm-items";
@@ -57,6 +58,27 @@ const req = (method: string, body?: unknown, query = "") =>
     body: body === undefined ? undefined : JSON.stringify(body)
   });
 const ask = (text: string, note: string | null = null) => ({ kind: "ask", body: { text, note, asked: false, answer: null } });
+const planBody = (over: Partial<GdmPlan> = {}): GdmPlan => ({
+  givenBy: "the dietitian",
+  note: null,
+  perDay: "three meals and three snacks",
+  unit: "grams",
+  choiceMeans: null,
+  figures: { breakfast: "30 g", lunch: "45 g" },
+  enteredOn: "2026-10-01",
+  replacedOn: null,
+  ...over
+});
+const plan = (over: Partial<GdmPlan> = {}, replaces?: string) => ({
+  kind: "plan",
+  body: planBody(over),
+  ...(replaces === undefined ? {} : { replaces })
+});
+/** Her plans as the list route returns them, each with its row id (never fed back to the strict schema). */
+const storedPlans = async (userId: string): Promise<StoredPlan[]> => {
+  const { items } = await (await as(userId).GET(req("GET", undefined, "?kind=plan"))).json();
+  return items.map((item: { id: string; body: GdmPlan }) => ({ id: item.id, ...item.body }));
+};
 const rawRows = async () => (await testDb.raw.query<{ body_ciphertext: string }>("SELECT body_ciphertext FROM gdm_items")).rows;
 /** Tags of the G-12 events that reached the Sentry SDK (safeDecrypt's own DecryptError events are left out). */
 const unreadableEvents = () =>
@@ -193,6 +215,100 @@ describe("/api/gdm/items", () => {
       routeCopy: loadSafetyContract().copy.clinicalRoutes.possible_hypoglycemia
     });
     expect(await rawRows()).toHaveLength(GDM_ITEM_CAP);
+  });
+
+  it("a plan body round-trips exactly as she wrote it, encrypted at rest", async () => {
+    const response = await as(her).POST(req("POST", plan()));
+    expect(response.status).toBe(200);
+    const [row] = await rawRows();
+    expect(row.body_ciphertext).toMatch(/^v\d+:/);
+    expect(row.body_ciphertext).not.toContain("dietitian");
+    const mine = await (await as(her).GET(req("GET", undefined, "?kind=plan"))).json();
+    expect(mine.items.map((item: { body: unknown }) => item.body)).toEqual([planBody()]);
+  });
+
+  it("a plan body with a target in it is refused, and nothing is kept (strict: no field for a target)", async () => {
+    expect((await as(her).POST(req("POST", { kind: "plan", body: { ...planBody(), target: "under 140" } }))).status).toBe(400);
+    expect(await rawRows()).toHaveLength(0);
+  });
+
+  it("G-13: after a replace there is exactly one current plan, and the old one is dated with the new one's enteredOn", async () => {
+    const { id: oldId } = await (await as(her).POST(req("POST", plan()))).json();
+    const replaced = await as(her).POST(req("POST", plan({ figures: { lunch: "30 g" }, enteredOn: "2026-10-20" }, oldId)));
+    expect(replaced.status).toBe(200);
+    const { id: newId } = await replaced.json();
+    const plans = await storedPlans(her);
+    expect(currentPlans(plans).map((p) => p.id)).toEqual([newId]);
+    expect(plans.find((p) => p.id === oldId)).toEqual({ id: oldId, ...planBody(), replacedOn: "2026-10-20" });
+    expect(plans.find((p) => p.id === newId)).toEqual({ id: newId, ...planBody({ figures: { lunch: "30 g" }, enteredOn: "2026-10-20" }) });
+  });
+
+  it("G-13: another user's plan id — or an id that is not a plan — as `replaces` is a 404, and nothing is inserted", async () => {
+    await testDb.db.insert(schema.gdmProfiles).values({ userId: other, consentedAt: new Date() });
+    try {
+      const { id: theirs } = await (await as(other).POST(req("POST", plan()))).json();
+      const { id: herAsk } = await (await as(her).POST(req("POST", ask("Which sheet stands?")))).json();
+      const before = await rawRows();
+      expect((await as(her).POST(req("POST", plan({}, theirs)))).status).toBe(404);
+      expect((await as(her).POST(req("POST", plan({}, herAsk)))).status).toBe(404);
+      expect(await rawRows()).toEqual(before);
+      expect(currentPlans(await storedPlans(other)).map((p) => p.id)).toEqual([theirs]);
+    } finally {
+      await testDb.raw.query("DELETE FROM gdm_profiles WHERE user_id = $1", [other]);
+    }
+  });
+
+  it("G-13: replacing a plan that is already replaced is a 409, and nothing is inserted", async () => {
+    const { id: first } = await (await as(her).POST(req("POST", plan()))).json();
+    await as(her).POST(req("POST", plan({ enteredOn: "2026-10-20" }, first)));
+    const before = await rawRows();
+    const again = await as(her).POST(req("POST", plan({ enteredOn: "2026-10-21" }, first)));
+    expect(again.status).toBe(409);
+    expect((await again.json()).error).not.toBe(GDM_COPY["gdm-list-full"].line);
+    expect(await rawRows()).toEqual(before);
+  });
+
+  it("R47: a plan cannot be edited in place — PATCH on a plan is a 400 and the stored plan is unchanged", async () => {
+    const { id } = await (await as(her).POST(req("POST", plan()))).json();
+    const dated = { ...planBody(), replacedOn: "2026-10-20" };
+    expect((await as(her).PATCH(req("PATCH", { id, body: dated }))).status).toBe(400);
+    expect((await as(her).PATCH(req("PATCH", { id, body: planBody({ givenBy: "someone else" }) }))).status).toBe(400);
+    expect(await storedPlans(her)).toEqual([{ id, ...planBody() }]);
+  });
+
+  it("R50: a second plan without `replaces` stands beside the first — two current plans, their difference flagged", async () => {
+    const { id: first } = await (await as(her).POST(req("POST", plan()))).json();
+    const { id: second } = await (await as(her).POST(req("POST", plan({ givenBy: "the clinic nurse", figures: { lunch: "30 g" } })))).json();
+    const plans = await storedPlans(her);
+    expect(currentPlans(plans).map((p) => p.id).sort()).toEqual([first, second].sort());
+    expect(detectConflicts(plans).map((c) => c.occasion)).toEqual(["lunch"]);
+  });
+
+  it("R47: a new plan is never stored already dated — a plain POST with a replacedOn is a 400, nothing inserted", async () => {
+    expect((await as(her).POST(req("POST", plan({ replacedOn: "2026-10-20" })))).status).toBe(400);
+    expect(await rawRows()).toHaveLength(0);
+  });
+
+  it("R47: a replace whose new plan is dated is a 400 — she is never left with no current plan", async () => {
+    const { id: oldId } = await (await as(her).POST(req("POST", plan()))).json();
+    const before = await rawRows();
+    expect((await as(her).POST(req("POST", plan({ enteredOn: "2026-10-20", replacedOn: "2026-10-20" }, oldId)))).status).toBe(400);
+    expect(await rawRows()).toEqual(before);
+    expect(currentPlans(await storedPlans(her)).map((p) => p.id)).toEqual([oldId]);
+  });
+
+  it("R52: DELETE removes only questions and meals — a plan or a sheet photo is a 404 and the row stays", async () => {
+    const { id: planId } = await (await as(her).POST(req("POST", plan()))).json();
+    const {
+      rows: [photo]
+    } = await testDb.raw.query<{ id: string }>(
+      "INSERT INTO gdm_items (user_id, kind, body_ciphertext) VALUES ($1, 'plan_photo', 'v1:x') RETURNING id",
+      [her]
+    );
+    const before = await rawRows();
+    expect((await as(her).DELETE(req("DELETE", undefined, `?id=${planId}`))).status).toBe(404);
+    expect((await as(her).DELETE(req("DELETE", undefined, `?id=${photo.id}`))).status).toBe(404);
+    expect(await rawRows()).toEqual(before);
   });
 
   it("no model call on this path (PRD §6.2 acceptance)", () => {

@@ -74,4 +74,17 @@ describe("gdmRouteGuard — closed → session → consent, in one place (G-16)"
     vi.stubEnv("GDM_DOOR_ENABLED", "1");
     expect(((await gdmRouteGuard({ db: untouchable, getSession: session(null) }, { consent: false })) as Response).status).toBe(401);
   });
+
+  it("R55 `sessionOnly` (reading back her own stored photo) needs a session and nothing else: door open or closed, consent or none, no database read", async () => {
+    expect(await gdmRouteGuard({ db: untouchable, getSession: session(notConsented) }, { sessionOnly: true })).toEqual({
+      userId: notConsented
+    });
+    vi.stubEnv("GDM_DOOR_ENABLED", "0");
+    vi.stubEnv("NEXT_PUBLIC_GDM_DOOR", "");
+    expect(await gdmRouteGuard({ db: untouchable, getSession: session(consented) }, { sessionOnly: true })).toEqual({
+      userId: consented
+    });
+    expect(((await gdmRouteGuard({ db: untouchable, getSession: session(null) }, { sessionOnly: true })) as Response).status).toBe(401);
+    expect(untouchable).not.toHaveBeenCalled();
+  });
 });
