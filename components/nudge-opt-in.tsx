@@ -5,6 +5,50 @@ import { useEffect, useState } from "react";
 import { historyStore } from "../lib/client/history-store";
 import { dayKeyLocal } from "../lib/coach/days";
 
+/** Web Push is usable in this browser and not blocked. Client-only. */
+export function pushSupported(): boolean {
+  return (
+    typeof Notification !== "undefined" &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    Notification.permission !== "denied"
+  );
+}
+
+/**
+ * Browser permission → push subscription → POST /api/push/subscribe, which
+ * also sets the profile's opt-in. Shared by this card and /account (FIX2a), so
+ * a reminder turned off there can be turned back on in-app.
+ */
+export async function enableReminder(): Promise<boolean> {
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      return false;
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+    const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    if (!publicKey) {
+      return false;
+    }
+
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey)
+    });
+
+    const response = await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(subscription.toJSON())
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Two-step nudge opt-in (plan P5): offered on the home loop only after the
  * user has a check on a PRIOR day (never during onboarding), and only when
@@ -21,12 +65,7 @@ export function NudgeOptIn() {
     let cancelled = false;
 
     (async () => {
-      if (
-        typeof Notification === "undefined" ||
-        !("serviceWorker" in navigator) ||
-        !("PushManager" in window) ||
-        Notification.permission === "denied"
-      ) {
+      if (!pushSupported()) {
         return;
       }
 
@@ -56,7 +95,16 @@ export function NudgeOptIn() {
           return;
         }
         const existing = await registration.pushManager.getSubscription();
-        if (!existing && !cancelled) {
+        // FIX2a: "Turn off" on /account clears the profile opt-in but leaves
+        // this browser's subscription, which used to hide this card for good.
+        // Off is off wherever the subscription lives, so ask again.
+        const optedOut = existing
+          ? await fetch("/api/profile", { cache: "no-store" })
+              .then((r) => (r.ok ? (r.json() as Promise<{ nudgeOptIn?: boolean }>) : null))
+              .then((profile) => profile?.nudgeOptIn === false)
+              .catch(() => false)
+          : false;
+        if ((!existing || optedOut) && !cancelled) {
           setVisible(true);
         }
       } catch {
@@ -71,36 +119,7 @@ export function NudgeOptIn() {
 
   async function enable() {
     setState("asking");
-
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        setState("failed");
-        return;
-      }
-
-      const registration = await navigator.serviceWorker.ready;
-      const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (!publicKey) {
-        setState("failed");
-        return;
-      }
-
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey)
-      });
-
-      const response = await fetch("/api/push/subscribe", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(subscription.toJSON())
-      });
-
-      setState(response.ok ? "done" : "failed");
-    } catch {
-      setState("failed");
-    }
+    setState((await enableReminder()) ? "done" : "failed");
   }
 
   if (!visible || state === "done") {
