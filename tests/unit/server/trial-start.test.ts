@@ -156,7 +156,7 @@ it("plan=annual checks out against the annual price with annual metadata", async
     sendMagicLink: vi.fn().mockResolvedValue(undefined),
     env: {
       ...trialEnv,
-      STRIPE_PRICE_ANNUAL: "price_annual"
+      STRIPE_PRICE_ANNUAL_8999: "price_annual"
     } as unknown as NodeJS.ProcessEnv
   });
 
@@ -170,13 +170,13 @@ it("plan=annual checks out against the annual price with annual metadata", async
   expect(call.subscription_data).toMatchObject({
     trial_period_days: 7,
     metadata: {
-      price_variant: "annual",
+      price_variant: "annual_8999",
       terms_version: TERMS_VERSION
     }
   });
 });
 
-it("503s on plan=annual when STRIPE_PRICE_ANNUAL is unset", async () => {
+it("503s on plan=annual when STRIPE_PRICE_ANNUAL_8999 is unset", async () => {
   const stripe = stripeStub();
   const handler = createTrialCheckoutHandler({
     db: () => ctx.db,

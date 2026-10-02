@@ -106,7 +106,7 @@ export default defineConfig({
         // e2e server must too, or the annual card is (correctly) hidden and
         // billing-pages.spec's annual assertion has nothing to match. A dummy
         // id is fine — annual checkout is never exercised here (no Stripe).
-        STRIPE_PRICE_ANNUAL: "price_e2e_annual_smoke_only",
+        STRIPE_PRICE_ANNUAL_8999: "price_e2e_annual_smoke_only",
         NEXT_DIST_DIR: ".next-e2e-legacy",
         NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3100"
       }

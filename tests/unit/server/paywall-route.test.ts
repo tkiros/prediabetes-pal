@@ -43,13 +43,13 @@ describe("GET /api/paywall — server commercial contract", () => {
   });
 
   // Honest inverse of the :3100 e2e dummy (billing-pages.spec asserts the annual
-  // card RENDERS when STRIPE_PRICE_ANNUAL is set). Production may leave the var
+  // card RENDERS when STRIPE_PRICE_ANNUAL_8999 is set). Production may leave the var
   // unset; here we prove the server then reports annual as NOT offered, so the
   // client's `{config.annualDisplay ? <annual/> : null}` gate correctly hides
   // the annual card rather than showing a guessed price.
-  it("reports annual as not offered when STRIPE_PRICE_ANNUAL is unset", async () => {
-    const prior = process.env.STRIPE_PRICE_ANNUAL;
-    delete process.env.STRIPE_PRICE_ANNUAL;
+  it("reports annual as not offered when STRIPE_PRICE_ANNUAL_8999 is unset", async () => {
+    const prior = process.env.STRIPE_PRICE_ANNUAL_8999;
+    delete process.env.STRIPE_PRICE_ANNUAL_8999;
     try {
       const body = await (await GET()).json();
       expect(body.annualDisplay).toBeNull();
@@ -58,7 +58,7 @@ describe("GET /api/paywall — server commercial contract", () => {
       expect(PaywallConfigSchema.safeParse(body).success).toBe(true);
     } finally {
       if (prior !== undefined) {
-        process.env.STRIPE_PRICE_ANNUAL = prior;
+        process.env.STRIPE_PRICE_ANNUAL_8999 = prior;
       }
     }
   });

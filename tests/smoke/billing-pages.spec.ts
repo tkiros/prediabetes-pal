@@ -17,8 +17,8 @@ test("subscribe page shows the soft paywall inside the claims boundary", async (
   await page.goto("/subscribe");
 
   await expect(page.getByTestId("paywall-card")).toBeVisible();
-  await expect(page.getByTestId("subscribe-monthly")).toContainText("$12.99");
-  await expect(page.getByTestId("subscribe-annual")).toContainText("$99.99");
+  await expect(page.getByTestId("subscribe-monthly")).toContainText("$9.99");
+  await expect(page.getByTestId("subscribe-annual")).toContainText("$89.99");
   // capability framing only — no outcome promises, no pressure
   const text = await page.locator("main").innerText();
   expect(text).not.toMatch(/revers|cure|treat|prevent|guarantee|lower your a1c/i);

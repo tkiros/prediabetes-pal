@@ -180,9 +180,9 @@ describe("POST /api/billing/stripe/checkout terms acceptance", () => {
   });
 
   it("records the accepted Terms version in Stripe metadata", async () => {
-    const previousPrice = process.env.STRIPE_PRICE_MONTHLY_1299;
+    const previousPrice = process.env.STRIPE_PRICE_MONTHLY_999;
     const previousUrl = process.env.NEXT_PUBLIC_APP_URL;
-    process.env.STRIPE_PRICE_MONTHLY_1299 = "price_monthly";
+    process.env.STRIPE_PRICE_MONTHLY_999 = "price_monthly";
     process.env.NEXT_PUBLIC_APP_URL = "https://prediabetespal.com";
     const stripe = {
       checkout: {
@@ -207,8 +207,8 @@ describe("POST /api/billing/stripe/checkout terms acceptance", () => {
         })
       );
     } finally {
-      if (previousPrice === undefined) delete process.env.STRIPE_PRICE_MONTHLY_1299;
-      else process.env.STRIPE_PRICE_MONTHLY_1299 = previousPrice;
+      if (previousPrice === undefined) delete process.env.STRIPE_PRICE_MONTHLY_999;
+      else process.env.STRIPE_PRICE_MONTHLY_999 = previousPrice;
       if (previousUrl === undefined) delete process.env.NEXT_PUBLIC_APP_URL;
       else process.env.NEXT_PUBLIC_APP_URL = previousUrl;
     }
@@ -1646,7 +1646,7 @@ describe("POST /api/billing/stripe/checkout (W-20b price unification, W-04 gate)
     LEGAL_TERMS_FINAL: "1",
     TRIAL_PRICE_VARIANT: "1999",
     STRIPE_PRICE_MONTHLY_1999: "price_ladder_1999",
-    STRIPE_PRICE_ANNUAL: "price_annual",
+    STRIPE_PRICE_ANNUAL_8999: "price_annual",
     // The env var the legacy path used to read. It must no longer be consulted:
     // a checkout priced off this while the wall advertises the ladder is exactly
     // the "shows a price checkout won't charge" failure pricing.ts exists to stop.

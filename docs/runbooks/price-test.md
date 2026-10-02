@@ -127,11 +127,12 @@ WHERE table_name='subscriptions' AND column_name='price_variant';
 ```
 Expect one row. If empty, apply migrations before continuing.
 
-**Step 2 — All four Stripe price IDs set (live).**
+**Step 2 — All five Stripe price IDs set (live).**
 In Vercel prod env, confirm these are present and are **live-mode** price IDs:
 - `STRIPE_PRICE_MONTHLY_999`
 - `STRIPE_PRICE_MONTHLY_1299`
 - `STRIPE_PRICE_MONTHLY_1999`
+- `STRIPE_PRICE_ANNUAL_8999` (the $89.99/year annual plan, owner decision 2026-09-06)
 - `STRIPE_PRICE_PANTRY`
 
 (Env keys read by `lib/server/pricing.ts` and `app/api/billing/handlers.ts`. The
@@ -179,8 +180,9 @@ Expect one row with a recent `last_run_at`.
 **Step 5 — Set the flip env vars.**
 In Vercel prod env, set:
 - `PAYWALL_MODE=trial`
-- `TRIAL_PRICE_VARIANT=1299`  (default; `paywallMode()` / `resolvePriceVariant()`
-  in `lib/server/pricing.ts` default to `legacy` / `1299` respectively)
+- `TRIAL_PRICE_VARIANT=999`  (default since 2026-09-06; `paywallMode()` /
+  `resolvePriceVariant()` in `lib/server/pricing.ts` default to `legacy` / `999`
+  respectively)
 
 **Step 6 — Deploy.**
 Trigger a production deployment so the env changes take effect.

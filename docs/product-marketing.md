@@ -94,7 +94,7 @@ individual.
 - Guest: first-day checks without an account or card.
 - Trial: seven days free, with the selected post-trial price and first-charge
   date shown before checkout.
-- Premium: `$12.99/month` or `$99.99/year`, subject to the live checkout price.
+- Premium: `$9.99/month` or `$89.99/year` (owner decision 2026-09-06), subject to the live checkout price.
 - Pantry Review: `$49` one-time, non-renewing purchase.
 - Cancellation: directly available from Account or Google Play.
 - Web refund policy: the first paid subscription charge is refundable when
