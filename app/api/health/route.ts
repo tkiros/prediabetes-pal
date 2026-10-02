@@ -19,8 +19,9 @@ export const runtime = "nodejs";
 
 // Staleness windows mirror each cron's own cadence with slack: bai-weekly runs
 // Mondays via vercel.json ("30 4 * * 1"); nudge, pantry-sweep,
-// trial-precharge and stripe-reconcile run hourly from the Railway scheduler
-// service (see docs/runbooks/price-test.md) — all four take the same 2h window.
+// trial-precharge and stripe-reconcile run hourly from GitHub Actions
+// (.github/workflows/hourly-crons.yml, since 2026-08-10) — all four take the
+// same 2h window, which also absorbs GitHub's scheduling delay under load.
 const NUDGE_STALE_MS = 2 * 60 * 60 * 1000; // 2 hours
 const BAI_WEEKLY_STALE_MS = 8 * 24 * 60 * 60 * 1000; // 8 days
 const TRIAL_PRECHARGE_STALE_MS = 2 * 60 * 60 * 1000; // 2 hours
