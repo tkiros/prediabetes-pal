@@ -268,9 +268,14 @@ describe("free-tier enforcement (4D)", () => {
 });
 
 describe("trial-mode hard wall (4.4)", () => {
+  async function setAccountCreatedAt(createdAt: Date) {
+    await testDb.db.update(schema.users).set({ createdAt }).where(eq(schema.users.id, userId));
+  }
+
   it("trial mode: signed-in user with status lapsed/none gets a hard 402 regardless of checks used", async () => {
-    // No subscription rows → entitlement tier free (status none). The wall must
-    // fire on the very first check — there are no residual free checks in trial.
+    // No subscription rows → entitlement tier free (status none). Past the
+    // account's first day the wall fires on the very first check.
+    await setAccountCreatedAt(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000));
     const POST = createHandler({
       sessionUserId: userId,
       paywallMode: () => "trial"
@@ -287,6 +292,62 @@ describe("trial-mode hard wall (4.4)", () => {
     // Nothing persisted — the blocked check never reaches the model or storage.
     const rows = await testDb.db.select().from(schema.checks);
     expect(rows).toHaveLength(0);
+  });
+
+  it("trial mode, FIX11: on the account's first day a non-premium session keeps the day-1 taster", async () => {
+    await setAccountCreatedAt(new Date());
+    // Six guest checks made earlier today, migrated at sign-in.
+    await testDb.db.insert(schema.checks).values(
+      Array.from({ length: 6 }, () => ({
+        userId,
+        risk: "SAFE" as const,
+        a1cBand: "prediabetes_60_62" as const,
+        foodCiphertext: "cipher",
+        createdAt: new Date()
+      }))
+    );
+    const POST = createHandler({ sessionUserId: userId, paywallMode: () => "trial" });
+
+    // 10 - 6 = 4 left: those pass and persist (so they count), the next walls.
+    for (let i = 0; i < 4; i += 1) {
+      expect((await POST(checkRequest())).status).toBe(200);
+    }
+    const walled = await POST(checkRequest());
+    expect(walled.status).toBe(402);
+    expect((await walled.json()).message).toContain("free week");
+    expect(await testDb.db.select().from(schema.checks)).toHaveLength(10);
+  });
+
+  it("trial mode, FIX11: a first-day account with no profile row is walled (its checks would never count)", async () => {
+    await setAccountCreatedAt(new Date());
+    await testDb.db.delete(schema.profiles);
+    const POST = createHandler({ sessionUserId: userId, paywallMode: () => "trial" });
+    expect((await POST(checkRequest())).status).toBe(402);
+  });
+
+  it("trial mode, FIX11: a first-day read error fails toward the wall", async () => {
+    await setAccountCreatedAt(new Date());
+    // Entitlement reads subscriptions; the first-day read joins users — fail only that.
+    const failing = new Proxy(testDb.db, {
+      get(target, prop) {
+        if (prop === "select") {
+          return (fields?: Record<string, unknown>) =>
+            fields && "createdAt" in fields && "timezone" in fields
+              ? (() => {
+                  throw new Error("users read down");
+                })()
+              : target.select(fields as never);
+        }
+        const value = Reflect.get(target, prop);
+        return typeof value === "function" ? value.bind(target) : value;
+      }
+    }) as typeof testDb.db;
+    const POST = createHandler({
+      sessionUserId: userId,
+      paywallMode: () => "trial",
+      dbOverride: () => failing
+    });
+    expect((await POST(checkRequest())).status).toBe(402);
   });
 
   it("trial mode: a stale Stripe row (lost renewal webhook) heals on read so a paying user is NOT walled", async () => {
