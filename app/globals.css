@@ -5388,7 +5388,8 @@ button.inline-link {
   white-space: nowrap;
 }
 
-.gdm-ask-head {
+.gdm-ask-head,
+.gdm-meals-head {
   display: grid;
   gap: 8px;
 }
@@ -5411,7 +5412,8 @@ button.inline-link {
   min-height: 88px;
 }
 
-.gdm-asks {
+.gdm-asks,
+.gdm-meals {
   display: grid;
   gap: 12px;
   margin: 0;
@@ -5419,7 +5421,8 @@ button.inline-link {
   list-style: none;
 }
 
-.gdm-ask {
+.gdm-ask,
+.gdm-meal {
   display: grid;
   gap: 10px;
   padding: 18px;
@@ -5427,13 +5430,15 @@ button.inline-link {
 
 /* Her own words, as she typed them (line breaks kept, long words wrapped). */
 .gdm-ask-text,
-.gdm-ask-note {
+.gdm-ask-note,
+.gdm-meal-text {
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
-.gdm-ask-text {
+.gdm-ask-text,
+.gdm-meal-text {
   color: var(--text-strong);
   font-size: 16px;
   font-weight: 600;
@@ -5451,15 +5456,18 @@ button.inline-link {
   gap: 12px;
 }
 
-/* Asked: the box and its label together are the 44px target. */
-.gdm-ask-check {
+/* Asked (and a meal's Include in my summary): the box and its label together
+   are the 44px target. */
+.gdm-ask-check,
+.gdm-meal-check {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
 /* Its colour is the door-wide checkbox rule at the top of this block. */
-.gdm-ask-check input[type="checkbox"] {
+.gdm-ask-check input[type="checkbox"],
+.gdm-meal-check input[type="checkbox"] {
   width: 20px;
   height: 20px;
   min-height: 0;
@@ -5467,7 +5475,8 @@ button.inline-link {
   flex-shrink: 0;
 }
 
-.gdm-ask-check label {
+.gdm-ask-check label,
+.gdm-meal-check label {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
@@ -5477,15 +5486,17 @@ button.inline-link {
 }
 
 /* G-76: the second Delete must not look live while it runs. */
-.gdm-ask .danger-button:disabled {
+.gdm-ask .danger-button:disabled,
+.gdm-meal .danger-button:disabled {
   opacity: 0.6;
   cursor: progress;
 }
 
 /* G-25: the empty state is a sentence with a way forward, not a muted hint.
-   My plan's empty line (page and card) reads the same. */
+   My plan's empty line (page and card) and My meals' read the same. */
 .gdm-ask-empty,
-.gdm-plan-empty {
+.gdm-plan-empty,
+.gdm-meal-empty {
   margin: 0;
   color: var(--text-body);
   font-size: 16px;
@@ -5772,4 +5783,35 @@ button.inline-link {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* Task 5.1 — My meals (F-MYMEALS; G-70): one add form, then a section for
+   each occasion that holds a meal. The rows share My questions' rules above. */
+.gdm-meal-form {
+  display: grid;
+  gap: 16px;
+}
+
+/* A meal is a line or two. */
+.gdm-meal-form textarea {
+  min-height: 88px;
+}
+
+.gdm-meal-save {
+  justify-self: start;
+}
+
+.gdm-meal-list {
+  display: grid;
+  gap: 20px;
+}
+
+.gdm-meal-section {
+  display: grid;
+  gap: 12px;
+}
+
+/* A disabled box (its save in flight) must not look like a different answer. */
+.gdm-meal-check input[type="checkbox"]:disabled {
+  cursor: progress;
 }

@@ -229,5 +229,21 @@ export const GDM_COPY = {
     openPlan: "Open My plan",
     summaryOffer: "Your summary is ready to print.",
     planTitle: "My plan"
+  },
+  // Task 5.1, F-MYMEALS. G-70: one add form — `field`, the `occasion` select
+  // (its options are `gdm-occasions`), `save` — and an occasion's heading only
+  // once it holds a meal. `inSummary` is her choice to copy a meal into her
+  // appointment summary; `remove` takes two presses, the second beside
+  // `gdm-data-controls.cancel` (G-76). G-25: `empty` is the drafted empty state.
+  // "Save", never that a meal worked or fits (PRD §6.2).
+  "gdm-meals-controls": {
+    title: "My meals",
+    sub: "Meals you already eat, in your own words.",
+    field: "Write a meal",
+    occasion: "Which occasion",
+    save: "Save",
+    inSummary: "Include in my summary",
+    remove: "Delete",
+    empty: "No meals yet. Start with one you already eat."
   }
 } as const satisfies Record<string, Record<string, string>>;
