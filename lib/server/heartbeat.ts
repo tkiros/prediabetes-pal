@@ -2,11 +2,16 @@ import { captureServerError } from "../pal/sentry-capture";
 import { schema, type Db } from "./db";
 
 /**
- * P7 observability: the two cron jobs upsert a liveness row here at the end
+ * P7 observability: every cron job upserts a liveness row here at the end
  * of a successful run; /api/health reads staleness off it (lib/server's own
  * health probe, not lib/pal — the engine stays untouched).
  */
-export type CronName = "nudge" | "bai-weekly" | "stripe-reconcile";
+export type CronName =
+  | "nudge"
+  | "bai-weekly"
+  | "stripe-reconcile"
+  | "trial-precharge"
+  | "pantry-sweep";
 
 /**
  * Fail-soft by design: a heartbeat write failure must never fail the cron
