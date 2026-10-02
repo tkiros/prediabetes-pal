@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import {
   and,
+  desc,
   eq,
   gt,
   gte,
@@ -427,12 +428,20 @@ export async function runNudgeCron(
       continue;
     }
 
-    // Checked today already? The nudge's whole job is done. Also compute the
-    // most recent check date for the inactivity wind-down.
+    // The user's single most recent check (one index seek on checks_user_day)
+    // answers both questions below:
+    //   - "checked today?" — the newest check is today iff ANY check is today,
+    //     because no check can be newer than the newest one;
+    //   - "days since last check" for the 14-day inactivity stop — needs only
+    //     the newest row, and still reads null (never checked) on no rows.
+    // This used to select every check the user had ever made, which grew
+    // without bound per user and ran for every opted-in profile every hour.
     const recent = await db
       .select({ createdAt: schema.checks.createdAt })
       .from(schema.checks)
-      .where(eq(schema.checks.userId, candidate.userId));
+      .where(eq(schema.checks.userId, candidate.userId))
+      .orderBy(desc(schema.checks.createdAt))
+      .limit(1);
     if (recent.some((row) => dayKey(row.createdAt) === todayKey)) {
       await clearTodayNudgeAttempts(db, candidate.userId, todayKey, now);
       skipped += 1;
