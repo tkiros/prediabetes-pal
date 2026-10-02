@@ -1,8 +1,25 @@
 # ADR: Hosting — Vercel (app) + Railway (database)
 
-**Date:** 2026-07-02 · **Status:** Accepted (owner decision) · **Phases:** P7+
+**Date:** 2026-07-02 · **Status:** Superseded in part (2026-08-10) · **Phases:** P7+
 **Supersedes:** the Database row of `docs/adr/stack.md` (Neon Postgres) — see
 the superseded note left in that file.
+
+> **⚠️ Superseded 2026-08-10 — Railway is gone.** The Railway account expired
+> on 2026-08-09 and took the database and the cron runner with it
+> (`docs/runbooks/incident-2026-08-10-database-outage.md`). Current state:
+>
+> - **Database: Neon Postgres** (`us-east-1`), reached through Neon's pooled
+>   endpoint with the same `pg`/Drizzle driver and the same `max: 3`
+>   per-instance pool. The role split, backups and migration procedure are in
+>   `docs/runbooks/database-governance.md` and `docs/runbooks/db-backups.md`.
+> - **Hourly scheduler: GitHub Actions** (`.github/workflows/hourly-crons.yml`),
+>   running `scripts/run-hourly-crons.mjs` unchanged. The weekly `bai-weekly`
+>   cron stays on Vercel (`vercel.json`).
+> - The Vercel half of this ADR (app hosting, preview deploys, release gate via
+>   `/api/health` heartbeats) is unchanged and still current.
+>
+> `docs/ops/env-reference.md` is the live source of truth for the connection
+> variables. The body below is kept as the record of the original decision.
 
 ## Decision
 

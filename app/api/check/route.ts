@@ -2,6 +2,8 @@ import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
+import { TASTER_LIMIT } from "../../../lib/client/taster-store";
+import { dayKeyInTimezone } from "../../../lib/coach/days";
 import type { Daypart } from "../../../lib/coach/insights";
 import { routeA1C } from "../../../lib/pal/a1c";
 import { CLARIFY_QUESTIONS, type ClarifyReason } from "../../../lib/pal/clarify";
@@ -139,6 +141,35 @@ function getModelClient(model?: string) {
   return client;
 }
 
+// FIX11 (feature map 2026-09-24 §3.0): the landing promises TASTER_LIMIT
+// checks on the first day. Signing in mid-day used to forfeit the rest, and
+// the wall then called them "yesterday's checks". On the account's first local
+// day a non-premium session keeps the taster: checks persisted today count
+// against it, migrated guest checks included (history-migrate keeps their
+// createdAt). No profile row ⇒ no taster: checks persist only for a consented
+// profile, so without one the count would stay 0 and day 1 would be
+// unlimited (a callbackUrl that skips /welcome; a GDM-only account). Any read
+// error fails toward the wall — no paid spend.
+// ponytail: counts persisted checks, so a fail-soft persistence miss
+// undercounts; bounded by the 200/day per-user spend cap.
+async function firstDayTasterLeft(database: Db, userId: string, at: Date): Promise<boolean> {
+  try {
+    const [row] = await database
+      .select({ createdAt: schema.users.createdAt, timezone: schema.profiles.timezone })
+      .from(schema.users)
+      .leftJoin(schema.profiles, eq(schema.profiles.userId, schema.users.id))
+      .where(eq(schema.users.id, userId));
+    if (!row || row.timezone === null) return false;
+    const timezone = row.timezone;
+    const dayKey = dayKeyInTimezone(timezone);
+    if (dayKey(row.createdAt) !== dayKey(at)) return false;
+    return (await countChecksToday(database, userId, timezone, at)) < TASTER_LIMIT;
+  } catch (error) {
+    await captureServerError(error, "route");
+    return false;
+  }
+}
+
 export function createCheckRouteHandler(deps: CheckRouteDeps = {}) {
   const checkFoodImpl = deps.checkFoodImpl ?? checkFood;
   const emitEvent = deps.emitEvent ?? emitSafeEvent;
@@ -227,11 +258,15 @@ export function createCheckRouteHandler(deps: CheckRouteDeps = {}) {
         }
 
         // Hard wall: any signed-in user without an active entitlement
-        // (lapsed/none) is stopped before any model spend — no residual free
-        // checks, so countChecksToday never runs. trialing/premium fall
-        // through untouched. reasonCode "daily_cap" is reused deliberately;
-        // the mode is distinguishable from the paywall config in analysis.
-        if (entitlement.tier !== "premium") {
+        // (lapsed/none) is stopped before any model spend, except on the
+        // account's first day while the taster lasts (FIX11, above).
+        // trialing/premium fall through untouched with no metering query.
+        // reasonCode "daily_cap" is reused deliberately; the mode is
+        // distinguishable from the paywall config in analysis.
+        if (
+          entitlement.tier !== "premium" &&
+          !(await firstDayTasterLeft(db(), session.userId, new Date(now())))
+        ) {
           emitEvent({
             name: "check_failed",
             environment,

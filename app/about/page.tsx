@@ -131,7 +131,8 @@ export default function AboutPage() {
           <li>not a device, and not registered with any regulator as one.</li>
         </ul>
 
-        <h2>What the guidance is built on</h2>
+        {/* Target of the result card's "How Prediabetes Pal chooses a signal". */}
+        <h2 id="guidance">What the guidance is built on</h2>
         <p>
           Every claim Prediabetes Pal is permitted to make is tied to a published
           source, recorded in an evidence pack that ships in the repository

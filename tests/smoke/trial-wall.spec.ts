@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import { expect, test, type Page, type Response } from "@playwright/test";
 
 import { doorSurfaceOn } from "./guide-door";
@@ -237,6 +240,45 @@ test("entitled: a Premium session with a spent device store is never walled", as
       JSON.parse(window.localStorage.getItem("pal.taster.v1") ?? "{}").used
   );
   expect(used).toBe(10);
+});
+
+test("FIX11: signing in on day 1 keeps the unused taster checks", async ({ page }) => {
+  // /welcome used to clear the device taster, and the server then walled the
+  // new account with "yesterday's checks". Needs the isolated database and the
+  // disk mailbox the e2e runner provisions (same gate as auth.spec).
+  const stubDir = process.env.AUTH_EMAIL_STUB_DIR;
+  test.skip(!process.env.DATABASE_URL || !stubDir, "needs DATABASE_URL + AUTH_EMAIL_STUB_DIR");
+
+  // Three guest checks already spent today; seeded once, never re-seeded.
+  await page.addInitScript((firstDay) => {
+    if (!window.localStorage.getItem("pal.taster.v1")) {
+      window.localStorage.setItem("pal.taster.v1", JSON.stringify({ firstDay, used: 3 }));
+    }
+  }, todayLocal());
+
+  const email = `e2e-taster-${Date.now()}@pal.test`;
+  await page.goto(`${TRIAL}/signin`);
+  await page.getByLabel("Email address").fill(email);
+  await page.getByRole("button", { name: /email me a sign-in link/i }).click();
+  await expect(page).toHaveURL(/check-email/);
+  const mailboxFile = path.join(stubDir!, `${email.replace(/[^a-z0-9@.]/gi, "_")}.json`);
+  await expect.poll(() => fs.existsSync(mailboxFile), { timeout: 10_000 }).toBe(true);
+  const { url } = JSON.parse(fs.readFileSync(mailboxFile, "utf8")) as { url: string };
+  await page.goto(url);
+
+  await page.goto(`${TRIAL}/welcome`);
+  await page.getByLabel("Latest A1C").fill("6.1");
+  await page.getByLabel(/I consent to Prediabetes Pal storing and using my A1C/).check();
+  const paywall = page.waitForResponse((r) => new URL(r.url()).pathname === "/api/paywall");
+  await page.getByTestId("welcome-save").click();
+  await expect(page).toHaveURL(/\/check$/);
+  await paywall;
+
+  const used = await page.evaluate(
+    () => JSON.parse(window.localStorage.getItem("pal.taster.v1") ?? "{}").used
+  );
+  expect(used).toBe(3);
+  await expect(page.getByTestId("taster-counter")).toHaveText("7 free checks left today");
 });
 
 test("day 2: an aged-out taster is walled on the next submit", async ({ page }) => {

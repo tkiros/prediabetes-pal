@@ -7,7 +7,6 @@ import { useEffect, useState } from "react";
 import { track } from "../../lib/client/analytics";
 import { historyStore } from "../../lib/client/history-store";
 import { profileStore } from "../../lib/client/profile-store";
-import { tasterStore } from "../../lib/client/taster-store";
 import { longitudinalInsightsEnabled } from "../../lib/longitudinal-insights-flag";
 
 /**
@@ -106,8 +105,8 @@ export default function WelcomePage() {
         });
       }
 
-      // Signed in: entitlement is server-truth, so drop the device taster.
-      tasterStore.clear();
+      // FIX11: keep the device taster. The server honours the rest of the
+      // day-1 allowance for a new account, and the counter stays truthful.
 
       // Mirror the saved profile on-device BEFORE navigating: /check's
       // FirstRunGate keys on a non-null device profile, and a user who signed
