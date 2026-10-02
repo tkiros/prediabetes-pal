@@ -29,9 +29,16 @@ permissions:
 
 on:
   schedule:
-    # Hourly. GitHub may delay scheduled runs under load; the 2h staleness
-    # window in /api/health absorbs that.
-    - cron: "0 * * * *"
+    # Three times an hour, off the top of the hour. A single "0 * * * *" line
+    # landed every 2-9 h in practice (40 runs over 7.4 days to 2026-10-02,
+    # median gap 4.4 h): GitHub delays and drops scheduled runs under load,
+    # worst at :00. With a 2h staleness window /api/health read degraded most
+    # of the day, and a nudge fired only when a run fell inside the user's hour.
+    # Overlap is safe: every job is idempotent (leases, claim-before-send,
+    # upserts, durable email idempotency keys) and `concurrency` serialises runs.
+    # ponytail: interim — the durable fix is Vercel Pro with these four paths
+    # back in vercel.json crons (docs/ops/outstanding.md, 2026-10-02).
+    - cron: "7,27,47 * * * *"
   workflow_dispatch:
 
 concurrency:
