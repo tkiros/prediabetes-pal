@@ -567,6 +567,12 @@ glucose, weight, or any other health outcome, and nothing will.**
 
 ### 13.1 Kill line 2 — idea engagement vs impressions (review A-95; owner rules in UC1)
 
+> **The only read left (owner ruling R-A, 2026-10-02).** The concierge test
+> (Guide-D5, kill line 1) was skipped, so nothing else checks PRD §11 risk 2
+> ("a menu, not a judge"). Prove Umami is recording in production **before**
+> the `ideas` flip (plan §7.3 step 7: `ideas_shown` arrives within the hour),
+> or this line cannot be read and the door cannot be judged.
+
 Read as **tapped**, not opened: `idea_tapped` sessions ÷ sessions in which a
 block rendered (`ideas_shown`), computed per `surface` (`"home"` | `"check"`).
 The impression count (`ideas_shown`) stays the denominator. **< 25% after four
